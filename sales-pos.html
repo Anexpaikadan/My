@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuickSale POS</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --panel: #1a1a26;
+    --border: #2a2a3e;
+    --accent: #00e5a0;
+    --accent2: #7c6ffd;
+    --warn: #ff6b6b;
+    --text: #e8e8f0;
+    --muted: #6b6b88;
+    --green: #00e5a0;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: grid;
+    grid-template-rows: 56px 1fr;
+    overflow: hidden;
+  }
+
+  /* Header */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 16px;
+  }
+  .logo { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; color: var(--accent); }
+  .logo span { color: var(--text); }
+  .clock { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--muted); margin-left: auto; }
+  .cashier-badge {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* Layout */
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    overflow: hidden;
+  }
+
+  /* Left Panel */
+  .left {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  /* Search bar */
+  .search-area {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .search-wrap {
+    flex: 1;
+    position: relative;
+  }
+  .search-wrap .icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 16px;
+  }
+  #searchInput {
+    width: 100%;
+    background: var(--panel);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px 12px 42px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  #searchInput:focus { border-color: var(--accent); }
+  #searchInput::placeholder { color: var(--muted); }
+  .qty-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--panel);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 6px 10px;
+  }
+  .qty-wrap label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  #qtyInput {
+    width: 52px;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    outline: none;
+    text-align: center;
+  }
+
+  /* Product grid */
+  .products-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .products-header h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); }
+  .count-badge {
+    background: var(--accent2);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+
+  .products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .products-grid::-webkit-scrollbar { width: 4px; }
+  .products-grid::-webkit-scrollbar-track { background: transparent; }
+  .products-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .product-card {
+    background: var(--panel);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .product-card:hover, .product-card.active-search {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0,229,160,0.12);
+  }
+  .product-card:active { transform: translateY(0); }
+  .product-emoji { font-size: 28px; margin-bottom: 8px; display: block; }
+  .product-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .product-price {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .product-stock { font-size: 10px; color: var(--muted); margin-top: 4px; }
+  .flash {
+    animation: flash 0.3s ease;
+  }
+  @keyframes flash {
+    0% { background: var(--panel); }
+    50% { background: rgba(0,229,160,0.15); }
+    100% { background: var(--panel); }
+  }
+  .no-results {
+    grid-column: 1/-1;
+    text-align: center;
+    color: var(--muted);
+    padding: 40px 0;
+    font-size: 14px;
+  }
+
+  /* Right Panel - Cart */
+  .cart-panel {
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .cart-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .cart-header h2 { font-size: 14px; font-weight: 800; letter-spacing: -0.3px; }
+  .cart-clear {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .cart-clear:hover { border-color: var(--warn); color: var(--warn); }
+
+  .cart-items {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .cart-items::-webkit-scrollbar { width: 4px; }
+  .cart-items::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .cart-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    gap: 8px;
+  }
+  .cart-empty .big-icon { font-size: 40px; opacity: 0.3; }
+  .cart-empty p { font-size: 13px; }
+
+  .cart-item {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px;
+    align-items: center;
+    animation: slideIn 0.2s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .cart-item-name { font-size: 13px; font-weight: 600; }
+  .cart-item-meta { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+  .cart-item-total {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    text-align: right;
+  }
+  .cart-item-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .qty-btn {
+    width: 22px; height: 22px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.1s;
+  }
+  .qty-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .cart-qty { font-family: 'JetBrains Mono', monospace; font-size: 13px; min-width: 20px; text-align: center; }
+  .remove-btn {
+    width: 22px; height: 22px;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.1s;
+    margin-left: 4px;
+  }
+  .remove-btn:hover { border-color: var(--warn); color: var(--warn); }
+
+  /* Totals */
+  .cart-totals {
+    border-top: 1px solid var(--border);
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .total-row.grand {
+    color: var(--text);
+    font-size: 22px;
+    font-weight: 700;
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+  .total-row .label { font-family: 'Syne', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+  .total-row.grand .label { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 800; color: var(--text); }
+
+  /* Discount row */
+  .discount-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  #discountInput {
+    flex: 1;
+    background: var(--panel);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 10px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  #discountInput:focus { border-color: var(--accent2); }
+  #discountInput::placeholder { color: var(--muted); }
+  .disc-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+  /* Checkout */
+  .checkout-btn {
+    margin: 0 20px 16px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 12px;
+    padding: 16px;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .checkout-btn:hover { background: #00ffb3; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,229,160,0.3); }
+  .checkout-btn:active { transform: translateY(0); }
+  .checkout-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* Receipt Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .receipt {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    width: 340px;
+    text-align: center;
+    animation: popIn 0.25s ease;
+  }
+  @keyframes popIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .receipt-icon { font-size: 48px; margin-bottom: 12px; }
+  .receipt h2 { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+  .receipt .receipt-total {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 16px 0;
+  }
+  .receipt-items { text-align: left; margin: 16px 0; }
+  .receipt-item { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); padding: 4px 0; border-bottom: 1px dashed var(--border); font-family: 'JetBrains Mono', monospace; }
+  .receipt-item span:last-child { color: var(--text); }
+  .new-sale-btn {
+    width: 100%;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 16px;
+    transition: all 0.15s;
+  }
+  .new-sale-btn:hover { background: #00ffb3; }
+
+  /* Keyboard hint */
+  .kbd-hint {
+    font-size: 10px;
+    color: var(--muted);
+    text-align: center;
+    padding: 0 0 8px;
+    letter-spacing: 0.5px;
+  }
+  kbd {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 4px;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Quick<span>Sale</span></div>
+  <div class="cashier-badge">Cashier: Admin</div>
+  <div class="clock" id="clock">--:--:--</div>
+</header>
+
+<div class="main">
+  <!-- Left: Products -->
+  <div class="left">
+    <div class="search-area">
+      <div class="search-wrap">
+        <span class="icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Search product name or code... (press Enter to add)" autofocus autocomplete="off">
+      </div>
+      <div class="qty-wrap">
+        <label>QTY</label>
+        <input type="number" id="qtyInput" value="1" min="1" max="99">
+      </div>
+    </div>
+
+    <div class="products-header">
+      <h2>Products</h2>
+      <span class="count-badge" id="countBadge">0</span>
+    </div>
+
+    <div class="products-grid" id="productsGrid"></div>
+  </div>
+
+  <!-- Right: Cart -->
+  <div class="cart-panel">
+    <div class="cart-header">
+      <h2>🛒 Current Sale</h2>
+      <button class="cart-clear" onclick="clearCart()">Clear All</button>
+    </div>
+
+    <div class="cart-items" id="cartItems">
+      <div class="cart-empty" id="cartEmpty">
+        <span class="big-icon">🛒</span>
+        <p>No items yet</p>
+        <p style="font-size:11px">Search and press Enter to add</p>
+      </div>
+    </div>
+
+    <div class="cart-totals">
+      <div class="total-row">
+        <span class="label">Subtotal</span>
+        <span id="subtotal" style="font-family:'JetBrains Mono',monospace">$0.00</span>
+      </div>
+      <div class="discount-row">
+        <span class="disc-label">Discount %</span>
+        <input type="number" id="discountInput" placeholder="0" min="0" max="100" oninput="updateTotals()">
+      </div>
+      <div class="total-row" id="discountRow" style="display:none">
+        <span class="label">Discount</span>
+        <span id="discountAmt" style="color:var(--warn);font-family:'JetBrains Mono',monospace">-$0.00</span>
+      </div>
+      <div class="total-row">
+        <span class="label">Tax (8%)</span>
+        <span id="taxAmt" style="font-family:'JetBrains Mono',monospace">$0.00</span>
+      </div>
+      <div class="total-row grand">
+        <span class="label">Total</span>
+        <span id="grandTotal">$0.00</span>
+      </div>
+    </div>
+
+    <div class="kbd-hint"><kbd>Enter</kbd> add item &nbsp;·&nbsp; <kbd>F2</kbd> checkout</div>
+    <button class="checkout-btn" id="checkoutBtn" onclick="checkout()" disabled>
+      💳 Checkout
+    </button>
+  </div>
+</div>
+
+<!-- Receipt Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="receipt">
+    <div class="receipt-icon">✅</div>
+    <h2>Sale Complete!</h2>
+    <div class="receipt-total" id="receiptTotal">$0.00</div>
+    <div class="receipt-items" id="receiptItems"></div>
+    <button class="new-sale-btn" onclick="newSale()">+ New Sale</button>
+  </div>
+</div>
+
+<script>
+const PRODUCTS = [
+  { id:1, name:"Coffee", emoji:"☕", price:3.50, stock:100, code:"COF" },
+  { id:2, name:"Tea", emoji:"🍵", price:2.75, stock:80, code:"TEA" },
+  { id:3, name:"Sandwich", emoji:"🥪", price:6.99, stock:30, code:"SAN" },
+  { id:4, name:"Salad", emoji:"🥗", price:8.50, stock:20, code:"SAL" },
+  { id:5, name:"Juice", emoji:"🧃", price:4.25, stock:50, code:"JUI" },
+  { id:6, name:"Muffin", emoji:"🧁", price:3.00, stock:40, code:"MUF" },
+  { id:7, name:"Burger", emoji:"🍔", price:9.99, stock:25, code:"BUR" },
+  { id:8, name:"Pizza Slice", emoji:"🍕", price:5.50, stock:15, code:"PIZ" },
+  { id:9, name:"Water", emoji:"💧", price:1.50, stock:200, code:"WAT" },
+  { id:10, name:"Soda", emoji:"🥤", price:2.25, stock:90, code:"SOD" },
+  { id:11, name:"Cookie", emoji:"🍪", price:2.00, stock:60, code:"COO" },
+  { id:12, name:"Cake Slice", emoji:"🍰", price:5.00, stock:12, code:"CAK" },
+  { id:13, name:"Hot Dog", emoji:"🌭", price:4.50, stock:18, code:"HOT" },
+  { id:14, name:"Chips", emoji:"🍟", price:2.50, stock:45, code:"CHP" },
+  { id:15, name:"Donut", emoji:"🍩", price:2.25, stock:35, code:"DON" },
+  { id:16, name:"Pasta", emoji:"🍝", price:10.99, stock:10, code:"PAS" },
+];
+
+let cart = [];
+let filtered = [...PRODUCTS];
+
+// Clock
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleTimeString();
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// Render products
+function renderProducts() {
+  const grid = document.getElementById('productsGrid');
+  const badge = document.getElementById('countBadge');
+  badge.textContent = filtered.length;
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div class="no-results">No products found</div>';
+    return;
+  }
+
+  grid.innerHTML = filtered.map((p, i) =>
+    `<div class="product-card ${i === 0 ? 'active-search' : ''}" onclick="addToCartById(${p.id})" id="pc-${p.id}">
+      <span class="product-emoji">${p.emoji}</span>
+      <div class="product-name">${p.name}</div>
+      <div class="product-price">$${p.price.toFixed(2)}</div>
+      <div class="product-stock">Stock: ${p.stock}</div>
+    </div>`
+  ).join('');
+}
+
+// Search
+document.getElementById('searchInput').addEventListener('input', function() {
+  const q = this.value.trim().toLowerCase();
+  filtered = q
+    ? PRODUCTS.filter(p => p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q))
+    : [...PRODUCTS];
+  renderProducts();
+});
+
+// Enter to add first result
+document.getElementById('searchInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && filtered.length > 0) {
+    addToCartById(filtered[0].id);
+    this.value = '';
+    filtered = [...PRODUCTS];
+    renderProducts();
+    this.focus();
+  }
+});
+
+// Qty input: enter focuses back to search
+document.getElementById('qtyInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') document.getElementById('searchInput').focus();
+});
+
+// F2 checkout
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'F2') checkout();
+});
+
+function getQty() {
+  const v = parseInt(document.getElementById('qtyInput').value) || 1;
+  return Math.max(1, Math.min(99, v));
+}
+
+function addToCartById(id) {
+  const product = PRODUCTS.find(p => p.id === id);
+  if (!product) return;
+  const qty = getQty();
+
+  const existing = cart.find(i => i.id === id);
+  if (existing) {
+    existing.qty += qty;
+  } else {
+    cart.push({ ...product, qty });
+  }
+
+  // Flash card
+  const card = document.getElementById('pc-' + id);
+  if (card) { card.classList.add('flash'); setTimeout(() => card.classList.remove('flash'), 300); }
+
+  document.getElementById('qtyInput').value = 1;
+  renderCart();
+  updateTotals();
+}
+
+function renderCart() {
+  const container = document.getElementById('cartItems');
+  const empty = document.getElementById('cartEmpty');
+
+  if (cart.length === 0) {
+    container.innerHTML = '';
+    container.appendChild(empty);
+    empty.style.display = 'flex';
+    document.getElementById('checkoutBtn').disabled = true;
+    return;
+  }
+
+  document.getElementById('checkoutBtn').disabled = false;
+
+  container.innerHTML = cart.map(item =>
+    `<div class="cart-item" id="ci-${item.id}">
+      <div>
+        <div class="cart-item-name">${item.emoji} ${item.name}</div>
+        <div class="cart-item-meta">$${item.price.toFixed(2)} each</div>
+        <div class="cart-item-controls">
+          <button class="qty-btn" onclick="changeQty(${item.id}, -1)">−</button>
+          <span class="cart-qty">${item.qty}</span>
+          <button class="qty-btn" onclick="changeQty(${item.id}, 1)">+</button>
+          <button class="remove-btn" onclick="removeItem(${item.id})" title="Remove">✕</button>
+        </div>
+      </div>
+      <div class="cart-item-total">$${(item.price * item.qty).toFixed(2)}</div>
+    </div>`
+  ).join('');
+}
+
+function changeQty(id, delta) {
+  const item = cart.find(i => i.id === id);
+  if (!item) return;
+  item.qty += delta;
+  if (item.qty <= 0) removeItem(id);
+  else { renderCart(); updateTotals(); }
+}
+
+function removeItem(id) {
+  cart = cart.filter(i => i.id !== id);
+  renderCart();
+  updateTotals();
+}
+
+function clearCart() {
+  cart = [];
+  renderCart();
+  updateTotals();
+}
+
+function updateTotals() {
+  const subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const discPct = Math.min(100, Math.max(0, parseFloat(document.getElementById('discountInput').value) || 0));
+  const discAmt = subtotal * discPct / 100;
+  const afterDisc = subtotal - discAmt;
+  const tax = afterDisc * 0.08;
+  const grand = afterDisc + tax;
+
+  document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
+  document.getElementById('taxAmt').textContent = '$' + tax.toFixed(2);
+  document.getElementById('grandTotal').textContent = '$' + grand.toFixed(2);
+
+  const discRow = document.getElementById('discountRow');
+  if (discPct > 0) {
+    discRow.style.display = 'flex';
+    document.getElementById('discountAmt').textContent = '-$' + discAmt.toFixed(2);
+  } else {
+    discRow.style.display = 'none';
+  }
+}
+
+function checkout() {
+  if (cart.length === 0) return;
+  const grand = document.getElementById('grandTotal').textContent;
+  document.getElementById('receiptTotal').textContent = grand;
+
+  document.getElementById('receiptItems').innerHTML = cart.map(i =>
+    `<div class="receipt-item"><span>${i.emoji} ${i.name} ×${i.qty}</span><span>$${(i.price * i.qty).toFixed(2)}</span></div>`
+  ).join('');
+
+  document.getElementById('modal').classList.add('show');
+}
+
+function newSale() {
+  clearCart();
+  document.getElementById('discountInput').value = '';
+  document.getElementById('modal').classList.remove('show');
+  document.getElementById('searchInput').focus();
+  updateTotals();
+}
+
+renderProducts();
+updateTotals();
+</script>
+</body>
+</html>
