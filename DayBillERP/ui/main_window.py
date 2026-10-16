@@ -556,17 +556,23 @@ class MainWindow:
 
         m_acc_t = tk.Menu(m_acc, tearoff=0)
         additem(m_acc_t, "Cash Payments", "payments", "Ctrl+P")
-        additem(m_acc_t, "Cash Receipts", "payments", "Ctrl+R")
+        m_acc_t.add_command(label="New Cash Payment (CP)", accelerator="F7",
+                            command=lambda: self._run_favourite("cash_payment"))
+        additem(m_acc_t, "Cash Receipts", "payments")
+        m_acc_t.add_command(label="New Cash Receipt (CR)", accelerator="F6",
+                            command=lambda: self._run_favourite("cash_receipt"))
         additem(m_acc_t, "Bank Payment / Contra", "payments")
         additem(m_acc_t, "Bank Receipt / Contra", "payments")
         additem(m_acc_t, "Opening Balances (accounts, stock, parties)", "opening")
-        additem(m_acc_t, "Journal Entry", "vouchers", "Ctrl+J")
+        additem(m_acc_t, "Vouchers (journal entries)", "vouchers", "Ctrl+J")
+        m_acc_t.add_command(label="New Journal Voucher (JV)", accelerator="Ctrl+Shift+J",
+                            command=lambda: self._run_favourite("journal_new"))
         additem(m_acc_t, "Debit Note (sales)", "debit_notes")
         additem(m_acc_t, "Credit Note (sales return)", "sales_return")
         additem(m_acc_t, "Closing Balance (financial reports)", "fin_reports")
         additem(m_acc_t, "Multi Journal Entry", "vouchers")
         additem(m_acc_t, "Vouchers List", "vouchers")
-        additem(m_acc_t, "Day Close / Z-Report", "day_close", "Ctrl+Z")
+        additem(m_acc_t, "Day Close / Z-Report", "day_close", "Ctrl+Shift+Z")
         additem(m_acc_t, "Expenses", "expenses")
         additem(m_acc_t, "Tax On Expenses", "expenses")
         additem(m_acc_t, "Bank Reconciliation", "bank_rec")
@@ -633,15 +639,16 @@ class MainWindow:
         m_inv_t = tk.Menu(m_inv, tearoff=0)
         additem(m_inv_t, "Sales Quotation", "quotations")
         additem(m_inv_t, "Offers & Promotions", "offers")
-        additem(m_inv_t, "Sales", "sales", "F3")
+        additem(m_inv_t, "Sales", "sales")
+        additem(m_inv_t, "POS (cashier)", "pos", "F3")
         additem(m_inv_t, "VAT Sales Invoice", "sales", "F2")
-        additem(m_inv_t, "Sales Return", "sales", "F6")
-        additem(m_inv_t, "Sales Return / Credit Note (VAT)", "sales", "Shift+F6")
+        additem(m_inv_t, "Sales Return", "sales_return", "Ctrl+R")
+        additem(m_inv_t, "Sales Return / Credit Note (VAT)", "sales_return")
         additem(m_inv_t, "Purchase Order", "purchase_orders")
         additem(m_inv_t, "Purchase Invoice", "purchases")
         additem(m_inv_t, "VAT Purchase Invoice", "purchases", "F4")
         additem(m_inv_t, "Purchase Return", "purchases")
-        additem(m_inv_t, "Purchase Return VAT", "purchases", "Shift+F4")
+        additem(m_inv_t, "Purchase Return VAT", "purchase_return", "Ctrl+Shift+R")
         additem(m_inv_t, "Stock Journal", "inventory")
         additem(m_inv_t, "Stock Transfer (between branches)", "stock_transfers")
         additem(m_inv_t, "Batches & Expiry", "expiry")
@@ -815,8 +822,37 @@ class MainWindow:
                 shift=True)
             hot("<Control-p>", lambda: self._menu_open("payments"), typing_safe=True)
             hot("<Control-j>", lambda: self._menu_open("vouchers"), typing_safe=True)
-            hot("<Control-z>", lambda: self._menu_open("day_close"), typing_safe=True)
+            # Day Close moved from Ctrl+Z (= undo everywhere else) to Ctrl+Shift+Z
+            hot("<Control-Z>", lambda: self._menu_open("day_close"), typing_safe=True,
+                shift=True)
             hot("<F5>", lambda: self._refresh_active())
+            # the open screens (MDI windows): close / next / previous
+            hot("<Control-w>", self._close_screen, typing_safe=True)
+            hot("<Control-F4>", self._close_screen)
+            hot("<Control-Tab>", lambda: self._next_screen(1))
+            hot("<Control-ISO_Left_Tab>", lambda: self._next_screen(-1))
+            hot("<Control-Shift-Tab>", lambda: self._next_screen(-1))
+        except Exception:
+            pass
+
+    def _close_screen(self):
+        """Ctrl+W / Ctrl+F4 — close the open screen (MDI window)."""
+        try:
+            ch = self.mdi.active
+            if ch is not None:
+                self.mdi.close(ch)
+        except Exception:
+            pass
+
+    def _next_screen(self, step=1):
+        """Ctrl+Tab / Ctrl+Shift+Tab — next / previous open screen."""
+        try:
+            keys = list(self.mdi.windows.keys())
+            if len(keys) < 2:
+                return
+            cur = getattr(self.mdi.active, "key", keys[0])
+            i = (keys.index(cur) + step) % len(keys) if cur in keys else 0
+            self.mdi.windows[keys[i]].restore()
         except Exception:
             pass
 

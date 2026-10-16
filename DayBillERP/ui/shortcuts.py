@@ -38,7 +38,9 @@ GLOBAL = [
     ("Ctrl+Shift+N", "Add Product"),
     ("Ctrl+Shift+C", "New Consumable Entry (staff food, bakery …)"),
     ("Ctrl+Shift+J", "New Journal Voucher (JV)"),
-    ("Ctrl+Z", "Day Close / Z-Report (not while typing)"),
+    ("Ctrl+Shift+Z", "Day Close / Z-Report"),
+    ("Ctrl+W / Ctrl+F4", "Close the open screen"),
+    ("Ctrl+Tab / Ctrl+Shift+Tab", "Next / previous open screen"),
     ("Right-click a menu item", "Add it to ⭐ Favourites (right-click a favourite: remove / move)"),
 ]
 
@@ -54,11 +56,15 @@ TXN = [
 
 WINDOWS = [
     ("Sales Invoice", [
-        ("F9", "Save as draft"), ("F10", "Print (choose the format)"),
-        ("Ctrl+S", "Save & confirm"), ("Esc", "Cancel / close"),
+        ("F2", "Find a product"), ("F3", "Find a customer"), ("F4", "Barcode box"),
+        ("F5", "Recalculate totals"), ("F6", "Bill discount"), ("F7", "Tax details"),
+        ("F8", "Cash received box"), ("F9", "Save as draft"), ("F10", "Save & print"),
+        ("F11", "Dot-matrix print"), ("F12", "PDF"), ("Ctrl+S", "Save"),
+        ("Ctrl+End", "Last row of the grid"), ("Ctrl+M", "Voice search"),
         ("Enter", "Next field / add the item"), ("Delete", "Remove the line"),
         ("Space", "Change the unit of the line (in the grid)"),
-        ("⭐ Pts box", "Spend loyalty points (when on)"),
+        ("Hold Ctrl", "Show the item's stock / cost box"),
+        ("⭐ Pts box", "Spend loyalty points (when on)"), ("Esc", "Close (asks when not saved)"),
     ]),
     ("POS (cashier)", [
         ("F1", "Save (cash / card window)"), ("F2", "Save & print"), ("F3", "New bill"),
@@ -67,12 +73,39 @@ WINDOWS = [
         ("Space", "Change the unit of the selected line"), ("Esc", "Clear the scan box"),
         ("Enter", "Add the scanned / typed item"),
     ]),
-    ("Purchase / Returns / Quotation / Purchase Order", [
+    ("Purchase / Sales Return / Purchase Return", [
+        ("F6", "Barcode box"), ("F9", "Save as draft"), ("F10", "Save & confirm"),
         ("Ctrl+S", "Save"), ("Enter", "Next field / add the item"),
-        ("Delete", "Remove the line"), ("Esc", "Close"),
+        ("Delete", "Remove the line"), ("Space", "Change the unit (grid)"), ("Esc", "Close"),
     ]),
-    ("Receipt / Payment / Voucher (CR · BR · CP · BP · JV)", [
-        ("Ctrl+S", "Save"), ("Enter", "Next field"), ("Esc", "Close"),
+    ("Quotation / Purchase Order", [
+        ("F9 / Ctrl+S", "Save"), ("Ctrl+P", "Print"), ("Delete", "Remove the line"),
+        ("Esc", "Close"),
+    ]),
+    ("Receipt / Payment (from the Payments screen)", [
+        ("F9 / Ctrl+S", "Save"), ("Space", "Tick / untick an invoice"),
+        ("Enter / F2", "Type the amount paid on an invoice"), ("Esc", "Close"),
+    ]),
+    ("Voucher (CR · BR · CP · BP · JV) / Journal / Expense", [
+        ("Ctrl+S", "Save"), ("F9", "Save (Expense)"), ("Enter", "Next field"),
+        ("Delete", "Remove a journal line"), ("Esc", "Close"),
+    ]),
+    ("Product / Customer / Supplier form", [
+        ("Ctrl+S / F4", "Save"), ("F5", "Save & print (product)"),
+        ("Ctrl+D", "Duplicate the product"), ("Ctrl+P", "Print the barcode label"),
+        ("Ctrl+B", "Make a barcode"), ("Alt+1 … Alt+9", "Go to page 1 … 9 of the form"),
+        ("Ctrl+Tab", "Next page of the form"), ("Esc", "Close"),
+    ]),
+    ("Products list", [
+        ("Insert", "New product"), ("F2 / Enter", "Edit"), ("Delete", "Delete"),
+        ("F5", "Reload"), ("Ctrl+F", "Search"),
+    ]),
+    ("Date boxes", [
+        ("Up / Down", "Day before / after"), ("PgUp / PgDn", "Month before / after"),
+        ("Alt+Down / F4", "Calendar"),
+    ]),
+    ("Reports", [
+        ("Enter (in a filter) / F5", "Run the report"),
     ]),
     ("Consumable Entry", [
         ("Enter", "Add the item"), ("Delete", "Remove the line"),
@@ -83,9 +116,14 @@ WINDOWS = [
         ("Double-click / Enter", "Open the transaction of the line"),
         ("Right-click", "Open · Edit · Delete · Voucher · New"),
     ]),
-    ("Lists (products, customers, suppliers …)", [
+    ("Lists and tables (everywhere)", [
         ("Double-click / Enter", "Open / edit"), ("Delete", "Delete (asks first; follows your rights)"),
-        ("Ctrl+N", "New"),
+        ("Ctrl+N", "New"), ("Ctrl+C", "Copy the selected rows"), ("Ctrl+A", "Select all"),
+        ("Home / End", "First / last row"),
+    ]),
+    ("Any field", [
+        ("Enter", "Next field (or the window's OK)"), ("Esc", "Close the window "
+                                                      "(a list / editor first)"),
     ]),
 ]
 

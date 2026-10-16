@@ -146,6 +146,7 @@ def default_grants(role_name):
             "categories":       {"view", "add", "edit"},
             "inventory":        {"view", "add", "edit", "export", "print"},
             "stock_adjustment": {"view", "add", "edit", "approve"},
+            "consumption":      {"view", "add", "edit", "print"},   # v6.9.3 own use
             "reports":          {"view", "reports", "export"},
         }
 

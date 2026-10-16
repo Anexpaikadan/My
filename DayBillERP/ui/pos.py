@@ -2461,27 +2461,16 @@ class POSWindow:
             if why:
                 messagebox.showwarning("Delete Bill", why, parent=self.win)
                 return
-            status = (inv.get("invoice_status") or "").lower()
-            warn = "Permanently delete bill %s?" % inv["invoice_number"]
-            if status == "confirmed":
-                warn = ("Bill %s is CONFIRMED — deleting removes its "
-                        "posted journal entries and affects reports.\n\n"
-                        "Delete anyway?" % inv["invoice_number"])
-            if not messagebox.askyesno("Delete Bill", warn):
+            # v6.9.3: a confirmed bill needs its number typed; the delete is
+            # one transaction (stock, journals, links, lines, header + audit)
+            from modules import doc_edit as _de
+            if not _de.confirm_delete("sales", self._loaded_invoice_id, parent=self.win):
                 return
-            try:
-                from modules.doc_actions import remove_document_effects, audit
-                remove_document_effects("sales", self._loaded_invoice_id)
-                db.execute("DELETE FROM sales_invoice_lines WHERE invoice_id=?",
-                           (self._loaded_invoice_id,))
-                db.execute("DELETE FROM sales_invoices WHERE invoice_id=?",
-                           (self._loaded_invoice_id,))
-                audit("delete", "sales_invoice", self._loaded_invoice_id,
-                      inv["invoice_number"])
-                self.status_var.set("Deleted bill %s." % inv["invoice_number"])
-            except Exception as e:
-                messagebox.showerror("Delete Bill", str(e)[:300])
+            ok, msg = _de.delete_document("sales", self._loaded_invoice_id)
+            if not ok:
+                messagebox.showerror("Delete Bill", msg or "Not deleted.", parent=self.win)
                 return
+            self.status_var.set("Deleted bill %s." % inv["invoice_number"])
             self._new_sale(ask=False)
             return
         if not self.cart:

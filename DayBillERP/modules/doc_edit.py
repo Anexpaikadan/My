@@ -111,6 +111,23 @@ def ask_text(kind, doc_id, action="edit"):
             "Open it for editing?")
 
 
+def confirm_delete(kind, doc_id, parent=None):
+    """v6.9.3: deleting a CONFIRMED document is never one click — the user
+    types its number. A draft / cancelled one: one Yes / No question."""
+    number, status, _d = info(kind, doc_id)
+    what = LABEL.get(kind, "Document")
+    if status == "confirmed":
+        from ui import danger
+        return danger.confirm_typed(
+            parent, "Delete " + what,
+            (ask_text(kind, doc_id, "delete") or "%s %s is CONFIRMED." % (what, number))
+            .replace("\n\nDelete it?", ""), word=number)
+    from tkinter import messagebox
+    return messagebox.askyesno("Delete " + what,
+                               "Delete %s %s (%s)?" % (what.lower(), number, status or "draft"),
+                               parent=parent)
+
+
 def delete_document(kind, doc_id):
     """Remove a document completely (stock, journals, links, lines, header).
     Returns (True, number) or (False, error)."""
