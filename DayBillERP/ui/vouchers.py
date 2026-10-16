@@ -36,6 +36,39 @@ def money(n):
         return "0.00"
 
 
+# ── which vouchers may be changed on this screen ─────────────
+# Only typed vouchers (connector key 'journal') are edited / deleted
+# here. A document's voucher is changed by changing the document;
+# automatic ones (payroll, stock, year-end …) by the screen that made them.
+def voucher_owner(journal_id):
+    """(txn, reason). reason is '' for a typed voucher that may be edited
+    or deleted here, else it says where to change it. txn is None when
+    the voucher is gone."""
+    try:
+        from ui import txn_connector as tc
+        txn = tc.resolve(journal_id)
+    except Exception:
+        txn = None
+    if not txn:
+        return None, "This voucher no longer exists."
+    key = txn["key"]
+    if key == "journal":
+        return txn, ""
+    num = txn.get("number") or "This voucher"
+    if key == "opening":
+        why = (f"{num} is an opening balance.\n\nChange or clear it in "
+               "Accounts ▸ Opening Balances — its voucher is corrected automatically.")
+    elif key == "system":
+        src = (txn.get("source_type") or "system").replace("_", " ")
+        why = (f"{num} was posted automatically ({src}).\n\nChange it from the "
+               "screen that made it (HR & Payroll, Stock, Year-end …).")
+    else:
+        what = str(txn.get("label") or key).split(" (")[0].split(" /")[0]
+        why = (f"{num} was posted by a {what.lower()}.\n\nChange or delete that "
+               f"{what.lower()} itself — its voucher goes with it.")
+    return txn, why
+
+
 class VouchersView:
     def __init__(self, parent):
         self.parent = parent
@@ -91,35 +124,23 @@ class VouchersView:
             jid = int(iid)
         except ValueError:
             return
-        row = db.fetchone("SELECT journal_number, source_type, source_id, entry_date "
-                          "FROM journal_entries WHERE journal_id=?", (jid,))
-        if not row:
+        from ui import txn_connector as tc
+        txn, why = voucher_owner(jid)
+        if not txn:
+            messagebox.showinfo("Edit Voucher", why, parent=self.frame)
+            self._load()
             return
-        src = (row.get("source_type") or "").lower()
-        if src.startswith("opening_"):
-            messagebox.showinfo(
-                "Edit Voucher",
-                f"{row['journal_number']} is an opening balance.\n\nChange it in "
-                "Accounts ▸ Opening Balances — its voucher is corrected automatically.")
-            return
-        if src in ("sales", "pos", "cogs", "cogs_return", "purchase", "sales_return",
-                   "purchase_return", "purchase_return_cost", "expense") or \
-                (src in ("receipt", "payment") and row.get("source_id")):
-            messagebox.showinfo(
-                "Edit Voucher",
-                f"{row['journal_number']} was posted by a "
-                f"{src.replace('_', ' ')} document.\n\nOpen and edit that "
-                "document — its voucher is corrected automatically.")
-            return
-        try:
-            from modules import financial_year as fy
-            d = row.get("entry_date")
-            msg = fy.guard_active(str(d)[:10]) if d else ""
-            if msg:
-                messagebox.showwarning("Edit Voucher", msg)
+        if why:
+            if txn["key"] in ("opening", "system"):
+                messagebox.showinfo("Edit Voucher", why, parent=self.frame)
                 return
-        except Exception:
-            pass
+            # a document's voucher → open that document (its own rights + lock)
+            if messagebox.askyesno("Edit Voucher", why + "\n\nOpen it now?",
+                                   parent=self.frame):
+                tc.edit_txn(self.frame, txn, self._load)
+            return
+        if tc._locked(txn, self.frame, "Edit Voucher"):      # closed / other year
+            return
         from ui.accounting import JournalForm
         JournalForm(self.frame, on_save=self._load, journal_id=jid)
 

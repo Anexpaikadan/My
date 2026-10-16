@@ -16,6 +16,7 @@ from tkinter import ttk, messagebox
 
 from config import settings as cfg
 from modules import online_forms as OF
+from modules import permissions as perm
 
 STARS = lambda n: "★" * int(n or 0) + "☆" * (5 - int(n or 0))
 
@@ -281,9 +282,16 @@ class OnlineFormsWindow:
         except Exception:
             return ""
 
+    @staticmethod
+    def _module(kind):
+        """The rights of this tab: suppliers, or customers (feedback too)."""
+        return "suppliers" if kind == "supplier" else "customers"
+
     def _set_status(self, kind, status):
         r = self._selected(kind)
         if not r:
+            return
+        if not perm.allowed(self._module(kind), "edit", parent=self.win):
             return
         OF.mark(r["entry_id"], status, r.get("record_id"), self._user())
         self.refresh()
@@ -294,6 +302,8 @@ class OnlineFormsWindow:
             return self._set_status(kind, "done")
         r = self._selected(kind)
         if not r or r.get("status") == "added":
+            return
+        if not perm.allowed(self._module(kind), "add", parent=self.win):
             return
         vals = dict((r.get("data") or {}).get("values") or {})
         try:
@@ -311,6 +321,8 @@ class OnlineFormsWindow:
 
     def open_prefilled(self, kind, r, vals):
         from config.database import db
+        if not perm.allowed(self._module(kind), "add", parent=self.win):
+            return None
         if kind == "customer":
             from ui.customers import CustomerForm as Form
             table, key, name_col = "customers", "customer_id", "customer_name_en"
@@ -412,6 +424,9 @@ class OnlineFormsWindow:
         ShareDialog(self.win, self.current())
 
     def open_settings(self):
+        # form links and API keys are settings
+        if not perm.allowed("company_settings", "settings", parent=self.win):
+            return
         SettingsDialog(self.win, on_save=self.refresh)
 
 
@@ -548,6 +563,8 @@ class SettingsDialog:
                 e.configure(show="•")
 
     def save(self):
+        if not perm.allowed("company_settings", "settings", parent=self.win):
+            return
         prov = self.prov.get()
         parse = OF.parse_jotform_id if prov == "jotform" else OF.parse_form_id
         for key, label, _h, secret in self.FIELDS[prov]:

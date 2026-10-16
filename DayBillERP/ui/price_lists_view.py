@@ -9,6 +9,7 @@ import tkinter as tk
 from tkinter import messagebox
 
 from modules import price_lists as PL
+from modules import permissions as perm
 from ui import v6_kit as K
 
 
@@ -134,6 +135,8 @@ class PriceListsView:
         self.page.say("New price list — type a name and Save.")
 
     def _save(self):
+        if not perm.allowed("products", "edit", parent=self.frame):
+            return
         base = next((k for k, lbl in PL.BASES if lbl == self.base_v.get()), "retail")
         adj = K.num(self.v["adj"], 0.0)
         if adj is None:
@@ -155,11 +158,19 @@ class PriceListsView:
     def _delete(self):
         if not self.list_id:
             return
+        if not perm.allowed("products", "delete", parent=self.frame):
+            return
         if not messagebox.askyesno("Delete price list",
                                    "Delete '%s'? Customers using it go back to the normal price."
                                    % self.v["name_en"].get(), parent=self.frame):
             return
-        PL.delete_list(self.list_id)
+        lid, name = self.list_id, self.v["name_en"].get()
+        PL.delete_list(lid)
+        try:
+            from modules.doc_actions import audit
+            audit("delete", "price_list", lid, name)
+        except Exception:
+            pass
         self._new()
         self.load()
         self.page.say("Price list deleted.")
@@ -179,6 +190,8 @@ class PriceListsView:
                                % (K.money(row.get("unit_price")), K.money(now)))
 
     def _set_price(self):
+        if not perm.allowed("products", "edit", parent=self.frame):
+            return
         if not self.list_id:
             self.page.say("Save or pick a price list first.", ok=False)
             return
@@ -201,6 +214,8 @@ class PriceListsView:
     def _remove_price(self):
         sel = self.itree.selection()
         if not sel:
+            return
+        if not perm.allowed("products", "edit", parent=self.frame):
             return
         PL.remove_price(int(sel[0]))
         self._load_items()

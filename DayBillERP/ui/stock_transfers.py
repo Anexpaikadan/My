@@ -170,6 +170,9 @@ class StockTransfersView:
                                                     l.get("unit_name") or "") for l in ls)[:600])
 
     def _delete(self):
+        from modules import permissions as _pm
+        if not _pm.allowed("inventory", "delete", parent=self.frame):
+            return
         sel = self.tree.selection()
         if not sel:
             return

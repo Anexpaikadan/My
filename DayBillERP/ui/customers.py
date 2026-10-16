@@ -381,12 +381,16 @@ class CustomersView:
         return int(sel[0])
 
     def _open_add_form(self):
+        if not perm.allowed("customers", "add", parent=self.frame):
+            return
         CustomerForm(self.frame, customer_id=None, on_save=self._load_customers)
 
     def _open_edit_form(self):
         cid = self._get_selected_id()
         if cid:
-            CustomerForm(self.frame, customer_id=cid, on_save=self._load_customers)
+            # no edit right = the form opens read-only
+            CustomerForm(self.frame, customer_id=cid, on_save=self._load_customers,
+                         view_only=not perm.can("customers", "edit"))
 
     def _view_customer(self):
         cid = self._get_selected_id()
@@ -442,6 +446,11 @@ class CustomersView:
                 )
                 return
             db.execute("DELETE FROM customers WHERE customer_id = ?", (cid,))
+            try:
+                from modules.doc_actions import audit
+                audit("delete", "customer", cid, name)
+            except Exception:
+                pass
             messagebox.showinfo(t("common.success"), f"Customer '{name}' deleted.")
             self._load_customers()
         except Exception as e:

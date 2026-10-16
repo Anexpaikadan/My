@@ -206,6 +206,10 @@ class StockCountView:
             self.t_plan.selection_set(nxt); self.t_plan.focus(nxt); self.t_plan.see(nxt)
 
     def send_counts(self):
+        # sending can change stock at once (when approval is off)
+        from modules import permissions as _pm
+        if not _pm.allowed("stock_adjustment", "add", parent=self.frame):
+            return None
         if not self.counts:
             messagebox.showinfo("Stock Count", "Type the counted quantities first (double-click a line).",
                                 parent=self.frame)
@@ -265,8 +269,9 @@ class StockCountView:
         return int(row.split(":")[1])
 
     def approve(self, doc_id=None):
+        # approve = the stock changes, so it needs the approve right
         from modules import permissions as _pm
-        if not _pm.allowed("inventory", "edit"):
+        if not _pm.allowed("stock_adjustment", "approve", parent=self.frame):
             return None
         doc_id = doc_id or self._doc()
         if not doc_id:
@@ -288,6 +293,9 @@ class StockCountView:
         return msg
 
     def reject(self, doc_id=None):
+        from modules import permissions as _pm
+        if not _pm.allowed("stock_adjustment", "approve", parent=self.frame):
+            return None
         doc_id = doc_id or self._doc()
         if not doc_id:
             return None

@@ -17,6 +17,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from config import settings as cfg
 from config.database import db
 from modules import mobile_api as M
+from modules import permissions as perm
 
 _BG = {"runner": None, "timer": None, "busy": False, "last": ""}
 
@@ -123,10 +124,20 @@ class MobileCenterView:
 
     def _check(self, parent, text, key, default=False):
         v = tk.BooleanVar(value=cfg.flag(key, default))
+
+        def flip():
+            # these options are settings: no right = the tick goes back
+            if not self._can_set():
+                v.set(not v.get())
+                return
+            cfg.set(key, v.get()); cfg.save_settings()
         tk.Checkbutton(parent, text=text, variable=v, bg=self.C["card_bg"], activebackground=self.C["card_bg"],
-                       font=("Segoe UI", 9), command=lambda: (cfg.set(key, v.get()), cfg.save_settings())
-                       ).pack(anchor="w")
+                       font=("Segoe UI", 9), command=flip).pack(anchor="w")
         return v
+
+    def _can_set(self):
+        """Server, devices and phone options need the settings right."""
+        return perm.allowed("company_settings", "settings", parent=self.frame)
 
     # ── Phones & PDT ───────────────────────────────────────────
     def _build_wifi(self):
@@ -179,6 +190,9 @@ class MobileCenterView:
         try:
             p = int(self.port_v.get())
             if 1024 <= p <= 65535 and p != int(cfg.get("mobile_port", 8090) or 8090):
+                if not self._can_set():
+                    self.port_v.set(str(cfg.get("mobile_port", 8090) or 8090))
+                    return
                 cfg.set("mobile_port", p); cfg.save_settings()
                 if self.server.running:
                     self.server.stop()
@@ -188,12 +202,16 @@ class MobileCenterView:
             pass
 
     def _start(self):
+        if not self._can_set():
+            return
         self._save_port()
         if not self.server.start():
             messagebox.showerror("Mobile server", self.server.error or "Could not start.")
         self._paint_server()
 
     def _stop(self):
+        if not self._can_set():
+            return
         self.server.stop(); self._paint_server()
 
     def _paint_server(self):
@@ -221,6 +239,8 @@ class MobileCenterView:
             self.qr_lbl.configure(text="")
 
     def _firewall(self):
+        if not self._can_set():
+            return
         port = int(cfg.get("mobile_port", 8090) or 8090)
         cmd = ('advfirewall firewall add rule name="DayBill Mobile" dir=in action=allow '
                'protocol=TCP localport=%d profile=private,domain' % port)
@@ -244,8 +264,16 @@ class MobileCenterView:
                 str(r.get("last_seen") or "")[:16]))
 
     def _kick(self):
-        for iid in self.dev_tree.selection():
+        sel = self.dev_tree.selection()
+        if not sel or not self._can_set():
+            return
+        for iid in sel:
             db.execute("DELETE FROM mobile_tokens WHERE token=?", (iid,))
+        try:
+            from modules.doc_actions import audit
+            audit("sign_out", "mobile_device", None, "%d device(s) signed out" % len(sel))
+        except Exception:
+            pass
         self._load_devices()
 
     # ── Users & modules ────────────────────────────────────────
@@ -429,13 +457,23 @@ class MobileCenterView:
                                             if (ln.get("price") or ln.get("cost")) else "")
         self.in_lines.insert("1.0", txt)
 
+    # the right needed to approve / reject each kind of document
+    _DOC_RIGHT = {"goods_in": ("purchase", "add"), "van_sale": ("sales", "add"),
+                  "goods_out": ("stock_adjustment", "approve"),
+                  "adjust": ("stock_adjustment", "approve"),
+                  "count": ("stock_adjustment", "approve")}
+
+    def _doc_allowed(self, d):
+        mod, act = self._DOC_RIGHT.get(d.get("doc_type"), ("stock_adjustment", "approve"))
+        return perm.allowed(mod, act, parent=self.frame)
+
     def _approve(self):
         from modules import permissions as _pm
-        if not _pm.allowed("stock_adjustment", "add"):
-            return False
         d = self._sel_doc()
         if not d or d["status"] not in ("pending", "error"):
             return
+        if not self._doc_allowed(d):
+            return False
         try:
             uid = (_pm.session_user() or {}).get("user_id")
             r = M.apply_doc(d["doc_id"], by_user=uid)
@@ -446,14 +484,18 @@ class MobileCenterView:
 
     def _reject(self):
         from modules import permissions as _pm
-        if not _pm.allowed("stock_adjustment", "add"):     # same right as Approve
-            return False
         d = self._sel_doc()
         if not d or d["status"] not in ("pending", "error"):
             return
+        if not self._doc_allowed(d):        # same right as Approve
+            return False
         why = simpledialog.askstring("Reject", "Why? (the device user sees this)", parent=self.frame) or ""
-        from modules import permissions as _pm
         M.reject_doc(d["doc_id"], why, (_pm.session_user() or {}).get("user_id"))
+        try:
+            from modules.doc_actions import audit
+            audit("reject", "mobile", d["doc_id"], "%s — %s" % (d.get("title") or d.get("doc_type"), why))
+        except Exception:
+            pass
         self._load_inbox()
 
     def _open_doc(self):
@@ -541,6 +583,27 @@ class MobileCenterView:
             self.v_qr.configure(image="")
 
     def _van_save(self):
+        # nothing changed = nothing to save (Test / Sync call this first)
+        try:
+            auto_new = max(0, int(float(self.v_auto.get() or 0)))
+        except ValueError:
+            auto_new = 0
+        try:
+            auto_old = int(float(cfg.get("van_auto_sync_min", 0) or 0))
+        except ValueError:
+            auto_old = 0
+        same = (self.v_url.get().strip() == (cfg.get("van_relay_url", "") or "")
+                and self.v_key.get().strip() == (cfg.get("van_relay_key", "") or "")
+                and auto_new == auto_old)
+        if same:
+            self.v_msg.set("✔ Saved.")
+            return True
+        if not self._can_set():
+            # put the saved values back
+            self.v_url.set(cfg.get("van_relay_url", "") or "")
+            self.v_key.set(cfg.get("van_relay_key", "") or "")
+            self.v_auto.set(str(auto_old))
+            return False
         cfg.set("van_relay_url", self.v_url.get().strip())
         cfg.set("van_relay_key", self.v_key.get().strip())
         try:
@@ -551,6 +614,7 @@ class MobileCenterView:
         _schedule(self.root)
         self._van_paint()
         self.v_msg.set("✔ Saved.")
+        return True
 
     def _van_check(self):
         self._van_save()
@@ -596,6 +660,9 @@ class MobileCenterView:
         threading.Thread(target=work, daemon=True).start()
 
     def _van_sync(self):
+        # Sync now books the van bills as sales
+        if not perm.allowed("sales", "add", parent=self.frame):
+            return
         self._van_save()
         self.v_msg.set("Syncing…")
         self.sync_btn.configure(state="disabled")
@@ -612,6 +679,8 @@ class MobileCenterView:
             self.sync_btn.configure(state="normal")
 
     def _van_folder(self):
+        if not self._can_set():
+            return
         C = self.C
         top = tk.Toplevel(self.frame); top.title("Make upload folder"); top.configure(bg=C["card_bg"])
         mode = tk.StringVar(value="update" if cfg.get("van_relay_key") else "new")

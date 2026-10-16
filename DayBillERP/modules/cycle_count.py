@@ -266,6 +266,11 @@ def approve(doc_id, approve_pids=None, by_user=None):
 def reject(doc_id, why="", by_user=None):
     from modules import mobile_api as M
     M.reject_doc(int(doc_id), why or "count again", by_user or _user_id())
+    try:
+        from modules import audit
+        audit.log("reject", "stock_count", doc_id, why or "count again")
+    except Exception:
+        pass
 
 
 def submit_desktop(counts, note=""):
@@ -282,6 +287,11 @@ def submit_desktop(counts, note=""):
                (uid, "count", "desktop", user, "this PC", "pending", "Stock Count · PC",
                 json.dumps({"note": note}), json.dumps(lines)))
     doc_id = db.execute_scalar("SELECT doc_id FROM mobile_docs WHERE doc_uid=?", (uid,))
+    try:
+        from modules import audit
+        audit.log("submit", "stock_count", doc_id, "%d line(s) from this PC" % len(lines))
+    except Exception:
+        pass
     if not needs_approval():
         approve(doc_id, None, user)
     return doc_id

@@ -53,11 +53,14 @@ class InventoryView:
                   cursor="hand2", highlightbackground=C["border"],
                   highlightthickness=1,
                   command=self._stock_count).pack(side="right", padx=(0, 8))
-        tk.Button(bar, text="🧹 Clear Stock", font=("Segoe UI", 10, "bold"),
-                  bg="#FEF2F2", fg=C["danger"], relief="flat", padx=14, pady=7,
-                  cursor="hand2", highlightbackground=C["border"],
-                  highlightthickness=1,
-                  command=self._clear_stock).pack(side="right", padx=(0, 8))
+        # Clear Stock zeroes the whole branch: only shown with the approve right
+        from modules import permissions as _pm
+        if _pm.can("stock_adjustment", "approve"):
+            tk.Button(bar, text="🧹 Clear Stock", font=("Segoe UI", 10, "bold"),
+                      bg="#FEF2F2", fg=C["danger"], relief="flat", padx=14, pady=7,
+                      cursor="hand2", highlightbackground=C["border"],
+                      highlightthickness=1,
+                      command=self._clear_stock).pack(side="right", padx=(0, 8))
 
     def _tabs(self, C):
         style = ttk.Style()
@@ -323,11 +326,11 @@ class InventoryView:
         StockCountDialog(self.frame, on_save=self._load_stock)
 
     def _clear_stock(self):
-        from modules import permissions as _pm
-        if not _pm.allowed("inventory", "delete"):
-            return False
         """Zero-out stock for a fresh physical count. Writes an adjustment
         movement for every product so the audit trail stays intact."""
+        from modules import permissions as _pm
+        if not _pm.allowed("stock_adjustment", "approve", parent=self.frame):
+            return False
         try:
             rows = db.fetchall(
                 "SELECT product_id, ISNULL(stock_quantity,0) AS stock "
@@ -338,11 +341,15 @@ class InventoryView:
         if not rows:
             messagebox.showinfo("Clear Stock", "All stock is already zero.")
             return
-        if not messagebox.askyesno(
-                "Clear ALL Stock",
-                "This resets stock to ZERO for %d product(s) so you can do a "
+        # dangerous: right + the user must type CLEAR (v6.9.3)
+        from ui import danger
+        if not danger.gate(
+                self.frame.winfo_toplevel(), "stock_adjustment", "approve",
+                "Clear Stock",
+                "%d products of this branch go to 0 stock so you can do a "
                 "fresh physical count.\n\nEach change is logged as an "
-                "adjustment. Continue?" % len(rows)):
+                "adjustment." % len(rows),
+                word="CLEAR"):
             return
         try:
             today = date.today().strftime("%Y-%m-%d")
@@ -860,6 +867,12 @@ class StockCountDialog:
                                 pid, diff, "Physical stock count", today, "COUNT")
                     except Exception:
                         pass
+                try:
+                    from modules.doc_actions import audit
+                    audit("stock_count", "stock", None,
+                          "%d products counted and applied" % len(changes))
+                except Exception:
+                    pass
             messagebox.showinfo("Stock Count",
                                 "Posted %d adjustment(s)." % len(changes))
             if self.on_save:

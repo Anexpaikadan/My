@@ -120,6 +120,7 @@ class SuppliersView:
         self.tree.tag_configure("even", background="#FAFAFA")
         self.tree.tag_configure("inactive", foreground="#9CA3AF")
         self.tree.bind("<Double-1>", lambda e: self._edit())
+        self.tree.bind("<Delete>", lambda e: self._delete())     # same check as the button
 
         bbar = tk.Frame(wrapper, bg=C["content_bg"])
         bbar.pack(fill="x", pady=(6, 0))
@@ -223,6 +224,11 @@ class SuppliersView:
                     f"Cannot delete. Supplier has {used} purchase invoice(s).")
                 return
             db.execute("DELETE FROM suppliers WHERE supplier_id=?", (sid,))
+            try:
+                from modules.doc_actions import audit
+                audit("delete", "supplier", sid, name)
+            except Exception:
+                pass
             messagebox.showinfo(t("common.success"), f"'{name}' deleted.")
             self._load()
         except Exception as e:
@@ -427,6 +433,13 @@ class SupplierForm:
     _EXTRA = ("address_en", "address_ar", "city_ar", "contact_person_ar", "country_code")
 
     def _save(self, mode="close"):
+        # a new supplier needs 'add', changing one needs 'edit'
+        _need = "edit" if self.supplier_id else "add"
+        if not perm.can("suppliers", _need):
+            messagebox.showwarning(
+                "Access Denied",
+                "You don't have permission to %s suppliers." % _need, parent=self.win)
+            return
         try:                        # v6.8: red note under each wrong box (Tally style)
             from ui import form_style as _FS
             _bad = _FS.validate(self.win, self._pagenav)
