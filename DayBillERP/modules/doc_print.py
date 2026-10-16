@@ -200,8 +200,18 @@ def load(kind, doc_id):
                 qr_problem = "The QR code could not be made (%s)." % str(e)[:120]
         inv["qr_code_data"] = qr
         inv["_qr_problem"] = qr_problem
-    elif kind == "sales_return" and row.get("zatca_qr_phase2"):
-        inv["qr_code_data"] = row["zatca_qr_phase2"]      # signed credit note
+    elif kind == "sales_return":
+        qr = row.get("zatca_qr_phase2")                    # signed credit note
+        if not qr:                 # v6.9.2: not signed (Phase 1) → the Phase 1 QR
+            try:
+                from modules.zatca.qr_generator import phase1_for_invoice
+                qr = phase1_for_invoice({"invoice_date": row.get("return_date"),
+                                         "created_at": row.get("created_at"),
+                                         "total_amount": row.get("total_amount"),
+                                         "vat_amount": row.get("vat_amount")}, company)
+            except Exception:
+                qr = ""
+        inv["qr_code_data"] = qr or None
     extra = []
     ref = k.get("ref")
     if ref and row.get(ref[0]):
@@ -219,7 +229,7 @@ def load(kind, doc_id):
         "narration": row.get("notes_en") or "", "notes": row.get("notes_en") or "",
         "payment": row.get("payment_method") or "",
         # ZATCA Phase 2 QR of a signed credit note
-        "qr": row.get("zatca_qr_phase2") if kind == "sales_return" else None,
+        "qr": inv.get("qr_code_data") if kind == "sales_return" else None,
     }
     title = k["title"]
     if kind in ("sales", "pos") and str(row.get("invoice_kind") or "").lower() == "debit":

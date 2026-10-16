@@ -56,7 +56,12 @@ CHANGELOG = [
                "locked, GOSI paid on a draft month cannot be lost or paid twice, an unpaid "
                "day marked absent is deducted once; end-of-service shows the real day rate",
                "🕐 Closing a shift that another window already closed no longer says it "
-               "worked"]),
+               "worked",
+               "🧾 ZATCA (670+ checks with a test Fatoora server): Protect keys works on SQL "
+               "Server; a bill that cannot be signed shows as 'fix' instead of dropping out "
+               "of Phase 2; zero-rated medicines use VATEX-SA-35 (SA-36 is qualifying "
+               "metals); unsigned simplified credit notes print the Phase 1 QR; bills are "
+               "held as 'fix' when the shop details become wrong after connecting"]),
     ("6.9.1", ["↩ A return put on the customer's / supplier's account now comes off the bill "
                "it was made from: the bill shows Partial / Paid, the Receipt and Payment "
                "windows ask only for what is still owed (older returns are linked once by "

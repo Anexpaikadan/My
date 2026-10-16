@@ -356,6 +356,16 @@ def _vatex_for(code):
         from config import settings as cfg
         key = {"Z": "zatca_vatex_z", "E": "zatca_vatex_e", "O": "zatca_vatex_o"}[code]
         want = str(cfg.get(key, "") or "")
+        if code == "Z" and want == "VATEX-SA-36" and not cfg.flag("zatca_vatex_v692", False):
+            # before v6.9.2 SA-36 was wrongly labelled "medicines" (it is
+            # qualifying metals): a shop that picked it meant SA-35
+            want = "VATEX-SA-35"
+            cfg.set(key, want)
+            cfg.set("zatca_vatex_v692", True)
+            try:
+                cfg.save_settings()
+            except Exception:
+                pass
         hit = next((c for c in P.VATEX_CHOICES if c[0] == want), None)
         if hit:
             return hit
@@ -382,6 +392,9 @@ def build_doc(kind, doc_id, comp=None):
     if b2b:
         problems += buyer_problems(buyer)
     c = comp or company()
+    # v6.9.2: shop details changed after connecting (e.g. building number "12")
+    # → held as 'fix', no counter used, instead of a bill ZATCA will reject
+    problems += ["shop %s %s" % (lbl, p) for _k, lbl, p in detail_problems(c)]
     uuid = str(row.get("zatca_uuid") or row.get("invoice_uuid") or "").strip().lower()
     if len(uuid) != 36:
         uuid = P.new_uuid()
@@ -519,6 +532,13 @@ def after_save(kind, doc_id):
         return r
     except Exception as e:
         log("⚠ could not sign %s %s: %s" % (kind, doc_id, str(e)[:150]))
+        try:        # v6.9.2: shown in the ZATCA list as 'fix' — not silently left out
+            table, pk = _TABLES[kind][0], _TABLES[kind][1]
+            _db().execute("UPDATE %s SET zatca_status='fix', zatca_last_error=? WHERE %s=? "
+                          "AND zatca_icv IS NULL" % (table, pk),
+                          (("Could not sign: %s" % e)[:2000], doc_id))
+        except Exception:
+            pass
         return None
 
 

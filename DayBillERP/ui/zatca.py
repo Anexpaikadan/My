@@ -533,13 +533,16 @@ class ZatcaView:
                   relief="flat", padx=10, pady=4, cursor="hand2", highlightbackground=C["border"],
                   highlightthickness=1, command=self._reconnect).pack(side="right", padx=6)
         names = ["%s  %s" % c for c in P.VATEX_CHOICES]
-        cur = str(cfg.get("zatca_vatex_z", "VATEX-SA-36") or "VATEX-SA-36")
-        self.vatex_v = tk.StringVar(value=next((n for n in names if n.startswith(cur)), names[4]))
+        cur = str(cfg.get("zatca_vatex_z", "VATEX-SA-35") or "VATEX-SA-35")
+        if cur == "VATEX-SA-36" and not cfg.flag("zatca_vatex_v692", False):
+            cur = "VATEX-SA-35"            # SA-36 was wrongly labelled "medicines" before v6.9.2
+        self.vatex_v = tk.StringVar(value=next((n for n in names if n.startswith(cur)), names[3]))
         cb = ttk.Combobox(b, textvariable=self.vatex_v, values=names, state="readonly", width=34)
         cb.pack(side="right")
         tk.Label(b, text="Zero-rated reason", font=("Segoe UI", 8), bg=C["card_bg"],
                  fg=C["text_secondary"]).pack(side="right", padx=(12, 4))
         cb.bind("<<ComboboxSelected>>", lambda ev: (cfg.set("zatca_vatex_z", self.vatex_v.get().split()[0]),
+                                                    cfg.set("zatca_vatex_v692", True),
                                                      cfg.save_settings()))
 
         tiles = tk.Frame(self.frame, bg=C["content_bg"]); tiles.pack(fill="x", padx=20)

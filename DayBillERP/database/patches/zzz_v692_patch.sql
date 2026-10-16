@@ -37,3 +37,12 @@ GO
 IF OBJECT_ID('mobile_tokens','U') IS NOT NULL AND COL_LENGTH('mobile_tokens','pw_sig') IS NULL
     EXEC(N'ALTER TABLE mobile_tokens ADD pw_sig NVARCHAR(16) NULL');
 GO
+
+-- ZATCA: "Protect keys" stores each secret locked (~206 characters) — the
+-- secret columns were NVARCHAR(200), so protecting always failed
+IF COL_LENGTH('zatca_egs','ccsid_secret') IS NOT NULL AND COL_LENGTH('zatca_egs','ccsid_secret') <> -1
+    EXEC(N'ALTER TABLE zatca_egs ALTER COLUMN ccsid_secret NVARCHAR(MAX) NULL');
+GO
+IF COL_LENGTH('zatca_egs','pcsid_secret') IS NOT NULL AND COL_LENGTH('zatca_egs','pcsid_secret') <> -1
+    EXEC(N'ALTER TABLE zatca_egs ALTER COLUMN pcsid_secret NVARCHAR(MAX) NULL');
+GO

@@ -1,6 +1,6 @@
 -- ============================================================
 -- DayBill ERP — FULL DATABASE INSTALLER  (clean new installation)
--- generated 2026-10-16 17:55  ·  ONE file = the whole database
+-- generated 2026-10-16 17:57  ·  ONE file = the whole database
 -- ------------------------------------------------------------
 -- WHAT IT MAKES
 --   • the DayBillERP database (Arabic collation) and EVERY table,
@@ -4751,10 +4751,10 @@ CREATE TABLE zatca_egs (
     private_key       NVARCHAR(MAX) NULL,
     csr               NVARCHAR(MAX) NULL,
     ccsid_token       NVARCHAR(MAX) NULL,
-    ccsid_secret      NVARCHAR(200) NULL,
+    ccsid_secret      NVARCHAR(MAX) NULL,
     ccsid_request_id  NVARCHAR(100) NULL,
     pcsid_token       NVARCHAR(MAX) NULL,
-    pcsid_secret      NVARCHAR(200) NULL,
+    pcsid_secret      NVARCHAR(MAX) NULL,
     pcsid_request_id  NVARCHAR(100) NULL,
     cert_expires      DATETIME NULL,
     icv               INT NOT NULL DEFAULT 0,
@@ -5003,6 +5003,15 @@ GO
 -- a phone's sign-in ends when the user's password is changed
 IF OBJECT_ID('mobile_tokens','U') IS NOT NULL AND COL_LENGTH('mobile_tokens','pw_sig') IS NULL
     EXEC(N'ALTER TABLE mobile_tokens ADD pw_sig NVARCHAR(16) NULL');
+GO
+
+-- ZATCA: "Protect keys" stores each secret locked (~206 characters) — the
+-- secret columns were NVARCHAR(200), so protecting always failed
+IF COL_LENGTH('zatca_egs','ccsid_secret') IS NOT NULL AND COL_LENGTH('zatca_egs','ccsid_secret') <> -1
+    EXEC(N'ALTER TABLE zatca_egs ALTER COLUMN ccsid_secret NVARCHAR(MAX) NULL');
+GO
+IF COL_LENGTH('zatca_egs','pcsid_secret') IS NOT NULL AND COL_LENGTH('zatca_egs','pcsid_secret') <> -1
+    EXEC(N'ALTER TABLE zatca_egs ALTER COLUMN pcsid_secret NVARCHAR(MAX) NULL');
 GO
 
 GO

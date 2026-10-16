@@ -47,7 +47,7 @@ SUB_STANDARD, SUB_SIMPLIFIED = "0100000", "0200000"
 
 # zero-rated / exempt / out-of-scope reasons (VATEX codes)
 VATEX = {
-    "Z": ("VATEX-SA-36", "Qualifying medicines and medical equipment"),
+    "Z": ("VATEX-SA-35", "Medicines and medical equipment"),
     "E": ("VATEX-SA-29", "Financial services mentioned in Article 29 of the VAT Regulations"),
     "O": ("VATEX-SA-OOS", "Not subject to VAT"),
 }
@@ -56,7 +56,7 @@ VATEX_CHOICES = [
     ("VATEX-SA-33", "Export of services"),
     ("VATEX-SA-34-1", "International transport of goods"),
     ("VATEX-SA-35", "Medicines and medical equipment"),
-    ("VATEX-SA-36", "Qualifying medicines and medical equipment"),
+    ("VATEX-SA-36", "Qualifying metals"),
     ("VATEX-SA-EDU", "Private education to citizen"),
     ("VATEX-SA-HEA", "Private healthcare to citizen"),
     ("VATEX-SA-29", "Financial services (Article 29)"),

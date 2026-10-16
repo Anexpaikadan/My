@@ -53,6 +53,17 @@ Newest first. The short guide is in the main README.md.
   could lose or double it); an unpaid-leave day also marked absent is
   deducted once; the end-of-service window shows the real day rate of leave
   pay; a second final settlement is refused.
+- **ZATCA Phase 1 + 2** (670+ checks, signing / sending run end to end
+  against a local test Fatoora server; every hash also checked with the
+  ZATCA SDK method): **Protect keys** failed on every SQL Server (a locked
+  secret is longer than its column) — fixed by this update; a bill that
+  cannot be signed while connected now shows as *fix* with the reason
+  instead of silently dropping out of Phase 2; the default zero-rated reason
+  is **VATEX-SA-35** medicines (SA-36 is *qualifying metals* — a shop that
+  had chosen the old "medicines" SA-36 label is moved to SA-35 once);
+  simplified credit notes not signed yet print the Phase 1 QR; bills are
+  held as *fix* (no counter used) when the shop details became wrong after
+  connecting.
 - **Shifts**: closing a shift that was already closed (two windows / PCs)
   says so instead of reporting a close that changed nothing. Rejecting a
   mobile document needs the same right as approving it.
