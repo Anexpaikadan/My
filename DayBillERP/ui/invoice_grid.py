@@ -413,6 +413,15 @@ class InvoiceGrid(tk.Frame):
             ln.setdefault("box_qty", "")
             ln.setdefault("purchase_price", 0.0)
             ln.setdefault("stock_quantity", 0.0)
+            # v6.9: a saved line has no stock / cost of its own → today's
+            # figures from the product (the Stock Details column showed 0)
+            p = next((x for x in self.products
+                      if ln.get("product_id") and x.get("product_id") == ln.get("product_id")), None)
+            if p:
+                if not ln.get("stock_quantity"):
+                    ln["stock_quantity"] = float(p.get("stock_quantity") or 0)
+                if not ln.get("purchase_price"):
+                    ln["purchase_price"] = float(p.get("purchase_price") or 0)
             self._match_saved_price(ln)
             if self.use_offers:          # keep the discount it was saved with
                 ln.update(offer_off=True, _frozen_qty=float(ln.get("quantity") or 0))

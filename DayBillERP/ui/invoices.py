@@ -2531,7 +2531,7 @@ class InvoiceForm:
         self.hdr_vars["invoice_number"].set(inv.get("invoice_number",""))
         self.inv_num_label.config(text=inv.get("invoice_number",""))
         self.hdr_vars["invoice_date"].set(str(inv.get("invoice_date","")))
-        self.hdr_vars["due_date"].set(str(inv.get("due_date","")))
+        self.hdr_vars["due_date"].set(str(inv.get("due_date") or "")[:10])   # v6.9: never "None"
         self.hdr_vars["po_number"].set(inv.get("po_number","") or "")
         self.hdr_vars["notes_en"].set(inv.get("notes_en","") or "")
         self.payment_var.set(inv.get("payment_method","credit"))

@@ -629,7 +629,7 @@ class PurchaseForm:
         qty = sum(l.get("quantity", 0) for l in self._lines)
         self.tvars["qty"].set(f"{qty:g}")
         self.tvars["gross"].set(f"{gross:,.2f}")
-        self.tvars["disc"].set(f"−{disc:,.2f}")
+        self.tvars["disc"].set(f"−{disc:,.2f}" if abs(disc) >= 0.005 else "0.00")
         self.tvars["taxable"].set(f"{gross:,.2f}")
         self.tvars["vat"].set(f"{vat:,.2f}")
         self.tvars["total"].set(f"{total:,.2f}")
