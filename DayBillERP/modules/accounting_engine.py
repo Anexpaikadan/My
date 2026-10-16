@@ -61,6 +61,13 @@ def _insert_journal(db, entry_date, lines, description_en, description_ar, sourc
 
     jid = db.execute_scalar(
         "SELECT MAX(journal_id) FROM journal_entries WHERE journal_number=?", (jnum,))
+    try:                                    # v6.9.3 voucher type (JV, CR, CP …)
+        from modules import voucher_types as _vt
+        vt = _vt.code_for(source_type, [l.get("account_id") for l in lines], source_id)
+        with db.savepoint():
+            db.execute("UPDATE journal_entries SET voucher_type=? WHERE journal_id=?", (vt, jid))
+    except Exception:
+        pass
 
     for i, l in enumerate(lines, 1):
         db.execute(

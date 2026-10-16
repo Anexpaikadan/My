@@ -212,8 +212,11 @@ class VouchersView:
         tk.Entry(f, textvariable=self.to_var, width=11, font=("Segoe UI", 10),
                  relief="solid", bd=1).pack(side="left", padx=(0, 10))
         lab("Type")
-        ttk.Combobox(f, textvariable=self.type_var, values=VOUCHER_TYPES,
-                     width=14, state="readonly").pack(side="left", padx=(0, 10))
+        from modules import voucher_types as _vt          # v6.9.3: SI / CR / CP …
+        self._vt_values = ["All"] + ["%s · %s" % c for c in _vt.choices()]
+        self.type_var.set("All")
+        ttk.Combobox(f, textvariable=self.type_var, values=self._vt_values,
+                     width=24, state="readonly").pack(side="left", padx=(0, 10))
         tk.Button(f, text="🔍 Filter", font=("Segoe UI", 9, "bold"),
                   bg=C["card_bg"], fg=C["text_primary"], relief="flat",
                   padx=12, pady=5, cursor="hand2",
@@ -231,7 +234,7 @@ class VouchersView:
         self.tree = ttk.Treeview(wrap, columns=cols, show="tree headings")
         heads = [("#0", "Voucher / Account", 240, "w"),
                  ("date", "Date", 90, "center"),
-                 ("type", "Type", 110, "center"),
+                 ("type", "Vch Type", 150, "w"),
                  ("narration", "Narration", 260, "w"),
                  ("debit", "Debit", 100, "e"),
                  ("credit", "Credit", 100, "e"),
@@ -249,12 +252,20 @@ class VouchersView:
         for i in self.tree.get_children():
             self.tree.delete(i)
         params = [self.from_var.get(), self.to_var.get()]
+        from modules import voucher_types as _vt
         sql = ("SELECT TOP 300 journal_id, journal_number, entry_date, reference, "
-               "description_en, source_type, total_debit, total_credit, is_posted "
-               "FROM journal_entries WHERE entry_date BETWEEN ? AND ?")
-        if self.type_var.get():
-            sql += " AND source_type=?"
-            params.append(self.type_var.get())
+               "description_en, source_type, total_debit, total_credit, is_posted, "
+               "%s AS voucher_type FROM journal_entries je "
+               "WHERE entry_date BETWEEN ? AND ?" % _vt.col())
+        want = (self.type_var.get() or "All").split(" · ")[0]
+        if want and want != "All":
+            if _vt.col() != "NULL":
+                sql += " AND je.voucher_type=?"
+                params.append(want)
+            else:
+                srcs = [k for k, v in _vt.BY_SOURCE.items() if v == want] or [want.lower()]
+                sql += " AND source_type IN (%s)" % ",".join("?" * len(srcs))
+                params.extend(srcs)
         sql += " ORDER BY journal_id DESC"
         try:
             rows = db.fetchall(sql, tuple(params)) or []
@@ -281,7 +292,7 @@ class VouchersView:
             dtxt = d.strftime("%d %b %Y") if hasattr(d, "strftime") else str(d)[:10]
             parent = self.tree.insert(
                 "", "end", iid=str(r["journal_id"]), text=r["journal_number"],
-                values=(dtxt, (r["source_type"] or "").replace("_", " "),
+                values=(dtxt, _vt.label(_vt.of_journal(r)),
                         r["description_en"] or "", money(r["total_debit"]),
                         money(r["total_credit"]),
                         "✓" if r["is_posted"] else "draft"))

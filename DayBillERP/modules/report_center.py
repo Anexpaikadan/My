@@ -283,6 +283,17 @@ TYPE_LABEL = {"sales": "Sale", "pos": "POS Sale", "cogs": "Cost of Sales",
               "purchase_return_cost": "Return Price Difference"}
 
 
+def _vt_col():
+    from modules import voucher_types as _vt
+    return _vt.col()
+
+
+def vlabel(row):
+    """CR · Cash Receipt — the voucher type of a journal row (v6.9.3)."""
+    from modules import voucher_types as _vt
+    return _vt.label(_vt.of_journal(row))
+
+
 def type_label(st):
     return TYPE_LABEL.get(str(st or "").lower(), str(st or "Journal").replace("_", " ").title())
 
@@ -1092,7 +1103,7 @@ def r_ledger(date_from, date_to, account=None, **_):
 def r_day_book(date_from, date_to, **_):
     data = _q("SELECT je.journal_id, je.entry_date, je.journal_number, je.source_type, "
               "je.reference, je.description_en, a.account_code, a.account_name_en, "
-              "jl.description AS line_desc, jl.debit, jl.credit "
+              "jl.description AS line_desc, jl.debit, jl.credit, %s AS voucher_type " % _vt_col() +
               "FROM journal_lines jl JOIN journal_entries je ON je.journal_id=jl.journal_id "
               "JOIN accounts a ON a.account_id=jl.account_id "
               "WHERE je.is_posted=1 AND je.entry_date BETWEEN ? AND ? "
@@ -1103,14 +1114,14 @@ def r_day_book(date_from, date_to, **_):
         last = r["journal_id"]
         rows.append({"date": _d(r["entry_date"]) if first else "",
                      "jv": r["journal_number"] if first else "",
-                     "type": type_label(r["source_type"]) if first else "",
+                     "type": vlabel(r) if first else "",
                      "ref": (r.get("reference") or "") if first else "",
                      "account": f"{r['account_code']}  {r['account_name_en']}",
                      "narration": r.get("line_desc") or (r.get("description_en") if first else ""),
                      "dr": round(_f(r["debit"]), 2) or None,
                      "cr": round(_f(r["credit"]), 2) or None})
-    cols = [col("date", "Date", width=90), col("jv", "Voucher", width=95),
-            col("type", "Type", width=110), col("ref", "Ref", width=80),
+    cols = [col("date", "Date", width=90), col("jv", "Voucher", width=105),
+            col("type", "Vch Type", width=150), col("ref", "Ref", width=80),
             col("account", "Account", width=220), col("narration", "Narration", width=200),
             col("dr", "Debit", "money"), col("cr", "Credit", "money")]
     tot = _sum_totals(rows, ("dr", "cr"), "account", "TOTAL")
@@ -1124,20 +1135,41 @@ def r_day_book(date_from, date_to, **_):
         desc="One line per voucher with amount and status.")
 def r_journal_register(date_from, date_to, **_):
     data = _q("SELECT journal_number, entry_date, source_type, reference, description_en, "
-              "total_debit, is_posted FROM journal_entries WHERE entry_date BETWEEN ? AND ? "
-              "ORDER BY entry_date, journal_id", (date_from, date_to))
+              "total_debit, is_posted, %s AS voucher_type FROM journal_entries je "
+              "WHERE entry_date BETWEEN ? AND ? "
+              "ORDER BY entry_date, journal_id" % _vt_col(), (date_from, date_to))
     rows = [{"date": _d(r["entry_date"]), "jv": r["journal_number"],
-             "type": type_label(r["source_type"]), "ref": r.get("reference") or "",
+             "type": vlabel(r), "ref": r.get("reference") or "",
              "narration": r.get("description_en") or "",
              "amount": round(_f(r["total_debit"]), 2),
              "status": "Posted" if r.get("is_posted") else "Draft"} for r in data]
-    cols = [col("date", "Date", width=90), col("jv", "Voucher", width=95),
-            col("type", "Type", width=110), col("ref", "Ref", width=90),
+    cols = [col("date", "Date", width=90), col("jv", "Voucher", width=105),
+            col("type", "Vch Type", width=150), col("ref", "Ref", width=90),
             col("narration", "Narration", width=280), col("amount", "Amount", "money"),
             col("status", "Status", width=70)]
     return _result("Journal Register", cols, rows,
                    _sum_totals(rows, ("amount",), "narration", "TOTAL"),
                    [("Vouchers", len(rows), "int")])
+
+
+@report("voucher_types", GROUP_ACC, "Voucher Type Summary",
+        desc="How many SI, POS, SR, PI, PR, CR, BR, CP, BP, EX, JV … vouchers and their amount.")
+def r_voucher_types(date_from, date_to, **_):
+    from modules import voucher_types as _vt
+    data = _q("SELECT source_type, total_debit, %s AS voucher_type FROM journal_entries je "
+              "WHERE je.is_posted=1 AND entry_date BETWEEN ? AND ?" % _vt_col(),
+              (date_from, date_to))
+    by = OrderedDict((c, {"code": c, "name": n, "count": 0, "amount": 0.0}) for c, n in _vt.choices())
+    for r in data:
+        c = _vt.of_journal(r)
+        d = by.setdefault(c, {"code": c, "name": _vt.name(c), "count": 0, "amount": 0.0})
+        d["count"] += 1
+        d["amount"] += _f(r["total_debit"])
+    rows = [dict(d, amount=round(d["amount"], 2)) for d in by.values() if d["count"]]
+    cols = [col("code", "Code", width=70), col("name", "Voucher type", width=220),
+            col("count", "Vouchers", "int", 90), col("amount", "Amount", "money")]
+    return _result("Voucher Type Summary", cols, rows,
+                   _sum_totals(rows, ("count", "amount"), "name", "TOTAL"))
 
 
 def _party_balances(kind, date_to):

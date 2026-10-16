@@ -151,6 +151,11 @@ def post_journal(entry_date, description, lines, source_type, source_id,
     if abs(total_debit - total_credit) > 0.01:
         return _fail(f"entry not balanced (Dr {total_debit:,.2f} / Cr {total_credit:,.2f})")
     posted = _auto_post() if is_posted is None else bool(is_posted)
+    try:                       # v6.9.3: SI / CR / CP … numbered per type
+        from modules import voucher_types as _vt
+        vtype = _vt.code_for(source_type, [l[0] for l in lines], source_id)
+    except Exception:
+        _vt, vtype = None, None
     try:
         # header + lines are ONE unit: a failure never leaves a journal
         # without its lines (v5.27). Inside a document save this is a
@@ -160,7 +165,7 @@ def post_journal(entry_date, description, lines, source_type, source_id,
         for _attempt in range(4):
             try:
                 with db.transaction():
-                    jnum = _next_journal_number()
+                    jnum = _vt.next_number(vtype) if _vt and vtype else _next_journal_number()
                     db.execute(
                         "INSERT INTO journal_entries (journal_number, entry_date, reference, "
                         "description_en, source_type, source_id, total_debit, total_credit, "
@@ -169,6 +174,13 @@ def post_journal(entry_date, description, lines, source_type, source_id,
                          total_debit, total_credit, 1 if posted else 0, None))
                     # this connection's new row — never another till's journal
                     jid = db.last_identity("journal_entries", "journal_id")
+                    if vtype:
+                        try:
+                            with db.savepoint():
+                                db.execute("UPDATE journal_entries SET voucher_type=? "
+                                           "WHERE journal_id=?", (vtype, jid))
+                        except Exception:
+                            pass          # column not there yet (before the v6.9.3 update)
                     if posted:
                         db.execute("UPDATE journal_entries SET posted_at=GETDATE() "
                                    "WHERE journal_id=?", (jid,))

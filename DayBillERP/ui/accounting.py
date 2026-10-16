@@ -216,16 +216,19 @@ class AccountingView:
     def _load_journals(self):
         self.jrn_tree.delete(*self.jrn_tree.get_children())
         try:
+            from modules import voucher_types as _vt
             rows = db.fetchall("SELECT journal_id, journal_number, entry_date, "
                                "description_en, source_type, "
-                               "total_debit, total_credit, is_posted FROM journal_entries "
-                               "ORDER BY entry_date DESC, journal_id DESC")
+                               "total_debit, total_credit, is_posted, %s AS voucher_type "
+                               "FROM journal_entries je "
+                               "ORDER BY entry_date DESC, journal_id DESC" % _vt.col())
         except Exception:
             rows = []
+        from modules import voucher_types as _vt
         for r in rows:
             self.jrn_tree.insert("", "end", iid=str(r["journal_id"]), values=(
                 r["journal_number"], str(r.get("entry_date", "")),
-                r.get("description_en", "") or "", r.get("source_type", ""),
+                r.get("description_en", "") or "", _vt.label(_vt.of_journal(r)),
                 f"{float(r['total_debit']):,.2f}", f"{float(r['total_credit']):,.2f}",
                 "✅ Posted" if r.get("is_posted") else "📝 Draft"))
 

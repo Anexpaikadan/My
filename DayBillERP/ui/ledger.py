@@ -24,6 +24,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from config import settings as cfg
 from config.database import db
+from modules import voucher_types as _vt
 
 
 def money(n):
@@ -246,7 +247,7 @@ class LedgerView:
         self.tree = ttk.Treeview(wrap, columns=cols, show="headings")
         heads = [("date", "Date", 85, "center"),
                  ("voucher", "Voucher", 100, "center"),
-                 ("type", "Type", 100, "center"),
+                 ("type", "Vch Type", 150, "w"),
                  ("narration", "Narration", 280, "w"),
                  ("debit", "Debit", 100, "e"),
                  ("credit", "Credit", 100, "e"),
@@ -282,7 +283,7 @@ class LedgerView:
                 (code, frm)) or 0
             rows = db.fetchall(
                 "SELECT je.journal_id, je.entry_date, je.journal_number, je.source_type, "
-                "je.description_en, jl.debit, jl.credit "
+                "je.description_en, jl.debit, jl.credit, %s AS voucher_type " % _vt.col() +
                 "FROM journal_lines jl "
                 "JOIN journal_entries je ON je.journal_id = jl.journal_id "
                 "JOIN accounts a ON a.account_id = jl.account_id "
@@ -313,7 +314,7 @@ class LedgerView:
             dtxt = d.strftime("%d/%m/%y") if hasattr(d, "strftime") else str(d)[:10]
             iid = self.tree.insert("", "end", values=(
                 dtxt, r["journal_number"],
-                (r["source_type"] or "").replace("_", " "),
+                _vt.label(_vt.of_journal(r)),                 # CR · Cash Receipt (v6.9.3)
                 r["description_en"] or "",
                 money(r["debit"]) if float(r["debit"] or 0) else "",
                 money(r["credit"]) if float(r["credit"] or 0) else "",
