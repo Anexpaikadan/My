@@ -1,113 +1,29 @@
-# 🇸🇦 DayBill ERP
+# DayBill ERP — version history
 
-**ZATCA Phase 1 & Phase 2 Compliant | Arabic & English | MS SQL Server**
+Newest first. The short guide is in the main README.md.
 
----
+## 🧹 v6.9.0 — clean final product, ledger ↔ transactions, Database Tool FROM / TO
 
-## 📋 Requirements
-
-- Python 3.10+
-- Microsoft SQL Server (Express is free)
-- SSMS (SQL Server Management Studio)
-- Windows OS (for tkinter desktop app)
-
----
-
-## 🚀 Quick Setup
-
-### Step 1: Database
-1. Open SSMS
-2. Run `database\INSTALL_DayBillERP_AllInOne.sql` (F5) — or in DayBill: login ▸
-   ⚙ Database Settings ▸ **Create New Database…**
-3. Database `DayBillERP` will be created: every table, the chart of
-   accounts, VAT categories, admin user, Cash Customer / Cash Supplier,
-   Main Branch. **Clean** — no sample products, customers or bills, and
-   the company is empty (fill it in Settings ▸ Company).
-4. Safe to run again on an existing database — it only adds what is
-   missing and never deletes data.
-
-### Step 2: Python Environment
-```bash
-# Create virtual environment
-python -m venv venv
-venv\Scripts\activate       # Windows
-source venv/bin/activate    # Linux/Mac
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### Step 3: ODBC Driver
-Download and install **ODBC Driver 17 for SQL Server** from Microsoft:
-https://aka.ms/downloadmsodbcsql
-
-### Step 4: Run the App
-```bash
-python main.py
-```
-
----
-
-## 🗂️ Project Structure
-
-```
-daybill_erp/
-├── main.py                    # Entry point
-├── requirements.txt
-├── config/
-│   ├── database.py            # MS SQL connection manager
-│   ├── language.py            # Arabic/English localization
-│   ├── settings.py            # App settings & themes
-│   ├── db_config.json         # DB connection (auto-created)
-│   └── app_settings.json      # App settings (auto-created)
-├── ui/
-│   ├── login_window.py        # Login screen
-│   ├── main_window.py         # Main shell + sidebar
-│   ├── dashboard.py           # Dashboard KPIs
-│   ├── customers.py           # Customer module (Step 5)
-│   ├── invoices.py            # Sales invoice (Step 6)
-│   └── vat_report.py          # VAT report (Step 7)
-├── locales/
-│   ├── en.json                # English strings
-│   └── ar.json                # Arabic strings
-└── modules/
-    ├── zatca/                 # ZATCA XML + QR generator
-    ├── pdf/                   # Invoice PDF generator
-    └── reports/               # Report generator
-```
-
----
-
-## 🔐 Default Login
-
-| Field    | Value   |
-|----------|---------|
-| Username | `admin` |
-| Password | set it yourself at the first sign-in (DayBill asks) |
-
-Then create a user for each person in **Users & Rights** and give each one a user type (Cashier, Sales, Manager…).
-
----
-
-## 🌐 Language Switch
-
-- Click **🌐 العربية** in top-right to switch to Arabic (RTL)
-- Click **🌐 English** to switch back
-
----
-
-## 📊 ZATCA Compliance
-
-| Feature            | Phase 1 | Phase 2 |
-|--------------------|---------|---------|
-| QR Code (TLV)      | ✅      | ✅      |
-| UUID per Invoice   | ✅      | ✅      |
-| XML UBL 2.1        | ✅      | ✅      |
-| Cryptographic Stamp| ❌      | ✅      |
-| Real-time Reporting| ❌      | ✅      |
-| ZATCA API Submit   | ❌      | ✅      |
-
----
+- **Ledger → transaction**: double-click any line in Account Ledger or a
+  customer / supplier statement to open the document that made it (sales,
+  POS, returns, purchase, receipt, payment, expense, journal). Right-click:
+  Open · Edit · Delete · Voucher · New ▸. The ledger refreshes after a save.
+- **Connector bar on every transaction window**: ➕ New · ✏ Edit · 💾 Save ·
+  🗑 Delete · 📄 Voucher · ✖ Close — each follows the user's rights for that
+  transaction type (Users & Rights). Ledger ▸ 🔗 Connectors shows every
+  connector, your rights, and what a double-click opens (edit / view / voucher).
+- **Database Tool**: FROM and TO boxes at the top of every page (they did
+  not work before); double-click a database for a menu; ⇄ swap; databases the
+  list could not inspect are checked live. Copy one DayBill company into
+  another (built-in DayBill map). An *is_active* column is never taken as
+  "Inactive" any more (it made every converted product inactive).
+- **Simple windows**: one slim title line on every form and dialog.
+- **Clean folders**: `docs/` (guides), `database/patches/` (automatic updates),
+  `database/tools/` (repair scripts by hand), `extras/` (Android app source).
+  Removed an unused module. Wrong menu items fixed (Customer / Supplier
+  Ledger, Credit Note, Closing Balance).
+- **One-click install**: INSTALL.bat installs the exact library versions from
+  requirements.txt, can create the database and makes a desktop shortcut.
 
 ## 📊 Accounts, Stock & Reports (v5.7)
 
@@ -1459,38 +1375,3 @@ billing / POS PCs.
   (low stock, invoices due), backup messages, auto-print receipts.
 
 ---
-
-## 🛣️ Build Roadmap
-
-- [x] Step 1: MS SQL Database Schema
-- [x] Step 2: Project Setup + DB Connection + Login + Dashboard
-- [x] Step 3: Customer Module
-- [x] Step 4: Product Module
-- [x] Step 5: Sales Invoice + ZATCA QR
-- [x] Step 6: ZATCA XML & Phase 2 (signing + API)
-- [x] Step 7: VAT Return Report
-- [x] Step 8: PDF Invoice Export (bilingual + QR)
-- [x] v5.x: POS, offers, branches & tills, ZATCA Phase 2, mobile & van, accounting audit
-- [x] v6.0: safe saves, ZATCA Wave 25, tenders & shifts, price lists, branch stock,
-      batches & expiry, bank reconciliation, year-end closing, GOSI / leave / attendance
-- [ ] Next ideas: loyalty points, customer display, Salla / Zid sync, AI bill
-      scanning, cost centres & budgets, fixed-asset depreciation
-
-## 🔤 Arabic PDF Font (important)
-
-PDF Arabic text needs a TTF font with Arabic glyphs plus the
-`arabic-reshaper` and `python-bidi` libraries. Place a font such as
-`Amiri-Regular.ttf` / `Cairo-Regular.ttf` in `modules/fonts/`, or install
-one system-wide. Without an Arabic-capable font, Arabic appears as boxes
-while English still renders correctly.
-
----
-
-## 📞 VAT Rates (Saudi Arabia)
-
-| Type       | Code | Rate |
-|------------|------|------|
-| Standard   | S    | 15%  |
-| Zero-rated | Z    | 0%   |
-| Exempt     | E    | 0%   |
-| Out of Scope | O  | N/A  |

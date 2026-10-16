@@ -3,7 +3,7 @@
 # ------------------------------------------------------------
 # Applies pending SQL patches automatically so you never forget to
 # run one in SSMS. Only touches files named *_patch.sql in the
-# database/ folder (all idempotent, IF NOT EXISTS-guarded). Tracks
+# database/patches/ folder (all idempotent, IF NOT EXISTS-guarded). Tracks
 # what's been applied in a _migrations table and skips those.
 #
 # It deliberately ignores the full schema / setup / optional / reset
@@ -16,7 +16,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from config.database import db
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_DB_DIR = os.path.join(_ROOT, "database")
+_DB_DIR = os.path.join(_ROOT, "database", "patches")
+_OLD_DIR = os.path.join(_ROOT, "database")      # a patch dropped in the old place still runs
 
 # split a SQL Server script into batches on lines that are just "GO"
 _GO = re.compile(r"^\s*GO\s*;?\s*$", re.IGNORECASE | re.MULTILINE)
@@ -37,8 +38,17 @@ def _applied():
         return set()
 
 
+def patch_files():
+    """Every *_patch.sql, one per name, sorted by name (patches/ wins)."""
+    found = {}
+    for d in (_OLD_DIR, _DB_DIR):
+        for f in glob.glob(os.path.join(d, "*_patch.sql")):
+            found[os.path.basename(f)] = f
+    return [found[n] for n in sorted(found)]
+
+
 def _pending_files():
-    files = sorted(glob.glob(os.path.join(_DB_DIR, "*_patch.sql")))
+    files = patch_files()
     done = _applied()
     return [f for f in files if os.path.basename(f) not in done]
 

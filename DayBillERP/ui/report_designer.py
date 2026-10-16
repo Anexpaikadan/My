@@ -54,7 +54,7 @@ class ReportDesignerView:
         tk.Label(self.frame,
                  text="🧩  Report Designer needs its database tables.\n\n"
                       "Go to Updates → Apply All Updates (or run\n"
-                      "database/report_designer_patch.sql in SSMS), then reopen.",
+                      "database/patches/report_designer_patch.sql in SSMS), then reopen.",
                  font=("Segoe UI", 12), bg=self.C["content_bg"],
                  fg=self.C["text_primary"], justify="center").pack(expand=True)
 

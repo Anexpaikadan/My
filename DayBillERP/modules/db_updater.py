@@ -117,7 +117,7 @@ CHANGELOG = [
                "Reset passwords: DayBill users, and another program's users in the same format "
                "(backup first, owner confirms)"]),
     ("6.0.2", ["Login ▸ 🔑 Forgot password?: reset by another admin, or a safe SQL query "
-               "(database\\RESET_user_password.sql) — then DayBill asks for a new password",
+               "(database\\tools\\RESET_user_password.sql) — then DayBill asks for a new password",
                "Database Settings ▸ 🔍 Find: finds SQL Server on this PC and the network",
                "🗂 List marks DayBill databases ✓; a wrong database offers to switch to DayBill's",
                "Clear message when the saved SQL password was locked on another PC"]),
@@ -197,6 +197,7 @@ def _find_patch_file(fname: str):
     candidates = [
         os.path.join(root, fname),
         os.path.join(root, os.path.basename(fname)),
+        os.path.join(root, "database", "patches", os.path.basename(fname)),
         os.path.join(root, "database", os.path.basename(fname)),
         os.path.join(os.getcwd(), fname),
         os.path.join(os.getcwd(), os.path.basename(fname)),
@@ -378,7 +379,7 @@ def apply_all_pending(db) -> dict:
 
 
 # ── v6.0: ONE update engine ─────────────────────────────────
-# DayBill applies database/*_patch.sql at every start (modules/db_migrate).
+# DayBill applies database/patches/*_patch.sql at every start (modules/db_migrate).
 # The Updates screen now shows and runs exactly that list, so the two
 # engines can never disagree. (PATCHES above stays for older callers.)
 def _desc_of(path):
@@ -427,7 +428,7 @@ def patch_status(db) -> list:
     except Exception:
         old = set()
     out = []
-    for path in sorted(glob.glob(os.path.join(M._DB_DIR, "*_patch.sql"))):
+    for path in M.patch_files():
         name = os.path.basename(path)
         ver = _ver_of(path)
         out.append({"name": name, "description": _desc_of(path), "version": ver,

@@ -85,7 +85,7 @@ class MobileCenterView:
                  font=("Segoe UI", 8), bg=C["card_bg"], fg=C["text_secondary"]).pack(anchor="w")
         if not M.tables_ready():
             tk.Label(self.frame, text="Mobile tables are missing.\n\nRestart DayBill (it adds them by itself) or run "
-                     "database/zz_mobile_patch.sql.", font=("Segoe UI", 11), bg=C["content_bg"],
+                     "database/patches/zz_mobile_patch.sql.", font=("Segoe UI", 11), bg=C["content_bg"],
                      fg=C["danger"], justify="center").pack(expand=True)
             return
         self.nb = ttk.Notebook(self.frame); self.nb.pack(fill="both", expand=True, padx=10, pady=8)

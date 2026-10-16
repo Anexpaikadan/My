@@ -1170,7 +1170,7 @@ class ForgotPasswordDialog:
                            bg="#F8FAFC", fg="#0F172A", wrap="word")
         self.txt.pack(fill="x", pady=(2, 6))
         para("Then sign in as that user with any password — DayBill asks for a new password "
-             "first. The same query is in the DayBill folder: database\\RESET_user_password.sql. "
+             "first. The same query is in the DayBill folder: database\\tools\\RESET_user_password.sql. "
              "It changes nothing on a database that isn't DayBill's.",
              color=C["text_secondary"])
         try:

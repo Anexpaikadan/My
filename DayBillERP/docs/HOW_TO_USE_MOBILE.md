@@ -100,7 +100,7 @@ DayBill offers http for now and goes back to https by itself when it works.
 
 Same app plus the 📷 camera, PDT scan-button broadcasts (Zebra DataWedge,
 Urovo, Honeywell, Newland, iData, Sunmi…) and the Bluetooth printer.
-Build it free on GitHub — see `android_app/README_ANDROID.md`.
+Build it free on GitHub — see `extras/android_app/README_ANDROID.md`.
 First start: type the shop address or the van relay address (or scan the QR
 on the DayBill screen).
 

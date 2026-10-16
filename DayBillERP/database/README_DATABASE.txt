@@ -23,13 +23,13 @@ missing and never deletes data.
 
 UPDATING AN OLDER DATABASE
 --------------------------
-Nothing to do by hand. The *_patch.sql files in this folder are applied
+Nothing to do by hand. The *_patch.sql files in the patches\ folder are applied
 automatically when DayBill starts (Settings > System > "Update the database
 automatically"), or from Updates > Apply All Updates.
 
 
-OTHER FILES (only when your dealer asks)
-----------------------------------------
+OTHER FILES in tools\ (only when your dealer asks)
+--------------------------------------------------
 REPAIR_product_keys.sql    repairs product keys on very old databases
 units_reset_optional.sql   resets the unit list - deletes custom units!
 RESET_user_password.sql    forgotten password: the user signs in with any
@@ -39,5 +39,5 @@ RESET_user_password.sql    forgotten password: the user signs in with any
 
 
 For developers: INSTALL_DayBillERP_AllInOne.sql is built from
-tools/sql_base/DayBillERP_Full_Setup.sql + all *_patch.sql files with
+tools/sql_base/DayBillERP_Full_Setup.sql + all patches/*_patch.sql files with
     python tools/build_install_sql.py

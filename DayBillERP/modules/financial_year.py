@@ -4,7 +4,7 @@
 # Real backing for Settings -> Financial Year: create a new FY,
 # close/lock one so no more postings land in it, and resolve which
 # FY a given date belongs to. Table created by
-# database/financial_year_patch.sql (idempotent).
+# database/patches/financial_year_patch.sql (idempotent).
 # ============================================================
 
 import sys, os

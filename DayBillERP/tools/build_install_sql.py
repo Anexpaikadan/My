@@ -1,14 +1,14 @@
 # ============================================================
 # Build INSTALL_DayBillERP_AllInOne.sql
 # ------------------------------------------------------------
-# Concatenates the base setup + every patch in database/ into ONE
+# Concatenates the base setup + every patch in database/patches/ into ONE
 # idempotent script for a brand-new installation:
 #
 #     python tools/build_install_sql.py
 #
 # Writes  database/INSTALL_DayBillERP_AllInOne.sql
 # Order: tools/sql_base/DayBillERP_Full_Setup.sql (schema + seed) first,
-# then all database/*_patch.sql alphabetically (each is idempotent),
+# then all database/patches/*_patch.sql alphabetically (each is idempotent),
 # with clear section banners and GO separators between files.
 # ============================================================
 
@@ -72,8 +72,8 @@ def main():
         parts.append(read(base_setup))
         parts.append("\nGO\n\n")
 
-    patch_dir = os.path.join(BASE, "database")
-    for p in sorted(glob.glob(os.path.join(patch_dir, "*.sql"))):
+    patch_dir = os.path.join(BASE, "database", "patches")
+    for p in sorted(glob.glob(os.path.join(patch_dir, "*_patch.sql"))):
         name = os.path.basename(p)
         if os.path.abspath(p) == os.path.abspath(OUT):
             continue                                       # this installer itself

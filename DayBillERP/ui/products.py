@@ -3166,7 +3166,7 @@ class ProductForm:
         except Exception as e:
             messagebox.showerror(
                 "Brand",
-                "Could not add brand — run database/product_extras_patch.sql "
+                "Could not add brand — run database/patches/product_extras_patch.sql "
                 f"first.\n\n{str(e)[:150]}", parent=self.win)
 
     # ── Save ──────────────────────────────────────────────────
@@ -3302,7 +3302,7 @@ class ProductForm:
                 (self.product_id,)) or []
         except Exception:
             tk.Label(self.images_holder,
-                     text="Run database/product_extras_patch.sql to enable "
+                     text="Run database/patches/product_extras_patch.sql to enable "
                          "multiple product images.",
                      font=("Segoe UI", 9), bg="#FFF7E6", fg="#9A6700",
                      wraplength=520, justify="left").pack(anchor="w", ipady=6, fill="x")
@@ -3354,7 +3354,7 @@ class ProductForm:
         except Exception as e:
             messagebox.showerror(
                 "Images",
-                "Could not save — run database/product_extras_patch.sql "
+                "Could not save — run database/patches/product_extras_patch.sql "
                 f"first.\n\n{str(e)[:150]}")
 
     def _delete_image(self, image_id):

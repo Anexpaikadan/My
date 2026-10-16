@@ -51,7 +51,7 @@ Source: "..\dist\DayBillERP.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\assets\app.ico"; DestDir: "{app}"; DestName: "DayBillERP.ico"; Flags: ignoreversion
 Source: "..\database\INSTALL_DayBillERP_AllInOne.sql"; DestDir: "{app}\database"; Flags: ignoreversion
 Source: "..\database\README_DATABASE.txt"; DestDir: "{app}\database"; Flags: ignoreversion skipifsourcedoesntexist
-Source: "..\database\RESET_user_password.sql"; DestDir: "{app}\database"; Flags: ignoreversion skipifsourcedoesntexist
+Source: "..\database\tools\RESET_user_password.sql"; DestDir: "{app}\database\tools"; Flags: ignoreversion skipifsourcedoesntexist
 Source: "..\DayBill_Database_Tool.bat"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
 
