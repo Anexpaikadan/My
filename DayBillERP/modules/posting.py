@@ -153,7 +153,7 @@ def post_journal(entry_date, description, lines, source_type, source_id,
     posted = _auto_post() if is_posted is None else bool(is_posted)
     try:                       # v6.9.3: SI / CR / CP … numbered per type
         from modules import voucher_types as _vt
-        vtype = _vt.code_for(source_type, [l[0] for l in lines], source_id)
+        vtype = _vt.code_for(source_type, [l[0] for l in lines], source_id, reference)
     except Exception:
         _vt, vtype = None, None
     try:

@@ -21,9 +21,11 @@ UPDATE journal_entries SET voucher_type = CASE LOWER(ISNULL(source_type, ''''))
     WHEN ''purchase'' THEN ''PI''         WHEN ''purchase_return'' THEN ''PR''
     WHEN ''purchase_return_cost'' THEN ''PR''
     WHEN ''receipt'' THEN ''CR''          WHEN ''payment'' THEN ''CP''
-    WHEN ''expense'' THEN ''EX''          WHEN ''transfer'' THEN ''CT''
+    WHEN ''expense'' THEN CASE WHEN source_id IS NULL THEN ''CP'' ELSE ''EX'' END
+    WHEN ''transfer'' THEN ''CT''
     WHEN ''opening'' THEN ''OB''          WHEN ''opening_accounts'' THEN ''OB''
-    WHEN ''opening_stock'' THEN ''OB''    WHEN ''adjustment'' THEN ''OB''
+    WHEN ''opening_stock'' THEN ''OB''
+    WHEN ''adjustment'' THEN CASE WHEN UPPER(ISNULL(reference,'''')) LIKE ''OPEN%'' THEN ''OB'' ELSE ''JV'' END
     WHEN ''stock_adjust'' THEN ''ADJ''    WHEN ''cycle_count'' THEN ''ADJ''
     WHEN ''consumption'' THEN ''CE''
     WHEN ''payroll'' THEN ''PY''          WHEN ''salary_payment'' THEN ''SAL''
@@ -72,6 +74,8 @@ CREATE TABLE consumption_entries (
     expense_account_id INT NULL,
     unit_name         NVARCHAR(100) NULL,          -- room / production unit (e.g. Bakery)
     warehouse_id      INT NULL,
+    branch_id         INT NULL,
+    counter_id        INT NULL,
     total_cost        DECIMAL(18,2) NOT NULL DEFAULT 0,
     notes             NVARCHAR(500) NULL,
     entry_status      NVARCHAR(20) NOT NULL DEFAULT 'confirmed',
@@ -94,4 +98,45 @@ CREATE TABLE consumption_lines (
     unit_cost         DECIMAL(18,4) NOT NULL DEFAULT 0,
     line_total        DECIMAL(18,2) NOT NULL DEFAULT 0
 );
+GO
+
+-- expense accounts a consumable entry posts to (only added when missing)
+IF OBJECT_ID('accounts','U') IS NOT NULL
+BEGIN
+    DECLARE @p INT = (SELECT account_id FROM accounts WHERE account_code='5000');
+    IF NOT EXISTS (SELECT 1 FROM accounts WHERE account_code='5460')
+        INSERT INTO accounts (account_code, account_name_en, account_name_ar, account_type, parent_account_id)
+        VALUES ('5460', N'Staff Food & Welfare', N'طعام ورعاية الموظفين', 'expense', @p);
+    IF NOT EXISTS (SELECT 1 FROM accounts WHERE account_code='5470')
+        INSERT INTO accounts (account_code, account_name_en, account_name_ar, account_type, parent_account_id)
+        VALUES ('5470', N'Production Materials Used', N'مواد مستهلكة في الإنتاج', 'expense', @p);
+    IF NOT EXISTS (SELECT 1 FROM accounts WHERE account_code='5480')
+        INSERT INTO accounts (account_code, account_name_en, account_name_ar, account_type, parent_account_id)
+        VALUES ('5480', N'Shop Supplies Used', N'مستلزمات المحل المستهلكة', 'expense', @p);
+    IF NOT EXISTS (SELECT 1 FROM accounts WHERE account_code='5490')
+        INSERT INTO accounts (account_code, account_name_en, account_name_ar, account_type, parent_account_id)
+        VALUES ('5490', N'Samples & Tasting', N'عينات وتذوق', 'expense', @p);
+END
+GO
+
+-- user rights for the new Consumable entry: the same as each role has for
+-- Stock Adjustment (the administrator can change them in Users & Rights)
+IF OBJECT_ID('permissions','U') IS NOT NULL AND OBJECT_ID('role_permissions','U') IS NOT NULL
+BEGIN
+    INSERT INTO permissions (module_key, action_key)
+    SELECT 'consumption', a.action_key FROM (SELECT DISTINCT action_key FROM permissions) a
+    WHERE NOT EXISTS (SELECT 1 FROM permissions p WHERE p.module_key='consumption'
+                      AND p.action_key=a.action_key);
+    INSERT INTO role_permissions (role_id, permission_id, allowed)
+    SELECT rp.role_id, pc.permission_id, rp.allowed
+    FROM role_permissions rp
+    JOIN permissions ps ON ps.permission_id=rp.permission_id AND ps.module_key='stock_adjustment'
+    JOIN permissions pc ON pc.module_key='consumption' AND pc.action_key=ps.action_key
+    WHERE NOT EXISTS (SELECT 1 FROM role_permissions x WHERE x.role_id=rp.role_id
+                      AND x.permission_id=pc.permission_id);
+END
+GO
+
+IF OBJECT_ID('consumption_entries','U') IS NOT NULL AND COL_LENGTH('consumption_entries','branch_id') IS NULL
+    EXEC(N'ALTER TABLE consumption_entries ADD branch_id INT NULL, counter_id INT NULL');
 GO

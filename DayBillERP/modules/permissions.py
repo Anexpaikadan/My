@@ -41,6 +41,7 @@ MODULES = [
     ("purchase_order",    "Purchase Order"),
     ("inventory",         "Inventory"),
     ("stock_adjustment",  "Stock Adjustment"),
+    ("consumption",       "Consumable Entry (own use)"),
     ("accounts",          "Accounts"),
     ("receipt",           "Receipt"),
     ("payment",           "Payment"),
@@ -444,7 +445,7 @@ def _legacy_can(module_key, action_key):
     always = {"dashboard", "sales", "sales_return", "receipt"}
     master_mods = {"products", "categories", "customers", "suppliers",
                    "purchase", "purchase_return", "inventory",
-                   "stock_adjustment", "payment"}
+                   "stock_adjustment", "consumption", "payment"}
     report_mods = {"accounts", "journal", "reports"}
     if action_key == "edit" and not can_edit:
         if module_key not in always:

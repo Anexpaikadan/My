@@ -56,6 +56,9 @@ CONNECTORS = [
     ("expense", dict(label="Expense / Asset purchase", perm="accounts",
                      window="Expense window", doc=None,
                      sources=("expense",), new=True)),
+    ("consumption", dict(label="Consumable Entry (own use)", perm="consumption",
+                         window="Consumable Entry window", doc="consumption",
+                         sources=("consumption",), new=True)),
     ("journal", dict(label="Journal / Voucher", perm="journal",
                      window="Journal Entry window", doc=None,
                      sources=("manual", "adjustment", "transfer", "journal",
@@ -170,7 +173,7 @@ def resolve(journal_id):
     elif key == "expense":
         if not (sid and _exists("SELECT expense_id FROM expenses WHERE expense_id=?", sid)):
             key = "journal"
-    elif key in ("sales", "sales_return", "purchase", "purchase_return"):
+    elif key in ("sales", "sales_return", "purchase", "purchase_return", "consumption"):
         if not sid:
             key = "system"
     elif key is None:
@@ -198,6 +201,8 @@ def _txn_for_form(key, form):
         doc_id = getattr(form, "payment_id", None)
     elif key == "expense":
         doc_id = getattr(form, "expense_id", None)
+    elif key == "consumption":
+        doc_id = getattr(form, "entry_id", None)
     elif key == "journal":
         jid = getattr(form, "journal_id", None)
         return dict(key=key, journal_id=jid, doc_id=None, number="",
@@ -300,6 +305,9 @@ def _open_view(parent, txn, on_change):
     elif key in ("sales_return", "purchase_return"):
         from ui.returns import ReturnForm
         f = ReturnForm(parent, mode=key.split("_")[0], return_id=did, view_only=True)
+    elif key == "consumption":
+        from ui.consumption import ConsumptionForm
+        f = ConsumptionForm(parent, entry_id=did, on_save=on_change, view_only=True)
     else:
         # these windows have no read-only layout → show the voucher lines
         return VoucherWindow(parent, txn, on_change)
@@ -344,6 +352,9 @@ def edit_txn(parent, txn, on_change=None):
     elif key == "expense":
         from ui.expenses import ExpenseForm
         f = ExpenseForm(parent, on_saved=on_change, expense_id=did)
+    elif key == "consumption":
+        from ui.consumption import ConsumptionForm
+        f = ConsumptionForm(parent, entry_id=did, on_save=on_change)
     elif key == "journal":
         from ui.accounting import JournalForm
         f = JournalForm(parent, on_save=on_change, journal_id=txn.get("journal_id"))
@@ -384,6 +395,9 @@ def new_txn(parent, key, on_change=None):
     elif key == "expense":
         from ui.expenses import ExpenseForm
         f = ExpenseForm(parent, on_saved=on_change)
+    elif key == "consumption":
+        from ui.consumption import ConsumptionForm
+        f = ConsumptionForm(parent, on_save=on_change)
     elif key == "journal":
         from ui.accounting import JournalForm
         f = JournalForm(parent, on_save=on_change)
@@ -640,6 +654,7 @@ class TxnBar:
             btn("➕ New", self.new, CONN[key]["new"] and r["add"], need="add")
         if voucher_btn:
             btn("📄 Voucher", self.voucher, r["view"], need="view")
+        self._bind_keys(r)
         if not in_band:
             tk.Label(inner, text="🔗 " + CONN[key]["label"], font=("Segoe UI", 9, "bold"),
                      bg=inner["bg"], fg=C["text_primary"]).pack(side="left")
@@ -648,6 +663,45 @@ class TxnBar:
                          for a in ("view", "add", "edit", "delete")),
                      font=("Segoe UI", 8), bg=inner["bg"],
                      fg=C["text_secondary"]).pack(side="left")
+
+    def _bind_keys(self, r):
+        """v6.9.3: the same keys in every transaction window (ui/shortcuts.TXN).
+        A key the window already uses for itself is left alone."""
+        win, key, form = self.win, self.key, self.form
+
+        def bind(seqs, fn, ok=True):
+            if not ok:
+                return
+            for seq in seqs:
+                try:
+                    if not win.bind(seq):
+                        win.bind(seq, lambda e, f=fn: (f(), "break")[1])
+                except Exception:
+                    pass
+        editable = (form is not None and hasattr(form, "_save") and not self.view_only
+                    and key not in ("opening", "system"))
+        bind(("<Control-s>", "<Control-S>"), self.save, editable and (r["edit"] or r["add"]))
+        bind(("<Control-n>",), self.new, CONN[key]["new"] and r["add"])
+        bind(("<Control-e>",), self.edit, self.view_only and r["edit"])
+        bind(("<Control-Delete>",), self.delete,
+             key not in ("opening", "system") and r["delete"] and not self.view_only)
+        bind(("<Control-j>",), self.voucher, r["view"])
+
+        def help_():
+            from ui import shortcuts
+            shortcuts.show(win, "transaction")
+        bind(("<F1>",), help_)
+
+        def close():
+            try:
+                h = win.protocol("WM_DELETE_WINDOW")
+                if h:
+                    win.tk.call(h)
+                    return
+            except Exception:
+                pass
+            win.destroy()
+        bind(("<Escape>",), close)
 
     # current transaction (the form may have saved a new one meanwhile)
     def txn(self):

@@ -394,19 +394,31 @@ class VouchersView:
 # New Voucher dialog (Receipt / Payment / Journal)
 # ============================================================
 class VoucherForm:
-    def __init__(self, parent, on_saved=None):
+    """vtype 'receipt' | 'payment' | 'journal' and mode 'cash' | 'bank' pre-set
+    the voucher (v6.9.3: ⭐ Cash Receipt (CR) / Cash Payment (CP) favourites)."""
+
+    TITLES = {("receipt", "cash"): "Cash Receipt (CR)", ("receipt", "bank"): "Bank Receipt (BR)",
+              ("payment", "cash"): "Cash Payment (CP)", ("payment", "bank"): "Bank Payment (BP)",
+              ("journal", "cash"): "Journal Voucher (JV)", ("journal", "bank"): "Journal Voucher (JV)"}
+
+    def __init__(self, parent, on_saved=None, vtype=None, mode=None):
         C = cfg.theme()
         self.C = C
         self.on_saved = on_saved
         self.win = tk.Toplevel(parent)
         self.win.bind("<Escape>", lambda e: self.win.destroy())
-        self.win.title("New Voucher")
+        self.win.title(self.TITLES.get((vtype, mode or "cash"), "New Voucher") if vtype
+                       else "New Voucher")
         self.win.configure(bg=C["card_bg"])
         self.win.geometry("480x560")
         self.win.transient(parent.winfo_toplevel())
         self.win.grab_set()
         self._load_data()
         self._build(C)
+        if vtype in ("receipt", "payment", "journal"):
+            self.vtype.set(vtype)
+        if mode in ("cash", "bank"):
+            self.mode_var.set(mode)
         self._vtype_ui()
 
     def _load_data(self):

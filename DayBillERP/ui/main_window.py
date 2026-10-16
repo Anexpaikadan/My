@@ -245,7 +245,7 @@ class MainWindow:
             "audit_log": "admin", "print_settings": "admin", "day_close": "reports", "setup": "dashboard", "integrations": "admin", "expenses": "reports", "aging": "reports", "printer_mgmt": "admin", "account_defaults": "admin", "opening": "admin", "fin_reports": "reports", "cust_statement": "reports", "supp_statement": "reports", "report_center": "reports", "insights": "reports", "branches": "admin", "quotations": "always", "purchase_orders": "master", "price_labels": "master", "offers": "master", "label_print": "master", "mobile": "master",
             # v6.0
             "price_lists": "master", "stock_transfers": "master", "expiry": "master",
-            "stock_count": "master", "price_updates": "master",
+            "stock_count": "master", "price_updates": "master", "consumption": "master",
             "debit_notes": "always", "bank_rec": "reports", "year_end": "admin",
             # Reports
             "reports": "reports", "vat_report": "reports", "zatca": "reports",
@@ -283,6 +283,7 @@ class MainWindow:
         # v6.0
         "price_lists": ("products", "edit"), "stock_transfers": ("inventory", "view"),
         "stock_count": ("inventory", "view"), "price_updates": ("products", "edit"),
+        "consumption": ("consumption", "view"),
         "expiry": ("inventory", "view"), "debit_notes": ("sales", "view"),
         "bank_rec": ("accounts", "view"), "year_end": ("accounts", "edit"),
         "users": ("users", "view"), "audit_log": ("audit_log", "view"),
@@ -741,6 +742,10 @@ class MainWindow:
 
         # ── Help ──────────────────────────────────────────────
         m_help = tk.Menu(menubar, tearoff=0)
+        from ui import shortcuts as _scm
+        m_help.add_command(label="⌨  Keyboard Shortcuts", accelerator="F1",
+                           command=lambda: _scm.show(self.root))
+        m_help.add_separator()
         additem(m_help, "Setup Checklist", "setup")
         m_help.add_command(label="Run Setup Wizard", command=self._run_wizard)
         m_help.add_separator()
@@ -758,9 +763,14 @@ class MainWindow:
         # Only when the key isn't already used by the window/screen that
         # has focus (Sales, POS, Product form… have their own F-keys), and
         # Ctrl shortcuts never fire while typing in a field.
-        def hot(seq, fn, typing_safe=False):
+        def hot(seq, fn, typing_safe=False, shift=False):
             def handler(e):
                 try:
+                    if shift and not (e.state & 0x0001):
+                        return            # Ctrl+R vs Ctrl+Shift+R (Caps Lock safe)
+                    if not shift and seq.startswith("<Control-") and (e.state & 0x0001) \
+                            and seq[-2:-1].isalpha():
+                        return
                     w = e.widget if isinstance(e.widget, tk.Misc) else None
                     if w is None or w.winfo_toplevel() is not self.root:
                         return            # another window (POS, forms, dialogs)
@@ -778,16 +788,75 @@ class MainWindow:
                 return "break"
             self.root.bind_all(seq, handler)
         try:
+            # v6.9.3: the whole list is in ui/shortcuts.py (Help ▸ ⌨ Keyboard Shortcuts, F1)
+            from ui import shortcuts as _sc
+            hot("<F1>", lambda: _sc.show(self.root))
             hot("<F2>", lambda: self._menu_open("sales"))
-            hot("<F3>", lambda: self._menu_open("sales"))
+            hot("<F3>", lambda: self._menu_open("pos"))
             hot("<F4>", lambda: self._menu_open("purchases"))
+            hot("<F6>", lambda: self._run_favourite("cash_receipt"))
+            hot("<F7>", lambda: self._run_favourite("cash_payment"))
             hot("<F8>", lambda: self._menu_open("products"))
+            hot("<F9>", lambda: self._menu_open("ledger"))
+            hot("<F11>", lambda: self._menu_open("inventory"))
+            hot("<F12>", lambda: self._menu_open("report_center"))
+            hot("<Control-n>", self._new_in_screen, typing_safe=True)
+            hot("<Control-l>", lambda: self._menu_open("ledger"), typing_safe=True)
+            hot("<Control-i>", lambda: self._menu_open("inventory"), typing_safe=True)
+            hot("<Control-e>", lambda: self._menu_open("expenses"), typing_safe=True)
+            hot("<Control-r>", lambda: self._menu_open("sales_return"), typing_safe=True)
+            hot("<Control-R>", lambda: self._menu_open("purchase_return"), typing_safe=True,
+                shift=True)
+            hot("<Control-N>", lambda: self._run_favourite("add_product"), typing_safe=True,
+                shift=True)
+            hot("<Control-C>", lambda: self._run_favourite("new_consumption"), typing_safe=True,
+                shift=True)
+            hot("<Control-J>", lambda: self._run_favourite("journal_new"), typing_safe=True,
+                shift=True)
             hot("<Control-p>", lambda: self._menu_open("payments"), typing_safe=True)
             hot("<Control-j>", lambda: self._menu_open("vouchers"), typing_safe=True)
             hot("<Control-z>", lambda: self._menu_open("day_close"), typing_safe=True)
             hot("<F5>", lambda: self._refresh_active())
         except Exception:
             pass
+
+    # Ctrl+N in the main window: a new record of the screen that is open
+    _NEW_FOR = {"sales": "sales", "purchases": "purchase", "sales_return": "sales_return",
+                "purchase_return": "purchase_return", "expenses": "expense",
+                "consumption": "consumption", "vouchers": "journal", "accounting": "journal",
+                "payments": "receipt"}
+
+    def _new_in_screen(self):
+        ch = getattr(getattr(self, "mdi", None), "active", None)
+        key = getattr(ch, "key", None) or getattr(self, "current_module", None)
+        parent = getattr(self, "content", None) or self.root
+        from modules import permissions as _pm
+        try:
+            if key in self._NEW_FOR:
+                from ui import txn_connector as tc
+                tc.new_txn(parent, self._NEW_FOR[key], self._refresh_active)
+            elif key == "products":
+                self._run_favourite("add_product")
+            elif key == "customers":
+                if _pm.allowed("customers", "add"):
+                    from ui.customers import CustomerForm
+                    CustomerForm(parent, on_save=self._refresh_active)
+            elif key == "suppliers":
+                if _pm.allowed("suppliers", "add"):
+                    from ui.suppliers import SupplierForm
+                    SupplierForm(parent, on_save=self._refresh_active)
+            elif key in ("quotations", "purchase_orders"):
+                mod = "quotation" if key == "quotations" else "purchase_order"
+                if _pm.allowed(mod, "add"):
+                    from ui.quotes import DocForm
+                    DocForm(parent, "quotation" if key == "quotations" else "purchase_order",
+                            on_save=self._refresh_active)
+            else:
+                from ui import shortcuts as _sc
+                _sc.show(self.root, "Everywhere")
+        except Exception as e:
+            from tkinter import messagebox
+            messagebox.showerror("New", str(e)[:200])
 
     def _menu_open(self, module_key):
         if self._can_see(module_key):
@@ -927,6 +996,7 @@ class MainWindow:
                 ("expiry", "⏰", "Batches & Expiry"),
                 ("label_print", "🖨", "Print Barcode Labels"),
                 ("stock_count", "🧮", "nav.stock_count"),
+                ("consumption", "🍞", "Consumable Entry"),
                 ("mobile", "📱", "Mobile, PDT & Van"),
                 ("barcode_designer", "🏷", "nav.barcode_designer"),
                 ("price_updates", "📈", "nav.price_updates"),
@@ -1097,6 +1167,8 @@ class MainWindow:
                 if group_name:
                     self._nav_key_group[key] = group_name
             self.nav_frame = top_frame
+            if not group_name:                 # v6.9.3: ⭐ Favourites under Home
+                self._build_favourites(top_frame)
         # open the heading used last time (or none) — the rest stay folded
         self._nav_open = None
         last = str(cfg.get("nav_open_group", "") or "")
@@ -1121,6 +1193,160 @@ class MainWindow:
                 _bind_wheel(c)
         _bind_wheel(nav_canvas)
         self._bind_nav_wheel = _bind_wheel
+
+    # ── ⭐ Favourites (v6.9.3) ────────────────────────────────
+    # A block at the top of the menu, one click each. Items are menu pages
+    # (sales, ledger …) or direct actions (a new Cash Payment voucher …).
+    # Right-click any menu item ▸ Add to Favourites; right-click a favourite
+    # ▸ Remove / Move up / Move down / Reset. Saved per user on this PC.
+    FAV_ACTIONS = {
+        "cash_payment": ("💸", "Cash Payment (CP)", ("payment", "add")),
+        "cash_receipt": ("💰", "Cash Receipt (CR)", ("receipt", "add")),
+        "bank_payment": ("🏦", "Bank Payment (BP)", ("payment", "add")),
+        "bank_receipt": ("🏦", "Bank Receipt (BR)", ("receipt", "add")),
+        "journal_new": ("🧾", "Journal Voucher (JV)", ("journal", "add")),
+        "add_product": ("➕", "Add Product", ("products", "add")),
+        "new_sale": ("🧾", "New Sales Invoice", ("sales", "add")),
+        "new_purchase": ("🛒", "New Purchase", ("purchase", "add")),
+        "new_consumption": ("🍞", "New Consumable Entry", ("consumption", "add")),
+    }
+    FAV_DEFAULT = ["cash_payment", "cash_receipt", "ledger", "inventory", "sales", "pos",
+                   "add_product", "sales_return", "purchases", "purchase_return"]
+
+    def _fav_setting(self):
+        uid = (self.current_user or {}).get("user_id") or "0"
+        return "nav_favorites_%s" % uid
+
+    def _favourites(self):
+        v = cfg.get(self._fav_setting())
+        if isinstance(v, list):
+            return [str(x) for x in v]
+        return list(self.FAV_DEFAULT)
+
+    def _fav_store(self, keys):
+        cfg.set(self._fav_setting(), list(dict.fromkeys(keys)))
+        try:
+            cfg.save_settings()
+        except Exception:
+            pass
+        self._rebuild_sidebar_soon()
+
+    def _rebuild_sidebar_soon(self):
+        def go():
+            try:
+                for w in self.sidebar.winfo_children():
+                    w.destroy()
+                self.nav_buttons = {}
+                self._build_sidebar()
+                if getattr(self, "current_module", None):
+                    self._paint_nav(self.current_module, "active")
+            except Exception:
+                pass
+        self.root.after(10, go)
+
+    def _fav_info(self, key):
+        """(icon, label) of a favourite, or None when it is unknown."""
+        if key in self.FAV_ACTIONS:
+            return self.FAV_ACTIONS[key][:2]
+        for _g, items in self._nav_def():
+            for k, icon, lk in items:
+                if k == key:
+                    return icon, (t(lk) if str(lk).startswith("nav.") else lk)
+        return None
+
+    def _fav_allowed(self, key):
+        if key in self.FAV_ACTIONS:
+            mod, act = self.FAV_ACTIONS[key][2]
+            try:
+                from modules import permissions as _pm
+                return _pm.can(mod, act)
+            except Exception:
+                return False
+        return self._can_see(key)
+
+    def _build_favourites(self, parent):
+        from ui.zoom import px
+        C = cfg.theme()
+        SB = C["sidebar_bg"]
+        items = [k for k in self._favourites() if self._fav_info(k) and self._fav_allowed(k)]
+        if not items:
+            return
+        rtl = is_rtl()
+        hdr = tk.Frame(parent, bg=SB)
+        hdr.pack(fill="x", pady=(px(3), 0), padx=px(10))
+        tk.Label(hdr, text="⭐  FAVOURITES", font=("Segoe UI", 8, "bold"), bg=SB,
+                 fg=C.get("warning", "#F5B700"), anchor="e" if rtl else "w").pack(
+                     fill="x", padx=px(6), pady=px(4))
+        hdr.bind("<Button-3>", lambda e: self._fav_menu(e, None))
+        body = tk.Frame(parent, bg=SB)
+        body.pack(fill="x")
+        saved = self.nav_frame
+        self.nav_frame = body
+        for k in items:
+            icon, label = self._fav_info(k)
+            self._nav_button("fav:" + k, icon, label)
+        self.nav_frame = saved
+        tk.Frame(parent, bg=C.get("sidebar_hover", "#2A3352"), height=1).pack(
+            fill="x", padx=px(14), pady=(px(4), px(2)))
+
+    def _run_favourite(self, key):
+        if not self._fav_allowed(key):
+            from tkinter import messagebox
+            messagebox.showinfo("Permission", "You don't have permission for this.")
+            return
+        if key not in self.FAV_ACTIONS:
+            self._load_module(key)
+            return
+        parent = getattr(self, "content", None) or self.root
+        try:
+            if key in ("cash_payment", "cash_receipt", "bank_payment", "bank_receipt", "journal_new"):
+                from ui.vouchers import VoucherForm
+                vt = {"cash_payment": ("payment", "cash"), "cash_receipt": ("receipt", "cash"),
+                      "bank_payment": ("payment", "bank"), "bank_receipt": ("receipt", "bank"),
+                      "journal_new": ("journal", "cash")}[key]
+                VoucherForm(parent, on_saved=self._refresh_active, vtype=vt[0], mode=vt[1])
+            elif key == "add_product":
+                from ui.products import ProductForm
+                ProductForm(parent, on_save=self._refresh_active)
+            elif key in ("new_sale", "new_purchase", "new_consumption"):
+                from ui import txn_connector as tc
+                tc.new_txn(parent, {"new_sale": "sales", "new_purchase": "purchase",
+                                    "new_consumption": "consumption"}[key], self._refresh_active)
+        except Exception as e:
+            from tkinter import messagebox
+            messagebox.showerror("Favourites", str(e)[:200])
+
+    def _fav_menu(self, event, key):
+        favs = self._favourites()
+        real = key[4:] if key and key.startswith("fav:") else key
+        m = tk.Menu(self.root, tearoff=0, font=("Segoe UI", 10))
+        if real and real in favs:
+            i = favs.index(real)
+            m.add_command(label="☆  Remove from Favourites",
+                          command=lambda: self._fav_store([k for k in favs if k != real]))
+            if i > 0:
+                m.add_command(label="▲  Move up", command=lambda: self._fav_store(
+                    favs[:i - 1] + [real, favs[i - 1]] + favs[i + 1:]))
+            if i < len(favs) - 1:
+                m.add_command(label="▼  Move down", command=lambda: self._fav_store(
+                    favs[:i] + [favs[i + 1], real] + favs[i + 2:]))
+        elif real and self._fav_info(real):
+            m.add_command(label="⭐  Add to Favourites",
+                          command=lambda: self._fav_store(favs + [real]))
+        add = [k for k in self.FAV_ACTIONS if k not in favs]
+        if add:
+            sub = tk.Menu(m, tearoff=0, font=("Segoe UI", 10))
+            for k in add:
+                icon, label, _p = self.FAV_ACTIONS[k]
+                sub.add_command(label="%s  %s" % (icon, label),
+                                command=lambda k=k: self._fav_store(favs + [k]))
+            m.add_cascade(label="⭐  Add a quick action", menu=sub)
+        m.add_separator()
+        m.add_command(label="↺  Reset Favourites", command=lambda: self._fav_store(self.FAV_DEFAULT))
+        try:
+            m.tk_popup(event.x_root, event.y_root)
+        finally:
+            m.grab_release()
 
     # ── folded sidebar: an icon rail (☰ in the top bar folds / opens it) ──
     GROUP_ICONS = {"Sales": "🧾", "Purchase": "🛒", "Inventory": "📦", "Accounts": "📒",
@@ -1157,6 +1383,9 @@ class MainWindow:
         self._rail_on = None
         item("🔍", "Search the menu", lambda w: (self._toggle_sidebar(),
                                                  self.root.after(80, lambda: self._nav_entry.focus_set())))
+        favs = [k for k in self._favourites() if self._fav_info(k) and self._fav_allowed(k)]
+        if favs:
+            item("⭐", "Favourites", lambda w: self._rail_favs(w, favs))
         for group, items in self._nav_def():
             visible = [it for it in items if self._can_see(it[0])]
             if not visible:
@@ -1182,6 +1411,18 @@ class MainWindow:
         b.bind("<Button-1>", lambda e: self._logout())
         self._rail_tip(b, t("nav.logout"))
         self._rail_paint()
+
+    def _rail_favs(self, w, favs):
+        m = tk.Menu(self.root, tearoff=0, font=("Segoe UI", 10))
+        m.add_command(label="⭐ FAVOURITES", state="disabled")
+        m.add_separator()
+        for k in favs:
+            icon, label = self._fav_info(k)
+            m.add_command(label="%s  %s" % (icon, label), command=lambda k=k: self._run_favourite(k))
+        try:
+            m.tk_popup(w.winfo_rootx() + w.winfo_width(), w.winfo_rooty())
+        finally:
+            m.grab_release()
 
     def _rail_menu(self, w, group, items):
         m = tk.Menu(self.root, tearoff=0, font=("Segoe UI", 10))
@@ -1636,6 +1877,8 @@ class MainWindow:
         def on_click(e=None, k=key):
             if k == "logout":
                 self._logout()
+            elif k.startswith("fav:"):
+                self._run_favourite(k[4:])
             else:
                 self._load_module(k)
 
@@ -1643,6 +1886,8 @@ class MainWindow:
             widget.bind("<Enter>", on_hover)
             widget.bind("<Leave>", on_leave)
             widget.bind("<Button-1>", on_click)
+            if not is_logout:              # ⭐ add to / remove from Favourites
+                widget.bind("<Button-3>", lambda e, k=key: self._fav_menu(e, k))
 
         self.nav_buttons[key] = {
             "frame": btn, "indicator": indicator,
@@ -2310,6 +2555,7 @@ class MainWindow:
             "setup":      "Setup Checklist",
             "integrations": "Integrations",
             "expenses":   "Expenses",
+            "consumption": "Consumable Entry",
             "aging":      "Outstanding / Aging",
             "printer_mgmt": "Printer Management",
             "account_defaults": "Default Accounts",
@@ -2434,6 +2680,10 @@ class MainWindow:
             elif module_key == "expenses":
                 from ui.expenses import ExpensesView
                 ExpensesView(self.content)
+
+            elif module_key == "consumption":
+                from ui.consumption import ConsumptionView
+                ConsumptionView(self.content)
 
             elif module_key == "aging":
                 from ui.aging import AgingView

@@ -30,7 +30,8 @@ except Exception:                                  # pragma: no cover
     cfg = None
 
 LABEL = {"sales": "Sales invoice", "purchase": "Purchase invoice",
-         "sales_return": "Sales return", "purchase_return": "Purchase return"}
+         "sales_return": "Sales return", "purchase_return": "Purchase return",
+         "consumption": "Consumable entry"}
 
 
 def _row(kind, doc_id):

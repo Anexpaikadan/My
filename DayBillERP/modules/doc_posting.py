@@ -60,12 +60,20 @@ KINDS = {
                             date="return_date", number="return_number",
                             ref="purchase_return", sign=-1, txn="return_out",
                             journals=("purchase_return", "purchase_return_cost")),
+    # v6.9.3: Consumable entry — stock the shop uses itself (staff food,
+    # bakery / kitchen production, shop supplies): stock out at cost,
+    # Dr the purpose's expense account, Cr Inventory
+    "consumption": dict(table="consumption_entries", id="entry_id",
+                        lines="consumption_lines", status="entry_status",
+                        date="entry_date", number="entry_number",
+                        ref="consumption", sign=-1, txn="consumption",
+                        journals=("consumption",)),
 }
 
 # journal source_type -> document kind (used by doc_actions on delete)
 SOURCE_TO_KIND = {"sales": "sales", "pos": "sales", "purchase": "purchase",
                   "sales_return": "sales_return",
-                  "purchase_return": "purchase_return"}
+                  "purchase_return": "purchase_return", "consumption": "consumption"}
 
 last_warning = ""
 
@@ -426,6 +434,38 @@ def _post_return_price_difference(doc_id, h, lines, cost):
         return None
 
 
+def _post_consumption(doc_id, h, cost, warn):
+    """Consumable entry: Dr the purpose's expense, Cr Inventory — at the
+    cost the stock really left with (so Inventory = stock × cost)."""
+    from modules import posting
+    cost = round(_f(cost), 2)
+    try:
+        db.execute("UPDATE consumption_entries SET total_cost=? WHERE entry_id=?",
+                   (cost, int(doc_id)))
+    except Exception:
+        pass
+    if not posting.enabled() or cost <= 0:
+        return None
+    exp = h.get("expense_account_id")
+    if not exp:
+        try:
+            from modules import consumption as _cn
+            exp = _cn.account_for(h.get("purpose"))
+        except Exception:
+            exp = None
+    from modules import account_defaults as ad
+    inv = ad.inventory()
+    num = str(h.get("entry_number") or "")
+    what = str(h.get("unit_name") or h.get("purpose") or "own use")
+    jid = posting.post_journal(_iso(h.get("entry_date")), "Consumable %s · %s" % (num, what),
+                               [(exp, cost, 0, "Used: %s" % what),
+                                (inv, 0, cost, "Stock used by the shop")],
+                               "consumption", int(doc_id), reference=num)
+    if not jid:
+        warn.append("journal not posted: %s" % (posting.last_error or "unknown reason"))
+    return jid
+
+
 def _post_doc(kind, doc_id, h, tenders):
     from modules import posting
     k = KINDS[kind]
@@ -559,7 +599,9 @@ def _sync(kind, doc_id, tenders):
         cost = 0.0
         warn.append("stock not updated: %s" % str(e)[:120])
     from modules import posting
-    if posting.enabled():
+    if kind == "consumption":
+        _post_consumption(doc_id, h, cost, warn)
+    elif posting.enabled():
         jid = _post_doc(kind, doc_id, h, tenders)
         if not jid and (_f(h.get("total_amount")) or _f(h.get("taxable_amount"))):
             warn.append("journal not posted: %s" % (posting.last_error or "unknown reason"))

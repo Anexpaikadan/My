@@ -61,7 +61,7 @@ BY_SOURCE = {
     "purchase": "PI", "purchase_return": "PR", "purchase_return_cost": "PR",
     "expense": "EX", "transfer": "CT",
     "manual": "JV", "journal": "JV", "voucher": "JV", "blank": "JV",
-    "opening": "OB", "opening_accounts": "OB", "opening_stock": "OB", "adjustment": "OB",
+    "opening": "OB", "opening_accounts": "OB", "opening_stock": "OB", "adjustment": "JV",
     "stock_adjust": "ADJ", "cycle_count": "ADJ", "consumption": "CE",
     "payroll": "PY", "salary_payment": "SAL", "gosi_payment": "GOSI", "eos": "EOS",
     "employee_loan": "LN", "day_close": "DC", "shift": "SH",
@@ -85,20 +85,26 @@ def _cash_ids():
             ids.add(a)
     except Exception:
         pass
-    try:
-        for r in db.fetchall("SELECT cash_account_id, petty_cash_account_id FROM branches") or []:
-            for k in ("cash_account_id", "petty_cash_account_id"):
-                if r.get(k):
-                    ids.add(r[k])
+    try:                                  # branch-wise cash accounts (when set up)
+        if db.execute_scalar("SELECT OBJECT_ID('branch_cash_accounts','U')") is not None:
+            for r in db.fetchall("SELECT cash_account_id, petty_cash_account_id "
+                                 "FROM branch_cash_accounts") or []:
+                for k in ("cash_account_id", "petty_cash_account_id"):
+                    if r.get(k):
+                        ids.add(r[k])
     except Exception:
         pass
     return ids
 
 
-def code_for(source_type, account_ids=None, source_id=None):
+def code_for(source_type, account_ids=None, source_id=None, reference=None):
     """The voucher-type code of a journal about to be posted (or already
     posted: pass its line accounts)."""
     st = str(source_type or "").strip().lower()
+    if st == "expense" and not source_id:
+        st = "payment"            # an expense paid from a voucher = Cash / Bank Payment
+    if st == "adjustment" and str(reference or "").upper().startswith("OPEN"):
+        return "OB"
     if st in MONEY_IN or st in MONEY_OUT:
         accs = set(a for a in (account_ids or []) if a)
         cash = bool(accs & _cash_ids()) if accs else True

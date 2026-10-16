@@ -25,6 +25,7 @@ STAMPED = {
     "sales_invoices": "invoice_id", "sales_returns": "return_id",
     "purchase_invoices": "purchase_id", "purchase_returns": "return_id",
     "payments": "payment_id", "expenses": "expense_id",
+    "consumption_entries": "entry_id",
 }
 
 
