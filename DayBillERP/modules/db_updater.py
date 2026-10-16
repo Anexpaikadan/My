@@ -10,7 +10,7 @@ import re
 try:                                    # one version for the whole app (config/version.py)
     from config.version import VERSION as APP_VERSION
 except Exception:
-    APP_VERSION = "6.9.0"
+    APP_VERSION = "6.9.1"
 
 # Ordered list of database patches shipped with the app.
 # (filename relative to project root, human description, version)
@@ -35,6 +35,15 @@ PATCHES = [
 
 # What changed in each version (shown in the Updates panel)
 CHANGELOG = [
+    ("6.9.1", ["↩ A return put on the customer's / supplier's account now comes off the bill "
+               "it was made from: the bill shows Partial / Paid, the Receipt and Payment "
+               "windows ask only for what is still owed (older returns are linked once by "
+               "the update)",
+               "↩ Loading a bill into a return picks the Payment Type for you: credit when the "
+               "bill is still open, else money back the way it was paid",
+               "✅ Whole trading cycle checked on a real SQL Server: purchase, sale with bill "
+               "discount, returns, quotation → invoice, receipt, supplier payment, trial "
+               "balance, stock value and all 57 reports"]),
     ("6.9.0", ["📒 Account Ledger / statements: double-click a line to open its transaction; "
                "right-click Open · Edit · Delete · Voucher · New — follows each user's rights",
                "🔗 Every transaction window: New · Edit · Delete · Voucher in its one title line; "

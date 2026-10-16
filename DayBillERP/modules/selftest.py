@@ -303,6 +303,17 @@ def run(out_dir=None):
                 raise RuntimeError("a patch would switch the company database: %s" % p)
     step("Updates stay on this company's database", patches_stay_home_v690)
 
+    def returns_settle_v691():
+        from modules import allocation as A, db_migrate as M
+        if "zzz_v691_patch.sql" not in [os.path.basename(p) for p in M.patch_files()]:
+            raise RuntimeError("update zzz_v691_patch.sql is missing")
+        for fn in ("apply_return", "release_return", "return_credit"):
+            if not callable(getattr(A, fn, None)):
+                raise RuntimeError("allocation.%s is missing" % fn)
+        if "credit" in A._REFUND or "cash" not in A._REFUND:
+            raise RuntimeError("refund methods are wrong")
+    step("Returns on account settle their bill", returns_settle_v691)
+
     text = "DayBill ERP self-test  %s\n%s\n\n%s\n" % (
         datetime.now().strftime("%Y-%m-%d %H:%M"), "-" * 40, "\n".join(rows))
     text += "\nRESULT: %s\n" % ("ALL OK" if ok_all else "PROBLEMS FOUND")

@@ -378,9 +378,25 @@ class ReturnForm:
                 p = next((x for x in self._parties if x["id"] == pid), None)
                 if p:
                     self.party_combo.set(f"{p['code']} — {p['name']}")
+            # v6.9.1: a bill that is still open → the return goes on the
+            # party's account (and settles that bill); a paid bill →
+            # money back the way it was paid
+            how = ""
+            try:
+                left = float(src.get("total_amount") or 0) - float(src.get("paid_amount") or 0)
+                if str(src.get("payment_status") or "").lower() == "paid":
+                    left = 0.0
+                paid_by = str(src.get("payment_method") or "").lower()
+                pick = ("credit" if left > 0.005 else
+                        paid_by if paid_by in ("cash", "card", "bank_transfer") else "cash")
+                self.hdr["payment"].set(pick)
+                how = ("\nPayment Type: credit — the bill still has %.2f open, the return "
+                       "comes off it." % left) if pick == "credit" else ""
+            except Exception:
+                pass
             messagebox.showinfo("Loaded",
                                 f"Imported {len(lines)} line(s). Edit quantities to "
-                                f"do a partial return.")
+                                f"do a partial return.{how}")
         except Exception as e:
             messagebox.showerror("Load Error", str(e))
 

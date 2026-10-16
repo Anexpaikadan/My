@@ -469,13 +469,17 @@ def _post_doc(kind, doc_id, h, tenders):
 
 # ── public API ────────────────────────────────────────────────
 def _unlink_payments(kind, doc_id):
-    if kind in ("sales", "purchase"):
-        try:
-            from modules import allocation
+    try:
+        from modules import allocation
+        if kind in ("sales", "purchase"):
             allocation.unlink_document("receipt" if kind == "sales" else "disbursement",
                                        doc_id)
-        except Exception:
-            pass
+        elif kind in ("sales_return", "purchase_return"):
+            allocation.release_return(kind, doc_id)    # the bill owes it again
+    except TransactionLost:
+        raise
+    except Exception:
+        pass
 
 
 def remove(kind, doc_id):
@@ -557,6 +561,14 @@ def _sync(kind, doc_id, tenders):
                             % (posting.last_error or "unknown reason"))
         if kind == "purchase_return" and jid:
             _post_return_price_difference(doc_id, h, lines, cost)
+    if kind in ("sales_return", "purchase_return"):
+        try:              # on the party's account → settles the bill it came from
+            from modules import allocation
+            allocation.apply_return(kind, doc_id)
+        except TransactionLost:
+            raise
+        except Exception as e:
+            warn.append("bill balance not updated: %s" % str(e)[:120])
     last_warning = "; ".join(warn)
     return last_warning
 

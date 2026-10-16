@@ -2,6 +2,25 @@
 
 Newest first. The short guide is in the main README.md.
 
+## ↩ v6.9.1 — returns on account settle their bill
+
+- **Returns on account come off the bill**: a sales / purchase return made
+  from a bill and put on the customer's / supplier's account (Payment Type
+  *credit*) now reduces what is still open on that bill. The bill shows
+  Partial / Paid correctly, the Receipt / Payment window asks only for what is
+  still owed, and the dashboard / connector "unpaid" totals agree with the
+  ledger. Editing or deleting the return gives the bill its balance back.
+  Returns saved before this update are linked once, automatically
+  (`database/patches/zzz_v691_patch.sql`), never more than the bill still had
+  open.
+- **Payment Type picked for you**: *Load* in a return window sets *credit*
+  when the original bill is still open, otherwise money back the way the bill
+  was paid. You can still change it.
+- **Checked end to end on a real SQL Server 2022**: purchase → sale with bill
+  discount → sales / purchase return → quotation → invoice → return on account
+  → receipt → supplier payment → re-save → delete; trial balance, stock value
+  = Inventory account, all 57 reports.
+
 ## 🧹 v6.9.0 — clean final product, ledger ↔ transactions, Database Tool FROM / TO
 
 - **Ledger → transaction**: double-click any line in Account Ledger or a

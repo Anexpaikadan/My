@@ -14,6 +14,10 @@
 #   release(payment_id)                    -> undo all its links
 #   allocations(payment_id)                -> {doc_id: amount}
 #   allocated_total(kind, doc_id)          -> money settled later
+#   apply_return / release_return(kind, return_id)
+#       (v6.9.1) a return put on the party's account — not refunded —
+#       settles the bill it was made from, so that bill stops showing a
+#       balance the customer / supplier no longer owes
 # kind: "receipt" (sales invoices) | "disbursement" (purchases)
 # ============================================================
 
@@ -73,7 +77,7 @@ def allocations(payment_id):
     return out
 
 
-def allocated_total(kind, doc_id):
+def _payments_total(kind, doc_id):
     """Money settled on this document by later receipts/payments."""
     s = _spec(kind)
     try:
@@ -82,6 +86,23 @@ def allocated_total(kind, doc_id):
             f"WHERE {s['col']}=?", (doc_id,)))
     except Exception:
         return 0.0
+
+
+def return_credit(kind, doc_id):
+    """Returns put on the party's account that settle this document."""
+    table = "sales_returns" if kind == "receipt" else "purchase_returns"
+    try:
+        return _f(db.execute_scalar(
+            f"SELECT ISNULL(SUM(applied_amount),0) FROM {table} WHERE applied_bill_id=?",
+            (doc_id,)))
+    except Exception:
+        return 0.0                                     # columns not there yet
+
+
+def allocated_total(kind, doc_id):
+    """Settled on this document after it was saved: receipts / payments
+    and returns put on the party's account."""
+    return round(_payments_total(kind, doc_id) + return_credit(kind, doc_id), 2)
 
 
 def open_documents(kind, party_id, payment_id=None):
@@ -168,13 +189,85 @@ def unlink_document(kind, doc_id):
     paid it become advances on the party's account again."""
     s = _spec(kind)
     try:
-        amt = allocated_total(kind, doc_id)
+        amt = _payments_total(kind, doc_id)
         if amt:
             db.execute(f"DELETE FROM payment_allocations WHERE {s['col']}=?", (doc_id,))
-            _bump(kind, doc_id, -amt)
+        rc = return_credit(kind, doc_id)
+        if rc:
+            table = "sales_returns" if kind == "receipt" else "purchase_returns"
+            db.execute(f"UPDATE {table} SET applied_bill_id=NULL, applied_amount=0 "
+                       f"WHERE applied_bill_id=?", (doc_id,))
+        if amt or rc:
+            _bump(kind, doc_id, -(amt + rc))
         return amt
     except Exception:
         return 0.0
+
+
+# ── returns on account settle their bill (v6.9.1) ─────────────
+_REFUND = ("cash", "card", "mada", "cheque", "bank", "bank_transfer", "gateway")
+_RET = {"sales_return": dict(table="sales_returns", ref="original_invoice_no",
+                             party="customer_id", bill="receipt", default="cash"),
+        "purchase_return": dict(table="purchase_returns", ref="original_purchase_no",
+                                party="supplier_id", bill="disbursement", default="credit")}
+
+
+def release_return(kind, return_id):
+    """Give back what a return settled on its bill (before edit / delete)."""
+    r = _RET.get(kind)
+    if not r or not return_id:
+        return 0.0
+    try:
+        row = db.fetchone(f"SELECT applied_bill_id AS b, ISNULL(applied_amount,0) AS a "
+                          f"FROM {r['table']} WHERE return_id=?", (return_id,))
+    except Exception:
+        return 0.0                                     # columns not there yet
+    if not row or not row.get("b"):
+        return 0.0
+    amt = _f(row["a"])
+    if amt:
+        _bump(r["bill"], row["b"], -amt)
+    db.execute(f"UPDATE {r['table']} SET applied_bill_id=NULL, applied_amount=0 "
+               f"WHERE return_id=?", (return_id,))
+    return amt
+
+
+def apply_return(kind, return_id):
+    """A confirmed return put on the party's account (not refunded in
+    cash / card / bank) settles the bill it was made from, up to what is
+    still open on that bill. Safe to call again after an edit."""
+    r = _RET.get(kind)
+    if not r or not return_id:
+        return 0.0
+    release_return(kind, return_id)
+    h = db.fetchone(f"SELECT * FROM {r['table']} WHERE return_id=?", (return_id,))
+    if not h or "applied_bill_id" not in h:
+        return 0.0
+    if str(h.get("return_status") or "confirmed").lower() != "confirmed":
+        return 0.0
+    if (str(h.get("payment_method") or "").strip().lower() or r["default"]) in _REFUND:
+        return 0.0
+    ref = str(h.get(r["ref"]) or "").strip()
+    if not ref:
+        return 0.0
+    s = _spec(r["bill"])
+    sql = (f"SELECT TOP 1 {s['id']} AS id, ISNULL(total_amount,0) AS t, "
+           f"ISNULL(paid_amount,0) AS p FROM {s['table']} "
+           f"WHERE invoice_number=? AND invoice_status='confirmed'")
+    params = [ref]
+    if h.get(r["party"]):
+        sql += f" AND {s['party']}=?"
+        params.append(h[r["party"]])
+    bill = db.fetchone(sql + f" ORDER BY {s['id']} DESC", tuple(params))
+    if not bill:
+        return 0.0
+    amt = round(min(_f(h.get("total_amount")), _f(bill["t"]) - _f(bill["p"])), 2)
+    if amt <= 0.005:
+        return 0.0
+    _bump(r["bill"], bill["id"], amt)
+    db.execute(f"UPDATE {r['table']} SET applied_bill_id=?, applied_amount=? "
+               f"WHERE return_id=?", (bill["id"], amt, return_id))
+    return amt
 
 
 def doc_payments(kind, doc_id):
