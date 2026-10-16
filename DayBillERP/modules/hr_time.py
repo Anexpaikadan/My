@@ -322,16 +322,21 @@ def month_summary(employee_id, year, month):
     out = {"present": 0, "late": 0, "absent": 0, "leave": 0, "off": 0, "hours": 0.0,
            "unpaid_leave": 0, "days_in_month": (last - first).days + 1}
     try:
-        for r in db.fetchall("SELECT status, hours FROM attendance WHERE employee_id=? AND work_date "
+        unpaid = set()
+        for l in leaves(employee_id):
+            if l.get("paid") in (0, False) and l.get("status") != "cancelled":
+                d, e = max(_d(l["start_date"]), first), min(_d(l["end_date"]), last)
+                while d <= e:
+                    unpaid.add(d)
+                    d += timedelta(days=1)
+        out["unpaid_leave"] = len(unpaid)
+        for r in db.fetchall("SELECT status, hours, work_date FROM attendance WHERE employee_id=? AND work_date "
                              "BETWEEN ? AND ?", (int(employee_id), first.isoformat(), last.isoformat())) or []:
+            if r["status"] == "absent" and _d(r["work_date"]) in unpaid:
+                continue                           # already taken off as unpaid leave
             if r["status"] in out:
                 out[r["status"]] += 1
             out["hours"] += _f(r.get("hours"))
-        for l in leaves(employee_id):
-            if l.get("paid") in (0, False) and l.get("status") != "cancelled":
-                s, e = max(_d(l["start_date"]), first), min(_d(l["end_date"]), last)
-                if e >= s:
-                    out["unpaid_leave"] += (e - s).days + 1
     except Exception:
         pass
     out["hours"] = round(out["hours"], 2)

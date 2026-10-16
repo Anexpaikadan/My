@@ -182,7 +182,7 @@ SECTIONS = [
         F("hr_overtime_from_attendance", "Overtime hours from attendance (hours above the day + days off)", "check"),
         F("hr_leave_carry", "Unused annual leave carries on (earned from the join date; paid at the end of service)", "check"),
         F("hr_daily_hours", "Working hours a day (hourly wage = monthly ÷ 30 ÷ hours)", "number"),
-        F("hr_wage_basis", "Wage for end of service, leave pay and overtime", "choice",
+        F("hr_wage_basis", "Wage for the end-of-service award (leave pay and overtime use the actual wage)", "choice",
           [("actual", "Actual wage: basic + all allowances (law)"), ("basic_housing", "Basic + housing (contract)")]),
         F("hr_doc_alert_days", "Warn about Iqama / passport / insurance / contract expiring within (days)", "number"),
         F("hr_probation_days", "Probation for new staff (days, at most 180 — 2025 law)", "number"),

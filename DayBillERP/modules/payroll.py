@@ -111,9 +111,10 @@ def lines(run_id):
 
 
 # ── one employee's month ──────────────────────────────────────
-def _active_loan(employee_id):
+def _active_loan(employee_id, until):
     r = db.fetchone("SELECT TOP 1 loan_id, monthly_deduction, balance FROM employee_loans WHERE employee_id=? "
-                    "AND is_settled=0 AND balance > 0 ORDER BY loan_date, loan_id", (int(employee_id),))
+                    "AND is_settled=0 AND balance > 0 AND loan_date <= ? ORDER BY loan_date, loan_id",
+                    (int(employee_id), until.isoformat()))
     return dict(r) if r else None
 
 
@@ -191,12 +192,21 @@ class RunExists(Exception):
     pass
 
 
+def _year_open(y, m):
+    """A month in a closed financial year is never made, changed or deleted."""
+    from modules import financial_year as fy
+    msg = fy.lock_message(month_range(y, m)[1].isoformat())
+    if msg:
+        raise ValueError(msg)
+
+
 def generate(m, y, replace=False):
     """Make the payroll of a month → (run_id, summary text).
     replace=True: a draft month is made again (loans given back, old books
     entry removed first). Approved / paid months must be reopened first."""
     m, y = int(m), int(y)
     first, last = month_range(y, m)
+    _year_open(y, m)
     old = run_of(m, y)
     if old:
         if (old.get("status") or "draft") != "draft":
@@ -214,7 +224,7 @@ def generate(m, y, replace=False):
                    "VALUES (?,?,?,?,?)", (m, y, label, "draft", _user()))
         run_id = db.execute_scalar("SELECT run_id FROM payroll_runs WHERE run_month=? AND run_year=?", (m, y))
         for e in emps:
-            loan = _active_loan(e["employee_id"])
+            loan = _active_loan(e["employee_id"], last)
             ded = min(_f(loan["monthly_deduction"]), _f(loan["balance"])) if loan else 0.0
             ps = compute(e, y, m, loan_deduction=ded)
             _insert_line(run_id, e, ps, loan["loan_id"] if loan else None)
@@ -259,6 +269,7 @@ def delete(run_id):
         return
     if (r.get("status") or "draft") != "draft":
         raise ValueError("Reopen the month first.")
+    _year_open(r["run_year"], r["run_month"])
     with db.transaction():
         _remove(run_id)
     _audit("delete", run_id, "payroll %s deleted" % r.get("run_label"))
@@ -316,8 +327,11 @@ def _post(run_id):
               (_acc("2320"), 0, t["loans"], "Loan instalments taken back"),
               (sal, 0, off, "Absent / unpaid / sick days and other deductions")]
     _, last = month_range(run["run_year"], run["run_month"])
-    return posting.post_journal(last.isoformat(), "Payroll %s" % run["run_label"], lines_, "payroll", run_id,
-                                reference=run["run_label"])
+    jid = posting.post_journal(last.isoformat(), "Payroll %s" % run["run_label"], lines_, "payroll", run_id,
+                               reference=run["run_label"])
+    if not jid:
+        raise ValueError("Payroll not saved — its journal could not be posted: %s" % posting.last_error)
+    return jid
 
 
 def edit_line(payslip_id, overtime_hours=None, bonus=None, other_deduction=None, note=None):
@@ -329,6 +343,7 @@ def edit_line(payslip_id, overtime_hours=None, bonus=None, other_deduction=None,
     run = run_by_id(p["run_id"])
     if (run.get("status") or "draft") != "draft":
         raise ValueError("%s is %s — press ↩ Reopen to change it." % (run["run_label"], run["status"]))
+    _year_open(run["run_year"], run["run_month"])
     e = db.fetchone("SELECT * FROM employees WHERE employee_id=?", (p["employee_id"],))
     e = dict(e)
     ot = _f(p.get("overtime_hours")) if overtime_hours is None else max(0.0, _f(overtime_hours))
@@ -383,6 +398,8 @@ def pay_gosi(run_id, method="bank", on=None):
     r = run_by_id(run_id)
     if r.get("gosi_paid_at"):
         raise ValueError("The GOSI of %s is already paid." % r["run_label"])
+    if (r.get("status") or "draft") == "draft":
+        approve(run_id)                    # as pay_salaries: no re-make / delete until ↩ Reopen
     t = _totals(run_id)
     amt = round(t["gosi_employee"] + t["gosi_employer"], 2)
     if amt <= 0:
@@ -402,6 +419,7 @@ def pay_gosi(run_id, method="bank", on=None):
 def reopen(run_id):
     """Back to draft: the payment entries are removed (salaries + GOSI)."""
     r = run_by_id(run_id)
+    _year_open(r["run_year"], r["run_month"])
     with db.transaction():
         _unpost("salary_payment", run_id)
         _unpost("gosi_payment", run_id)
@@ -477,6 +495,9 @@ def settlement(employee_id, end_date, reason="termination", leave_days=None, not
     if not e:
         raise ValueError("Employee not found.")
     e = dict(e)
+    if not e.get("is_active") and db.execute_scalar("SELECT COUNT(*) FROM eos_settlements WHERE employee_id=?",
+                                                    (int(employee_id),)):
+        raise ValueError("%s already has a final settlement." % e.get("full_name_en"))
     end = _d(end_date)
     if not end:
         raise ValueError("Type the last working day.")
@@ -503,7 +524,7 @@ def settlement(employee_id, end_date, reason="termination", leave_days=None, not
     return {"employee": e, "end_date": end.isoformat(), "years": years, "days_not_counted": not_counted,
             "wage": wage, "wage_basis": PE.wage_basis(), "reason": eos["reason"], "award_full": eos["award_full"],
             "share": eos["share"], "award": eos["gratuity_amount"], "leave_days": leave_days,
-            "leave_pay": leave_pay, "leave_auto": leave_auto, "notice_days": nd, "notice_by": notice_by,
+            "leave_pay": leave_pay, "day_wage": round(day_wage, 2), "leave_auto": leave_auto, "notice_days": nd, "notice_by": notice_by,
             "notice_pay": notice_pay, "notice_taken": notice_taken, "comp_77": comp, "comp_77_how": comp_how,
             "gross": gross, "loan_owed": owed, "loan_recovered": recovered,
             "loan_left": round(owed - recovered, 2), "net": round(gross - notice_taken - recovered, 2)}

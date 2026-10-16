@@ -1353,7 +1353,7 @@ class EOSDialog:
         g.columnconfigure(0, weight=1)
         rows = [("End-of-service award (%.0f %% of %s)" % (s["share"] * 100, _m(s["award_full"])), s["award"], "+")]
         if s["leave_pay"]:
-            rows.append(("Unused annual leave · %g days × %s" % (s["leave_days"], _m(s["wage"] / 30.0)),
+            rows.append(("Unused annual leave · %g days × %s" % (s["leave_days"], _m(s["day_wage"])),
                          s["leave_pay"], "+"))
         if s.get("notice_pay"):
             rows.append(("Notice not given by the shop · %g days" % s["notice_days"], s["notice_pay"], "+"))
@@ -1432,7 +1432,7 @@ class EOSDialog:
                  "End-of-service award (full)      %12s" % _m(s["award_full"]),
                  "Share for this reason            %11.0f %%" % (s["share"] * 100),
                  "Award                            %12s" % _m(s["award"]),
-                 "Unused leave %6g days × %8s %12s" % (s["leave_days"], _m(s["wage"] / 30.0), _m(s["leave_pay"])),
+                 "Unused leave %6g days × %8s %12s" % (s["leave_days"], _m(s["day_wage"]), _m(s["leave_pay"])),
                  "Loans still owed  (%8s) −    %12s" % (_m(s["loan_owed"]), _m(s["loan_recovered"])),
                  "─" * 47,
                  "NET TO PAY                       %12s SAR" % _m(s["net"])]
