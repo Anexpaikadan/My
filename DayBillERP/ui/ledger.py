@@ -156,30 +156,26 @@ class LedgerView:
         self.acct_combo["values"] = vals
 
     def _summary(self, C):
+        """v6.9: one slim line (the account itself is in the Account box)."""
         card = tk.Frame(self.frame, bg=C["card_bg"],
                         highlightbackground=C["border"], highlightthickness=1)
-        card.pack(fill="x", padx=24, pady=12)
-        inner = tk.Frame(card, bg=C["card_bg"])
-        inner.pack(fill="x", padx=16, pady=10)
-        self.title_var = tk.StringVar(value="—")
-        tk.Label(inner, textvariable=self.title_var, font=("Segoe UI", 12, "bold"),
-                 bg=C["card_bg"], fg=C["text_primary"]).pack(anchor="w")
-        row = tk.Frame(inner, bg=C["card_bg"]); row.pack(fill="x", pady=(6, 0))
+        card.pack(fill="x", padx=24, pady=(10, 8))
+        row = tk.Frame(card, bg=C["card_bg"])
+        row.pack(fill="x", padx=14, pady=6)
+        self.title_var = tk.StringVar(value="—")      # used by Excel / Print
 
         def cell(label, var, color):
-            f = tk.Frame(row, bg=C["card_bg"])
-            f.pack(side="left", padx=(0, 28))
-            tk.Label(f, text=label, font=("Segoe UI", 8), bg=C["card_bg"],
-                     fg=C["text_secondary"]).pack(anchor="w")
-            tk.Label(f, textvariable=var, font=("Segoe UI", 13, "bold"),
-                     bg=C["card_bg"], fg=color).pack(anchor="w")
+            tk.Label(row, text=label, font=("Segoe UI", 9), bg=C["card_bg"],
+                     fg=C["text_secondary"]).pack(side="left", padx=(0, 6))
+            tk.Label(row, textvariable=var, font=("Segoe UI", 11, "bold"),
+                     bg=C["card_bg"], fg=color).pack(side="left", padx=(0, 28))
 
         self.opening_var = tk.StringVar(value="0.00")
         self.drcr_var = tk.StringVar(value="0.00 / 0.00")
         self.closing_var = tk.StringVar(value="0.00")
         cell("Opening", self.opening_var, C["text_primary"])
         cell("Debits / Credits", self.drcr_var, C["info"])
-        cell("Closing balance", self.closing_var, C["primary"])
+        cell("Closing", self.closing_var, C["primary"])
 
     def _actions(self, C):
         """Transaction actions for the selected line (connector)."""

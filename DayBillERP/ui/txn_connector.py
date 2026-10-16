@@ -540,6 +540,48 @@ def attach(form, key, on_change=None, view_only=None, compact=False):
         return None
 
 
+def _title_band(win):
+    """The window's coloured title line (first packed frame, full width),
+    or None. v6.9: the connector buttons sit IN it — one header line."""
+    C = cfg.theme()
+    plain = {str(C.get("content_bg", "")).upper(), str(C.get("card_bg", "")).upper()}
+    for fr in win.pack_slaves()[:2]:
+        try:
+            if fr.winfo_class() != "Frame" or str(fr.cget("bg")).upper() in plain:
+                continue
+            if fr.pack_info().get("fill") in ("x", "both"):
+                return fr
+        except Exception:
+            continue
+    return None
+
+
+def _tip(widget, text):
+    """Small hover tip (why a button is greyed out)."""
+    box = {}
+
+    def show(_e=None):
+        try:
+            t = tk.Toplevel(widget)
+            t.overrideredirect(True)
+            t.attributes("-topmost", True)
+            tk.Label(t, text=text, font=("Segoe UI", 8), bg="#111827", fg="white",
+                     padx=6, pady=2).pack()
+            t.geometry("+%d+%d" % (widget.winfo_rootx(),
+                                   widget.winfo_rooty() + widget.winfo_height() + 2))
+            box["t"] = t
+        except Exception:
+            pass
+
+    def hide(_e=None):
+        try:
+            box.pop("t").destroy()
+        except Exception:
+            pass
+    widget.bind("<Enter>", show, add="+")
+    widget.bind("<Leave>", hide, add="+")
+
+
 class TxnBar:
     def __init__(self, win, form, key, on_change, view_only, txn=None,
                  compact=False, voucher_btn=True):
@@ -549,51 +591,63 @@ class TxnBar:
         C = cfg.theme()
         self.C = C
         r = rights(key)
-        bar = tk.Frame(win, bg=C.get("primary_light", C["card_bg"]),
-                       highlightbackground=C["border"], highlightthickness=1)
-        slaves = [w for w in win.pack_slaves() if w is not bar]
-        try:                     # right under the window's coloured title band
-            if slaves:
-                bar.pack(side="top", fill="x", after=slaves[0])
-            else:
-                bar.pack(side="top", fill="x")
-        except Exception:
+        own = compact                # the form has its own Save / Delete toolbar
+        band = _title_band(win)
+        in_band = band is not None
+        if in_band:
+            # one header line: title on the left, actions on the right.
+            # The form keeps its own Save (footer) and Esc / ✕ closes it.
+            host = tk.Frame(band, bg=band["bg"])
+            host.pack(side="right", padx=8)
+            inner = host
+        else:
+            bar = tk.Frame(win, bg=C.get("primary_light", C["card_bg"]),
+                           highlightbackground=C["border"], highlightthickness=1)
             bar.pack(side="top", fill="x")
-        inner = tk.Frame(bar, bg=bar["bg"])
-        inner.pack(fill="x", padx=10, pady=4)
+            inner = tk.Frame(bar, bg=bar["bg"])
+            inner.pack(fill="x", padx=10, pady=4)
+        self.frame = inner
+        win._txn_bar = self
+        words = {"add": "add", "edit": "change", "delete": "delete", "view": "open"}
 
-        def btn(text, cmd, ok, fg=None):
-            b = tk.Button(inner, text=text, font=("Segoe UI", 9, "bold"),
+        def btn(text, cmd, ok, fg=None, need=None):
+            b = tk.Button(inner, text=text, font=("Segoe UI", 8 if in_band else 9, "bold"),
                           bg=C["card_bg"], fg=fg or C["text_primary"], relief="flat",
-                          padx=10, pady=2, cursor="hand2" if ok else "arrow",
+                          padx=8 if in_band else 10, pady=0 if in_band else 2,
+                          cursor="hand2" if ok else "arrow",
                           highlightthickness=1, highlightbackground=C["border"],
                           command=cmd if ok else (lambda: None),
                           state="normal" if ok else "disabled")
-            b.pack(side="right", padx=(6, 0))
+            b.pack(side="right", padx=(4, 0), pady=3 if in_band else 0)
+            if not ok and need:
+                _tip(b, "Your user type can't %s %s — ask the administrator "
+                        "(Users & Rights)." % (words.get(need, need), CONN[key]["label"].lower()))
             return b
 
         # buttons first (right side), so a narrow window never hides them
-        if not compact:
+        if not in_band and not own:
             btn("✖ Close", win.destroy, True)
         if key not in ("opening", "system"):
-            if not compact:
-                btn("🗑 Delete", self.delete, r["delete"], fg=C.get("danger", "#DC2626"))
-            if (not compact and form is not None and hasattr(form, "_save")
+            if not own:
+                btn("🗑 Delete", self.delete, r["delete"], fg=C.get("danger", "#DC2626"),
+                    need="delete")
+            if (not in_band and not own and form is not None and hasattr(form, "_save")
                     and not view_only):
                 btn("💾 Save", self.save, r["edit"] or r["add"],
-                    fg=C.get("success", "#16A34A"))
+                    fg=C.get("success", "#16A34A"), need="edit")
             if view_only:
-                btn("✏ Edit", self.edit, r["edit"])
-            btn("➕ New", self.new, CONN[key]["new"] and r["add"])
+                btn("✏ Edit", self.edit, r["edit"], need="edit")
+            btn("➕ New", self.new, CONN[key]["new"] and r["add"], need="add")
         if voucher_btn:
-            btn("📄 Voucher", self.voucher, r["view"])
-        tk.Label(inner, text="🔗 " + CONN[key]["label"], font=("Segoe UI", 9, "bold"),
-                 bg=bar["bg"], fg=C["text_primary"]).pack(side="left")
-        tk.Label(inner, text="  " + " ".join(
-                     ("✔" if r[a] else "✖") + a.title()
-                     for a in ("view", "add", "edit", "delete")),
-                 font=("Segoe UI", 8), bg=bar["bg"],
-                 fg=C["text_secondary"]).pack(side="left")
+            btn("📄 Voucher", self.voucher, r["view"], need="view")
+        if not in_band:
+            tk.Label(inner, text="🔗 " + CONN[key]["label"], font=("Segoe UI", 9, "bold"),
+                     bg=inner["bg"], fg=C["text_primary"]).pack(side="left")
+            tk.Label(inner, text="  " + " ".join(
+                         ("✔" if r[a] else "✖") + a.title()
+                         for a in ("view", "add", "edit", "delete")),
+                     font=("Segoe UI", 8), bg=inner["bg"],
+                     fg=C["text_secondary"]).pack(side="left")
 
     # current transaction (the form may have saved a new one meanwhile)
     def txn(self):
