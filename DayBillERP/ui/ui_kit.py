@@ -293,6 +293,46 @@ def total_box(parent, label, var, big_font=16):
     return f
 
 
+def slim_key_style(color, key="", label="", bold=True):
+    """v6.9: one-line action button ('F9  Save Draft') — half the height
+    of key_style's two-line button; same colours."""
+    st = key_style(color, "", ("%s  %s" % (key, label)).strip() if key else label, bold)
+    st.update(pady=3, padx=12, justify="center", anchor="center")
+    return st
+
+
+def slim_ghost_key_style(key="", label=""):
+    st = ghost_key_style("", ("%s  %s" % (key, label)).strip() if key else label)
+    st.update(pady=3, padx=12, justify="center", anchor="center")
+    return st
+
+
+def total_strip(parent, cells, total, C=None):
+    """v6.9: document totals on ONE slim line:
+        Qty 98   Gross 1,316.40   …        [ NET TOTAL (SAR)  1,513.86 ]
+    cells = [(label, key, colour or None)], total = (label, key).
+    Returns {key: StringVar} (the same keys the forms already use)."""
+    C = C or cfg.theme()
+    out = {}
+    row = tk.Frame(parent, bg=C["card_bg"])
+    row.pack(fill="x", padx=10, pady=3)
+    bg = C.get("primary", "#2563EB")
+    box = tk.Frame(row, bg=bg, padx=12, pady=2)
+    box.pack(side="right")
+    tk.Label(box, text=total[0], font=("Segoe UI", 8, "bold"), bg=bg,
+             fg="#DCE8FF").pack(side="left", padx=(0, 10))
+    out[total[1]] = tk.StringVar(value="0.00")
+    tk.Label(box, textvariable=out[total[1]], font=("Segoe UI", 14, "bold"), bg=bg,
+             fg="white").pack(side="left")
+    for i, (label, key, colour) in enumerate(cells):
+        tk.Label(row, text=label, font=("Segoe UI", 8), bg=C["card_bg"],
+                 fg=C.get("text_secondary", "#6B7280")).pack(side="left", padx=(0 if i == 0 else 16, 4))
+        out[key] = tk.StringVar(value="0.00")
+        tk.Label(row, textvariable=out[key], font=("Segoe UI", 11, "bold"), bg=C["card_bg"],
+                 fg=colour or C.get("text_primary", "#111827")).pack(side="left")
+    return out
+
+
 def fit_columns(tree, min_width=50):
     """Keep every column of a table on screen: when the table is narrower
     than its columns, all columns shrink in proportion (never below

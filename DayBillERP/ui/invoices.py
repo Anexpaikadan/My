@@ -788,8 +788,9 @@ class InvoiceForm:
         self.form_body.pack(side="top", fill="x")
 
         # ── Big line-items grid (fills the middle) ────────────
+        # v6.9: packed LAST (below) so the header, totals and buttons are
+        # always whole and the grid takes exactly the room that is left
         self.items_area = tk.Frame(self.win, bg=C["content_bg"])
-        self.items_area.pack(side="top", fill="both", expand=True)
 
         self._build_form_header(C)
         self._build_line_items(C)
@@ -802,22 +803,26 @@ class InvoiceForm:
         self.bottom_bar.pack(side="bottom", fill="x")
         self._build_totals_bar(C)
         self._build_statusbar(C)
+        self.items_area.pack(side="top", fill="both", expand=True)
 
     def _build_statusbar(self, C):
         """Slim Polosys-style status strip at the very bottom:
         app · financial-year range + user · today's date · DB/branch ·
         live clock."""
-        sb = tk.Frame(self.win, bg="#EEF1F6", height=22)
-        sb.pack(side="bottom", fill="x")
-        sb.pack_propagate(False)
+        # v6.9: the status sits in the footer line (no extra strip)
+        sb = getattr(self, "_footer_info", None)
+        sbg = C["card_bg"] if sb is not None else "#EEF1F6"
+        if sb is None:
+            sb = tk.Frame(self.win, bg=sbg, height=22)
+            sb.pack(side="bottom", fill="x")
+            sb.pack_propagate(False)
 
         def cell(txt, side="left", bold=False):
             l = tk.Label(sb, text=txt, font=("Segoe UI", 8, "bold" if bold else "normal"),
-                         bg="#EEF1F6", fg="#4A4468", padx=10)
+                         bg=sbg, fg=C["text_secondary"], padx=6)
             l.pack(side=side)
             return l
 
-        cell("DayBill ERP", bold=True)
         # financial year range + logged-in user
         fy_txt = ""
         try:
@@ -851,8 +856,8 @@ class InvoiceForm:
             cell(db_txt)
         # live clock on the right
         self._clock_lbl = tk.Label(sb, text="", font=("Segoe UI", 8),
-                                   bg="#EEF1F6", fg="#4A4468", padx=10)
-        self._clock_lbl.pack(side="right")
+                                   bg=sbg, fg=C["text_secondary"], padx=6)
+        self._clock_lbl.pack(side="left")
 
         def tick():
             try:
@@ -877,7 +882,8 @@ class InvoiceForm:
 
         # ── Toolbar (Polosys-style) ───────────────────────────
         tb = tk.Frame(fb, bg=C["card_bg"])
-        tb.pack(fill="x", padx=6, pady=(4, 2))
+        tb.pack(fill="x", padx=6, pady=(2, 1))
+        self._tools_bar = tb                 # v6.9: the voice switch sits here too
         tools = [
             ("\U0001f4be Save",        lambda: self._save(confirm=True)),
             ("\u270f Edit",            self._edit_focused_line),
@@ -896,176 +902,134 @@ class InvoiceForm:
         for txt, cmd in tools:
             tk.Button(tb, text=txt, font=("Segoe UI", 8, "bold"),
                       bg=C["content_bg"], fg=C["text_primary"], relief="flat",
-                      padx=6, pady=4, cursor="hand2", command=cmd).pack(side="left", padx=1)
+                      padx=6, pady=2, cursor="hand2", command=cmd).pack(side="left", padx=1)
         tk.Frame(fb, bg=C["border"], height=1).pack(fill="x")
 
+        # v6.9: TWO slim rows (was five) — the item grid gets the room
         body = tk.Frame(fb, bg=C["card_bg"])
-        body.pack(fill="x", padx=8, pady=4)
-        left = tk.Frame(body, bg=C["card_bg"])
-        left.pack(side="left", fill="y", padx=(0, 24))
-        left.columnconfigure(1, weight=1)      # labels stay tight to their boxes
-        right = tk.Frame(body, bg=C["card_bg"])
-        right.pack(side="left", fill="both", expand=True)
-        right.columnconfigure(1, weight=1)
+        body.pack(fill="x", padx=8, pady=(3, 4))
+        r1 = tk.Frame(body, bg=C["card_bg"])
+        r1.pack(fill="x")
+        r2 = tk.Frame(body, bg=C["card_bg"])
+        r2.pack(fill="x", pady=(3, 0))
+        F8, F10 = ("Segoe UI", 8), ("Segoe UI", 10)
 
-        # Compact app-style fields: small labels, fixed minimal widths,
-        # tight vertical rhythm (Polosys-dense, matching the main app).
-        def field(parent, label, make, r, width=None):
-            tk.Label(parent, text=label, font=("Segoe UI", 8), bg=C["card_bg"],
-                     fg=C["text_secondary"]).grid(row=r, column=0, sticky="w",
-                     padx=(0, 6), pady=1)
-            w = make(parent)
-            if width is not None:
-                try:
-                    w.configure(width=width)
-                except Exception:
-                    pass
-                w.grid(row=r, column=1, sticky="w", pady=1)
+        def lbl(parent, text, padl=10, fg=None, bold=False):
+            tk.Label(parent, text=text, font=("Segoe UI", 8, "bold") if bold else F8,
+                     bg=C["card_bg"], fg=fg or C["text_secondary"]).pack(side="left", padx=(padl, 3))
+
+        def entry(parent, var, width, st=None, bold=False, expand=False):
+            e = tk.Entry(parent, textvariable=var, width=width,
+                         font=("Segoe UI", 10, "bold") if bold else F10,
+                         relief="solid", bd=1, state=st or state)
+            if expand:
+                e.pack(side="left", fill="x", expand=True)
             else:
-                w.grid(row=r, column=1, sticky="ew", pady=1)
-            return w
+                e.pack(side="left")
+            return e
 
-        # ── Left block ────────────────────────────────────────
-        self.vr_prefix_var = tk.BooleanVar(value=False)
+        def check(parent, text, var, fg=None, cmd=None, padl=8):
+            tk.Checkbutton(parent, text=text, variable=var, font=F8, bg=C["card_bg"],
+                           fg=fg or C["text_secondary"], activebackground=C["card_bg"],
+                           command=cmd).pack(side="left", padx=(padl, 0))
+
+        def small_btn(parent, text, cmd, primary=False, padl=3):
+            tk.Button(parent, text=text, font=("Segoe UI", 8, "bold" if primary else "normal"),
+                      bg=C["primary"] if primary else C["content_bg"],
+                      fg="white" if primary else C["text_primary"], relief="flat",
+                      padx=6, cursor="hand2", command=cmd).pack(side="left", padx=(padl, 0))
+
+        # ── row 1: number · find · date · customer · credit / draft · sales a/c
+        self.vr_prefix_var = tk.BooleanVar(value=False)      # kept for older callers
         self.draft_mode_var = tk.BooleanVar(value=False)
-        topl = tk.Frame(left, bg=C["card_bg"])
-        topl.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 2))
-        tk.Checkbutton(topl, text="Vr Prefix/Number", variable=self.vr_prefix_var,
-                       font=("Segoe UI", 8), bg=C["card_bg"], fg=C["text_secondary"],
-                       activebackground=C["card_bg"]).pack(side="left")
-        tk.Entry(topl, textvariable=self.hdr_vars["invoice_number"], width=10,
-                 font=("Segoe UI", 10, "bold"), relief="solid", bd=1,
-                 state="disabled").pack(side="left", padx=(6, 0))
+        lbl(r1, "No.", padl=0, bold=True)
+        entry(r1, self.hdr_vars["invoice_number"], 9, st="disabled", bold=True)
         # ▲▼ — browse previous / next invoice into this same window
-        # (loads the bill's details for viewing, editing, deleting, printing)
-        tk.Button(topl, text="▲", font=("Segoe UI", 7), width=2, bg=C["content_bg"],
-                  relief="flat", cursor="hand2",
-                  command=self._nav_prev).pack(side="left", padx=(2, 0))
-        tk.Button(topl, text="▼", font=("Segoe UI", 7), width=2, bg=C["content_bg"],
-                  relief="flat", cursor="hand2",
-                  command=self._nav_next).pack(side="left")
-        # Find by number (Enter loads it)
+        tk.Button(r1, text="▲", font=("Segoe UI", 7), width=2, bg=C["content_bg"],
+                  relief="flat", cursor="hand2", command=self._nav_prev).pack(side="left", padx=(2, 0))
+        tk.Button(r1, text="▼", font=("Segoe UI", 7), width=2, bg=C["content_bg"],
+                  relief="flat", cursor="hand2", command=self._nav_next).pack(side="left")
         self.find_enabled = tk.BooleanVar(value=False)
-        tk.Checkbutton(topl, text="Find", variable=self.find_enabled,
-                       font=("Segoe UI", 8), bg=C["card_bg"], fg=C["text_secondary"],
-                       activebackground=C["card_bg"],
-                       command=self._toggle_find).pack(side="left", padx=(6, 0))
+        check(r1, "Find", self.find_enabled, cmd=self._toggle_find, padl=6)
         self.find_var = tk.StringVar()
-        self.find_entry = tk.Entry(topl, textvariable=self.find_var, width=9,
-                                   font=("Segoe UI", 9), relief="solid", bd=1,
-                                   state="disabled")
+        self.find_entry = tk.Entry(r1, textvariable=self.find_var, width=8,
+                                   font=("Segoe UI", 9), relief="solid", bd=1, state="disabled")
         self.find_entry.pack(side="left", padx=(2, 0))
         self.find_entry.bind("<Return>", lambda e: self._find_invoice())
-        tk.Checkbutton(topl, text="Draft Mode", variable=self.draft_mode_var,
-                       font=("Segoe UI", 8), bg=C["card_bg"], fg=C["danger"],
-                       activebackground=C["card_bg"]).pack(side="left", padx=(8, 0))
-        tk.Button(topl, text="Goto Last Row", font=("Segoe UI", 8), bg=C["content_bg"],
-                  relief="flat", cursor="hand2",
-                  command=self._goto_last_row).pack(side="left", padx=(8, 0))
-
-        de = field(left, "Date", lambda p: tk.Entry(
-            p, textvariable=self.hdr_vars["invoice_date"], font=("Segoe UI", 10),
-            relief="solid", bd=1, width=14, state=state), 1, width=14)
-        self.warehouse_var = tk.StringVar(
-            value=self._warehouses[0] if self._warehouses else "Primary")
-        field(left, "WareHouse", lambda p: ttk.Combobox(
-            p, textvariable=self.warehouse_var, values=self._warehouses or ["Primary"],
-            font=("Segoe UI", 10), width=22,
-            state="readonly" if state == "normal" else "disabled"), 2, width=22)
-        self.minv_var = tk.StringVar()
-        field(left, "M Inv No#", lambda p: tk.Entry(
-            p, textvariable=self.minv_var, font=("Segoe UI", 10), relief="solid",
-            bd=1, width=18, state=state), 3, width=18)
-        self.salesman_var = tk.StringVar()
-        field(left, "SM", lambda p: ttk.Combobox(
-            p, textvariable=self.salesman_var, values=self._salesmen,
-            font=("Segoe UI", 10), width=24,
-            state="normal" if state == "normal" else "disabled"), 4, width=24)
+        lbl(r1, "Date")
+        de = entry(r1, self.hdr_vars["invoice_date"], 11)
         if state == "normal":
             try:
                 from ui.datepicker import attach_datepicker
                 attach_datepicker(de, self.hdr_vars["invoice_date"])
             except Exception:
                 pass
-
-        # ── Right block ───────────────────────────────────────
         self.payment_var = tk.StringVar(value="cash")
         self.credit_acct_var = tk.BooleanVar(value=False)
         self.sales_acct_var = tk.BooleanVar(value=True)
-        topr = tk.Frame(right, bg=C["card_bg"])
-        topr.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 2))
-
-        def _credit_toggle():
-            self.payment_var.set("credit" if self.credit_acct_var.get() else "cash")
-        tk.Checkbutton(topr, text="Credit Account", variable=self.credit_acct_var,
-                       font=("Segoe UI", 8), bg=C["card_bg"], fg=C["text_secondary"],
-                       activebackground=C["card_bg"], command=_credit_toggle).pack(side="left")
-        tk.Checkbutton(topr, text="Sales Account", variable=self.sales_acct_var,
-                       font=("Segoe UI", 8), bg=C["card_bg"], fg=C["text_secondary"],
-                       activebackground=C["card_bg"]).pack(side="left", padx=(8, 0))
-        self.sales_account_var = tk.StringVar(value="Sales Account")
-        ttk.Combobox(topr, textvariable=self.sales_account_var, values=["Sales Account"],
-                     font=("Segoe UI", 9), state="readonly", width=16).pack(side="left", padx=(6, 0))
-
         self.cust_var = tk.StringVar()
         cust_opts = [f"{c['customer_code']} \u2014 {c['customer_name_en']}"
                      for c in self._customers]
-        tk.Label(right, text="Customer", font=("Segoe UI", 8), bg=C["card_bg"],
-                 fg=C["text_secondary"]).grid(row=1, column=0, sticky="w", padx=(0, 6), pady=2)
-        crow = tk.Frame(right, bg=C["card_bg"])
-        crow.grid(row=1, column=1, sticky="ew", pady=2)
-        self.cust_combo = ttk.Combobox(crow, textvariable=self.cust_var, values=cust_opts,
-                                       state="readonly", font=("Segoe UI", 10))
+        lbl(r1, "Customer")
+        self.cust_combo = ttk.Combobox(r1, textvariable=self.cust_var, values=cust_opts,
+                                       state="readonly", font=F10, width=24)
         self.cust_combo.pack(side="left", fill="x", expand=True)
         self.cust_combo.bind("<<ComboboxSelected>>", self._on_customer_select)
         if not self.view_only:
-            tk.Button(crow, text="New", font=("Segoe UI", 8, "bold"), bg=C["primary"],
-                      fg="white", relief="flat", padx=8, cursor="hand2",
-                      command=self._new_customer).pack(side="left", padx=(4, 0))
-            tk.Button(crow, text="W/Stock", font=("Segoe UI", 8), bg=C["content_bg"],
-                      relief="flat", cursor="hand2",
-                      command=lambda: self._nav("inventory")).pack(side="left", padx=(4, 0))
-            tk.Button(crow, text="More", font=("Segoe UI", 8), bg=C["content_bg"],
-                      relief="flat", cursor="hand2",
-                      command=lambda: self._nav("settings")).pack(side="left", padx=(4, 0))
+            small_btn(r1, "New", self._new_customer, primary=True, padl=4)
+            small_btn(r1, "W/Stock", lambda: self._nav("inventory"))
+            small_btn(r1, "More", lambda: self._nav("settings"))
 
+        def _credit_toggle():
+            self.payment_var.set("credit" if self.credit_acct_var.get() else "cash")
+        check(r1, "Credit", self.credit_acct_var, cmd=_credit_toggle)
+        check(r1, "Draft", self.draft_mode_var, fg=C["danger"], padl=4)
+        check(r1, "Sales A/c", self.sales_acct_var, padl=4)
+        self.sales_account_var = tk.StringVar(value="Sales Account")
+        ttk.Combobox(r1, textvariable=self.sales_account_var, values=["Sales Account"],
+                     font=("Segoe UI", 9), state="readonly", width=13).pack(side="left", padx=(2, 0))
+
+        # ── row 2: name · mobile · address · ref · M.Inv · salesman · warehouse
         self.cust_name_var = tk.StringVar()
-        field(right, "Name", lambda p: tk.Entry(
-            p, textvariable=self.cust_name_var, font=("Segoe UI", 10), relief="solid",
-            bd=1, state=state), 2)
         self.cust_addr_var = tk.StringVar()
-        field(right, "Address", lambda p: tk.Entry(
-            p, textvariable=self.cust_addr_var, font=("Segoe UI", 10), relief="solid",
-            bd=1, state=state), 3)
-
         self.cust_mobile_var = tk.StringVar()
-        tk.Label(right, text="Mobile No", font=("Segoe UI", 8), bg=C["card_bg"],
-                 fg=C["text_secondary"]).grid(row=4, column=0, sticky="w", padx=(0, 6), pady=2)
-        mrow = tk.Frame(right, bg=C["card_bg"])
-        mrow.grid(row=4, column=1, sticky="ew", pady=2)
-        tk.Entry(mrow, textvariable=self.cust_mobile_var, font=("Segoe UI", 10),
-                 relief="solid", bd=1, width=15, state=state).pack(side="left")
-        tk.Label(mrow, text="Ref No&Date", font=("Segoe UI", 8), bg=C["card_bg"],
-                 fg=C["text_secondary"]).pack(side="left", padx=(8, 4))
-        tk.Entry(mrow, textvariable=self.hdr_vars["po_number"], font=("Segoe UI", 10),
-                 relief="solid", bd=1, width=12, state=state).pack(side="left")
-        tk.Entry(mrow, textvariable=self.hdr_vars["due_date"], font=("Segoe UI", 10),
-                 relief="solid", bd=1, width=11, state=state).pack(side="left", padx=(4, 0))
+        self.minv_var = tk.StringVar()
+        self.salesman_var = tk.StringVar()
+        self.warehouse_var = tk.StringVar(
+            value=self._warehouses[0] if self._warehouses else "Primary")
+        lbl(r2, "Name", padl=0)
+        entry(r2, self.cust_name_var, 16, expand=True)
+        lbl(r2, "Mobile")
+        entry(r2, self.cust_mobile_var, 11)
+        lbl(r2, "Address")
+        entry(r2, self.cust_addr_var, 14, expand=True)
+        lbl(r2, "Ref No / Date")
+        entry(r2, self.hdr_vars["po_number"], 8)
+        de2 = tk.Entry(r2, textvariable=self.hdr_vars["due_date"], font=F10, relief="solid",
+                       bd=1, width=10, state=state)
+        de2.pack(side="left", padx=(3, 0))
+        lbl(r2, "M.Inv")
+        entry(r2, self.minv_var, 8)
+        lbl(r2, "SM")
+        ttk.Combobox(r2, textvariable=self.salesman_var, values=self._salesmen, font=F10,
+                     width=10, state="normal" if state == "normal" else "disabled").pack(side="left")
+        lbl(r2, "WH")
+        ttk.Combobox(r2, textvariable=self.warehouse_var, values=self._warehouses or ["Primary"],
+                     font=F10, width=12,
+                     state="readonly" if state == "normal" else "disabled").pack(side="left")
         self.in_search_var = tk.BooleanVar(value=True)
-        tk.Checkbutton(mrow, text="In Search", variable=self.in_search_var,
-                       font=("Segoe UI", 8), bg=C["card_bg"], fg=C["accent_dark"],
-                       activebackground=C["card_bg"]).pack(side="left", padx=(8, 0))
+        check(r2, "In Search", self.in_search_var, fg=C["accent_dark"])
+        small_btn(r2, "⤓", self._goto_last_row, padl=4)     # Goto Last Row
+        self.win.bind("<Control-End>", lambda e: self._goto_last_row())
+
     def _build_line_items(self, C):
         fb    = self.items_area
 
-        tk.Frame(fb, bg=C["border"], height=1).pack(
-            fill="x", padx=16, pady=(16,0))
-        items_hdr = tk.Frame(fb, bg=C["content_bg"])
-        items_hdr.pack(fill="x", padx=16, pady=(8,0))
-
-        tk.Label(items_hdr, text="🛒  Line Items",
-                 font=("Segoe UI", 10, "bold"),
-                 bg=C["content_bg"], fg=C["primary"]).pack(side="left")
+        # v6.9: no "Line Items" title line — the grid starts right under
+        # the header; the voice switch lives on the toolbar
+        items_hdr = getattr(self, "_tools_bar", None) or tk.Frame(fb, bg=C["content_bg"])
+        if items_hdr.master is fb:
+            items_hdr.pack(fill="x", padx=16, pady=(4, 0))
 
         if not self.view_only:
             # 🎤 Voice search: ON/OFF toggle lives right here in the sales
@@ -1073,12 +1037,12 @@ class InvoiceForm:
             self._voice_on = tk.BooleanVar(
                 value=bool(cfg.get("voice_search_enabled", False)))
             self.voice_speak_btn = tk.Button(
-                items_hdr, text="🎤 Speak", font=("Segoe UI", 9, "bold"),
-                bg="#16A085", fg="white", relief="flat", padx=10, pady=4,
+                items_hdr, text="🎤 Speak", font=("Segoe UI", 8, "bold"),
+                bg="#16A085", fg="white", relief="flat", padx=8, pady=2,
                 cursor="hand2", command=self._voice_search)
             self.voice_toggle_btn = tk.Button(
-                items_hdr, font=("Segoe UI", 9), relief="flat", padx=10,
-                pady=4, cursor="hand2", command=self._toggle_voice)
+                items_hdr, font=("Segoe UI", 8), relief="flat", padx=8,
+                pady=2, cursor="hand2", command=self._toggle_voice)
             self.voice_toggle_btn.pack(side="right", padx=(0, 8))
             self._voice_apply_state()
 
@@ -1089,7 +1053,7 @@ class InvoiceForm:
                                     on_change=self._on_grid_change,
                                     tax_mode=cfg.get("sales_price_tax_mode", "inclusive"),
                                     doc_type="sales", use_offers=True)
-            self.line_grid.pack(fill="both", expand=True, padx=16, pady=(8, 0))
+            self.line_grid.pack(fill="both", expand=True, padx=8, pady=(4, 0))
             # now that the grid exists, sync totals once
             self._on_grid_change()
             # focus the first product cell for fast selling
@@ -2028,147 +1992,127 @@ class InvoiceForm:
 
     # ── Right Panel (Totals + QR) ─────────────────────────────
     def _build_totals_bar(self, C):
+        """v6.9: TWO slim rows (was seven) — what you type on the first,
+        the figures on the second, GRAND TOTAL on the right."""
         bar = self.bottom_bar
         inner = tk.Frame(bar, bg=C["card_bg"])
-        inner.pack(fill="x", padx=12, pady=6)
+        inner.pack(fill="x", padx=10, pady=3)
+        ro = "disabled" if self.view_only else "normal"
+        F8 = ("Segoe UI", 8)
 
         # hidden frames kept for compatibility with _update_totals / QR
         self.vat_breakdown_frame = tk.Frame(inner, bg=C["card_bg"])
         self.qr_frame = tk.Frame(inner, bg=C["card_bg"])
         self.qr_label = tk.Label(self.qr_frame, text="")
 
-        def money_label(parent, var, color, big=False):
-            return tk.Label(parent, textvariable=var,
-                            font=("Segoe UI", 16 if big else 11, "bold"),
-                            bg=C["card_bg"], fg=color)
-
-        # ── Column A: options ────────────────────────────────
-        colA = tk.Frame(inner, bg=C["card_bg"])
-        colA.pack(side="left", fill="y", padx=(0, 18))
-        self.lbill_var = tk.StringVar(value="L.Bill: 0.00   Bal: 0.00")
-        tk.Label(colA, textvariable=self.lbill_var, font=("Segoe UI", 9, "bold"),
-                 bg=C["card_bg"], fg=C["primary"]).grid(row=0, column=0, columnspan=2, sticky="w")
-        tk.Label(colA, text="Remarks", font=("Segoe UI", 8), bg=C["card_bg"],
-                 fg=C["text_secondary"]).grid(row=1, column=0, sticky="w", pady=(4, 0))
-        self.hdr_vars["notes_en"] = tk.StringVar()
-        tk.Entry(colA, textvariable=self.hdr_vars["notes_en"], font=("Segoe UI", 9),
-                 relief="solid", bd=1, width=28).grid(row=1, column=1, sticky="w", pady=(4, 0))
-        self.print_after_var = tk.BooleanVar(value=True)
-        tk.Checkbutton(colA, text="Print After Save", variable=self.print_after_var,
-                       font=("Segoe UI", 8), bg=C["card_bg"], fg=C["text_secondary"],
-                       activebackground=C["card_bg"]).grid(row=2, column=0, sticky="w", pady=(4, 0))
-        # v6.0: Price Category = price list (Standard, Wholesale, your lists);
-        # it follows the customer and re-prices the lines when changed
-        self.price_category_var = tk.StringVar(value="Standard")
-        pc = tk.Frame(colA, bg=C["card_bg"]); pc.grid(row=2, column=1, sticky="w", pady=(4, 0))
-        tk.Label(pc, text="Price Category", font=("Segoe UI", 8), bg=C["card_bg"],
-                 fg=C["text_secondary"]).pack(side="left")
-        try:
-            from modules import price_lists as _PL
-            _pc_vals = [l for l, _k in _PL.choices()]
-        except Exception:
-            _pc_vals = ["Standard", "Wholesale"]
-        self.price_cat_combo = ttk.Combobox(pc, textvariable=self.price_category_var,
-                                            values=_pc_vals, width=14,
-                                            state="disabled" if self.view_only else "readonly",
-                                            font=("Segoe UI", 9))
-        self.price_cat_combo.pack(side="left", padx=(4, 0))
-        self.price_cat_combo.bind("<<ComboboxSelected>>", lambda e: self._on_price_category())
-        self.vatno_var = tk.BooleanVar(value=False)
-        self.auto_calc_var = tk.BooleanVar(value=True)
-        optrow = tk.Frame(colA, bg=C["card_bg"]); optrow.grid(row=3, column=0, columnspan=2, sticky="w", pady=(4, 0))
-        tk.Checkbutton(optrow, text="VAT #", variable=self.vatno_var, font=("Segoe UI", 8),
-                       bg=C["card_bg"], fg=C["text_secondary"], activebackground=C["card_bg"]).pack(side="left")
-        tk.Checkbutton(optrow, text="Auto Calculation", variable=self.auto_calc_var,
-                       font=("Segoe UI", 8), bg=C["card_bg"], fg=C["text_secondary"],
-                       activebackground=C["card_bg"]).pack(side="left", padx=(8, 0))
-        if not self.view_only:
-            tk.Button(optrow, text="Tender", font=("Segoe UI", 9, "bold"), bg=C["info"],
-                      fg="white", relief="flat", padx=12, cursor="hand2",
-                      command=self._open_teller).pack(side="left", padx=(10, 0))
-            tk.Button(optrow, text="Pending", font=("Segoe UI", 9, "bold"), bg=C["accent"],
-                      fg="white", relief="flat", padx=12, cursor="hand2",
-                      command=self._hold_sale).pack(side="left", padx=(6, 0))
-
-        # ── Column B: tenders & adjustments ──────────────────
-        colB = tk.Frame(inner, bg=C["card_bg"])
-        colB.pack(side="left", fill="y", padx=(0, 18))
-
-        def amt_row(r, label, var_name, color=None):
-            tk.Label(colB, text=label, font=("Segoe UI", 8), bg=C["card_bg"],
-                     fg=color or C["text_secondary"]).grid(row=r, column=0, sticky="w", pady=2)
-            var = tk.StringVar(value="0.00")
-            setattr(self, var_name, var)
-            e = tk.Entry(colB, textvariable=var, font=("Segoe UI", 10), width=12,
-                         relief="solid", bd=1, justify="right",
-                         state="normal" if not self.view_only else "disabled")
-            e.grid(row=r, column=1, sticky="w", pady=2, padx=(6, 0))
-            setattr(self, var_name + "_entry", e)
-            return var
-
-        amt_row(0, "Credit Card Amount", "card_var")
-        amt_row(1, "SR Amount", "sr_amount_var")
-        # Cash Received with Full-Pay tick
-        self.full_pay_var = tk.BooleanVar(value=False)
-        tk.Checkbutton(colB, text="Cash Rcvd", variable=self.full_pay_var,
-                       font=("Segoe UI", 8, "bold"), bg=C["card_bg"], fg=C["primary"],
-                       activebackground=C["card_bg"], command=self._toggle_full_pay).grid(
-                           row=2, column=0, sticky="w", pady=2)
-        self.cash_var = tk.StringVar(value="0.00")
-        self.cash_var_entry = tk.Entry(colB, textvariable=self.cash_var, font=("Segoe UI", 10),
-                                       width=12, relief="solid", bd=1, justify="right",
-                                       state="normal" if not self.view_only else "disabled")
-        self.cash_var_entry.grid(row=2, column=1, sticky="w", pady=2, padx=(6, 0))
-        self.cash_var.trace("w", lambda *a: self._update_balance())
-        self.card_var.trace("w", lambda *a: self._update_balance())
-        # bank kept for posting (hidden), plus Add Amount / JV
-        self.bank_var = tk.StringVar(value="0.00")
-        tk.Button(colB, text="Add. Amount / JV", font=("Segoe UI", 8, "underline"),
-                  bg=C["card_bg"], fg=C["info"], relief="flat", cursor="hand2", bd=0,
-                  command=lambda: self._nav("vouchers")).grid(
-                      row=3, column=0, columnspan=2, sticky="w", pady=(2, 2))
-        amt_row(4, "Round", "round_var")
-        self.round_var.trace("w", lambda *a: self._update_totals())
-        tk.Label(colB, text="Tot VAT", font=("Segoe UI", 8), bg=C["card_bg"],
-                 fg=C["text_secondary"]).grid(row=5, column=0, sticky="w", pady=2)
-        self.vat_var = tk.StringVar(value="0.00")
-        money_label(colB, self.vat_var, C["info"]).grid(row=5, column=1, sticky="e", pady=2)
-        amt_row(6, "Coupon Amt", "coupon_var")
-
-        # ── Column C: net / discount / grand total ───────────
-        colC = tk.Frame(inner, bg=C["card_bg"])
-        colC.pack(side="right", fill="y")
-        # vars _update_totals expects
+        # vars _update_totals / _update_balance expect
         self.subtotal_var = tk.StringVar(value="0.00")
         self.taxable_var = tk.StringVar(value="0.00")
         self.totalqty_var = tk.StringVar(value="0")
         self.discount_var = tk.StringVar(value="0.00")
         self.total_var = tk.StringVar(value="0.00")
         self.balance_var = tk.StringVar(value="0.00")
+        self.vat_var = tk.StringVar(value="0.00")
+        self.bank_var = tk.StringVar(value="0.00")        # kept for posting (hidden)
         self.bill_discount_var = tk.StringVar(value="0.00")
+
+        # ── GRAND TOTAL (right, both rows high) ──────────────
+        gt = tk.Frame(inner, bg=C["primary"], padx=12, pady=2)
+        gt.pack(side="right", fill="y", padx=(10, 0))
+        tk.Label(gt, text="GRAND TOTAL", font=("Segoe UI", 8, "bold"), bg=C["primary"],
+                 fg="white").pack(anchor="e")
+        tk.Label(gt, textvariable=self.total_var, font=("Segoe UI", 16, "bold"),
+                 bg=C["primary"], fg="white").pack(anchor="e")
+
+        left = tk.Frame(inner, bg=C["card_bg"])
+        left.pack(side="left", fill="both", expand=True)
+        r1 = tk.Frame(left, bg=C["card_bg"])
+        r1.pack(fill="x")
+        r2 = tk.Frame(left, bg=C["card_bg"])
+        r2.pack(fill="x", pady=(3, 0))
+
+        def lbl(parent, text, padl=10, fg=None, bold=False):
+            tk.Label(parent, text=text, font=("Segoe UI", 8, "bold") if bold else F8,
+                     bg=C["card_bg"], fg=fg or C["text_secondary"]).pack(side="left", padx=(padl, 3))
+
+        def amt(label, var_name, width=8, padl=10, var=None):
+            lbl(r1, label, padl=padl)
+            if var is None:
+                var = tk.StringVar(value="0.00")
+                setattr(self, var_name, var)
+            e = tk.Entry(r1, textvariable=var, font=("Segoe UI", 10), width=width,
+                         relief="solid", bd=1, justify="right", state=ro)
+            e.pack(side="left")
+            setattr(self, var_name + "_entry", e)
+            return e
+
+        # ── row 1: remarks · price list · tenders · round / coupon / discount
+        lbl(r1, "Remarks", padl=0)
+        self.hdr_vars["notes_en"] = tk.StringVar()
+        tk.Entry(r1, textvariable=self.hdr_vars["notes_en"], font=("Segoe UI", 9),
+                 relief="solid", bd=1, width=16).pack(side="left", fill="x", expand=True)
+        # v6.0: Price Category = price list; it follows the customer and
+        # re-prices the lines when changed
+        self.price_category_var = tk.StringVar(value="Standard")
+        lbl(r1, "Price")
+        try:
+            from modules import price_lists as _PL
+            _pc_vals = [l for l, _k in _PL.choices()]
+        except Exception:
+            _pc_vals = ["Standard", "Wholesale"]
+        self.price_cat_combo = ttk.Combobox(r1, textvariable=self.price_category_var,
+                                            values=_pc_vals, width=11,
+                                            state="disabled" if self.view_only else "readonly",
+                                            font=("Segoe UI", 9))
+        self.price_cat_combo.pack(side="left")
+        self.price_cat_combo.bind("<<ComboboxSelected>>", lambda e: self._on_price_category())
+        amt("Card", "card_var")
+        amt("SR", "sr_amount_var", width=7)
+        self.full_pay_var = tk.BooleanVar(value=False)
+        tk.Checkbutton(r1, text="Cash Rcvd", variable=self.full_pay_var,
+                       font=("Segoe UI", 8, "bold"), bg=C["card_bg"], fg=C["primary"],
+                       activebackground=C["card_bg"], command=self._toggle_full_pay).pack(
+                           side="left", padx=(8, 2))
+        self.cash_var = tk.StringVar(value="0.00")
+        self.cash_var_entry = tk.Entry(r1, textvariable=self.cash_var, font=("Segoe UI", 10),
+                                       width=9, relief="solid", bd=1, justify="right", state=ro)
+        self.cash_var_entry.pack(side="left")
+        amt("Round", "round_var", width=6)
+        amt("Coupon", "coupon_var", width=6)
+        self.bill_discount_entry = amt(
+            "Bill Disc", "bill_discount", width=7, var=self.bill_discount_var)
+        if not (not self.view_only and cfg.flag("allow_discount_edit", True)):
+            self.bill_discount_entry.configure(state="disabled")   # Settings ▸ Sales ▸ Allow Discount Edit
+        self.cash_var.trace("w", lambda *a: self._update_balance())
+        self.card_var.trace("w", lambda *a: self._update_balance())
+        self.round_var.trace("w", lambda *a: self._update_totals())
         self.bill_discount_var.trace("w", lambda *a: self._update_totals())
 
-        tk.Label(colC, text="Net Amount", font=("Segoe UI", 8), bg=C["card_bg"],
-                 fg=C["text_secondary"]).grid(row=0, column=0, sticky="w")
-        money_label(colC, self.total_var, C["text_primary"]).grid(row=0, column=1, sticky="e")
-        tk.Label(colC, text="Bill Discount", font=("Segoe UI", 8), bg=C["card_bg"],
-                 fg=C["text_secondary"]).grid(row=1, column=0, sticky="w", pady=2)
-        self.bill_discount_entry = tk.Entry(
-            colC, textvariable=self.bill_discount_var, font=("Segoe UI", 10), width=10,
-            relief="solid", bd=1, justify="right",
-            state="normal" if (not self.view_only and cfg.flag("allow_discount_edit", True))
-                  else "disabled")   # Settings ▸ Sales ▸ Allow Discount Edit
-        self.bill_discount_entry.grid(row=1, column=1, sticky="e", pady=2)
-        tk.Frame(colC, bg=C["border"], height=1).grid(row=2, column=0, columnspan=2, sticky="ew", pady=4)
-        gt = tk.Frame(colC, bg=C["primary"], padx=12, pady=3)
-        gt.grid(row=3, column=0, columnspan=2, sticky="ew")
-        tk.Label(gt, text="GRAND TOTAL", font=("Segoe UI", 10, "bold"), bg=C["primary"],
-                 fg="white").pack(side="left")
-        tk.Label(gt, textvariable=self.total_var, font=("Segoe UI", 16, "bold"),
-                 bg=C["primary"], fg="white").pack(side="right", padx=(16, 0))
-        tk.Label(colC, text="Balance", font=("Segoe UI", 8), bg=C["card_bg"],
-                 fg=C["danger"]).grid(row=4, column=0, sticky="w")
-        money_label(colC, self.balance_var, C["danger"]).grid(row=4, column=1, sticky="e")
+        # ── row 2: last bill · options · Net / VAT / Balance ───
+        self.lbill_var = tk.StringVar(value="L.Bill: 0.00   Bal: 0.00")
+        tk.Label(r2, textvariable=self.lbill_var, font=("Segoe UI", 8, "bold"),
+                 bg=C["card_bg"], fg=C["primary"]).pack(side="left")
+        self.print_after_var = tk.BooleanVar(value=True)
+        self.vatno_var = tk.BooleanVar(value=False)
+        self.auto_calc_var = tk.BooleanVar(value=True)
+        for text, var in (("Print After Save", self.print_after_var), ("VAT #", self.vatno_var),
+                          ("Auto Calculation", self.auto_calc_var)):
+            tk.Checkbutton(r2, text=text, variable=var, font=F8, bg=C["card_bg"],
+                           fg=C["text_secondary"], activebackground=C["card_bg"]).pack(
+                               side="left", padx=(8, 0))
+        tk.Button(r2, text="Add. Amount / JV", font=("Segoe UI", 8, "underline"),
+                  bg=C["card_bg"], fg=C["info"], relief="flat", cursor="hand2", bd=0,
+                  command=lambda: self._nav("vouchers")).pack(side="left", padx=(10, 0))
+
+        def figure(label, var, color):
+            tk.Label(r2, textvariable=var, font=("Segoe UI", 11, "bold"), bg=C["card_bg"],
+                     fg=color).pack(side="right", padx=(2, 0))
+            tk.Label(r2, text=label, font=F8, bg=C["card_bg"],
+                     fg=color if color == C["danger"] else C["text_secondary"]).pack(
+                         side="right", padx=(14, 0))
+        figure("Balance", self.balance_var, C["danger"])
+        figure("Tot VAT", self.vat_var, C["info"])
+        figure("Net Amount", self.total_var, C["text_primary"])
 
     def _clear_form(self):
         if self.view_only:
@@ -2374,29 +2318,38 @@ class InvoiceForm:
 
     # ── Footer ────────────────────────────────────────────────
     def _build_footer(self, C):
+        """v6.9: ONE slim line — status on the left, one-line buttons on
+        the right (the separate status strip and two-line buttons are gone)."""
         footer = tk.Frame(self.win, bg=C["card_bg"],
                           highlightbackground=C["border"], highlightthickness=1)
         footer.pack(fill="x", side="bottom")
         inner = tk.Frame(footer, bg=C["card_bg"])
-        inner.pack(fill="x", padx=16, pady=8)
+        inner.pack(fill="x", padx=10, pady=3)
 
         self.save_status = tk.StringVar()
         tk.Label(inner, textvariable=self.save_status,
                  font=("Segoe UI", 9), bg=C["card_bg"],
                  fg=C["danger"]).pack(side="left")
+        self._footer_info = tk.Frame(inner, bg=C["card_bg"])     # filled by _build_statusbar
+        self._footer_info.pack(side="left")
 
         from ui.ui_kit import key_style, ghost_key_style
+
+        def slim(style):
+            style.update(pady=3, padx=12, justify="center", anchor="center")
+            return style
+
         tk.Button(inner, command=self.win.destroy,
-                  **ghost_key_style("Esc", t("common.cancel"))).pack(side="right", padx=(8, 0))
+                  **slim(ghost_key_style("", "Esc  " + t("common.cancel")))).pack(side="right", padx=(6, 0))
 
         if not self.view_only:
             tk.Button(inner, command=lambda: self._save(confirm=True),
-                      **key_style(C.get("tile_green", C["success"]), "✔", "Save & Confirm")).pack(
-                          side="right", padx=(8, 0))
+                      **slim(key_style(C.get("tile_green", C["success"]), "",
+                                       "✔  Save & Confirm"))).pack(side="right", padx=(6, 0))
 
             # 🖨 Print ▾  — Default / Dot-matrix / PDF (saves first)
-            print_btn = tk.Menubutton(inner, **key_style(C.get("tile_purple", C["info"]),
-                                                          "F10  ▾", "Print"))
+            print_btn = tk.Menubutton(inner, **slim(key_style(C.get("tile_purple", C["info"]),
+                                                              "", "F10  Print ▾")))
             pmenu = tk.Menu(print_btn, tearoff=0, font=("Segoe UI", 10))
             pmenu.add_command(label="🖨  Print  (default layout)      F10",
                               command=lambda: self._save_and_print("default"))
@@ -2410,26 +2363,21 @@ class InvoiceForm:
             pmenu.add_command(label="↺  Print previous invoice",
                               command=self._print_previous)
             print_btn.configure(menu=pmenu)
-            print_btn.pack(side="right", padx=(8, 0))
+            print_btn.pack(side="right", padx=(6, 0))
 
             tk.Button(inner, command=lambda: self._save(confirm=False),
-                      **key_style(C.get("tile_blue", C["primary"]), "F9", "Save Draft")).pack(
-                          side="right")
+                      **slim(key_style(C.get("tile_blue", C["primary"]), "",
+                                       "F9  Save Draft"))).pack(side="right")
 
             # Hold (Pending): save current sale as draft, then start a fresh one
             tk.Button(inner, command=self._hold_sale,
-                      **key_style(C.get("tile_orange", C["warning"]), "⏸", "Hold (Pending)")).pack(
-                          side="right", padx=(0, 8))
+                      **slim(key_style(C.get("tile_orange", C["warning"]), "",
+                                       "⏸  Hold"))).pack(side="right", padx=(0, 6))
 
             # Teller: cash-tender popup (enter cash given → shows change)
             tk.Button(inner, command=self._open_teller,
-                      **key_style(C.get("slate", "#5B6B82"), "💵", "Teller")).pack(
-                          side="right", padx=(0, 8))
-
-            # Keyboard shortcut hint
-            tk.Label(inner, text="⌨ F9 Save · F10 Print · F11 Dot-matrix · F12 PDF",
-                     font=("Segoe UI", 8), bg=C["card_bg"],
-                     fg=C["text_secondary"]).pack(side="left", padx=8)
+                      **slim(key_style(C.get("slate", "#5B6B82"), "",
+                                       "💵  Teller"))).pack(side="right", padx=(0, 6))
 
     # ── Teller (cash tender) ──────────────────────────────────
     def _teller_num(self, v):

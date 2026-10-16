@@ -421,8 +421,7 @@ class PurchaseForm:
         self.form_body = tk.Frame(self.win, bg=C["card_bg"],
                                   highlightbackground=C["border"], highlightthickness=1)
         self.form_body.pack(side="top", fill="x")
-        self.items_area = tk.Frame(self.win, bg=C["content_bg"])
-        self.items_area.pack(side="top", fill="both", expand=True)
+        self.items_area = tk.Frame(self.win, bg=C["content_bg"])    # packed last (v6.9)
 
         self._build_header(C)
         self._build_grid(C)
@@ -431,11 +430,12 @@ class PurchaseForm:
                                    highlightbackground=C["border"], highlightthickness=1)
         self.bottom_bar.pack(side="bottom", fill="x")
         self._build_totals(C)
+        self.items_area.pack(side="top", fill="both", expand=True)
 
     def _build_header(self, C):
         self.hdr = {}
         grid = tk.Frame(self.form_body, bg=C["card_bg"])
-        grid.pack(fill="x", padx=14, pady=10)
+        grid.pack(fill="x", padx=12, pady=(4, 5))          # v6.9: tighter
         for i in range(4):
             grid.columnconfigure(i, weight=1, uniform="h")
 
@@ -518,16 +518,14 @@ class PurchaseForm:
                  relief="solid", bd=1).pack(fill="x", ipady=6, pady=(2, 0))
 
     def _build_grid(self, C):
-        tk.Label(self.items_area, text="🛒  Purchase Items (Rate = Cost Price)",
-                 font=("Segoe UI", 10, "bold"), bg=C["content_bg"],
-                 fg=C["primary"]).pack(anchor="w", padx=16, pady=(8, 0))
+        # v6.9: no title line above the grid — more rows for the items
         try:
             from ui.invoice_grid import InvoiceGrid
             self.grid = InvoiceGrid(self.items_area, C, self.products,
                                     self._product_units, on_change=self._on_change,
                                     tax_mode=cfg.get("purchase_cost_tax_mode", "exclusive"),
                                     doc_type="purchase")
-            self.grid.pack(fill="both", expand=True, padx=16, pady=(4, 0))
+            self.grid.pack(fill="both", expand=True, padx=8, pady=(4, 0))
             self._on_change()
             self.grid.focus_first_product()
         except Exception as e:
@@ -536,57 +534,39 @@ class PurchaseForm:
                      bg=C["content_bg"], fg=C["danger"]).pack(padx=16, pady=20)
 
     def _build_totals(self, C):
-        inner = tk.Frame(self.bottom_bar, bg=C["card_bg"])
-        inner.pack(fill="x", padx=14, pady=8)
-        self.tvars = {}
-
-        def tcell(col, label, key, color=None, big=False):
-            f = tk.Frame(inner, bg=C["card_bg"])
-            f.grid(row=0, column=col, padx=10, sticky="w")
-            tk.Label(f, text=label, font=("Segoe UI", 8), bg=C["card_bg"],
-                     fg=C["text_secondary"]).pack(anchor="w")
-            v = tk.StringVar(value="0.00"); self.tvars[key] = v
-            if big:                               # solid blue total box
-                f.destroy()
-                from ui.ui_kit import total_box
-                total_box(inner, label, v).grid(row=0, column=col, padx=10, sticky="nse")
-                inner.columnconfigure(col - 1, weight=1)
-                return
-            tk.Label(f, textvariable=v, font=("Segoe UI", 16 if big else 11, "bold"),
-                     bg=C["card_bg"], fg=color or C["text_primary"]).pack(anchor="w")
-        tcell(0, "Total Qty", "qty")
-        tcell(1, "Gross", "gross")
-        tcell(2, "Discount", "disc", color=C["danger"])
-        tcell(3, "Taxable", "taxable")
-        tcell(4, "VAT", "vat", color=C["info"])
-        tk.Frame(inner, bg=C["border"], width=1).grid(row=0, column=5, sticky="ns", padx=6)
-        tcell(6, "NET TOTAL (SAR)", "total", color=C["primary"], big=True)
+        """v6.9: totals on one slim line (was a tall block)."""
+        from ui.ui_kit import total_strip
+        self.tvars = total_strip(self.bottom_bar,
+                                 [("Total Qty", "qty", None), ("Gross", "gross", None),
+                                  ("Discount", "disc", C["danger"]), ("Taxable", "taxable", None),
+                                  ("VAT", "vat", C["info"])],
+                                 ("NET TOTAL (SAR)", "total"), C)
 
     def _build_footer(self, C):
         footer = tk.Frame(self.win, bg=C["card_bg"],
                           highlightbackground=C["border"], highlightthickness=1)
         footer.pack(fill="x", side="bottom")
-        inner = tk.Frame(footer, bg=C["card_bg"]); inner.pack(fill="x", padx=16, pady=8)
+        inner = tk.Frame(footer, bg=C["card_bg"]); inner.pack(fill="x", padx=10, pady=3)
         self.status_var = tk.StringVar()
         tk.Label(inner, textvariable=self.status_var, font=("Segoe UI", 9),
                  bg=C["card_bg"], fg=C["danger"]).pack(side="left")
         tk.Button(inner, command=self.win.destroy,
-                  **__import__("ui.ui_kit", fromlist=["x"]).ghost_key_style("Esc", "Cancel")).pack(
+                  **__import__("ui.ui_kit", fromlist=["x"]).slim_ghost_key_style("Esc", "Cancel")).pack(
                       side="right", padx=(8, 0))
         from ui import print_menu
         print_menu.print_button(inner, "purchase", lambda: self.purchase_id,
                                 before=self._save_for_print, status=self.status_var,
-                                **__import__("ui.ui_kit", fromlist=["x"]).key_style(
+                                **__import__("ui.ui_kit", fromlist=["x"]).slim_key_style(
                                     C.get("tile_purple", C["info"]), "🖨 ▾", "Print")).pack(side="right", padx=(8, 0))
         tk.Button(inner, command=lambda: self._save(confirm=True),
-                  **__import__("ui.ui_kit", fromlist=["x"]).key_style(
+                  **__import__("ui.ui_kit", fromlist=["x"]).slim_key_style(
                       C.get("tile_green", C["success"]), "F10", "Save & Confirm")).pack(side="right", padx=(8, 0))
         # v6.0: batch no. + expiry date per line
         tk.Button(inner, text="⏰ Expiry dates", font=("Segoe UI", 9), bg=C["card_bg"],
-                  relief="flat", padx=10, pady=4, cursor="hand2", highlightthickness=1,
+                  relief="flat", padx=10, pady=2, cursor="hand2", highlightthickness=1,
                   highlightbackground=C["border"], command=self._expiry_dates).pack(side="right", padx=(8, 0))
         tk.Button(inner, command=lambda: self._save(confirm=False),
-                  **__import__("ui.ui_kit", fromlist=["x"]).key_style(
+                  **__import__("ui.ui_kit", fromlist=["x"]).slim_key_style(
                       C.get("tile_blue", C["primary"]), "F9", "Save Draft")).pack(side="right")
 
     def _focus_barcode(self):

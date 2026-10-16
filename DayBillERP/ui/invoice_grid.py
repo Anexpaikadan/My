@@ -130,7 +130,8 @@ class InvoiceGrid(tk.Frame):
         for key, title, w, anchor in COLUMNS:
             self.footer_tree.column(key, width=w, anchor=anchor,
                                     stretch=(key == "product"))
-        self.footer_tree.pack(fill="x", side="bottom")
+        # v6.9: placed before the item rows → never cut off on a small window
+        self.footer_tree.pack(fill="x", side="bottom", before=self.tree)
         self.footer_tree.insert("", "end", iid="sum", values=(""))
         try:
             from ui.grid_lines import excel_grid
@@ -162,7 +163,8 @@ class InvoiceGrid(tk.Frame):
         except Exception:
             self._ctrl_hold = None
 
-        hint = tk.Frame(self, bg=C["card_bg"]); hint.pack(fill="x", padx=4, pady=(2, 0))
+        hint = tk.Frame(self, bg=C["card_bg"])
+        hint.pack(fill="x", side="bottom", padx=4, pady=(2, 0), before=self.tree.master)
         # last saved document of this kind — small, on the right
         self.last_var = tk.StringVar(value=self._last_doc_text(self._last_kind))
         tk.Label(hint, textvariable=self.last_var, font=("Segoe UI", 8, "bold"),

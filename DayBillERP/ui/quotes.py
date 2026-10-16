@@ -193,19 +193,19 @@ class DocForm:
                         highlightthickness=1)
         form.pack(fill="x")
         self.form_body = form
-        g = tk.Frame(form, bg=C["card_bg"]); g.pack(fill="x", padx=14, pady=10)
+        g = tk.Frame(form, bg=C["card_bg"]); g.pack(fill="x", padx=12, pady=(4, 5))
 
-        def lbl(r, c, t):
-            tk.Label(g, text=t, font=("Segoe UI", 9), bg=C["card_bg"],
+        def lbl(r, c, t):                     # v6.9: two slim rows (was three)
+            tk.Label(g, text=t, font=("Segoe UI", 8), bg=C["card_bg"],
                      fg=C["text_secondary"]).grid(row=r, column=c, sticky="w",
-                                                   padx=(0 if c == 0 else 16, 6), pady=4)
+                                                   padx=(0 if c == 0 else 14, 4), pady=2)
 
         self.v = {x: tk.StringVar() for x in ("number", "date", "date2", "status",
                                               "party", "ref", "notes")}
         lbl(0, 0, "Number")
         nf = tk.Frame(g, bg=C["card_bg"]); nf.grid(row=0, column=1, sticky="w")
         tk.Entry(nf, textvariable=self.v["number"], width=20, font=("Segoe UI", 10),
-                 relief="solid", bd=1, state="readonly").pack(side="left", ipady=3)
+                 relief="solid", bd=1, state="readonly").pack(side="left", ipady=1)
         for txt, cmd in (("▲", self._prev), ("▼", self._next)):
             tk.Button(nf, text=txt, font=("Segoe UI", 7), width=2, relief="flat",
                       bg=C["content_bg"], cursor="hand2", command=cmd).pack(side="left", padx=(2, 0))
@@ -217,56 +217,54 @@ class DocForm:
         lbl(1, 0, k["party_label"] + " *")
         self.party_cb = ttk.Combobox(g, textvariable=self.v["party"], width=40,
                                      values=self._party_opts, font=("Segoe UI", 10))
-        self.party_cb.grid(row=1, column=1, sticky="w", pady=4, ipady=2)
+        self.party_cb.grid(row=1, column=1, sticky="w", pady=2)
         self.party_cb.bind("<KeyRelease>", self._filter_party)
         lbl(1, 2, "Reference")
         tk.Entry(g, textvariable=self.v["ref"], width=16, font=("Segoe UI", 10),
-                 relief="solid", bd=1).grid(row=1, column=3, sticky="w", ipady=3)
-        lbl(1, 4, "Status")
+                 relief="solid", bd=1).grid(row=1, column=3, sticky="w", ipady=1)
+        lbl(0, 6, "Status")
         self.status_cb = ttk.Combobox(g, textvariable=self.v["status"], width=12,
                                       values=k["statuses"], state="readonly",
                                       font=("Segoe UI", 10))
-        self.status_cb.grid(row=1, column=5, sticky="w", ipady=2)
-        lbl(2, 0, "Notes / Terms")
-        tk.Entry(g, textvariable=self.v["notes"], width=86, font=("Segoe UI", 10),
-                 relief="solid", bd=1).grid(row=2, column=1, columnspan=5, sticky="w",
-                                           pady=4, ipady=3)
+        self.status_cb.grid(row=0, column=7, sticky="w")
+        lbl(1, 4, "Notes / Terms")
+        tk.Entry(g, textvariable=self.v["notes"], width=40, font=("Segoe UI", 10),
+                 relief="solid", bd=1).grid(row=1, column=5, columnspan=3, sticky="ew",
+                                           pady=2, ipady=1)
+        g.columnconfigure(5, weight=1)
 
-        items = tk.Frame(self.win, bg=C["content_bg"])
-        items.pack(side="top", fill="both", expand=True)
-        tk.Label(items, text="🛒  Items", font=("Segoe UI", 10, "bold"),
-                 bg=C["content_bg"], fg=C["primary"]).pack(anchor="w", padx=16, pady=(8, 0))
+        items = tk.Frame(self.win, bg=C["content_bg"])      # packed last (v6.9)
         from ui.invoice_grid import InvoiceGrid
         self.grid = InvoiceGrid(items, C, self._products, self._units,
                                 on_change=self._on_change,
                                 tax_mode=cfg.get(k["tax_key"], k["tax_default"]),
                                 doc_type=k["grid_doc"], last_kind=None)
-        self.grid.pack(fill="both", expand=True, padx=16, pady=(4, 0))
+        self.grid.pack(fill="both", expand=True, padx=8, pady=(4, 0))
 
         footer = tk.Frame(self.win, bg=C["card_bg"], highlightbackground=C["border"],
                           highlightthickness=1)
         footer.pack(fill="x", side="bottom")
-        fi = tk.Frame(footer, bg=C["card_bg"]); fi.pack(fill="x", padx=16, pady=8)
+        fi = tk.Frame(footer, bg=C["card_bg"]); fi.pack(fill="x", padx=10, pady=3)
         self.msg = tk.StringVar()
         tk.Label(fi, textvariable=self.msg, font=("Segoe UI", 9), bg=C["card_bg"],
                  fg=C["danger"]).pack(side="left")
         tk.Button(fi, text="Close", font=("Segoe UI", 10), bg=C["card_bg"],
-                  fg=C["text_secondary"], relief="flat", padx=14, pady=6, cursor="hand2",
+                  fg=C["text_secondary"], relief="flat", padx=14, pady=3, cursor="hand2",
                   highlightbackground=C["border"], highlightthickness=1,
                   command=self._close).pack(side="right", padx=(8, 0))
         self.btn_convert = tk.Button(
             fi, text=f"➡  Make {k['convert']}", font=("Segoe UI", 10, "bold"),
-            bg=C["success"], fg="white", relief="flat", padx=14, pady=6, cursor="hand2",
+            bg=C["success"], fg="white", relief="flat", padx=14, pady=3, cursor="hand2",
             command=self.convert)
         self.btn_convert.pack(side="right", padx=(8, 0))
         self.btn_wa = tk.Button(fi, text="🟢  WhatsApp", font=("Segoe UI", 10),
                                 bg=C["card_bg"], fg=C["text_primary"], relief="flat",
-                                padx=12, pady=6, cursor="hand2",
+                                padx=12, pady=3, cursor="hand2",
                                 highlightbackground=C["border"], highlightthickness=1,
                                 command=self._whatsapp)
         self.btn_wa.pack(side="right", padx=(8, 0))
         from ui import print_menu
-        from ui.ui_kit import key_style
+        from ui.ui_kit import slim_key_style as key_style        # v6.9: one-line buttons
         _ps = key_style(C.get("tile_purple", C["info"]), "Ctrl+P ▾", "Print")
         _pt = _ps.pop("text")
         print_menu.print_button(fi, self.kind, lambda: self.doc_id,
@@ -277,30 +275,17 @@ class DocForm:
         self.btn_save.pack(side="right")
         if self.kind == "purchase_order":       # v6.0: what to order (low stock)
             tk.Button(fi, text="💡 Suggest (low stock)", font=("Segoe UI", 10), bg=C["card_bg"],
-                      relief="flat", padx=12, pady=6, cursor="hand2", highlightthickness=1,
+                      relief="flat", padx=12, pady=3, cursor="hand2", highlightthickness=1,
                       highlightbackground=C["border"], command=self._suggest).pack(side="right", padx=(0, 8))
 
         tot = tk.Frame(self.win, bg=C["card_bg"], highlightbackground=C["border"],
                        highlightthickness=1)
         tot.pack(fill="x", side="bottom")
-        ti = tk.Frame(tot, bg=C["card_bg"]); ti.pack(fill="x", padx=14, pady=6)
-        self.tv = {}
-        for i, (lab, key, big) in enumerate((("Items", "count", False), ("Qty", "qty", False),
-                                             ("Taxable", "taxable", False),
-                                             ("VAT", "vat", False),
-                                             ("TOTAL (SAR)", "total", True))):
-            f = tk.Frame(ti, bg=C["card_bg"]); f.grid(row=0, column=i, padx=14, sticky="w")
-            tk.Label(f, text=lab, font=("Segoe UI", 8), bg=C["card_bg"],
-                     fg=C["text_secondary"]).pack(anchor="w")
-            v = tk.StringVar(value="0"); self.tv[key] = v
-            if big:                               # solid blue total box
-                f.destroy()
-                from ui.ui_kit import total_box
-                total_box(ti, lab, v).grid(row=0, column=i, padx=14, sticky="nse")
-                ti.columnconfigure(i - 1, weight=1)
-                continue
-            tk.Label(f, textvariable=v, font=("Segoe UI", 16 if big else 11, "bold"),
-                     bg=C["card_bg"], fg=C["primary"] if big else C["text_primary"]).pack(anchor="w")
+        from ui.ui_kit import total_strip               # v6.9: totals on one slim line
+        self.tv = total_strip(tot, [("Items", "count", None), ("Qty", "qty", None),
+                                    ("Taxable", "taxable", None), ("VAT", "vat", C["info"])],
+                              ("TOTAL (SAR)", "total"), C)
+        items.pack(side="top", fill="both", expand=True)
         self._on_change()
         try:
             self.grid.focus_first_product()
@@ -752,16 +737,16 @@ class _DocListView:
                                  ("❌  Cancel", self._cancel, "#FEF2F2", C["danger"]),
                                  ("🗑  Delete", self._delete, "#FEF2F2", C["danger"])):
             tk.Button(bb, text=txt, font=("Segoe UI", 9), bg=bg, fg=fg, relief="flat",
-                      padx=12, pady=6, cursor="hand2", highlightbackground=C["border"],
+                      padx=12, pady=3, cursor="hand2", highlightbackground=C["border"],
                       highlightthickness=1 if bg == C["card_bg"] else 0,
                       command=cmd).pack(side="left", padx=(0, 6))
         tk.Button(bb, text="🔄  Refresh", font=("Segoe UI", 9), bg=C["card_bg"],
-                  fg=C["text_secondary"], relief="flat", padx=12, pady=6, cursor="hand2",
+                  fg=C["text_secondary"], relief="flat", padx=12, pady=3, cursor="hand2",
                   highlightbackground=C["border"], highlightthickness=1,
                   command=self.load).pack(side="right")
         if self.kind == "purchase_order":       # v6.4: goods came → scan them against the order
             tk.Button(bb, text="📦  Receive (scan)", font=("Segoe UI", 9, "bold"), bg=C["primary"],
-                      fg="white", relief="flat", padx=12, pady=6, cursor="hand2",
+                      fg="white", relief="flat", padx=12, pady=3, cursor="hand2",
                       command=self._receive).pack(side="right", padx=6)
             menu.insert_command(2, label="📦  Receive (scan)", command=self._receive)
         self.load()

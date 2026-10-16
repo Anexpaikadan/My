@@ -18,6 +18,12 @@ Newest first. The short guide is in the main README.md.
   another (built-in DayBill map). An *is_active* column is never taken as
   "Inactive" any more (it made every converted product inactive).
 - **Simple windows**: one slim title line on every form and dialog.
+- **Bigger item area in every item window** (Sales, Purchase, Sales /
+  Purchase Return, Quotation, Purchase Order): the sales header is two rows
+  (was five), the totals two rows (was seven), one-line buttons with the status
+  in the same line, no title line above the grid. At 1366 × 768 the sales
+  window shows about 11 item rows instead of 4. The grid's total row and hint
+  line can no longer be cut off.
 - **Clean folders**: `docs/` (guides), `database/patches/` (automatic updates),
   `database/tools/` (repair scripts by hand), `extras/` (Android app source).
   Removed an unused module. Wrong menu items fixed (Customer / Supplier
