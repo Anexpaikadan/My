@@ -377,7 +377,8 @@ _settings = {}
 _theme = {}
 # saved locked to this computer (Windows DPAPI) — see config/secret_box.py
 SECRET_KEYS = ("ai_api_key", "wathq_api_key", "van_relay_key", "wa_api_token",
-               "smtp_password", "relay_password")
+               "smtp_password", "relay_password",
+               "tally_api_key", "jotform_api_key")        # v6.9: form keys locked too
 
 
 def load_settings() -> dict:

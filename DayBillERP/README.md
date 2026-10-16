@@ -68,6 +68,13 @@ line to open its transaction; right-click for Open · Edit · Delete · Voucher 
 New. **🔗 Connectors** shows which window each kind of line opens and lets you
 choose what a double-click does.
 
+## 🌐 Online forms (Tally or Jotform)
+
+Customers and suppliers register — and rate their visit — on their phone.
+Settings ▸ Online forms: choose **Tally** or **Jotform**, paste the API key and
+the three form links (Customer registration, Supplier registration, How was
+your visit?). Answers wait in Customers ▸ 🌐 Online forms until you review them.
+
 ## 🌐 Language
 
 **🌐 العربية** (top right) switches to Arabic (right-to-left); **🌐 English** back.

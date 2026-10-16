@@ -1,5 +1,5 @@
 # ============================================================
-# DayBill ERP - Online forms (Tally) (v6.8)
+# DayBill ERP - Online forms (Tally or Jotform) (v6.8, Jotform v6.9)
 # ------------------------------------------------------------
 # Customers and suppliers fill a Tally web form on their phone
 # (link, WhatsApp, or a QR code on the receipt). DayBill brings the
@@ -16,6 +16,14 @@
 #   tally_form_supplier
 #   tally_form_feedback
 #   receipt_feedback_qr  – print "Rate your visit" QR on POS receipts
+#
+# v6.9 — Jotform works the same way (forms_provider = "jotform"):
+#   jotform_api_key        – Jotform ▸ Settings ▸ API ▸ Create New Key
+#   jotform_form_customer  – form ID or link, e.g. https://form.jotform.com/2610…
+#   jotform_form_supplier / jotform_form_feedback
+#   jotform_region         – "us" (default) or "eu" (eu.jotform.com accounts)
+# Questions are read by their title exactly as for Tally; the feedback
+# form's hidden boxes are named bill and branch (?bill=… in the link).
 # ============================================================
 import json
 import re
@@ -37,6 +45,9 @@ KINDS = {
     "supplier": ("tally_form_supplier", "Supplier registration", "تسجيل مورد"),
     "feedback": ("tally_form_feedback", "Customer feedback", "تقييم العملاء"),
 }
+JOT_KEYS = {"customer": "jotform_form_customer", "supplier": "jotform_form_supplier",
+            "feedback": "jotform_form_feedback"}
+PROVIDERS = (("tally", "Tally (tally.so)"), ("jotform", "Jotform (jotform.com)"))
 
 # Tally question title (English part, before " · ") → DayBill field.
 # Matched by words, so a title can be reworded a little.
@@ -90,11 +101,41 @@ def _get(key, default=""):
         return default
 
 
+def provider():
+    """'tally' or 'jotform' (Settings ▸ Online forms ▸ Forms from)."""
+    p = _get("forms_provider").lower()
+    if p.startswith("jot"):
+        return "jotform"
+    if p.startswith("tal"):
+        return "tally"
+    # not chosen yet: the one that has a key
+    return "jotform" if _get("jotform_api_key") and not _get("tally_api_key") else "tally"
+
+
+def provider_name():
+    return dict(PROVIDERS)[provider()].split(" ")[0]
+
+
 def form_id(kind):
-    """The Tally form ID for a kind — the setting may hold the ID or any
-    tally.so link (r/<id>, forms/<id>/edit, embed/<id>)."""
-    raw = _get(KINDS[kind][0]) if kind in KINDS else ""
-    return parse_form_id(raw)
+    """The form ID for a kind — the setting may hold the ID or any link
+    (tally.so/r/<id>, form.jotform.com/<id>, …)."""
+    if kind not in KINDS:
+        return ""
+    if provider() == "jotform":
+        return parse_jotform_id(_get(JOT_KEYS[kind]))
+    return parse_form_id(_get(KINDS[kind][0]))
+
+
+def parse_jotform_id(raw):
+    """'https://form.jotform.com/261234567890123' / 'jotform.com/build/…' / the
+    number itself → '261234567890123'."""
+    raw = (raw or "").strip()
+    if not raw:
+        return ""
+    m = re.search(r"jotform\.com/(?:form/|build/|edit/|inbox/|tables/)?(\d{8,20})", raw)
+    if m:
+        return m.group(1)
+    return raw if re.fullmatch(r"\d{8,20}", raw) else ""
 
 
 def parse_form_id(raw):
@@ -112,11 +153,19 @@ def form_link(kind, **params):
     if not fid:
         return ""
     q = {k: v for k, v in params.items() if v not in (None, "")}
-    return "https://tally.so/r/%s%s" % (fid, ("?" + urllib.parse.urlencode(q)) if q else "")
+    tail = ("?" + urllib.parse.urlencode(q)) if q else ""
+    if provider() == "jotform":
+        host = "eu.jotform.com" if _get("jotform_region").lower() == "eu" else "form.jotform.com"
+        return "https://%s/%s%s" % (host, fid, tail)
+    return "https://tally.so/r/%s%s" % (fid, tail)
+
+
+def api_key():
+    return _get("jotform_api_key" if provider() == "jotform" else "tally_api_key")
 
 
 def configured():
-    return bool(_get("tally_api_key")) and any(form_id(k) for k in KINDS)
+    return bool(api_key()) and any(form_id(k) for k in KINDS)
 
 
 # ── Tally API ───────────────────────────────────────────────
@@ -146,6 +195,92 @@ def _request(path, params=None, timeout=20):
         raise TallyError("Tally error %s" % e.code)
     except (urllib.error.URLError, OSError) as e:
         raise TallyError("No internet connection to Tally (%s)." % getattr(e, "reason", e))
+
+
+# ── Jotform API (v6.9) ──────────────────────────────────────
+_JOT_SKIP = {"control_head", "control_button", "control_text", "control_divider",
+             "control_pagebreak", "control_collapse", "control_image", "control_captcha"}
+
+
+def _jot_request(path, params=None, timeout=20):
+    key = _get("jotform_api_key")
+    if not key:
+        raise TallyError("Add your Jotform API key in Settings ▸ Online forms.")
+    base = "https://eu-api.jotform.com" if _get("jotform_region").lower() == "eu" \
+        else "https://api.jotform.com"
+    q = dict(params or {})
+    url = base + path + ("?" + urllib.parse.urlencode(q) if q else "")
+    req = urllib.request.Request(url, headers={"APIKEY": key, "Accept": "application/json",
+                                               "User-Agent": "DayBillERP"})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            data = json.loads(r.read().decode("utf-8") or "{}")
+    except urllib.error.HTTPError as e:
+        if e.code in (401, 403):
+            raise TallyError("Jotform did not accept the API key (%s). Make a new key in "
+                             "Jotform ▸ Settings ▸ API." % e.code)
+        if e.code == 404:
+            raise TallyError("Jotform can't find that form — check the form ID in Settings.")
+        if e.code == 429:
+            raise TallyError("Jotform says: too many requests (daily API limit). Try later.")
+        raise TallyError("Jotform error %s" % e.code)
+    except (urllib.error.URLError, OSError) as e:
+        raise TallyError("No internet connection to Jotform (%s)." % getattr(e, "reason", e))
+    if str(data.get("responseCode", 200)) not in ("200", "206"):
+        raise TallyError("Jotform: %s" % (data.get("message") or data.get("responseCode")))
+    return data
+
+
+def jot_fetch(fid, max_pages=20):
+    """All submissions of a Jotform form (newest first, deleted ones left out)."""
+    subs, offset = [], 0
+    for _ in range(max_pages):
+        data = _jot_request("/form/%s/submissions" % fid,
+                            {"limit": 1000, "offset": offset, "orderby": "created_at"})
+        part = data.get("content") or []
+        subs.extend(p for p in part if str(p.get("status", "ACTIVE")).upper() != "DELETED")
+        if len(part) < 1000:
+            break
+        offset += 1000
+    return subs
+
+
+def _jot_value(a):
+    """One Jotform answer → plain text (lists joined with ', ' like Tally)."""
+    if isinstance(a.get("answer"), (list, tuple)):
+        return answer_text(a["answer"])
+    if a.get("prettyFormat") not in (None, ""):
+        return re.sub(r"<[^>]+>", " ", str(a["prettyFormat"])).strip()
+    val = a.get("answer")
+    if isinstance(val, dict):
+        if val.get("full"):                         # phone
+            return str(val["full"])
+        return " ".join(str(v) for v in val.values() if v not in (None, "")).strip()
+    return answer_text(val)
+
+
+def jot_normalize(subs):
+    """Jotform submissions → [{id, submitted_at, answers: {title: text}}]
+    (the same shape normalize() gives for Tally)."""
+    out = []
+    for s in subs or []:
+        answers = {}
+        items = (s.get("answers") or {}).values() if isinstance(s.get("answers"), dict) else []
+        for a in sorted(items, key=lambda x: int(str(x.get("order") or 0) or 0)):
+            if not isinstance(a, dict) or a.get("type") in _JOT_SKIP:
+                continue
+            name = str(a.get("name") or "")
+            title = str(a.get("text") or name or "")
+            if "answer" not in a and "prettyFormat" not in a:
+                continue
+            txt = _jot_value(a)
+            if name.lower() in ("bill", "branch"):          # hidden boxes (?bill=…)
+                answers[name.lower()] = txt
+            elif title:
+                answers[title] = txt
+        out.append({"id": "jf-" + str(s.get("id") or ""), "answers": answers,
+                    "submitted_at": str(s.get("created_at") or "")[:19]})
+    return [e for e in out if e["id"] != "jf-"]
 
 
 def fetch_raw(fid, max_pages=20):
@@ -320,15 +455,19 @@ def store(kind, entries):
 
 
 def sync(kinds=None):
-    """Bring new answers in from Tally. → ({kind: added}, [problems])."""
+    """Bring new answers in from Tally / Jotform. → ({kind: added}, [problems])."""
     added, problems = {}, []
+    jot = provider() == "jotform"
     for kind in (kinds or KINDS):
         fid = form_id(kind)
         if not fid:
             continue
         try:
-            q, s = fetch_raw(fid)
-            added[kind] = store(kind, normalize(q, s))
+            if jot:
+                added[kind] = store(kind, jot_normalize(jot_fetch(fid)))
+            else:
+                q, s = fetch_raw(fid)
+                added[kind] = store(kind, normalize(q, s))
         except TallyError as e:
             problems.append("%s: %s" % (KINDS[kind][1], e))
         except Exception as e:                          # never crash the app

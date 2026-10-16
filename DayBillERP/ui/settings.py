@@ -228,11 +228,19 @@ SECTIONS = [
         F("pos_paper_size", "POS Paper Size", "choice", ["80mm", "58mm"]),
         F("print_copies", "Copies", "number"),
     ]},
-    {"key": "online_forms", "title": "Online forms (Tally)", "icon": "🌐", "store": "app", "fields": [
+    {"key": "online_forms", "title": "Online forms (Tally / Jotform)", "icon": "🌐", "store": "app", "fields": [
+        F("forms_provider", "Forms from", "choice",
+          [("tally", "Tally (tally.so)"), ("jotform", "Jotform (jotform.com)")]),
         F("tally_api_key", "Tally API key (tally.so ▸ Settings ▸ API keys)", "secret"),
-        F("tally_form_customer", "Customer registration form — ID or link (e.g. https://tally.so/r/4aXjl5)"),
-        F("tally_form_supplier", "Supplier registration form — ID or link"),
-        F("tally_form_feedback", "Customer feedback form — ID or link"),
+        F("tally_form_customer", "Tally · customer registration form — ID or link (e.g. https://tally.so/r/4aXjl5)"),
+        F("tally_form_supplier", "Tally · supplier registration form — ID or link"),
+        F("tally_form_feedback", "Tally · customer feedback form — ID or link"),
+        F("jotform_api_key", "Jotform API key (jotform.com ▸ Settings ▸ API ▸ Create New Key)", "secret"),
+        F("jotform_region", "Jotform account", "choice",
+          [("us", "jotform.com"), ("eu", "eu.jotform.com (EU)")]),
+        F("jotform_form_customer", "Jotform · customer registration form — ID or link"),
+        F("jotform_form_supplier", "Jotform · supplier registration form — ID or link"),
+        F("jotform_form_feedback", "Jotform · customer feedback form — ID or link"),
         F("tally_auto_check", "Check for new answers when DayBill opens and every hour", "check"),
         F("receipt_feedback_qr", "Print a small 'Rate your visit' QR on POS receipts", "check"),
     ]},
@@ -387,7 +395,7 @@ DESCRIPTIONS = {
     "accounting": "Journal posting behaviour. Default ledger accounts are set in Accounts ▸ Default Accounts.",
     "customer": "Customer code numbering and credit controls.",
     "supplier": "Supplier code numbering and controls.",
-    "online_forms": "Customers and suppliers fill a Tally web form on their phone; the answers wait "
+    "online_forms": "Customers and suppliers fill a Tally or Jotform web form on their phone; the answers wait "
                     "in Customers ▸ 🌐 Online forms until you review and add them.",
     "security": "Password policy. Users and rights are in Users & Rights.",
     "backup": "Automatic backup schedule and location.",

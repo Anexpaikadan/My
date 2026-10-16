@@ -259,6 +259,23 @@ def run(out_dir=None):
             raise RuntimeError("online form answers not mapped: %s" % v)
     step("Tally-style boxes + online forms", forms_v680)
 
+    def forms_v690():
+        from modules import online_forms as of
+        if of.parse_jotform_id("https://form.jotform.com/261234567890123") != "261234567890123":
+            raise RuntimeError("Jotform link not read")
+        e = of.jot_normalize([{"id": "9", "created_at": "2026-01-01 10:00:00", "answers": {
+            "1": {"name": "rating", "order": "1", "text": "Your rating", "type": "control_rating", "answer": "4"},
+            "2": {"name": "good", "order": "2", "text": "What was good?", "type": "control_checkbox",
+                  "answer": ["Prices · الأسعار", "Clean store"]},
+            "3": {"name": "bill", "order": "3", "text": "bill", "type": "control_textbox", "answer": "1001"}}}])
+        v = of.map_answers("feedback", e[0]["answers"])
+        if v.get("rating") != 4 or v.get("bill") != "1001" or v.get("liked") != "Prices, Clean store":
+            raise RuntimeError("Jotform answers not mapped: %s" % v)
+        from ui import txn_connector as tc
+        if tc.CONN["sales"]["perm"] != "sales" or "cogs" not in tc.CONN["sales"]["sources"]:
+            raise RuntimeError("ledger connector map wrong")
+    step("Jotform forms + ledger connector", forms_v690)
+
     text = "DayBill ERP self-test  %s\n%s\n\n%s\n" % (
         datetime.now().strftime("%Y-%m-%d %H:%M"), "-" * 40, "\n".join(rows))
     text += "\nRESULT: %s\n" % ("ALL OK" if ok_all else "PROBLEMS FOUND")

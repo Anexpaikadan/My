@@ -1,7 +1,7 @@
 # ============================================================
 # DayBill ERP - 🌐 Online forms window (v6.8)
 # ------------------------------------------------------------
-# Answers from the Tally web forms wait here:
+# Answers from the Tally / Jotform web forms wait here:
 #   Customers · Suppliers · Feedback  (tabs, with the number of new ones)
 # Left: the list.  Right: every answer of the chosen one, Tally style
 # (question in small grey, answer below), and what you can do with it:
@@ -47,7 +47,7 @@ class OnlineFormsWindow:
         self.win.bind("<Escape>", lambda e: self.win.destroy())
         self.win.bind("<F5>", lambda e: self.check_now())
         FK.header(self.win, C, "🌐  Online forms  ·  النماذج الإلكترونية",
-                  "Tally — customers and suppliers fill them on their phone")
+                  "%s — customers and suppliers fill them on their phone" % OF.provider_name())
         self._build_top(C)
         self.nb = ttk.Notebook(self.win)
         self.nb.pack(fill="both", expand=True, padx=10, pady=(4, 10))
@@ -195,14 +195,15 @@ class OnlineFormsWindow:
 
     def _empty_text(self, k):
         if not OF.form_id(k):
-            return ("No %s form set yet.\n\nPress ⚙ Settings and paste the link of your Tally form."
-                    % OF.KINDS[k][1].lower())
+            return ("No %s form set yet.\n\nPress ⚙ Settings and paste the link of your %s form."
+                    % (OF.KINDS[k][1].lower(), OF.provider_name()))
         return "Nothing new.\nPress ⟳ Check for new answers (F5)."
 
     def _status_text(self):
         last = str(cfg.get("tally_last_sync", "") or "")
-        if not str(cfg.get("tally_api_key", "") or "").strip():
-            self.status.set("⚠ Add your Tally API key in ⚙ Settings to bring answers in.")
+        if not OF.api_key():
+            self.status.set("⚠ Add your %s API key in ⚙ Settings to bring answers in."
+                            % OF.provider_name())
         else:
             self.status.set("Last checked: %s" % (last or "never"))
 
@@ -377,10 +378,11 @@ class OnlineFormsWindow:
 
     def check_now(self):
         if not OF.configured():
-            self.status.set("⚠ Add your Tally API key and at least one form in ⚙ Settings first.")
+            self.status.set("⚠ Add your %s API key and at least one form in ⚙ Settings first."
+                            % OF.provider_name())
             return
         self.check_btn.configure(state="disabled", text="⟳ Checking…")
-        self.status.set("Checking Tally for new answers…")
+        self.status.set("Checking %s for new answers…" % OF.provider_name())
         res = {}
 
         def work():
@@ -477,20 +479,28 @@ class ShareDialog:
 
 
 class SettingsDialog:
-    """Settings ▸ Online forms, right here (API key + the 3 form links)."""
-    FIELDS = (("tally_api_key", "Tally API key", "tally.so ▸ Settings ▸ API keys ▸ Create API key", True),
-              ("tally_form_customer", "Customer registration form", "link or ID, e.g. https://tally.so/r/4aXjl5", False),
-              ("tally_form_supplier", "Supplier registration form", "link or ID", False),
-              ("tally_form_feedback", "Customer feedback form", "link or ID", False))
+    """Settings ▸ Online forms, right here: Tally or Jotform, the API key
+    and the 3 form links (v6.9: Jotform)."""
+    FIELDS = {
+        "tally": (("tally_api_key", "Tally API key", "tally.so ▸ Settings ▸ API keys ▸ Create API key", True),
+                  ("tally_form_customer", "Customer registration form", "link or ID, e.g. https://tally.so/r/4aXjl5", False),
+                  ("tally_form_supplier", "Supplier registration form", "link or ID", False),
+                  ("tally_form_feedback", "Customer feedback form", "link or ID", False)),
+        "jotform": (("jotform_api_key", "Jotform API key", "jotform.com ▸ Settings ▸ API ▸ Create New Key", True),
+                    ("jotform_form_customer", "Customer registration form", "link or ID, e.g. https://form.jotform.com/2610…", False),
+                    ("jotform_form_supplier", "Supplier registration form", "link or ID", False),
+                    ("jotform_form_feedback", "Customer feedback form", "link or ID", False)),
+    }
 
     def __init__(self, parent, on_save=None):
         from ui import form_kit as FK
-        C = cfg.theme()
+        C = self.C = cfg.theme()
+        self.FK = FK
         self.on_save = on_save
-        self.win = FK.popup("Online forms settings", (600, 470), (520, 430), None, parent=parent)
+        self.win = FK.popup("Online forms settings", (620, 520), (540, 470), None, parent=parent)
         self.win.configure(bg=C["content_bg"])
         self.win.bind("<Escape>", lambda e: self.win.destroy())
-        FK.header(self.win, C, "⚙  Online forms (Tally)")
+        FK.header(self.win, C, "⚙  Online forms")
         foot = tk.Frame(self.win, bg=C["card_bg"])
         foot.pack(side="bottom", fill="x")
         self.note = tk.Label(foot, text="", bg=C["card_bg"], fg=C["danger"], font=("Segoe UI", 9))
@@ -499,29 +509,57 @@ class SettingsDialog:
                   font=("Segoe UI", 9, "bold"), command=self.save).pack(side="right", padx=12, pady=8)
         tk.Button(foot, text="Cancel", relief="flat", padx=12, pady=5,
                   command=self.win.destroy).pack(side="right", pady=8)
-        g = FK.grid(self.win, C, cols=1)
-        self.vars = {}
-        for i, (key, label, hint, secret) in enumerate(self.FIELDS):
-            v = tk.StringVar(value=str(cfg.get(key, "") or ""))
-            self.vars[key] = v
-            cell, e = FK.field(g, C, i, 0, label, v, hint=hint, check="")
-            if secret:
-                e.configure(show="•")
+        top = tk.Frame(self.win, bg=C["content_bg"])
+        top.pack(fill="x", padx=14, pady=(8, 0))
+        tk.Label(top, text="Forms from", bg=C["content_bg"], font=("Segoe UI", 9, "bold"),
+                 fg=C["text_primary"]).pack(side="left")
+        self.prov = tk.StringVar(value=OF.provider())
+        for val, lbl in OF.PROVIDERS:
+            tk.Radiobutton(top, text=lbl, variable=self.prov, value=val, bg=C["content_bg"],
+                           command=self._fields).pack(side="left", padx=(10, 0))
+        self.region = tk.StringVar(value=str(cfg.get("jotform_region", "us") or "us"))
+        self.region_box = tk.Checkbutton(top, text="EU account (eu.jotform.com)", bg=C["content_bg"],
+                                         variable=self.region, onvalue="eu", offvalue="us")
+        self.vars = {k: tk.StringVar(value=str(cfg.get(k, "") or ""))
+                     for rows in self.FIELDS.values() for k, *_ in rows}
+        self.body = tk.Frame(self.win, bg=C["content_bg"])
+        self.body.pack(fill="x")
         self.auto = tk.BooleanVar(value=bool(cfg.flag("tally_auto_check", False)))
         self.qr = tk.BooleanVar(value=bool(cfg.flag("receipt_feedback_qr", False)))
         tk.Checkbutton(self.win, text="Check for new answers when DayBill opens and every hour",
                        variable=self.auto, bg=C["content_bg"], anchor="w").pack(fill="x", padx=14)
         tk.Checkbutton(self.win, text="Print a small 'Rate your visit' QR on POS receipts",
                        variable=self.qr, bg=C["content_bg"], anchor="w").pack(fill="x", padx=14)
+        self._fields()
+
+    def _fields(self):
+        """Show the boxes of the chosen service."""
+        for w in self.body.winfo_children():
+            w.destroy()
+        prov = self.prov.get()
+        if prov == "jotform":
+            self.region_box.pack(side="left", padx=(16, 0))
+        else:
+            self.region_box.pack_forget()
+        g = self.FK.grid(self.body, self.C, cols=1)
+        for i, (key, label, hint, secret) in enumerate(self.FIELDS[prov]):
+            cell, e = self.FK.field(g, self.C, i, 0, label, self.vars[key], hint=hint, check="")
+            if secret:
+                e.configure(show="•")
 
     def save(self):
-        for key in ("tally_form_customer", "tally_form_supplier", "tally_form_feedback"):
+        prov = self.prov.get()
+        parse = OF.parse_jotform_id if prov == "jotform" else OF.parse_form_id
+        for key, label, _h, secret in self.FIELDS[prov]:
             raw = self.vars[key].get().strip()
-            if raw and not OF.parse_form_id(raw):
-                self.note.configure(text="That is not a Tally form link: %s" % raw[:40])
+            if not secret and raw and not parse(raw):
+                self.note.configure(text="That is not a %s form link: %s"
+                                    % ("Jotform" if prov == "jotform" else "Tally", raw[:40]))
                 return
         for key, v in self.vars.items():
             cfg.set(key, v.get().strip())
+        cfg.set("forms_provider", prov)
+        cfg.set("jotform_region", self.region.get())
         cfg.set("tally_auto_check", bool(self.auto.get()))
         cfg.set("receipt_feedback_qr", bool(self.qr.get()))
         try:

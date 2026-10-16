@@ -30,6 +30,12 @@ Newest first. The short guide is in the main README.md.
   setting because some patches ran before the table they change existed;
   re-running it with sqlcmd failed (QUOTED_IDENTIFIER). New
   `zzz_v690_patch.sql` repairs databases made by the older installer.
+- **Online forms from Jotform too**: Settings ▸ Online forms ▸ *Forms from*
+  Tally or Jotform (API key, EU account, the three form links). Answers are
+  read by question title exactly as for Tally; the feedback form's hidden
+  boxes are `bill` and `branch`. Ready-made Jotform forms: Customer
+  registration, Supplier registration, How was your visit?. The Tally and
+  Jotform API keys are now kept locked to the PC like the other keys.
 - **Bugs fixed**: the salesman list on the sales invoice was always empty;
   supplier aging ignored purchase returns made from a bill; sales / purchase
   windows logged a database error for a warehouses table that does not exist.
