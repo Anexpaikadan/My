@@ -518,7 +518,7 @@ class SettingsDialog:
             tk.Radiobutton(top, text=lbl, variable=self.prov, value=val, bg=C["content_bg"],
                            command=self._fields).pack(side="left", padx=(10, 0))
         self.region = tk.StringVar(value=str(cfg.get("jotform_region", "us") or "us"))
-        self.region_box = tk.Checkbutton(top, text="EU account (eu.jotform.com)", bg=C["content_bg"],
+        self.region_box = tk.Checkbutton(top, text="EU account", bg=C["content_bg"],
                                          variable=self.region, onvalue="eu", offvalue="us")
         self.vars = {k: tk.StringVar(value=str(cfg.get(k, "") or ""))
                      for rows in self.FIELDS.values() for k, *_ in rows}
