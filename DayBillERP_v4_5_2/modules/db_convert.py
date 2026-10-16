@@ -177,6 +177,14 @@ def _flat(s):
     return norm_name(s).replace(" ", "")
 
 
+def _positive_flag(col):
+    """'is_active', 'Active', 'Enabled', 'Visible' — 1 means IN use."""
+    c = _flat(col)
+    neg = ("inactive", "notactive", "disabled", "deleted", "blocked", "stopped")
+    return (any(w in c for w in ("active", "enabled", "visible", "inuse"))
+            and not any(w in c for w in neg))
+
+
 def name_score(col, synonyms):
     """0..1 — how much a column / table name looks like one of the synonyms."""
     c = _flat(col)
@@ -610,6 +618,8 @@ def score_columns(shape, table, entity):
         syn = FIELD_SYNONYMS.get(field, [])
         lst = []
         for col, ty in cols:
+            if field == "inactive" and _positive_flag(col):
+                continue        # is_active / enabled mean the OPPOSITE (v6.9)
             vals = [r.get(col) for r in sample]
             ns = name_score(col, syn)
             vs = value_score(field, vals, ty)
@@ -678,6 +688,34 @@ def assign(scores, min_score=0.35):
 
 # ── built-in maps for programs whose tables are known ───────
 PROFILES = {
+    # DayBill itself (v6.9): copy one DayBill company into another
+    # (e.g. a new company / a fresh database). Balances = the parties'
+    # opening balances; documents are not copied.
+    "DayBill": {
+        "detect": ["products", "sales_invoices", "company", "users"],
+        "products": {"table": "products", "fields": {
+            "key": "product_id", "code": "product_code", "barcode": "barcode",
+            "name_en": "product_name_en", "name_ar": "product_name_ar",
+            "unit": "unit_of_measure_en", "price": "unit_price", "cost": "purchase_price",
+            "qty": "stock_quantity", "reorder": "reorder_level",
+            "category": {"column": "category_id",
+                         "lookup": {"table": "product_categories", "key": "category_id",
+                                    "value": "category_name_en"}},
+            "vat": {"column": "vat_category_id",
+                    "lookup": {"table": "vat_categories", "key": "vat_category_id",
+                               "value": "category_code"}}}},
+        "barcodes": {"table": "product_unit_barcodes", "fields": {
+            "item": "product_id", "barcode": "barcode"}},
+        "customers": {"table": "customers", "fields": {
+            "code": "customer_code", "name_en": "customer_name_en", "name_ar": "customer_name_ar",
+            "phone": "phone", "email": "email", "vat_no": "vat_registration_no",
+            "address": "address_en", "city": "city_en", "credit_limit": "credit_limit",
+            "balance": "opening_balance"}},
+        "suppliers": {"table": "suppliers", "fields": {
+            "code": "supplier_code", "name_en": "supplier_name_en", "name_ar": "supplier_name_ar",
+            "phone": "phone", "email": "email", "vat_no": "vat_registration_no",
+            "address": "address_en", "city": "city_en", "balance": "opening_balance"}},
+    },
     # Microsoft Dynamics RMS (Store Operations) / Dynamics POS 2009 —
     # Item / Alias / Supplier confirmed; the rest only used when the
     # column really exists in the database.

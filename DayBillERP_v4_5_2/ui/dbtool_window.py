@@ -64,23 +64,34 @@ class DbToolApp:
         self.plan = None
         self._q = queue.Queue()
 
-        head = tk.Frame(root, bg=C["primary"])
+        # v6.9: slim header + FROM / TO pickers that work from every page
+        head = tk.Frame(root, bg=C["primary"], height=34)
         head.pack(fill="x")
-        tk.Label(head, text="🛠  DayBill Database Tool", font=("Segoe UI", 16, "bold"),
-                 bg=C["primary"], fg="white").pack(side="left", padx=16, pady=10)
-        tk.Label(head, text="Pick a database · reset a password · bring another program's data into "
-                 "DayBill. The other program's database is only read — never changed.",
-                 font=("Segoe UI", 9), bg=C["primary"], fg="white").pack(side="left", padx=6)
-        bar = tk.Frame(root, bg=C["content_bg"])
-        bar.pack(fill="x", padx=14, pady=(8, 0))
-        tk.Label(bar, text="FROM (other program):", font=("Segoe UI", 9, "bold"), bg=C["content_bg"],
-                 fg=C["text_secondary"]).pack(side="left")
-        tk.Label(bar, textvariable=self.src_label, font=("Segoe UI", 10, "bold"), bg=C["content_bg"],
-                 fg="#B45309").pack(side="left", padx=(4, 24))
-        tk.Label(bar, text="TO (DayBill):", font=("Segoe UI", 9, "bold"), bg=C["content_bg"],
-                 fg=C["text_secondary"]).pack(side="left")
-        tk.Label(bar, textvariable=self.tgt_label, font=("Segoe UI", 10, "bold"), bg=C["content_bg"],
-                 fg="#15803D").pack(side="left", padx=4)
+        head.pack_propagate(False)
+        tk.Label(head, text="🛠  DayBill Database Tool", font=("Segoe UI", 11, "bold"),
+                 bg=C["primary"], fg="white").pack(side="left", padx=12)
+        tk.Label(head, text="The FROM database is only read — never changed.",
+                 font=("Segoe UI", 8), bg=C["primary"], fg="white").pack(side="right", padx=12)
+        bar = tk.Frame(root, bg=C["card_bg"], highlightthickness=1,
+                       highlightbackground=C["border"])
+        bar.pack(fill="x", padx=12, pady=(8, 0))
+        tk.Label(bar, text="FROM", font=("Segoe UI", 9, "bold"), bg=C["card_bg"],
+                 fg="#B45309").pack(side="left", padx=(10, 4), pady=6)
+        self.from_var = tk.StringVar(value="")
+        self.from_combo = ttk.Combobox(bar, textvariable=self.from_var, width=28, state="readonly")
+        self.from_combo.pack(side="left")
+        self.from_combo.bind("<<ComboboxSelected>>", lambda e: self._pick_from())
+        self._btn(bar, "📂 SQLite…", self._open_file)
+        tk.Button(bar, text="⇄", font=("Segoe UI", 11, "bold"), relief="flat", bg=C["card_bg"],
+                  fg=C["primary"], cursor="hand2", command=self._swap).pack(side="left", padx=8)
+        tk.Label(bar, text="TO", font=("Segoe UI", 9, "bold"), bg=C["card_bg"],
+                 fg="#15803D").pack(side="left", padx=(4, 4))
+        self.to_var = tk.StringVar(value="")
+        self.to_combo = ttk.Combobox(bar, textvariable=self.to_var, width=28, state="readonly")
+        self.to_combo.pack(side="left")
+        self.to_combo.bind("<<ComboboxSelected>>", lambda e: self._pick_to())
+        self._btn(bar, "🆕 New…", self._new_db)
+        self._btn(bar, "🔄 Connect & list", self._list, primary=True, side="right")
         self.status = tk.StringVar(value="Start with 1. Server & databases → Connect.")
         tk.Label(root, textvariable=self.status, font=("Segoe UI", 9, "bold"), bg=C["content_bg"],
                  fg=C["primary"], anchor="w").pack(side="bottom", fill="x", padx=14, pady=(0, 6))
@@ -95,6 +106,9 @@ class DbToolApp:
         self._build_t1()
         self._build_t2()
         self._build_t3()
+        # the saved server is usually right → list its databases at once
+        if not sync:
+            root.after(300, self._list)
 
     # ── helpers ──────────────────────────────────────────────
     def say(self, txt, ok=True):
@@ -185,16 +199,70 @@ class DbToolApp:
         tk.Label(row2, text="(the same server and sign-in DayBill uses — SQL user / password only for "
                  "'SQL login')", font=("Segoe UI", 8), bg=C["card_bg"],
                  fg=C["text_secondary"]).pack(side="left", padx=8)
-        self.db_tree = self._tree(p, [("name", "Database", 320, "w"), ("kind", "What is it", 260, "w")],
+        self.db_tree = self._tree(p, [("name", "Database", 320, "w"), ("kind", "What is it", 260, "w"),
+                                      ("role", "Picked as", 160, "center")],
                                   height=14)
+        self.db_tree.bind("<Double-1>", self._db_menu)
+        self.db_tree.bind("<Button-3>", self._db_menu)
         acts = tk.Frame(p, bg=C["content_bg"]); acts.pack(fill="x", padx=8, pady=6)
         self._btn(acts, "⬅ Use as FROM (other program)", self._use_from)
         self._btn(acts, "➡ Use as TO (DayBill)", self._use_to, primary=True)
         self._btn(acts, "🆕 New DayBill database…", self._new_db)
         self._btn(acts, "📂 Open a SQLite file (e.g. Aronium)…", self._open_file)
-        tk.Label(p, text="Tip: restore the other program's .bak under a NEW name first (DayBill login ▸ "
-                 "Database Settings ▸ ♻ Restore), then pick it here as FROM.", font=("Segoe UI", 8),
+        tk.Label(p, text="Pick FROM and TO in the boxes at the top, or double-click a database here. "
+                 "Tip: restore the other program's .bak under a NEW name first (DayBill login ▸ "
+                 "Database Settings ▸ ♻ Restore), then pick it as FROM.", font=("Segoe UI", 8),
                  bg=C["content_bg"], fg=C["text_secondary"]).pack(anchor="w", padx=12)
+
+    def _db_menu(self, event):
+        iid = self.db_tree.identify_row(event.y)
+        if not iid:
+            return
+        self.db_tree.selection_set(iid)
+        m = tk.Menu(self.db_tree, tearoff=0)
+        m.add_command(label="⬅  Use '%s' as FROM" % iid, command=lambda: self._use_from(iid))
+        m.add_command(label="➡  Use '%s' as TO (DayBill)" % iid, command=lambda: self._use_to(iid))
+        try:
+            m.tk_popup(event.x_root, event.y_root)
+        finally:
+            m.grab_release()
+
+    def _pick_from(self):
+        name = self.from_var.get()
+        if name and name != self.src_label.get():
+            self._use_from(name)
+        self.from_var.set(self.src_label.get() if self.src is not None else "")
+
+    def _pick_to(self):
+        name = self.to_var.get()
+        if name and name != self.tgt_name:
+            self._use_to(name)
+        self.to_var.set(self.tgt_name)
+
+    def _swap(self):
+        """FROM ⇄ TO (both must be databases on the server)."""
+        old_from = self.src_label.get() if self.src is not None else ""
+        old_to = self.tgt_name
+        if not old_from or not old_to or old_from not in [n for n, _ok in self.marked]:
+            messagebox.showinfo("Swap", "Pick a FROM and a TO database on the server first.",
+                                parent=self.root)
+            return
+        if self._use_to(old_from, quiet=True):
+            self._use_from(old_to, ask=False)
+        self._mark_roles()
+
+    def _mark_roles(self):
+        """'Picked as' column + the two boxes show the current choice."""
+        frm = self.src_label.get() if self.src is not None else ""
+        for iid in self.db_tree.get_children():
+            role = ("FROM" if iid == frm else "") + (" + " if iid == frm and iid == self.tgt_name else "") + \
+                   ("TO" if iid == self.tgt_name else "")
+            vals = list(self.db_tree.item(iid, "values"))
+            vals = (vals + ["", "", ""])[:3]
+            vals[2] = role
+            self.db_tree.item(iid, values=vals)
+        self.from_var.set(frm)
+        self.to_var.set(self.tgt_name)
 
     def _find(self):
         conf = self._conf()
@@ -238,8 +306,10 @@ class DbToolApp:
             self.db_tree.delete(*self.db_tree.get_children())
             for n, ok in marked:
                 self.db_tree.insert("", "end", iid=n, values=(
-                    n, "✓ DayBill database" if ok else ("✗ another program" if ok is False else "? can't look")))
+                    n, "✓ DayBill database" if ok else ("✗ another program" if ok is False else "? can't look"),
+                    ""))
             self._fill_db_combos()
+            self._mark_roles()
             self.say("✅ %d database(s). Pick the other program's one → Use as FROM, and a DayBill one "
                      "→ Use as TO." % len(marked))
         self._bg(work, done)
@@ -254,20 +324,25 @@ class DbToolApp:
     def _kind(self, name):
         return next((ok for n, ok in self.marked if n == name), None)
 
-    def _use_from(self, name=None):
+    def _use_from(self, name=None, ask=True):
         name = name or self._sel_db()
         if not name:
-            return
-        if self._kind(name) is True and not messagebox.askyesno(
+            return False
+        if name == self.tgt_name:
+            messagebox.showwarning("FROM", "'%s' is already TO. FROM and TO must be two different "
+                                   "databases." % name, parent=self.root)
+            return False
+        if ask and self._kind(name) is True and not messagebox.askyesno(
                 "FROM", "'%s' is a DayBill database. Use it as FROM anyway (to copy one DayBill "
                 "into another)?" % name, parent=self.root):
-            return
+            return False
         try:
             src = CV.open_mssql(self._conf(), name)
         except Exception as e:
             messagebox.showerror("FROM", "Could not open '%s':\n%s" % (name, str(e)[:300]), parent=self.root)
-            return
+            return False
         self._set_source(src, name)
+        return True
 
     def _set_source(self, src, label):
         if self.src is not None:
@@ -278,6 +353,10 @@ class DbToolApp:
         self.src = src
         self.src_label.set(label)
         self.shape, self.mapping, self.plan = None, {}, None
+        try:
+            self._mark_roles()
+        except Exception:
+            pass
         self.say("FROM = %s. Now 3. Convert to DayBill → 🔎 Read the old database." % label)
 
     def _open_file(self):
@@ -291,19 +370,27 @@ class DbToolApp:
         except Exception as e:
             messagebox.showerror("Open", str(e)[:300], parent=self.root)
 
-    def _use_to(self, name=None):
+    def _use_to(self, name=None, quiet=False):
         name = name or self._sel_db()
         if not name:
-            return
-        if self._kind(name) is not True:
-            messagebox.showwarning("TO", "'%s' is not a DayBill database. Pick one marked ✓, or make "
-                                   "one with 🆕 New DayBill database." % name, parent=self.root)
-            return
+            return False
+        if self.src is not None and name == self.src_label.get() and not quiet:
+            messagebox.showwarning("TO", "'%s' is already FROM. FROM and TO must be two different "
+                                   "databases." % name, parent=self.root)
+            return False
+        if self._kind(name) is False:
+            messagebox.showwarning("TO", "'%s' is another program's database. Pick one marked ✓, or "
+                                   "make one with 🆕 New." % name, parent=self.root)
+            return False
+        # ✓ or "? can't look": open it and look now (the live check decides)
         if not self._connect_target(name):
-            return
+            return False
         self.tgt_name = name
         self.tgt_label.set(name)
+        self.marked = [(n, True if n == name else ok) for n, ok in self.marked]
+        self._mark_roles()
         self.say("TO = %s (DayBill)." % name)
+        return True
 
     def _connect_target(self, name):
         conf = self._conf(name)
@@ -337,7 +424,9 @@ class DbToolApp:
             if ok:
                 clean = "".join(ch for ch in name.strip() if ch.isalnum() or ch in "_-")
                 self.marked.append((clean, True))
-                self.db_tree.insert("", "end", iid=clean, values=(clean, "✓ DayBill database (new)"))
+                if not self.db_tree.exists(clean):
+                    self.db_tree.insert("", "end", iid=clean,
+                                        values=(clean, "✓ DayBill database (new)", ""))
                 self._fill_db_combos()
                 self._use_to(clean)
         self._bg(work, done)
@@ -370,6 +459,8 @@ class DbToolApp:
     def _fill_db_combos(self):
         names = [n for n, _ok in self.marked]
         self.pw_combo["values"] = names
+        self.from_combo["values"] = names
+        self.to_combo["values"] = [n for n, ok in self.marked if ok is not False]
         if names and not self.pw_db.get():
             mine = [n for n, ok in self.marked if ok]
             self.pw_db.set(mine[0] if mine else names[0])
