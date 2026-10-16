@@ -21,6 +21,34 @@ _OLD_DIR = os.path.join(_ROOT, "database")      # a patch dropped in the old pla
 
 # split a SQL Server script into batches on lines that are just "GO"
 _GO = re.compile(r"^\s*GO\s*;?\s*$", re.IGNORECASE | re.MULTILINE)
+# a "USE <database>" line anywhere in a batch (v6.9)
+_USE = re.compile(r"^\s*USE\s+\[?[\w\-]+\]?\s*;?\s*$", re.IGNORECASE | re.MULTILINE)
+
+
+def strip_use(sql):
+    """Patches start with 'USE DayBillERP;' (for running them in SSMS).
+    DayBill is already on the right company database: running that line
+    switched the WHOLE session to the database called DayBillERP — any
+    other company's updates and work went there (v6.9 fix)."""
+    return _USE.sub("", sql or "")
+
+
+def _db_name():
+    try:
+        return db.execute_scalar("SELECT DB_NAME()")
+    except Exception:
+        return None
+
+
+def _back_home(home):
+    """Make sure the connection is still on this company's database."""
+    if not home:
+        return
+    try:
+        if _db_name() != home:
+            db.execute("USE [%s]" % str(home).replace("]", "]]"))
+    except Exception:
+        pass
 
 
 def _ensure_table():
@@ -67,7 +95,7 @@ def _run_file(path):
     batch so re-running a patch never surfaces as a failure. Returns the
     count of batches skipped as already-applied."""
     with open(path, "r", encoding="utf-8-sig") as fh:
-        sql = fh.read()
+        sql = strip_use(fh.read())
     skipped = 0
     for batch in _GO.split(sql):
         stmt = batch.strip()
@@ -98,15 +126,18 @@ def run_pending(verbose=False):
     except Exception as e:
         return applied, [("(_migrations table)", str(e))]
 
+    home = _db_name()                  # this company's database — stay on it
     for path in _pending_files():
         name = os.path.basename(path)
         try:
             _run_file(path)
+            _back_home(home)
             db.execute("INSERT INTO _migrations (filename) VALUES (?)", (name,))
             applied.append(name)
             if verbose:
                 print(f"[migrate] applied {name}")
         except Exception as e:
+            _back_home(home)
             errors.append((name, str(e)[:200]))
             if verbose:
                 print(f"[migrate] FAILED {name}: {e}")

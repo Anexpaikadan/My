@@ -2123,7 +2123,7 @@ class InvoiceForm:
         except Exception:
             pass
         self._lines = []
-        for v in ("cash_var", "card_var", "bank_var"):
+        for v in ("cash_var", "card_var", "bank_var", "bill_discount_var", "round_var"):
             if hasattr(self, v):
                 getattr(self, v).set("0.00")
         # a cleared form is a NEW document: back to today's system date
@@ -2475,6 +2475,10 @@ class InvoiceForm:
         self._on_price_category(reprice=False)
 
     def _load_invoice_body(self, inv):
+        # v6.9: a saved bill discount is already inside the lines
+        for v in ("bill_discount_var", "round_var"):
+            if hasattr(self, v):
+                getattr(self, v).set("0.00")
 
         self.hdr_vars["invoice_number"].set(inv.get("invoice_number",""))
         self.inv_num_label.config(text=inv.get("invoice_number",""))
@@ -2616,12 +2620,24 @@ class InvoiceForm:
             self.save_status.set("❌ Customer not found.")
             return
 
+        # v6.9: Bill Disc (and the Round box) are spread over the lines
+        # BEFORE VAT, so the saved invoice, journal, print and ZATCA match
+        # the GRAND TOTAL on the screen. The screen's own lines stay as
+        # they are (Save & Print keeps the window open).
+        save_lines = self._lines
+        bill_adj = self._num_field("bill_discount_var") - self._num_field("round_var")
+        if abs(bill_adj) >= 0.005 and self._lines:
+            from modules.doc_math import spread_bill_adjustment
+            incl = (getattr(getattr(self, "line_grid", None), "tax_mode", None)
+                    or cfg.get("sales_price_tax_mode", "inclusive")) == "inclusive"
+            save_lines = spread_bill_adjustment(self._lines, bill_adj, incl)
+
         # Compute totals
-        subtotal = sum(ln.get("line_amount",0)    for ln in self._lines)
-        discount = sum(ln.get("discount_amount",0) for ln in self._lines)
+        subtotal = sum(ln.get("line_amount",0)    for ln in save_lines)
+        discount = sum(ln.get("discount_amount",0) for ln in save_lines)
         taxable  = subtotal
-        vat_amt  = sum(ln.get("vat_amount",0)     for ln in self._lines)
-        total    = sum(ln.get("line_total",0)      for ln in self._lines)
+        vat_amt  = sum(ln.get("vat_amount",0)     for ln in save_lines)
+        total    = sum(ln.get("line_total",0)      for ln in save_lines)
 
         # ── Credit limit (Settings ▸ Customer) — credit sales only ──
         try:
@@ -2731,8 +2747,8 @@ class InvoiceForm:
             # Remember the id so Save+Print (F2/F3) and Hold can use it
             self.invoice_id = inv_id
 
-            # Insert lines
-            for i, ln in enumerate(self._lines, 1):
+            # Insert lines (bill discount already spread in — v6.9)
+            for i, ln in enumerate(save_lines, 1):
                 db.execute(
                     "INSERT INTO sales_invoice_lines ("
                     "invoice_id, line_number, product_id, product_code, "

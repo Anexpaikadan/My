@@ -45,6 +45,21 @@ Newest first. The short guide is in the main README.md.
 - **Sales / purchase windows**: editing a saved invoice without a due date put
   the word "None" in the date box and saving it failed; saved lines showed
   stock 0 in Stock Details (now today's stock); purchase discount "−0.00".
+- **Bill discount is saved (spread before VAT)**: the sales invoice's Bill
+  Disc and Round boxes changed only the total on the screen — the saved
+  invoice, journal, print and ZATCA kept the old total. Now the amount is
+  spread over the lines in proportion to their value, before VAT: each line's
+  taxable amount and VAT are worked out again, so screen, invoice, journal,
+  QR and ZATCA all show the same total (e.g. 342.90 − 2.90 = 340.00 →
+  taxable 295.65 + VAT 44.35). A reopened invoice carries the discount in its
+  lines. POS bills with automatic round-off are spread the same way.
+- **Several companies on one server (important fix)**: the automatic
+  database updates ran the "USE DayBillERP" line at the top of each patch,
+  which switched the whole DayBill session to the database called DayBillERP.
+  A company with any other database name had its updates — and that
+  session's work — go to DayBillERP instead. Updates now always stay on the
+  company's own database; databases that missed updates get them on the next
+  start.
 - **Bugs fixed**: the salesman list on the sales invoice was always empty;
   supplier aging ignored purchase returns made from a bill; sales / purchase
   windows logged a database error for a warehouses table that does not exist.

@@ -276,6 +276,33 @@ def run(out_dir=None):
             raise RuntimeError("ledger connector map wrong")
     step("Jotform forms + ledger connector", forms_v690)
 
+    def bill_discount_v690():
+        from modules.doc_math import spread_bill_adjustment
+        lines = []
+        for qty, price in ((12, 6.50), (3, 42.0), (4, 18.75), (2, 31.95)):
+            g = qty * price
+            lines.append({"quantity": qty, "unit_price": price, "discount_amount": 0,
+                          "line_amount": g / 1.15, "vat_amount": g - g / 1.15, "line_total": g})
+        out = spread_bill_adjustment(lines, 2.90, True)
+        tot = round(sum(l["line_total"] for l in out), 2)
+        tax = round(sum(l["line_amount"] for l in out), 2)
+        vat = round(sum(l["vat_amount"] for l in out), 2)
+        if tot != 340.00 or round(tax + vat, 2) != tot or abs(vat - round(tax * 0.15, 2)) > 0.02:
+            raise RuntimeError("bill discount spread wrong: %s %s %s" % (tot, tax, vat))
+        if lines[0]["line_total"] != 78.0:
+            raise RuntimeError("bill discount changed the screen lines")
+    step("Bill discount spread before VAT", bill_discount_v690)
+
+    def patches_stay_home_v690():
+        import glob, re as _re
+        from modules import db_migrate as M
+        for p in M.patch_files():
+            with open(p, "r", encoding="utf-8-sig") as fh:
+                left = M.strip_use(fh.read())
+            if _re.search(r"^\s*USE\s+\w+", left, _re.I | _re.M):
+                raise RuntimeError("a patch would switch the company database: %s" % p)
+    step("Updates stay on this company's database", patches_stay_home_v690)
+
     text = "DayBill ERP self-test  %s\n%s\n\n%s\n" % (
         datetime.now().strftime("%Y-%m-%d %H:%M"), "-" * 40, "\n".join(rows))
     text += "\nRESULT: %s\n" % ("ALL OK" if ok_all else "PROBLEMS FOUND")

@@ -2770,6 +2770,23 @@ class POSWindow:
             return self._write_invoice_body(lines, h, invoice_id)
 
     def _write_invoice_body(self, lines, h, invoice_id=None):
+        # v6.9: a rounded total (Settings ▸ Tax ▸ round-off) is spread over
+        # the lines BEFORE VAT, so the lines, taxable, VAT and total agree
+        # (the header used to keep the rounded total with unrounded VAT)
+        try:
+            _lt = round(sum(float(l.get("line_total") or 0) for l in lines), 2)
+            _adj = round(_lt - float(h.get("total") or 0), 2)
+            if lines and 0.005 <= abs(_adj) <= 1.0:
+                from modules.doc_math import spread_bill_adjustment
+                _tmp = spread_bill_adjustment(
+                    [dict(l, line_amount=l.get("taxable")) for l in lines], _adj, _price_incl())
+                lines = [dict(l, taxable=t["line_amount"], vat_amount=t["vat_amount"],
+                              line_total=t["line_total"], discount_amount=t["discount_amount"])
+                         for l, t in zip(lines, _tmp)]
+                h = dict(h, gross=round(sum(float(l["taxable"]) for l in lines), 2),
+                         vat=round(sum(float(l["vat_amount"]) for l in lines), 2))
+        except Exception:
+            pass
         if invoice_id:
             inv = db.fetchone("SELECT invoice_number FROM sales_invoices "
                               "WHERE invoice_id=?", (invoice_id,)) or {}

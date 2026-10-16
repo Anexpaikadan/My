@@ -45,7 +45,13 @@ CHANGELOG = [
                "INSTALL.bat (libraries, database, desktop icon)",
                "🩹 New database installer fixed: company row, ZATCA counter column and the "
                "opening-equity account were missing; sqlcmd re-runs work",
-               "🩹 Salesman list on the sales invoice, supplier aging with purchase returns"]),
+               "🩹 Salesman list on the sales invoice, supplier aging with purchase returns",
+               "🏢 Several companies on one server: database updates (and the session) stay "
+               "on the company's own database — they went to DayBillERP before",
+               "🧾 Bill discount saved: spread over the lines before VAT (invoice, journal, "
+               "print and ZATCA match the screen); POS round-off the same way",
+               "📐 Sales, purchase, return, quotation windows: small header and footer, "
+               "much bigger item area"]),
     ("6.8.0", ["Tally-style entry boxes: grey example inside an empty box, one clear border that turns "
                "blue while typing, red * for must-fill boxes, a red note right under a wrong box "
                "(mobile, email, VAT, CR, postal code, IBAN …) that goes away when fixed; Save opens the "
@@ -342,7 +348,8 @@ def apply_patch(db, patch_name: str) -> tuple:
 def _run_sql(db, patch_name: str, sql: str) -> tuple:
     """Execute a SQL script (split on GO), tolerate 'already exists',
     then record the patch as applied. Returns (True, msg) or (False, msg)."""
-    batches = split_sql_batches(sql)
+    from modules.db_migrate import strip_use      # v6.9: never switch company database
+    batches = split_sql_batches(strip_use(sql))
     tolerated = ("already an object", "already exists", "there is already",
                  "duplicate", "column names in each table must be unique")
     for batch in batches:
