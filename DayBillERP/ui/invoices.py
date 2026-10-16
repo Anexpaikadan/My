@@ -716,16 +716,17 @@ class InvoiceForm:
         # Salesmen (from users) and warehouses — both optional/guarded
         self._salesmen = []
         try:
-            rows = db.fetchall("SELECT full_name FROM users WHERE is_active=1 "
-                               "ORDER BY full_name")
+            rows = db.fetchall("SELECT full_name_en AS full_name FROM users "
+                               "WHERE is_active=1 ORDER BY full_name_en")
             self._salesmen = [r["full_name"] for r in (rows or []) if r.get("full_name")]
         except Exception:
             self._salesmen = []
         self._warehouses = []
-        try:
-            rows = db.fetchall("SELECT warehouse_name_en AS n FROM warehouses "
-                               "WHERE is_active=1 ORDER BY warehouse_name_en")
-            self._warehouses = [r["n"] for r in (rows or []) if r.get("n")]
+        try:                       # optional table — ask first, no DB error
+            if db.execute_scalar("SELECT OBJECT_ID('warehouses','U')"):
+                rows = db.fetchall("SELECT warehouse_name_en AS n FROM warehouses "
+                                   "WHERE is_active=1 ORDER BY warehouse_name_en")
+                self._warehouses = [r["n"] for r in (rows or []) if r.get("n")]
         except Exception:
             self._warehouses = []
         if not self._warehouses:
@@ -832,7 +833,8 @@ class InvoiceForm:
         try:
             from modules import audit as _a
             u = getattr(_a, "_user", {}) or {}
-            user_txt = u.get("full_name") or u.get("username") or ""
+            user_txt = (u.get("full_name") or u.get("full_name_en")
+                        or u.get("username") or "")
         except Exception:
             pass
         if fy_txt or user_txt:

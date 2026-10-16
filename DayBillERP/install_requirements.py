@@ -11,9 +11,13 @@
 #     4. Then start the app with:  py main.py
 # ============================================================
 
+import os
 import sys
 import subprocess
 import importlib
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+NO_PAUSE = "--no-pause" in sys.argv          # INSTALL.bat carries on by itself
 
 APP_NAME = "DayBill ERP"
 MIN_PY = (3, 10)
@@ -32,6 +36,7 @@ PACKAGES = [
     ("cryptography",      "cryptography",      True,  "ZATCA Phase 2 signing"),
     ("lxml",              "lxml",              True,  "ZATCA XML"),
     ("requests",          "requests",          True,  "ZATCA / Wathq / updates over the internet"),
+    ("certifi",           "certifi",           True,  "Secure (HTTPS) connection to ZATCA"),
 
     # ---- OPTIONAL (only if you use these features) ----
     ("win32print",        "pywin32",           False, "Printing & printer list (Windows only)"),
@@ -67,15 +72,44 @@ def check_python():
     return True
 
 
+def _pins():
+    """requirements.txt → {package name: 'name>=x,<y'} (the versions DayBill
+    is tested with — a newer major version must never be installed)."""
+    out = {}
+    try:
+        with open(os.path.join(HERE, "requirements.txt"), encoding="utf-8") as f:
+            for raw in f:
+                line = raw.split("#", 1)[0].strip()
+                if not line:
+                    continue
+                spec = line.split(";", 1)[0].strip()
+                name = spec
+                for ch in "<>=!~ ":
+                    name = name.split(ch, 1)[0]
+                out[name.lower()] = spec
+    except Exception:
+        pass
+    return out
+
+
+PINS = _pins()
+
+
 def pip_install(pkg):
-    """Install one package with pip. Returns True on success."""
+    """Install one package (at the tested version) with pip. True on success."""
+    spec = PINS.get(pkg.lower(), pkg)
     try:
         subprocess.check_call(
-            [sys.executable, "-m", "pip", "install", "--upgrade", pkg],
+            [sys.executable, "-m", "pip", "install", spec],
             stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
         return True
     except Exception:
         return False
+
+
+def pause(msg="  Press Enter to exit..."):
+    if not NO_PAUSE:
+        input(msg)
 
 
 def is_installed(import_name):
@@ -104,18 +138,26 @@ def ensure_pip():
 
 def main():
     if not check_python():
-        input("\n  Press Enter to exit...")
+        pause("\n  Press Enter to exit...")
         return
     line("=")
     print("  Checking and installing required libraries...\n")
 
     if not ensure_pip():
-        input("\n  Press Enter to exit...")
+        pause("\n  Press Enter to exit...")
         return
 
     # Upgrade pip quietly first (helps avoid build errors)
     subprocess.call([sys.executable, "-m", "pip", "install", "--upgrade", "pip"],
                     stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    # Everything at the tested versions in one go; the list below then
+    # checks each library and retries one by one if this step failed.
+    req = os.path.join(HERE, "requirements.txt")
+    if os.path.exists(req):
+        print("  Installing requirements.txt (tested versions) ...")
+        subprocess.call([sys.executable, "-m", "pip", "install", "-r", req],
+                        stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+        print()
 
     on_windows = sys.platform.startswith("win")
     failed_required = []
@@ -172,16 +214,18 @@ def main():
 
     line("=")
     print("\n  NEXT STEPS:")
-    print("   1. Make sure SQL Server is running and your db_config.json is set.")
-    print("   2. In SQL Server Management Studio, run database\\INSTALL_DayBillERP_AllInOne.sql")
-    print("      (only on a fresh database).")
-    print("   3. Start the app:   py main.py")
+    print("   1. Make sure SQL Server is running.")
+    print("   2. New shop: DayBill login > Database Settings > Create New Database")
+    print("      (or run database\\INSTALL_DayBillERP_AllInOne.sql in SSMS).")
+    print("   3. Start the app:   py main.py   (or the DayBill icon on the desktop)")
     if not failed_required:
         print(color("\n  ALL DONE — you're ready to run DayBill ERP.\n", GREEN))
     else:
         print(color("\n  Fix the REQUIRED items above, then run the app.\n", YEL))
 
-    input("  Press Enter to exit...")
+    pause()
+    if failed_required:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
@@ -191,4 +235,5 @@ if __name__ == "__main__":
         print("\n  Cancelled.")
     except Exception as e:
         print(color(f"\n  Unexpected error: {e}", RED))
-        input("  Press Enter to exit...")
+        pause()
+        sys.exit(1)

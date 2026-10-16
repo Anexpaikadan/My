@@ -80,8 +80,10 @@ UPDATE x SET parent_account_id = p.account_id
  WHERE x.parent_account_id IS NULL AND a.parent IS NOT NULL;
 GO
 
-IF EXISTS (SELECT 1 FROM sys.tables WHERE name='account_settings')
-   AND NOT EXISTS (SELECT 1 FROM account_settings WHERE setting_key='default_opening_equity')
-    INSERT INTO account_settings (setting_key, account_code)
-    VALUES ('default_opening_equity', '3400');
+-- v6.9: account_settings may not exist yet (default_accounts_patch runs
+-- after this one) — dynamic SQL so a new database never errors here
+IF OBJECT_ID('account_settings','U') IS NOT NULL
+    EXEC(N'IF NOT EXISTS (SELECT 1 FROM account_settings WHERE setting_key=''default_opening_equity'')
+             INSERT INTO account_settings (setting_key, account_code)
+             VALUES (''default_opening_equity'', ''3400'');');
 GO

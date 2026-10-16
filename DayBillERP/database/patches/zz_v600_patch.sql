@@ -15,8 +15,8 @@ USE DayBillERP;
 GO
 
 -- ── ZATCA ───────────────────────────────────────────────────
-IF COL_LENGTH('zatca_egs','counter_id') IS NULL
-    ALTER TABLE zatca_egs ADD counter_id INT NULL;
+IF OBJECT_ID('zatca_egs','U') IS NOT NULL AND COL_LENGTH('zatca_egs','counter_id') IS NULL
+    EXEC(N'ALTER TABLE zatca_egs ADD counter_id INT NULL');   -- table made by zz_zatca2 (v6.9)
 GO
 IF COL_LENGTH('sales_invoices','invoice_kind') IS NULL
     ALTER TABLE sales_invoices ADD invoice_kind NVARCHAR(12) NULL;

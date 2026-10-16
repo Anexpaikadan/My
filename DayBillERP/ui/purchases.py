@@ -386,12 +386,13 @@ class PurchaseForm:
                 self._product_units.setdefault(u["product_id"], []).append(u)
         except Exception:
             self._product_units = {}
-        try:
-            rows = db.fetchall("SELECT warehouse_name_en AS n FROM warehouses "
-                               "WHERE is_active=1 ORDER BY warehouse_name_en")
-            wl = [r["n"] for r in (rows or []) if r.get("n")]
-            if wl:
-                self._warehouses = wl
+        try:                       # optional table — ask first, no DB error
+            if db.execute_scalar("SELECT OBJECT_ID('warehouses','U')"):
+                rows = db.fetchall("SELECT warehouse_name_en AS n FROM warehouses "
+                                   "WHERE is_active=1 ORDER BY warehouse_name_en")
+                wl = [r["n"] for r in (rows or []) if r.get("n")]
+                if wl:
+                    self._warehouses = wl
         except Exception:
             pass
 

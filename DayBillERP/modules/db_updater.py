@@ -10,7 +10,7 @@ import re
 try:                                    # one version for the whole app (config/version.py)
     from config.version import VERSION as APP_VERSION
 except Exception:
-    APP_VERSION = "6.8.0"
+    APP_VERSION = "6.9.0"
 
 # Ordered list of database patches shipped with the app.
 # (filename relative to project root, human description, version)
@@ -35,6 +35,17 @@ PATCHES = [
 
 # What changed in each version (shown in the Updates panel)
 CHANGELOG = [
+    ("6.9.0", ["📒 Account Ledger / statements: double-click a line to open its transaction; "
+               "right-click Open · Edit · Delete · Voucher · New — follows each user's rights",
+               "🔗 Every transaction window: New · Edit · Delete · Voucher in its one title line; "
+               "Ledger ▸ Connectors shows what each kind of line opens and your rights",
+               "🛠 Database Tool: FROM and TO boxes that work, swap, double-click a database; "
+               "copy one DayBill company into another",
+               "🧹 Clean folders (docs, database/patches, database/tools, extras); one-click "
+               "INSTALL.bat (libraries, database, desktop icon)",
+               "🩹 New database installer fixed: company row, ZATCA counter column and the "
+               "opening-equity account were missing; sqlcmd re-runs work",
+               "🩹 Salesman list on the sales invoice, supplier aging with purchase returns"]),
     ("6.8.0", ["Tally-style entry boxes: grey example inside an empty box, one clear border that turns "
                "blue while typing, red * for must-fill boxes, a red note right under a wrong box "
                "(mobile, email, VAT, CR, postal code, IBAN …) that goes away when fixed; Save opens the "

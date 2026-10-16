@@ -134,10 +134,11 @@ def _links(kind):
     allocations  = {payment_id: {bill_id: amount}}  (receipts / payments
                    settled against invoices on the payment screen)
     return_links = {return_id: bill_id}  (returns made from an invoice)"""
-    col, rtbl, btbl, bid = (("invoice_id", "sales_returns", "sales_invoices", "invoice_id")
-                            if kind == "customer" else
-                            ("purchase_id", "purchase_returns", "purchase_invoices",
-                             "purchase_id"))
+    col, rtbl, btbl, bid, ref = (("invoice_id", "sales_returns", "sales_invoices", "invoice_id",
+                                  "original_invoice_no")
+                                 if kind == "customer" else
+                                 ("purchase_id", "purchase_returns", "purchase_invoices",
+                                  "purchase_id", "original_purchase_no"))      # v6.9: real column
     alloc, rlink = defaultdict(dict), {}
     try:
         for r in db.fetchall(f"SELECT payment_id, {col} AS doc, allocated_amount FROM "
@@ -149,8 +150,8 @@ def _links(kind):
     try:
         nums = {str(r["n"]).strip(): r["id"] for r in db.fetchall(
             f"SELECT {bid} AS id, invoice_number AS n FROM {btbl}") or [] if r.get("n")}
-        for r in db.fetchall(f"SELECT return_id, original_invoice_no AS n FROM {rtbl} "
-                             f"WHERE original_invoice_no IS NOT NULL") or []:
+        for r in db.fetchall(f"SELECT return_id, {ref} AS n FROM {rtbl} "
+                             f"WHERE {ref} IS NOT NULL") or []:
             b = nums.get(str(r["n"]).strip())
             if b:
                 rlink[r["return_id"]] = b

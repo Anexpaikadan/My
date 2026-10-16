@@ -64,6 +64,11 @@ def main():
 
 """ % datetime.now().strftime("%Y-%m-%d %H:%M"))
 
+    # v6.9: sqlcmd starts with QUOTED_IDENTIFIER OFF — filtered indexes and
+    # procedures need these ON (SSMS / DayBill already use them)
+    parts.append("SET QUOTED_IDENTIFIER ON;\nSET ANSI_NULLS ON;\nSET ANSI_PADDING ON;\n"
+                 "SET ANSI_WARNINGS ON;\nSET ARITHABORT ON;\nSET CONCAT_NULL_YIELDS_NULL ON;\n"
+                 "SET NUMERIC_ROUNDABORT OFF;\nGO\n\n")
     base_setup = BASE_SETUP
     if not os.path.exists(base_setup):                     # older layout
         base_setup = os.path.join(BASE, "DayBillERP_Full_Setup.sql")

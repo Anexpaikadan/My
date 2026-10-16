@@ -1,6 +1,6 @@
 -- ============================================================
 -- DayBill ERP — FULL DATABASE INSTALLER  (clean new installation)
--- generated 2026-10-16 04:30  ·  ONE file = the whole database
+-- generated 2026-10-16 10:46  ·  ONE file = the whole database
 -- ------------------------------------------------------------
 -- WHAT IT MAKES
 --   • the DayBillERP database (Arabic collation) and EVERY table,
@@ -28,6 +28,15 @@
 -- and starting data are only added when missing, nothing is deleted.
 -- Regenerate after adding patches:  python tools/build_install_sql.py
 -- ============================================================
+
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
+SET ANSI_PADDING ON;
+SET ANSI_WARNINGS ON;
+SET ARITHABORT ON;
+SET CONCAT_NULL_YIELDS_NULL ON;
+SET NUMERIC_ROUNDABORT OFF;
+GO
 
 -- ▼▼▼  BASE: DayBillERP_Full_Setup.sql  ▼▼▼
 -- ============================================================================
@@ -872,9 +881,9 @@ GO
 -- The first-run wizard opens while the name is still 'Your Company Name'.
 IF NOT EXISTS (SELECT 1 FROM company)
 INSERT INTO company (
-    company_name_en, company_name_ar, vat_registration_no, country_code
+    company_name_en, company_name_ar, vat_registration_no
 ) VALUES (
-    N'Your Company Name', N'اسم شركتك', N'', 'SA'
+    N'Your Company Name', N'اسم شركتك', N''
 );
 GO
 
@@ -1876,10 +1885,6 @@ PRINT 'Product master extra columns ready.';
 
 GO
 
--- (skipped optional/repair script: REPAIR_product_keys.sql)
-
--- (skipped optional/repair script: RESET_user_password.sql)
-
 -- ▼▼▼  PATCH: accounting_payroll_patch.sql  ▼▼▼
 -- ============================================================
 -- DayBill ERP - Accounting & Payroll Schema Patch
@@ -2382,10 +2387,12 @@ UPDATE x SET parent_account_id = p.account_id
  WHERE x.parent_account_id IS NULL AND a.parent IS NOT NULL;
 GO
 
-IF EXISTS (SELECT 1 FROM sys.tables WHERE name='account_settings')
-   AND NOT EXISTS (SELECT 1 FROM account_settings WHERE setting_key='default_opening_equity')
-    INSERT INTO account_settings (setting_key, account_code)
-    VALUES ('default_opening_equity', '3400');
+-- v6.9: account_settings may not exist yet (default_accounts_patch runs
+-- after this one) — dynamic SQL so a new database never errors here
+IF OBJECT_ID('account_settings','U') IS NOT NULL
+    EXEC(N'IF NOT EXISTS (SELECT 1 FROM account_settings WHERE setting_key=''default_opening_equity'')
+             INSERT INTO account_settings (setting_key, account_code)
+             VALUES (''default_opening_equity'', ''3400'');');
 GO
 
 GO
@@ -3792,8 +3799,6 @@ GO
 
 GO
 
--- (skipped optional/repair script: units_reset_optional.sql)
-
 -- ▼▼▼  PATCH: user_rights_patch.sql  ▼▼▼
 -- ============================================================
 -- DayBill ERP - Per-user rights (Master / Reports / Edit / Delete)
@@ -4264,8 +4269,8 @@ USE DayBillERP;
 GO
 
 -- ── ZATCA ───────────────────────────────────────────────────
-IF COL_LENGTH('zatca_egs','counter_id') IS NULL
-    ALTER TABLE zatca_egs ADD counter_id INT NULL;
+IF OBJECT_ID('zatca_egs','U') IS NOT NULL AND COL_LENGTH('zatca_egs','counter_id') IS NULL
+    EXEC(N'ALTER TABLE zatca_egs ADD counter_id INT NULL');   -- table made by zz_zatca2 (v6.9)
 GO
 IF COL_LENGTH('sales_invoices','invoice_kind') IS NULL
     ALTER TABLE sales_invoices ADD invoice_kind NVARCHAR(12) NULL;
@@ -4828,6 +4833,34 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_sales_invoices_zatca_q' 
     CREATE INDEX IX_sales_invoices_zatca_q ON sales_invoices(zatca_status, zatca_icv);
 GO
 PRINT N'✅ ZATCA Phase 2 connection + send queue ready.';
+GO
+
+GO
+
+-- ▼▼▼  PATCH: zzz_v690_patch.sql  ▼▼▼
+-- ============================================================
+-- DayBill ERP v6.9.0 — repairs (runs LAST: zzz_ sorts after zz_zatca2)
+-- Databases made by the older one-file installer missed three things
+-- because some patches ran before the table they change existed.
+-- Idempotent: safe on every database, changes nothing that is right.
+-- ============================================================
+
+-- ZATCA Phase 2: an e-invoicing unit per counter (till)
+IF OBJECT_ID('zatca_egs','U') IS NOT NULL AND COL_LENGTH('zatca_egs','counter_id') IS NULL
+    EXEC(N'ALTER TABLE zatca_egs ADD counter_id INT NULL');
+GO
+
+-- Opening Balance Equity account used by Opening Balances
+IF OBJECT_ID('account_settings','U') IS NOT NULL
+    EXEC(N'IF NOT EXISTS (SELECT 1 FROM account_settings WHERE setting_key=''default_opening_equity'')
+             INSERT INTO account_settings (setting_key, account_code)
+             VALUES (''default_opening_equity'', ''3400'');');
+GO
+
+-- the company row (empty — the first-run wizard asks for the details)
+IF OBJECT_ID('company','U') IS NOT NULL AND NOT EXISTS (SELECT 1 FROM company)
+    INSERT INTO company (company_name_en, company_name_ar, vat_registration_no)
+    VALUES (N'Your Company Name', N'اسم شركتك', N'');
 GO
 
 GO

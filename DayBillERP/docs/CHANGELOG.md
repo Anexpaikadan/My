@@ -23,7 +23,16 @@ Newest first. The short guide is in the main README.md.
   Removed an unused module. Wrong menu items fixed (Customer / Supplier
   Ledger, Credit Note, Closing Balance).
 - **One-click install**: INSTALL.bat installs the exact library versions from
-  requirements.txt, can create the database and makes a desktop shortcut.
+  requirements.txt (certifi added), can create the database and makes a
+  desktop shortcut.
+- **Database installer fixed** (tested on SQL Server 2022): a new database got
+  no company row, no ZATCA counter column and no Opening Balance Equity
+  setting because some patches ran before the table they change existed;
+  re-running it with sqlcmd failed (QUOTED_IDENTIFIER). New
+  `zzz_v690_patch.sql` repairs databases made by the older installer.
+- **Bugs fixed**: the salesman list on the sales invoice was always empty;
+  supplier aging ignored purchase returns made from a bill; sales / purchase
+  windows logged a database error for a warehouses table that does not exist.
 
 ## 📊 Accounts, Stock & Reports (v5.7)
 

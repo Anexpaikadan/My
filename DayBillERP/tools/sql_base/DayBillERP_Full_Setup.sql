@@ -840,9 +840,9 @@ GO
 -- The first-run wizard opens while the name is still 'Your Company Name'.
 IF NOT EXISTS (SELECT 1 FROM company)
 INSERT INTO company (
-    company_name_en, company_name_ar, vat_registration_no, country_code
+    company_name_en, company_name_ar, vat_registration_no
 ) VALUES (
-    N'Your Company Name', N'اسم شركتك', N'', 'SA'
+    N'Your Company Name', N'اسم شركتك', N''
 );
 GO
 
