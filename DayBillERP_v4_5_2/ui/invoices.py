@@ -666,6 +666,11 @@ class InvoiceForm:
             self._load_invoice()
         else:
             self._set_defaults()
+        try:      # v6.9 connector bar: New · Edit · Save · Delete (user rights)
+            from ui import txn_connector as _tc
+            _tc.attach(self, "sales", compact=True)   # has its own toolbar
+        except Exception:
+            pass
 
     # ── Lookups ───────────────────────────────────────────────
     def _load_lookups(self):

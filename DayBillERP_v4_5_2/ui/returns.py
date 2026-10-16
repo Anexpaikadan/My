@@ -53,6 +53,11 @@ class ReturnForm:
             self._load_return()
         else:
             self._set_defaults()
+        try:      # v6.9 connector bar: New · Edit · Save · Delete (user rights)
+            from ui import txn_connector as _tc
+            _tc.attach(self, f"{mode}_return")
+        except Exception:
+            pass
 
     # ── lookups ───────────────────────────────────────────────
     def _load_lookups(self):

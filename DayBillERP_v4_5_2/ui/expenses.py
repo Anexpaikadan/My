@@ -232,6 +232,11 @@ class ExpenseForm:
         if expense_id:
             self._load_existing()
         self._recalc()
+        try:      # v6.9 connector bar: New · Edit · Save · Delete (user rights)
+            from ui import txn_connector as _tc
+            _tc.attach(self, "expense")
+        except Exception:
+            pass
 
     # ── data ──────────────────────────────────────────────────
     def _load_accounts(self):

@@ -789,6 +789,11 @@ class JournalForm:
                   command=self._save).pack(side="right")
         if journal_id:
             self._load_existing()
+        try:      # v6.9 connector bar: New · Edit · Save · Delete (user rights)
+            from ui import txn_connector as _tc
+            _tc.attach(self, "journal")
+        except Exception:
+            pass
 
     def _load_existing(self):
         """Fill the form with a saved voucher (edit mode)."""

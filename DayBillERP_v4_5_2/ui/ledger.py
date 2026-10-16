@@ -6,6 +6,13 @@
 # included, so customer & supplier ledgers work too), set a date
 # range, and see: opening balance, every posted journal line with
 # a running balance, and the closing balance marked Dr/Cr.
+#
+# v6.9: every line is connected to its transaction (ui/txn_connector):
+#   double-click / Enter  open the transaction window
+#   right-click           Open · Edit · Delete · Voucher · New ▸
+#   toolbar               ➕ New ▾ · 👁 Open · ✏ Edit · 🗑 Delete · 🔗 Connectors
+# Each action follows the user's rights for that transaction type, and
+# the ledger refreshes itself after a save or delete.
 # ============================================================
 
 import tkinter as tk
@@ -36,6 +43,7 @@ class LedgerView:
         self._accounts = self._load_accounts()
         self._topbar(C)
         self._summary(C)
+        self._actions(C)
         self._table(C)
         if self._accounts:
             # default to the Cash account if present
@@ -173,6 +181,68 @@ class LedgerView:
         cell("Debits / Credits", self.drcr_var, C["info"])
         cell("Closing balance", self.closing_var, C["primary"])
 
+    def _actions(self, C):
+        """Transaction actions for the selected line (connector)."""
+        bar = tk.Frame(self.frame, bg=C["content_bg"])
+        bar.pack(fill="x", padx=24, pady=(0, 6))
+
+        def b(text, cmd, fg=None, side="left"):
+            w = tk.Button(bar, text=text, font=("Segoe UI", 9, "bold"),
+                          bg=C["card_bg"], fg=fg or C["text_primary"], relief="flat",
+                          padx=12, pady=4, cursor="hand2", highlightthickness=1,
+                          highlightbackground=C["border"], command=cmd)
+            w.pack(side=side, padx=(0, 6))
+            return w
+
+        self.new_btn = b("➕ New ▾", lambda: self._conn("new"), fg=C["primary"])
+        b("👁 Open", lambda: self._conn("open"))
+        b("✏ Edit", lambda: self._conn("edit"))
+        b("🗑 Delete", lambda: self._conn("delete"), fg=C.get("danger", "#DC2626"))
+        b("🔗 Connectors", lambda: self._conn("chooser"), side="right")
+        tk.Label(bar, text="Double-click a line to open its transaction · "
+                           "right-click for more",
+                 font=("Segoe UI", 8), bg=C["content_bg"],
+                 fg=C["text_secondary"]).pack(side="left", padx=(8, 0))
+
+    def _journal_of(self, iid):
+        return self._row_journal.get(iid)
+
+    def _conn(self, what):
+        from ui import txn_connector as tc
+        if what == "new":
+            return tc.new_menu(self.frame, self.new_btn, self._reload)
+        if what == "chooser":
+            return tc.ConnectorChooser(self.frame)
+        if not getattr(self, "_tree_actions", None):
+            return
+        if not self._tree_actions["current"]():
+            messagebox.showinfo("Ledger", "Select a transaction line first.")
+            return
+        {"open": self._tree_actions["open"], "edit": self._tree_actions["edit"],
+         "delete": self._tree_actions["delete"]}[what]()
+
+    def _reload(self):
+        """Refresh after a save / delete, keeping the place in the list."""
+        try:
+            if not self.tree.winfo_exists():
+                return
+            sel = self.tree.selection()
+            keep = self._row_journal.get(sel[0]) if sel else None
+            top = self.tree.yview()[0]
+        except Exception:
+            return
+        self._load()
+        try:
+            if keep:
+                for iid, jid in self._row_journal.items():
+                    if jid == keep:
+                        self.tree.selection_set(iid)
+                        self.tree.focus(iid)
+                        break
+            self.tree.yview_moveto(top)
+        except Exception:
+            pass
+
     def _table(self, C):
         wrap = tk.Frame(self.frame, bg=C["card_bg"])
         wrap.pack(fill="both", expand=True, padx=24, pady=(0, 16))
@@ -192,6 +262,10 @@ class LedgerView:
         self.tree.configure(yscrollcommand=ysb.set)
         self.tree.pack(side="left", fill="both", expand=True)
         ysb.pack(side="right", fill="y")
+        # every line → its transaction window (rights-checked)
+        self._row_journal = {}
+        from ui import txn_connector as tc
+        self._tree_actions = tc.bind_tree(self.tree, self._journal_of, self._reload)
 
     # ── load ledger (ported queries, SQL Server) ──────────────
     def _load(self):
@@ -200,6 +274,7 @@ class LedgerView:
             return
         for i in self.tree.get_children():
             self.tree.delete(i)
+        self._row_journal = {}
         frm, to = self.from_var.get(), self.to_var.get()
         try:
             opening = db.execute_scalar(
@@ -210,7 +285,7 @@ class LedgerView:
                 "WHERE a.account_code = ? AND je.entry_date < ? AND je.is_posted = 1",
                 (code, frm)) or 0
             rows = db.fetchall(
-                "SELECT je.entry_date, je.journal_number, je.source_type, "
+                "SELECT je.journal_id, je.entry_date, je.journal_number, je.source_type, "
                 "je.description_en, jl.debit, jl.credit "
                 "FROM journal_lines jl "
                 "JOIN journal_entries je ON je.journal_id = jl.journal_id "
@@ -240,13 +315,14 @@ class LedgerView:
             run += float(r["debit"] or 0) - float(r["credit"] or 0)
             d = r["entry_date"]
             dtxt = d.strftime("%d/%m/%y") if hasattr(d, "strftime") else str(d)[:10]
-            self.tree.insert("", "end", values=(
+            iid = self.tree.insert("", "end", values=(
                 dtxt, r["journal_number"],
                 (r["source_type"] or "").replace("_", " "),
                 r["description_en"] or "",
                 money(r["debit"]) if float(r["debit"] or 0) else "",
                 money(r["credit"]) if float(r["credit"] or 0) else "",
                 money(run)))
+            self._row_journal[iid] = r["journal_id"]
         if not rows:
             self.tree.insert("", "end", values=("", "", "",
                                                 "No entries in this range.",

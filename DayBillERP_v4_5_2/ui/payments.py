@@ -521,6 +521,11 @@ class PaymentForm:
             if party_id:                      # opened from an invoice
                 self._preselect(party_id, doc_id)
         self.party_cb.focus_set()
+        try:      # v6.9 connector bar: New · Edit · Save · Delete (user rights)
+            from ui import txn_connector as _tc
+            _tc.attach(self, "receipt" if is_receipt else "payment")
+        except Exception:
+            pass
 
     def _preselect(self, party_id, doc_id=None):
         p = next((x for x in self.parties if x["id"] == party_id), None)

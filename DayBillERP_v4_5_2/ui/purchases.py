@@ -347,6 +347,11 @@ class PurchaseForm:
             self._load_data()
         else:
             self._set_defaults()
+        try:      # v6.9 connector bar: New · Edit · Save · Delete (user rights)
+            from ui import txn_connector as _tc
+            _tc.attach(self, "purchase")
+        except Exception:
+            pass
 
     def _load_lookups(self):
         try:

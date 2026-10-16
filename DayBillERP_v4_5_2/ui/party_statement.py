@@ -95,7 +95,8 @@ def build_statement(party_type, party_id, date_from=None, date_to=None):
     sign = 1 if is_cust else -1
     df, dt_to = _d(date_from), _d(date_to)
     lines = _fetch(
-        "SELECT je.entry_date AS dt, je.journal_number, je.source_type, je.reference, "
+        "SELECT je.journal_id, je.entry_date AS dt, je.journal_number, je.source_type, "
+        "je.reference, "
         "je.description_en, jl.description AS line_desc, jl.debit, jl.credit "
         "FROM journal_lines jl JOIN journal_entries je ON je.journal_id=jl.journal_id "
         "WHERE je.is_posted=1 AND jl.account_id=? ORDER BY je.entry_date, je.journal_id",
@@ -121,7 +122,8 @@ def build_statement(party_type, party_id, date_from=None, date_to=None):
         doc = _DOC_LABEL.get(st, st.replace("_", " ").title() or "Entry")
         rows.append({"date": d.strftime("%Y-%m-%d") if d else "—",
                      "doc": doc, "ref": r.get("reference") or r.get("journal_number") or "",
-                     "debit": deb, "credit": cred, "balance": bal})
+                     "debit": deb, "credit": cred, "balance": bal,
+                     "journal_id": r.get("journal_id")})
     if bal is None:
         bal = carried
     return {
@@ -354,6 +356,13 @@ class StatementDialog:
                              anchor="e" if c in ("debit", "credit", "balance")
                              else ("center" if c == "date" else "w"))
         self.tree.pack(fill="both", expand=True, padx=4, pady=4)
+        # v6.9: double-click a line → its transaction (ui/txn_connector)
+        self._row_journal = {}
+        try:
+            from ui import txn_connector as tc
+            tc.bind_tree(self.tree, self._row_journal.get, self._run)
+        except Exception:
+            pass
         self.tree.tag_configure("open", font=("Segoe UI", 10, "italic"),
                                 foreground="#6B7280")
         self.tree.tag_configure("close", font=("Segoe UI", 10, "bold"),
@@ -393,16 +402,19 @@ class StatementDialog:
             f"{data['name']}  ({data['code']})")
 
         self.tree.delete(*self.tree.get_children())
+        self._row_journal.clear()
         # opening row
         self.tree.insert("", "end", tags=("open",), values=(
             self.from_var.get(), "Opening Balance", "", "", "",
             _money(data["opening"])))
         for r in data["rows"]:
-            self.tree.insert("", "end", values=(
+            iid = self.tree.insert("", "end", values=(
                 r["date"], r["doc"], r["ref"],
                 _money(r["debit"]) if r["debit"] else "",
                 _money(r["credit"]) if r["credit"] else "",
                 _money(r["balance"])))
+            if r.get("journal_id"):
+                self._row_journal[iid] = r["journal_id"]
         # closing row
         self.tree.insert("", "end", tags=("close",), values=(
             self.to_var.get(), "Closing Balance", "",
