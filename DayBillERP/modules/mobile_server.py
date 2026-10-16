@@ -136,6 +136,8 @@ def handle(method, path, query, body, token):
         return 404, {"error": "Not found"}
     except M.MobileError as e:
         return (401 if "sign in" in str(e).lower() else 400), {"error": str(e)}
+    except (ValueError, TypeError, AttributeError, KeyError) as e:     # malformed request
+        return 400, {"error": "Bad request: %s" % str(e)[:120]}
     except Exception as e:
         traceback.print_exc()
         return 500, {"error": "DayBill error: %s" % str(e)[:200]}
@@ -176,12 +178,17 @@ class _Handler(BaseHTTPRequestHandler):
         if u.path.startswith("/api/"):
             body = {}
             if method == "POST":
-                n = int(self.headers.get("Content-Length") or 0)
+                try:
+                    n = max(0, int(self.headers.get("Content-Length") or 0))
+                except ValueError:
+                    return self._send(400, {"error": "Bad Content-Length"})
                 if n > 5_000_000:
                     return self._send(413, {"error": "Too big"})
                 try:
                     body = json.loads(self.rfile.read(n).decode("utf-8") or "{}")
                 except Exception:
+                    return self._send(400, {"error": "Bad JSON"})
+                if not isinstance(body, dict):
                     return self._send(400, {"error": "Bad JSON"})
             tok = (self.headers.get("Authorization") or "").replace("Bearer", "").strip()
             try:

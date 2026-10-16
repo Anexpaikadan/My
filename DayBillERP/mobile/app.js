@@ -568,11 +568,23 @@ function calcLine(l, incl, rate) {
   if (incl && rate) { const tax = gross / (1 + rate / 100); return { taxable: tax, vat: gross - tax, total: gross }; }
   return { taxable: gross, vat: gross * rate / 100, total: gross + gross * rate / 100 };
 }
+// halalas, half up (10.005 → 10.01) — the same rounding as DayBill
+const r2 = v => { const x = Math.abs(+v || 0); const r = Math.round(x * 100 + 1e-7) / 100; return v < 0 ? -r : r; };
+// v6.9.2: the ZATCA way, exactly as DayBill books it — each line's taxable in
+// halalas, the VAT worked out once per rate on the bill total
 function billTotals(B) {
   const incl = !!CAT.settings.price_incl_vat, vatOn = CAT.settings.vat_enabled !== false;
-  let tx = 0, vat = 0, tot = 0;
-  for (const l of B.lines) { const r = calcLine(l, incl, vatOn ? l.vat_rate : 0); l.total = Math.round(r.total * 100) / 100; tx += r.taxable; vat += r.vat; tot += r.total; }
-  B.taxable = Math.round(tx * 100) / 100; B.vat = Math.round(vat * 100) / 100; B.total = Math.round((B.taxable + B.vat) * 100) / 100;
+  const byRate = {}; let tot = 0;
+  for (const l of B.lines) {
+    const rate = vatOn ? (+l.vat_rate || 0) : 0, r = calcLine(l, incl, rate);
+    l.total = r2(r.total); tot += l.total;
+    byRate[rate] = (byRate[rate] || 0) + r2(r.taxable);
+  }
+  let vat = 0, tx = 0;
+  for (const k in byRate) { vat += r2(byRate[k] * (+k) / 100); tx += byRate[k]; }
+  B.vat = r2(vat);
+  if (incl) { B.total = r2(tot); B.taxable = r2(B.total - B.vat); }
+  else { B.taxable = r2(tx); B.total = r2(B.taxable + B.vat); }
   return B;
 }
 function vanBill() {

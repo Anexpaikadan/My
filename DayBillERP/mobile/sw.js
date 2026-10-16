@@ -1,6 +1,6 @@
 // DayBill Mobile — keeps the app itself on the phone so it opens with no
 // signal (van). Data always comes fresh from DayBill / the relay.
-const CACHE = "daybill-mobile-v640";
+const CACHE = "daybill-mobile-v692";
 const FILES = ["./", "index.html", "van.html", "app.css", "app.js", "config.js", "vendor/qrcode.js",
                "manifest.webmanifest", "icon-192.png", "icon-512.png"];
 self.addEventListener("install", e => {

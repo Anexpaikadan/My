@@ -191,10 +191,12 @@ def close_shift(counted_cash, notes="", shift=None):
     sm = summary(s)
     diff = round(counted - sm["expected_cash"], 2)
     with db.transaction():
-        db.execute("UPDATE cashier_shifts SET closed_at=GETDATE(), expected_cash=?, counted_cash=?, "
-                   "difference=?, status='closed', notes=COALESCE(?, notes) WHERE shift_id=? "
-                   "AND status='open'",
-                   (sm["expected_cash"], counted, diff, (notes or "")[:500] or None, s["shift_id"]))
+        n = db.execute("UPDATE cashier_shifts SET closed_at=GETDATE(), expected_cash=?, counted_cash=?, "
+                       "difference=?, status='closed', notes=COALESCE(?, notes) WHERE shift_id=? "
+                       "AND status='open'",
+                       (sm["expected_cash"], counted, diff, (notes or "")[:500] or None, s["shift_id"]))
+    if not n:          # closed meanwhile (another window / PC): nothing was changed
+        return None, "This shift was already closed."
     sm.update(counted_cash=counted, difference=diff, closed_at=datetime.now())
     try:
         from modules import audit

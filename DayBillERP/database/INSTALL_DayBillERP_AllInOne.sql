@@ -1,6 +1,6 @@
 -- ============================================================
 -- DayBill ERP — FULL DATABASE INSTALLER  (clean new installation)
--- generated 2026-10-16 17:44  ·  ONE file = the whole database
+-- generated 2026-10-16 17:55  ·  ONE file = the whole database
 -- ------------------------------------------------------------
 -- WHAT IT MAKES
 --   • the DayBillERP database (Arabic collation) and EVERY table,
@@ -4998,6 +4998,11 @@ GO
 IF OBJECT_ID('sales_invoices','U') IS NOT NULL
    AND COL_LENGTH('sales_invoices','loyalty_points_redeemed') IS NULL
     EXEC(N'ALTER TABLE sales_invoices ADD loyalty_points_redeemed INT NULL');
+GO
+
+-- a phone's sign-in ends when the user's password is changed
+IF OBJECT_ID('mobile_tokens','U') IS NOT NULL AND COL_LENGTH('mobile_tokens','pw_sig') IS NULL
+    EXEC(N'ALTER TABLE mobile_tokens ADD pw_sig NVARCHAR(16) NULL');
 GO
 
 GO

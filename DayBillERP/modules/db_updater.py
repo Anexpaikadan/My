@@ -45,7 +45,18 @@ CHANGELOG = [
                "↩ Returning part of a discounted line gives back only that part's discount "
                "(a 1-of-3 return kept the whole line discount and refunded too little)",
                "🌐 The three Tally forms are live: customer registration, supplier "
-               "registration, How was your visit?"]),
+               "registration, How was your visit?",
+               "📱 Mobile / van: a bill with an unknown product, a bad quantity / price, a "
+               "date in a closed year, a total far from its lines or a credit bill without a "
+               "customer is no longer half-saved — it waits in the Inbox with the reason; "
+               "van credit bills follow the credit limit; 5 wrong passwords lock the phone "
+               "sign-in; a password change signs the phone out; van cash no longer counts "
+               "in the office till's day close; the phone works VAT out like DayBill",
+               "👥 Payroll: loans start in the month they were given, closed years are "
+               "locked, GOSI paid on a draft month cannot be lost or paid twice, an unpaid "
+               "day marked absent is deducted once; end-of-service shows the real day rate",
+               "🕐 Closing a shift that another window already closed no longer says it "
+               "worked"]),
     ("6.9.1", ["↩ A return put on the customer's / supplier's account now comes off the bill "
                "it was made from: the bill shows Partial / Paid, the Receipt and Payment "
                "windows ask only for what is still owed (older returns are linked once by "

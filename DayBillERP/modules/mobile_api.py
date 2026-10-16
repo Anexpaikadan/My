@@ -57,6 +57,39 @@ def _f(v, d=0.0):
         return d
 
 
+def _check_date(head):
+    """The bill date the device sent: a real date, not in a closed year."""
+    when = str(head.get("date") or date.today().isoformat())[:10]
+    try:
+        datetime.strptime(when, "%Y-%m-%d")
+    except ValueError:
+        raise MobileError("Bad date '%s'." % when)
+    from modules import financial_year as _fy
+    msg = _fy.lock_message(when)
+    if msg:
+        raise MobileError(msg)
+    return when
+
+
+def _product_or_fail(ln):
+    p = _one("SELECT * FROM products WHERE product_id=?", (ln.get("product_id"),))
+    if not p:                       # never save a bill without one of its items
+        raise MobileError("Product %s is not in DayBill — sync the device and send again."
+                          % ln.get("product_id"))
+    return p
+
+
+def _posted_or_fail(kind, doc_id, **kw):
+    """Stock + books for a document saved from a device. A bill whose journal
+    cannot be posted is NOT kept: everything rolls back and the document
+    waits in the office Inbox with the reason (v6.9.2)."""
+    from modules import doc_posting
+    warn = doc_posting.sync(kind, doc_id, **kw) or ""
+    if "journal not posted" in warn:
+        raise MobileError("Not booked — " + warn)
+    return warn
+
+
 def clean(obj):
     """Rows → JSON-safe (Decimal → float, dates → text)."""
     if isinstance(obj, dict):
@@ -151,20 +184,34 @@ def check_pin(stored, pin):
         return False
 
 
+MOBILE_MAX_FAILS, MOBILE_LOCK_SECONDS = 5, 300
+
+
 def login(username, password, device=""):
-    u = _one("SELECT user_id, username, password_hash, full_name_en, is_active FROM users "
-             "WHERE username=?", (str(username or "").strip(),))
+    name = str(username or "").strip()[:50]
     from modules import permissions as _pm
+    # v6.9.2: the same lock as the desktop sign-in — 5 wrong passwords, then wait
+    if _pm.recent_failed_logins(name, MOBILE_LOCK_SECONDS) >= MOBILE_MAX_FAILS:
+        raise MobileError("Too many wrong passwords — wait 5 minutes and try again.")
+    u = _one("SELECT user_id, username, password_hash, full_name_en, is_active FROM users "
+             "WHERE username=?", (name,))
     if not u or not u.get("is_active", 1) or not _pm.verify_password(password or "",
                                                                         u.get("password_hash")):
+        _pm.log_login(u["user_id"] if u else None, name, False)
         raise MobileError("Wrong user name or password.")
     acc = access(u["user_id"])
     if not acc["active"] or not acc["modules"]:
         raise MobileError("This user has no mobile access. In DayBill: Inventory ▸ "
                           "Mobile & Van ▸ Users — tick the modules for %s." % u["username"])
+    _pm.log_login(u["user_id"], name, True)
     tok = secrets.token_hex(24)
     db.execute("INSERT INTO mobile_tokens (token, user_id, device) VALUES (?,?,?)",
                (tok, u["user_id"], str(device or "")[:120]))
+    try:            # v6.9.2: the sign-in ends when the password is changed
+        db.execute("UPDATE mobile_tokens SET pw_sig=? WHERE token=?",
+                   (_pw_sig(u.get("password_hash")), tok))
+    except Exception:
+        pass
     dev_no = next_device_no(u["user_id"], acc)
     return {"token": tok, "user": u["full_name_en"] or u["username"], "device_no": dev_no,
             "user_id": u["user_id"], "modules": acc["modules"], "van_code": acc["van_code"],
@@ -187,15 +234,24 @@ def next_device_no(user_id, acc=None):
         return 1
 
 
+def _pw_sig(password_hash):
+    """A short fingerprint of the stored password: a new password → new sig."""
+    return hashlib.sha256(str(password_hash or "").encode("utf-8")).hexdigest()[:16]
+
+
 def user_for(token):
     """Token → {user_id, username, modules}; MobileError when unknown."""
-    t = _one("SELECT t.user_id, u.username, u.full_name_en, u.is_active FROM mobile_tokens t "
-             "JOIN users u ON u.user_id=t.user_id WHERE t.token=?", (str(token or ""),))
+    t = _one("SELECT t.*, u.username, u.full_name_en, u.is_active, u.password_hash "
+             "FROM mobile_tokens t JOIN users u ON u.user_id=t.user_id WHERE t.token=?",
+             (str(token or ""),))
     if not t or not t.get("is_active", 1):
         raise MobileError("Please sign in again.")
+    if t.get("pw_sig") and t["pw_sig"] != _pw_sig(t.get("password_hash")):
+        db.execute("DELETE FROM mobile_tokens WHERE token=?", (str(token),))
+        raise MobileError("The password was changed — please sign in again.")
     acc = access(t["user_id"])
     if not acc["active"]:
-        raise MobileError("Mobile access was turned off for this user.")
+        raise MobileError("Mobile access was turned off for this user — please sign in again.")
     try:
         db.execute("UPDATE mobile_tokens SET last_seen=GETDATE() WHERE token=?", (token,))
     except Exception:
@@ -372,6 +428,9 @@ def submit(user, doc, source="wifi", device=""):
     """Save a document sent by a device, then apply it (or leave it in the
     office inbox when Settings ▸ Mobile asks for approval).
     doc = {uid, type, header{}, lines[{product_id, unit_id, factor, qty, …}]}"""
+    if not isinstance(doc, dict) or not isinstance(doc.get("lines") or [], list) \
+            or not isinstance(doc.get("header") or {}, dict):
+        raise MobileError("Bad document.")
     dtype = str(doc.get("type") or "")
     module = "van" if dtype == "van_sale" else dtype
     if dtype not in DOC_TITLES:
@@ -380,14 +439,23 @@ def submit(user, doc, source="wifi", device=""):
     uid = str(doc.get("uid") or "").strip()[:64]
     if not uid:
         raise MobileError("Missing document id.")
-    have = _one("SELECT doc_id, status, result, ref_table, ref_id FROM mobile_docs WHERE doc_uid=?",
-                (uid,))
+    have = _one("SELECT doc_id, status, result, ref_table, ref_id, user_id FROM mobile_docs "
+                "WHERE doc_uid=?", (uid,))
+    if have and have.get("user_id") not in (None, user["user_id"]):
+        raise MobileError("This document id is used by another user.")
+    lines = [ln for ln in (doc.get("lines") or []) if isinstance(ln, dict) and ln.get("product_id")]
+    head = doc.get("header") or {}
+    if have and have.get("status") == "error" and lines:
+        # sent again after a failure (product synced, year reopened …): try again
+        db.execute("UPDATE mobile_docs SET header_json=?, lines_json=? WHERE doc_id=?",
+                   (json.dumps(head, ensure_ascii=False), json.dumps(lines, ensure_ascii=False),
+                    have["doc_id"]))
+        return apply_doc(have["doc_id"], by_user=user["user_id"])
     if have:                                   # sent twice → same answer, nothing booked twice
+        have.pop("user_id", None)
         return clean(dict(have, duplicate=True))
-    lines = [ln for ln in (doc.get("lines") or []) if ln.get("product_id")]
     if not lines:
         raise MobileError("The list is empty.")
-    head = doc.get("header") or {}
     title = DOC_TITLES[dtype]
     if dtype == "goods_out":
         title += " · " + str(head.get("reason") or "")
@@ -513,9 +581,7 @@ def _goods_in(head, lines, d):
     vat_on = cfg.flag("vat_enabled", True) and cfg.flag("apply_vat_purchase", True)
     rows = []
     for ln in lines:
-        p = _one("SELECT * FROM products WHERE product_id=?", (ln["product_id"],))
-        if not p:
-            continue
+        p = _product_or_fail(ln)
         u = _one("SELECT unit_name_en, conversion_factor, purchase_price FROM product_units "
                  "WHERE unit_id=?", (ln.get("unit_id"),)) if ln.get("unit_id") else None
         fac = _f((u or {}).get("conversion_factor"), _f(ln.get("factor"), 1)) or 1
@@ -523,6 +589,8 @@ def _goods_in(head, lines, d):
             _f(p.get("purchase_price")) * fac
         rate = _vat_rate(p) if vat_on else 0.0
         qty = _f(ln.get("qty"))
+        if not (0 < qty < 1e6 and 0 <= cost < 1e7):    # also NaN / infinity
+            raise MobileError("Bad quantity or cost for %s." % p.get("product_code"))
         from modules.doc_math import r2              # half up, like the windows
         amt = r2(qty * cost)
         vat = r2(amt * rate / 100.0)
@@ -559,7 +627,7 @@ def _goods_in(head, lines, d):
     if cfg.flag("mobile_goods_in_confirm", False):
         from modules import doc_posting
         db.execute("UPDATE purchase_invoices SET invoice_status='confirmed' WHERE purchase_id=?", (pid,))
-        doc_posting.sync("purchase", pid)
+        _posted_or_fail("purchase", pid)
         return pid, "Purchase %s confirmed — stock added (%d item(s))." % (pnum, len(rows))
     return pid, ("Purchase %s saved as DRAFT (%d item(s)). Office: Purchases ▸ open it, "
                  "check prices ▸ Confirm → stock goes in." % (pnum, len(rows)))
@@ -571,20 +639,23 @@ def _van_sale(head, lines, d):
     vat_on = cfg.flag("vat_enabled", True) and cfg.flag("apply_vat_pos", True)
     cust = _one("SELECT * FROM customers WHERE customer_id=?", (head.get("customer_id"),)) \
         if head.get("customer_id") else None
+    if str(head.get("payment") or "cash").lower() == "credit" and not cust:
+        raise MobileError("Choose the customer for a credit bill.")
+    when = _check_date(head)
     if not cust:
         cust = _one("SELECT * FROM customers WHERE customer_code='WALKIN' OR "
                     "customer_name_en LIKE 'Walk%' OR customer_name_en LIKE 'Cash%' "
                     "ORDER BY customer_id") or {}
     rows = []
     for ln in lines:
-        p = _one("SELECT * FROM products WHERE product_id=?", (ln["product_id"],))
-        if not p:
-            continue
+        p = _product_or_fail(ln)
         rate = _vat_rate(p) if vat_on else 0.0
         vc = _one("SELECT category_code FROM vat_categories WHERE vat_category_id=?",
                   (p.get("vat_category_id"),)) or {}
         qty, price = _f(ln.get("qty")), _f(ln.get("price"))
         disc = _f(ln.get("discount"))
+        if not (0 < qty < 1e6 and 0 <= price < 1e7 and 0 <= disc <= qty * price):
+            raise MobileError("Bad quantity, price or discount for %s." % p.get("product_code"))
         gross = qty * price - disc
         if incl and rate:
             taxable = gross / (1 + rate / 100.0)
@@ -610,17 +681,30 @@ def _van_sale(head, lines, d):
     rows = round_lines(rows, **keys)
     T = doc_totals(rows, incl, rate="rate", code="vat_code", **keys)
     gross, vat, total = T["taxable"], T["vat"], T["total"]
-    printed = _f(head.get("total"))
-    if printed and abs(printed - total) > 0.05:
-        # the van printed its own total: keep the books equal to the paper bill
-        diff = round(printed - total, 2)
-        rows[-1]["total"] = round(rows[-1]["total"] + diff, 2)
-        rows[-1]["taxable"] = round(rows[-1]["taxable"] + diff, 2)
-        gross = round(gross + diff, 2)
-        total = printed
+    printed = round(_f(head.get("total")), 2)
+    if printed and abs(printed - total) >= 0.005:
+        # the van printed its own total (its rounding): the books follow the
+        # paper bill, the difference spread over the lines BEFORE VAT — a
+        # real mismatch is not booked but waits in the office Inbox
+        if abs(printed - total) > 1.0:
+            raise MobileError("Van total %.2f does not match its lines %.2f — not booked."
+                              % (printed, total))
+        from modules.doc_math import spread_bill_adjustment
+        L = [dict(r, line_amount=r["taxable"], vat_amount=r["vat"], line_total=r["total"],
+                  discount_amount=r["disc"], quantity=r["qty"], unit_price=r["price"]) for r in rows]
+        L = spread_bill_adjustment(L, round(total - printed, 2), incl)
+        rows = [dict(r, taxable=o["line_amount"], vat=o["vat_amount"], total=o["line_total"],
+                     disc=round(o["discount_amount"], 2)) for r, o in zip(rows, L)]
+        T = doc_totals(rows, incl, rate="rate", code="vat_code", **keys)
+        vat, total = T["vat"], printed
+        gross = round(total - vat, 2)
     pay = str(head.get("payment") or "cash").lower()
     cash_amt = card_amt = 0.0
     if pay == "credit":
+        from modules import credit_check        # Settings ▸ Customer ▸ Credit limit
+        st, msg = credit_check.check(cust.get("customer_id"), total)
+        if st == "block":
+            raise MobileError(msg or "Over the customer's credit limit — not booked.")
         paid, status = 0.0, "unpaid"
     else:
         paid, status = total, "paid"
@@ -628,7 +712,6 @@ def _van_sale(head, lines, d):
             card_amt = total
         else:
             pay, cash_amt = "cash", total
-    when = str(head.get("date") or date.today().isoformat())[:10]
     num = db.get_next_invoice_number("SALES")
     db.execute("INSERT INTO sales_invoices (invoice_number, invoice_date, customer_id, "
                "customer_name_en, customer_name_ar, customer_country_code, subtotal_amount, "
@@ -664,17 +747,22 @@ def _van_sale(head, lines, d):
         db.execute("UPDATE sales_invoices SET qr_code_data=? WHERE invoice_id=?", (tlv, iid))
     except Exception:
         pass
-    from modules import doc_posting
-    try:
-        doc_posting.sync("sales", iid, tenders={"cash": cash_amt, "bank": card_amt})
-    except Exception as e:
-        doc_posting.last_warning = str(e)[:200]
+    try:            # a van is not this PC's till: its cash is not in this drawer
+        from modules import branches as _br
+        _b, _c = _br.current()
+        if _b:
+            db.execute("UPDATE sales_invoices SET branch_id=?, counter_id=NULL "
+                       "WHERE invoice_id=?", (_b, iid))
+    except Exception:
+        pass
+    warn = _posted_or_fail("sales", iid, tenders={"cash": cash_amt, "bank": card_amt})
     try:
         from modules.zatca import egs as _zegs
         _zegs.after_save("sales", iid)
     except Exception:
         pass
-    return iid, "Sales invoice %s (van bill %s) · %.2f" % (num, head.get("number") or "-", total)
+    return iid, "Sales invoice %s (van bill %s) · %.2f%s" % (
+        num, head.get("number") or "-", total, (" · ⚠ " + warn[:120]) if warn else "")
 
 
 # ── what a van takes on the road ──────────────────────────────

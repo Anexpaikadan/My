@@ -266,8 +266,8 @@ def _import(items):
         try:
             r = M.submit(user, it.get("doc") or {}, source="van", device=it.get("device") or v["van_code"])
             res.append({"uid": uid, "status": r.get("status") or "applied", "result": r.get("result") or ""})
-        except M.MobileError as e:
-            res.append({"uid": uid, "status": "error", "result": str(e)})
+        except Exception as e:          # one bad document must not stop the ack / every later sync
+            res.append({"uid": uid, "status": "error", "result": str(e)[:300]})
     return res
 
 

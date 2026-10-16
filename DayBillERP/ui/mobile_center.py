@@ -445,6 +445,9 @@ class MobileCenterView:
         self._load_inbox()
 
     def _reject(self):
+        from modules import permissions as _pm
+        if not _pm.allowed("stock_adjustment", "add"):     # same right as Approve
+            return False
         d = self._sel_doc()
         if not d or d["status"] not in ("pending", "error"):
             return

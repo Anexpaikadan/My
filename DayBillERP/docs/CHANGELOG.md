@@ -31,6 +31,31 @@ Newest first. The short guide is in the main README.md.
   refunded too little.
 - **Online forms live**: the shop's Tally forms are published (links in
   README ▸ Online forms).
+- **Mobile / van — checked on a real server, hardened**: a document with an
+  unknown product, a zero / negative / huge quantity or price, a date in a
+  closed financial year, a van total more than 1.00 from its lines, or a
+  credit bill without a customer is refused as a whole (it waits in the
+  Inbox with the reason) — before, it could be saved half (no journal, lines
+  dropped, VAT broken). A small van rounding difference is spread before
+  VAT. Van credit bills follow the customer's credit limit. A bill whose
+  journal cannot be posted is not kept. One bad relay document no longer
+  stops every later van sync. Bad requests get a clear 400. Phone sign-in:
+  5 wrong passwords lock it for 5 minutes (logged in Login history), a
+  password change or switching mobile access off signs the phone out, and a
+  document id cannot be reused by another user; a document sent again after
+  a failure is tried again. Van sales no longer count as cash in the office
+  till's Day Close. The phone app works VAT out exactly like DayBill, so the
+  printed van bill matches the books.
+- **Payroll** (real-server test of every HR screen): a loan is not taken
+  from months before its date; months in a closed financial year cannot be
+  made, changed, reopened or deleted, and a payroll whose journal fails is
+  not saved silently; paying GOSI approves a draft month first (a re-make
+  could lose or double it); an unpaid-leave day also marked absent is
+  deducted once; the end-of-service window shows the real day rate of leave
+  pay; a second final settlement is refused.
+- **Shifts**: closing a shift that was already closed (two windows / PCs)
+  says so instead of reporting a close that changed nothing. Rejecting a
+  mobile document needs the same right as approving it.
 
 ## ↩ v6.9.1 — returns on account settle their bill
 
