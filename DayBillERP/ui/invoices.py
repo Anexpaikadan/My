@@ -1929,6 +1929,8 @@ class InvoiceForm:
         if city:
             info += f"  |  City: {city}"
         self.cust_info_var.set(info)
+        if hasattr(self, "points_info_var"):
+            self._update_totals()
 
     def _recalc_line(self, idx):
         line = self._lines[idx]
@@ -2078,7 +2080,20 @@ class InvoiceForm:
                                        width=9, relief="solid", bd=1, justify="right", state=ro)
         self.cash_var_entry.pack(side="left")
         amt("Round", "round_var", width=6)
-        amt("Coupon", "coupon_var", width=6)
+        # v6.9.2: ⭐ loyalty points spent on this bill (was an unused Coupon box)
+        self.points_entry = amt("⭐ Pts", "points_var", width=6)
+        self.points_var.set("0")
+        self.coupon_var = self.points_var
+        self.points_info_var = tk.StringVar(value="")
+        tk.Label(r1, textvariable=self.points_info_var, font=("Segoe UI", 7, "bold"),
+                 bg=C["card_bg"], fg=C["warning"] if "warning" in C else "#B45309").pack(
+                     side="left", padx=(2, 0))
+        try:
+            from modules import loyalty as _loy
+            if not _loy.enabled() or self.view_only:
+                self.points_entry.configure(state="disabled")
+        except Exception:
+            self.points_entry.configure(state="disabled")
         self.bill_discount_entry = amt(
             "Bill Disc", "bill_discount", width=7, var=self.bill_discount_var)
         if not (not self.view_only and cfg.flag("allow_discount_edit", True)):
@@ -2087,6 +2102,7 @@ class InvoiceForm:
         self.card_var.trace("w", lambda *a: self._update_balance())
         self.round_var.trace("w", lambda *a: self._update_totals())
         self.bill_discount_var.trace("w", lambda *a: self._update_totals())
+        self.points_var.trace("w", lambda *a: self._update_totals())
 
         # ── row 2: last bill · options · Net / VAT / Balance ───
         self.lbill_var = tk.StringVar(value="L.Bill: 0.00   Bal: 0.00")
@@ -2126,6 +2142,9 @@ class InvoiceForm:
         for v in ("cash_var", "card_var", "bank_var", "bill_discount_var", "round_var"):
             if hasattr(self, v):
                 getattr(self, v).set("0.00")
+        self._loaded_points = self._saved_points_extra = 0
+        if hasattr(self, "points_var"):
+            self.points_var.set("0")
         # a cleared form is a NEW document: back to today's system date
         today = date.today().isoformat()
         self.hdr_vars["invoice_date"].set(today)
@@ -2215,6 +2234,67 @@ class InvoiceForm:
         except Exception:
             return 0.0
 
+    def _incl(self):
+        """Prices typed with VAT (inclusive) or without."""
+        return (getattr(getattr(self, "line_grid", None), "tax_mode", None)
+                or cfg.get("sales_price_tax_mode", "inclusive")) == "inclusive"
+
+    def _points_used(self, bill_total=None):
+        """(points, SAR) newly spent on this bill — v6.9.2 loyalty. Never
+        more than the customer has or than the bill is worth; nothing below
+        the minimum. (Points a saved bill already spent are inside its
+        lines, like its bill discount, and stay spent.)"""
+        try:
+            from modules import loyalty
+            if not loyalty.enabled():
+                return 0, 0.0
+            want = int(float(str(self.points_var.get() or 0).replace(",", "") or 0))
+            cust = getattr(self, "_selected_customer", None) or {}
+            if want <= 0 or loyalty.is_walk_in(cust):
+                return 0, 0.0
+            if bill_total is None:
+                bill_total = sum(ln.get("line_total", 0) for ln in self._lines) \
+                    - self._num_field("bill_discount_var")
+            # a bill saved from this window and kept open (Save & Print) has
+            # already taken these points off the balance: they still count
+            ok = min(want, loyalty.can_spend(cust.get("customer_id"), bill_total,
+                                             already=getattr(self, "_saved_points_extra", 0)))
+            return (ok, loyalty.value_of(ok)) if ok > 0 else (0, 0.0)
+        except Exception:
+            return 0, 0.0
+
+    def _show_points(self):
+        """⭐ balance next to the Points box."""
+        try:
+            from modules import loyalty
+            cust = getattr(self, "_selected_customer", None) or {}
+            if not loyalty.enabled() or loyalty.is_walk_in(cust):
+                self.points_info_var.set("")
+                return
+            have = loyalty.balance(cust.get("customer_id")) + int(
+                getattr(self, "_saved_points_extra", 0) or 0)
+            used, val = self._points_used()
+            want = int(float(str(self.points_var.get() or 0).replace(",", "") or 0))
+            txt = "%d pts" % have
+            if want and not used:
+                txt += " · min %d" % loyalty.min_redeem() if have >= want else " · not enough"
+            elif used:
+                txt += " · −%.2f" % val
+            self.points_info_var.set(txt)
+        except Exception:
+            pass
+
+    def _lines_to_save(self, bill_adj=None):
+        """The lines as Save stores them: bill discount / points / round box
+        spread over them before VAT (v6.9)."""
+        if bill_adj is None:
+            bill_adj = (self._num_field("bill_discount_var") + self._points_used()[1]
+                        - self._num_field("round_var"))
+        if abs(bill_adj) >= 0.005 and self._lines:
+            from modules.doc_math import spread_bill_adjustment
+            return spread_bill_adjustment(self._lines, bill_adj, self._incl())
+        return self._lines
+
     def _update_totals(self):
         subtotal = sum(ln.get("line_amount",0) for ln in self._lines)
         discount = sum(ln.get("discount_amount",0) for ln in self._lines)
@@ -2223,8 +2303,9 @@ class InvoiceForm:
         total    = sum(ln.get("line_total",0)  for ln in self._lines)
         total_qty = sum(ln.get("quantity",0) for ln in self._lines)
 
-        # bill-level adjustments (wired): bill discount + round off
+        # bill-level adjustments (wired): bill discount + ⭐ points + round off
         bill_disc = self._num_field("bill_discount_var")
+        bill_disc += self._points_used(total - bill_disc)[1]
         round_adj = self._num_field("round_var")
         # Settings ▸ Tax: automatic round-off fills the Round field
         # (guarded: round_var has a trace that re-enters this method)
@@ -2243,6 +2324,19 @@ class InvoiceForm:
         grand = total - bill_disc + round_adj
         if grand < 0:
             grand = 0
+        # v6.9.2: taxable / VAT / total exactly as Save will store them —
+        # bill discount spread over the lines, VAT the ZATCA way (once per
+        # rate on the bill total), so screen = print = books = e-invoice
+        if self._lines:
+            try:
+                from modules.doc_math import doc_totals
+                T = doc_totals(self._lines_to_save(bill_disc - round_adj), self._incl())
+                taxable, vat, grand = T["taxable"], T["vat"], max(T["total"], 0)
+            except Exception:
+                pass
+        self._shown = (grand, vat)
+        if hasattr(self, "points_info_var"):
+            self._show_points()
 
         if hasattr(self, "totalqty_var"):
             self.totalqty_var.set(f"{total_qty:g}")
@@ -2299,8 +2393,9 @@ class InvoiceForm:
                 self._qr_data = ""
                 return
             dt_str  = format_zatca_datetime(datetime.utcnow())
-            total   = sum(ln.get("line_total",0)   for ln in self._lines)
-            vat_amt = sum(ln.get("vat_amount",0)   for ln in self._lines)
+            total, vat_amt = getattr(self, "_shown", None) or (
+                sum(ln.get("line_total", 0) for ln in self._lines),
+                sum(ln.get("vat_amount", 0) for ln in self._lines))
 
             qr_data = generate_zatca_qr(seller, vat_no, dt_str, total, vat_amt)
 
@@ -2479,6 +2574,11 @@ class InvoiceForm:
         for v in ("bill_discount_var", "round_var"):
             if hasattr(self, v):
                 getattr(self, v).set("0.00")
+        # ⭐ points this bill spent are inside its lines too and stay spent
+        self._loaded_points = int(float(inv.get("loyalty_points_redeemed") or 0))
+        self._saved_points_extra = 0
+        if hasattr(self, "points_var"):
+            self.points_var.set("0")
 
         self.hdr_vars["invoice_number"].set(inv.get("invoice_number",""))
         self.inv_num_label.config(text=inv.get("invoice_number",""))
@@ -2624,20 +2724,17 @@ class InvoiceForm:
         # BEFORE VAT, so the saved invoice, journal, print and ZATCA match
         # the GRAND TOTAL on the screen. The screen's own lines stay as
         # they are (Save & Print keeps the window open).
-        save_lines = self._lines
-        bill_adj = self._num_field("bill_discount_var") - self._num_field("round_var")
-        if abs(bill_adj) >= 0.005 and self._lines:
-            from modules.doc_math import spread_bill_adjustment
-            incl = (getattr(getattr(self, "line_grid", None), "tax_mode", None)
-                    or cfg.get("sales_price_tax_mode", "inclusive")) == "inclusive"
-            save_lines = spread_bill_adjustment(self._lines, bill_adj, incl)
+        from modules.doc_math import doc_totals, round_lines
+        _pts_used = int(getattr(self, "_loaded_points", 0) or 0) + self._points_used()[0]
+        save_lines = round_lines(self._lines_to_save())     # halalas, adding up
 
-        # Compute totals
-        subtotal = sum(ln.get("line_amount",0)    for ln in save_lines)
+        # Totals the ZATCA way (v6.9.2): VAT once per rate on the bill —
+        # the same VAT the e-invoice XML and its QR carry
+        T = doc_totals(save_lines, self._incl())
         discount = sum(ln.get("discount_amount",0) for ln in save_lines)
-        taxable  = subtotal
-        vat_amt  = sum(ln.get("vat_amount",0)     for ln in save_lines)
-        total    = sum(ln.get("line_total",0)      for ln in save_lines)
+        subtotal = taxable = T["taxable"]
+        vat_amt  = T["vat"]
+        total    = T["total"]
 
         # ── Credit limit (Settings ▸ Customer) — credit sales only ──
         try:
@@ -2796,6 +2893,13 @@ class InvoiceForm:
                 _pk = self._price_key()
                 db.execute("UPDATE sales_invoices SET price_list_id=? WHERE invoice_id=?",
                            (_pk if isinstance(_pk, int) else None, inv_id))
+            except Exception:
+                pass
+
+            try:                    # ⭐ loyalty points spent on this bill (v6.9.2)
+                db.execute("UPDATE sales_invoices SET loyalty_points_redeemed=? "
+                           "WHERE invoice_id=?", (_pts_used or None, inv_id))
+                self._saved_points_extra = _pts_used - int(getattr(self, "_loaded_points", 0) or 0)
             except Exception:
                 pass
 

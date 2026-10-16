@@ -1442,6 +1442,30 @@ def r_sales_customers(date_from, date_to, party="", **_):
     return _result("Customer-wise Sales", cols, rows, tot)
 
 
+@report("loyalty_points", GROUP_SALES, "⭐ Loyalty Points", params=("period", "party"),
+        desc="Points each customer earned and spent in the period, and has now.")
+def r_loyalty_points(date_from, date_to, party="", **_):
+    from modules import loyalty
+    rows = []
+    for r in loyalty.summary(date_from, date_to):
+        if not _match(party, r.get("customer_name_en"), r.get("customer_code"), r.get("phone")):
+            continue
+        bal = int(_f(r.get("balance")))
+        rows.append({"code": r.get("customer_code") or "", "customer": r.get("customer_name_en") or "",
+                     "phone": r.get("phone") or "", "earned": int(_f(r.get("earned"))),
+                     "spent": int(_f(r.get("spent"))), "balance": bal,
+                     "value": loyalty.value_of(bal) if bal > 0 else 0.0})
+    cols = [col("code", "Code", width=80), col("customer", "Customer", width=220),
+            col("phone", "Mobile", width=110), col("earned", "Earned", "int", 80),
+            col("spent", "Spent", "int", 80), col("balance", "Points now", "int", 90),
+            col("value", "Worth now (SAR)", "money")]
+    tot = _sum_totals(rows, ("earned", "spent", "balance", "value"), "customer", "TOTAL")
+    notes = ["1 point per %.2f SAR spent · 1 point = %.2f SAR · loyalty is %s (Settings ▸ Customer)"
+             % (loyalty.sar_per_point(), loyalty.point_value(),
+                "ON" if loyalty.enabled() else "OFF")]
+    return _result("Loyalty Points", cols, rows, tot, notes=notes)
+
+
 @report("sales_daily", GROUP_SALES, "Daily Sales Summary",
         desc="Day by day: bills, cash / card / credit, VAT, returns.")
 def r_sales_daily(date_from, date_to, **_):

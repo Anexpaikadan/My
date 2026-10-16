@@ -523,8 +523,9 @@ def _goods_in(head, lines, d):
             _f(p.get("purchase_price")) * fac
         rate = _vat_rate(p) if vat_on else 0.0
         qty = _f(ln.get("qty"))
-        amt = round(qty * cost, 2)
-        vat = round(amt * rate / 100.0, 2)
+        from modules.doc_math import r2              # half up, like the windows
+        amt = r2(qty * cost)
+        vat = r2(amt * rate / 100.0)
         rows.append(dict(product_id=p["product_id"], product_code=p.get("product_code"),
                          product_name_en=p.get("product_name_en"),
                          unit=(u or {}).get("unit_name_en") or ln.get("unit") or
@@ -533,9 +534,9 @@ def _goods_in(head, lines, d):
                          rate=rate, vat=vat, total=round(amt + vat, 2)))
     if not rows:
         raise MobileError("No valid items.")
-    sub = round(sum(r["amt"] for r in rows), 2)
-    vat = round(sum(r["vat"] for r in rows), 2)
-    total = round(sub + vat, 2)
+    from modules.doc_math import doc_totals     # v6.9.2: VAT once per rate
+    T = doc_totals(rows, False, net="amt", vat="vat", total="total", rate="rate")
+    sub, vat, total = T["taxable"], T["vat"], T["total"]
     note = "From %s (mobile) — check prices, then Confirm." % (d.get("device") or "PDT")
     db.execute("INSERT INTO purchase_invoices (invoice_number, supplier_invoice_no, invoice_date, "
                "supplier_id, supplier_name_en, supplier_name_ar, supplier_vat_no, payment_method, "
@@ -597,14 +598,18 @@ def _van_sale(head, lines, d):
                          product_name_en=p.get("product_name_en"),
                          product_name_ar=p.get("product_name_ar") or "",
                          unit=ln.get("unit") or "PCs", qty=qty, price=price, disc=round(disc, 2),
-                         taxable=round(taxable, 2), vat_category_id=p.get("vat_category_id"),
+                         taxable=taxable, vat_category_id=p.get("vat_category_id"),
                          vat_code=vc.get("category_code") or "S", rate=rate,
-                         vat=round(vat, 2), total=round(total, 2)))
+                         vat=vat, total=total))           # rounded below (round_lines)
     if not rows:
         raise MobileError("No valid items.")
-    gross = round(sum(r["taxable"] for r in rows), 2)
-    vat = round(sum(r["vat"] for r in rows), 2)
-    total = round(gross + vat, 2)
+    # v6.9.2: same maths as the Sales Invoice window — each line adds up in
+    # halalas, the bill's VAT is worked out once per rate (the ZATCA way)
+    from modules.doc_math import doc_totals, round_lines
+    keys = dict(net="taxable", vat="vat", total="total")
+    rows = round_lines(rows, **keys)
+    T = doc_totals(rows, incl, rate="rate", code="vat_code", **keys)
+    gross, vat, total = T["taxable"], T["vat"], T["total"]
     printed = _f(head.get("total"))
     if printed and abs(printed - total) > 0.05:
         # the van printed its own total: keep the books equal to the paper bill

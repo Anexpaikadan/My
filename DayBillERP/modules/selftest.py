@@ -314,6 +314,30 @@ def run(out_dir=None):
             raise RuntimeError("refund methods are wrong")
     step("Returns on account settle their bill", returns_settle_v691)
 
+    def vat_zatca_way_v692():
+        from modules.doc_math import doc_totals, r2
+        L = []
+        for q, p in ((12, 6.5), (3, 42), (4, 18.75), (2, 31.95)):
+            g = q * p
+            L.append(dict(line_amount=g / 1.15, vat_amount=g - g / 1.15, line_total=g,
+                          vat_rate=15, vat_category_code="S"))
+        T = doc_totals(L, True)
+        if (T["total"], T["vat"], T["taxable"]) != (342.90, 44.73, 298.17):
+            raise RuntimeError("bill VAT is not worked out once on the total: %s" % T)
+        if r2(3 * 3.335) != 10.01 or r2(10.1745) != 10.17:
+            raise RuntimeError("halala rounding is not half-up")
+    step("VAT once per rate on the bill (ZATCA)", vat_zatca_way_v692)
+
+    def loyalty_v692():
+        from modules import loyalty as L, db_migrate as M
+        if "zzz_v692_patch.sql" not in [os.path.basename(p) for p in M.patch_files()]:
+            raise RuntimeError("update zzz_v692_patch.sql is missing")
+        if L.points_for(342.90) != int(342.90 // L.sar_per_point()) or L.points_for(-5) != 0:
+            raise RuntimeError("points earned are wrong")
+        if L.is_walk_in({"customer_code": "CASH"}) is not True:
+            raise RuntimeError("the cash customer would collect points")
+    step("Loyalty points", loyalty_v692)
+
     text = "DayBill ERP self-test  %s\n%s\n\n%s\n" % (
         datetime.now().strftime("%Y-%m-%d %H:%M"), "-" * 40, "\n".join(rows))
     text += "\nRESULT: %s\n" % ("ALL OK" if ok_all else "PROBLEMS FOUND")

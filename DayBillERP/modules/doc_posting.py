@@ -480,6 +480,14 @@ def _unlink_payments(kind, doc_id):
         raise
     except Exception:
         pass
+    if kind in ("sales", "sales_return"):
+        try:                                           # its loyalty points go too
+            from modules import loyalty
+            loyalty.remove(kind, doc_id)
+        except TransactionLost:
+            raise
+        except Exception:
+            pass
 
 
 def remove(kind, doc_id):
@@ -561,6 +569,17 @@ def _sync(kind, doc_id, tenders):
                             % (posting.last_error or "unknown reason"))
         if kind == "purchase_return" and jid:
             _post_return_price_difference(doc_id, h, lines, cost)
+    if kind in ("sales", "sales_return"):
+        try:              # loyalty points earned / spent / taken back (v6.9.2)
+            from modules import loyalty
+            if kind == "sales":
+                loyalty.sync_sale(doc_id)
+            else:
+                loyalty.sync_return(doc_id)
+        except TransactionLost:
+            raise
+        except Exception as e:
+            warn.append("loyalty points not updated: %s" % str(e)[:120])
     if kind in ("sales_return", "purchase_return"):
         try:              # on the party's account → settles the bill it came from
             from modules import allocation

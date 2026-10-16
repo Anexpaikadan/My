@@ -208,6 +208,10 @@ SECTIONS = [
         F("cust_over_credit_warn", "Over Credit Warning", "check"),
         F("cust_mandatory_mobile", "Mandatory Mobile", "check"),
         F("cust_mandatory_vat", "Mandatory VAT Number", "check"),
+        F("loyalty_enabled", "⭐ Loyalty points (customers earn on every bill, spend as a discount)", "check"),
+        F("loyalty_sar_per_point", "Loyalty · spend this many SAR to earn 1 point", "number"),
+        F("loyalty_point_value", "Loyalty · 1 point is worth (SAR) when spent", "number"),
+        F("loyalty_min_redeem", "Loyalty · fewest points spent at once", "number"),
     ]},
     {"key": "supplier", "title": "Supplier", "icon": "🏭", "store": "app", "fields": [
         F("sup_prefix", "Supplier Code Prefix"),
@@ -393,7 +397,7 @@ DESCRIPTIONS = {
     "inventory": "Negative stock, the low-stock alert level and expiry warnings.",
     "hr": "GOSI rates (change them when GOSI announces new ones) and payroll deductions.",
     "accounting": "Journal posting behaviour. Default ledger accounts are set in Accounts ▸ Default Accounts.",
-    "customer": "Customer code numbering and credit controls.",
+    "customer": "Customer code numbering, credit controls and loyalty points.",
     "supplier": "Supplier code numbering and controls.",
     "online_forms": "Customers and suppliers fill a Tally or Jotform web form on their phone; the answers wait "
                     "in Customers ▸ 🌐 Online forms until you review and add them.",

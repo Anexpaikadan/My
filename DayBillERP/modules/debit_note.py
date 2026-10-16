@@ -84,15 +84,16 @@ def compute(lines):
         desc = str(ln.get("description") or "").strip()
         if qty <= 0 or price <= 0 or not desc:
             continue
-        amt = round(qty * price, 2)
-        v = round(amt * rate / 100.0, 2)
+        from modules.doc_math import r2              # half up, like the windows
+        amt = r2(qty * price)
+        v = r2(amt * rate / 100.0)
         out.append({"description": desc[:200], "quantity": qty, "unit_price": price,
                     "vat_rate": rate, "line_amount": amt, "vat_amount": v,
                     "line_total": round(amt + v, 2), "product_id": ln.get("product_id"),
                     "vat_code": "S" if rate > 0 else "Z"})
-        taxable += amt
-        vat += v
-    return out, round(taxable, 2), round(vat, 2), round(taxable + vat, 2)
+    from modules.doc_math import doc_totals      # v6.9.2: VAT once per rate (ZATCA)
+    T = doc_totals(out, False, code="vat_code")
+    return out, T["taxable"], T["vat"], T["total"]
 
 
 def create(original_invoice_id, lines, reason, pay="credit", when=None):

@@ -10,7 +10,7 @@ import re
 try:                                    # one version for the whole app (config/version.py)
     from config.version import VERSION as APP_VERSION
 except Exception:
-    APP_VERSION = "6.9.1"
+    APP_VERSION = "6.9.2"
 
 # Ordered list of database patches shipped with the app.
 # (filename relative to project root, human description, version)
@@ -35,6 +35,17 @@ PATCHES = [
 
 # What changed in each version (shown in the Updates panel)
 CHANGELOG = [
+    ("6.9.2", ["⭐ Loyalty points: customers earn on every bill and spend points as a discount "
+               "(Sales Invoice ▸ ⭐ Pts box, POS ▸ ⭐ Points / F10); Customers ▸ ⭐ Points shows "
+               "the history and gives / takes points; Report Center ▸ ⭐ Loyalty Points. "
+               "Switch on in Settings ▸ Customer",
+               "🧾 VAT the ZATCA way on every bill: worked out once per rate on the bill total — "
+               "the printed VAT, the books, the e-invoice XML and its QR now always agree "
+               "(van sales were up to a few halalas off)",
+               "↩ Returning part of a discounted line gives back only that part's discount "
+               "(a 1-of-3 return kept the whole line discount and refunded too little)",
+               "🌐 The three Tally forms are live: customer registration, supplier "
+               "registration, How was your visit?"]),
     ("6.9.1", ["↩ A return put on the customer's / supplier's account now comes off the bill "
                "it was made from: the bill shows Partial / Paid, the Receipt and Payment "
                "windows ask only for what is still owed (older returns are linked once by "

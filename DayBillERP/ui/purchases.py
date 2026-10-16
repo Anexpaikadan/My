@@ -599,18 +599,19 @@ class PurchaseForm:
         grid = getattr(self, "grid", None)
         if grid is None:
             return
-        self._lines = grid.data_lines()
+        from modules.doc_math import doc_totals, round_lines
+        self._lines = round_lines(grid.data_lines())        # halalas (v6.9.2)
         if not hasattr(self, "tvars"):
             return
         gross = sum(l.get("line_amount", 0) for l in self._lines)
         disc = sum(l.get("discount_amount", 0) for l in self._lines)
-        vat = sum(l.get("vat_amount", 0) for l in self._lines)
-        total = sum(l.get("line_total", 0) for l in self._lines)
+        T = doc_totals(self._lines, (getattr(getattr(self, "grid", None), "tax_mode", "exclusive") == "inclusive"))               # VAT once per rate
+        vat, total = T["vat"], T["total"]
         qty = sum(l.get("quantity", 0) for l in self._lines)
         self.tvars["qty"].set(f"{qty:g}")
         self.tvars["gross"].set(f"{gross:,.2f}")
         self.tvars["disc"].set(f"−{disc:,.2f}" if abs(disc) >= 0.005 else "0.00")
-        self.tvars["taxable"].set(f"{gross:,.2f}")
+        self.tvars["taxable"].set(f"{T['taxable']:,.2f}")
         self.tvars["vat"].set(f"{vat:,.2f}")
         self.tvars["total"].set(f"{total:,.2f}")
 
@@ -749,9 +750,10 @@ class PurchaseForm:
             pass
         self.status_var.set("")
         s = self.suppliers[self.sup_cb.current()]
-        sub = sum(l.get("line_amount", 0) for l in self._lines)
-        vat = sum(l.get("vat_amount", 0) for l in self._lines)
-        total = sum(l.get("line_total", 0) for l in self._lines)
+        from modules.doc_math import doc_totals, round_lines
+        self._lines = round_lines(self._lines)
+        T = doc_totals(self._lines, (getattr(getattr(self, "grid", None), "tax_mode", "exclusive") == "inclusive"))     # v6.9.2: the ZATCA way
+        sub, vat, total = T["taxable"], T["vat"], T["total"]
         status = "confirmed" if confirm else "draft"
         # paid now (cash / bank / card / cheque) or on the supplier's account
         method = str(self.hdr["payment"].get() or "credit").lower()

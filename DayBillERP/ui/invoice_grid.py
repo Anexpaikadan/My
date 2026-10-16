@@ -349,6 +349,12 @@ class InvoiceGrid(tk.Frame):
                     ln["discount_percent"] = 0.0
             except Exception:
                 pass
+        # v6.9.2: a saved line's discount (e.g. its share of a bill discount
+        # or of loyalty points) follows its quantity, so returning 1 of 3
+        # gives back 1/3 of the discount — not all of it
+        lq = ln.get("_load_qty")
+        if lq and not ln.get("offer_id"):
+            ln["discount_amount"] = round(float(ln.get("_load_disc") or 0) * qty / lq, 4)
         disc = float(ln.get("discount_amount", 0))
         gross = qty * price - disc
         if getattr(self, "tax_mode", "exclusive") == "inclusive" and rate:
@@ -425,6 +431,13 @@ class InvoiceGrid(tk.Frame):
                 if not ln.get("purchase_price"):
                     ln["purchase_price"] = float(p.get("purchase_price") or 0)
             self._match_saved_price(ln)
+            try:                         # its discount per quantity (see _recalc)
+                _q, _d = float(ln.get("quantity") or 0), float(ln.get("discount_amount") or 0)
+                if _q > 0 and abs(_d) > 1e-9 and not ln.get("offer_id"):
+                    ln.setdefault("_load_qty", _q)
+                    ln.setdefault("_load_disc", _d)
+            except (TypeError, ValueError):
+                pass
             if self.use_offers:          # keep the discount it was saved with
                 ln.update(offer_off=True, _frozen_qty=float(ln.get("quantity") or 0))
             self._recalc(ln)

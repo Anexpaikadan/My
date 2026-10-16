@@ -355,9 +355,11 @@ class DocForm:
             return
         self.tv["count"].set(str(len(L)))
         self.tv["qty"].set(f"{sum(_f(x.get('quantity')) for x in L):g}")
-        self.tv["taxable"].set(f"{sum(_f(x.get('line_amount')) for x in L):,.2f}")
-        self.tv["vat"].set(f"{sum(_f(x.get('vat_amount')) for x in L):,.2f}")
-        self.tv["total"].set(f"{sum(_f(x.get('line_total')) for x in L):,.2f}")
+        from modules.doc_math import doc_totals
+        T = doc_totals(L, (getattr(getattr(self, "grid", None), "tax_mode", "exclusive") == "inclusive"))          # v6.9.2: VAT once per rate
+        self.tv["taxable"].set(f"{T['taxable']:,.2f}")
+        self.tv["vat"].set(f"{T['vat']:,.2f}")
+        self.tv["total"].set(f"{T['total']:,.2f}")
 
     def _next_number(self):
         try:
@@ -469,11 +471,11 @@ class DocForm:
             if not ok2:
                 self.msg.set(f"⚠️  {k['date2_label']}: {err2}")
                 return False
-        L = self._lines
-        taxable = round(sum(_f(x.get("line_amount")) for x in L), 2)
+        from modules.doc_math import doc_totals, round_lines
+        L = self._lines = round_lines(self._lines)
+        T = doc_totals(L, (getattr(getattr(self, "grid", None), "tax_mode", "exclusive") == "inclusive"))          # v6.9.2: the ZATCA way
+        taxable, vat, total = T["taxable"], T["vat"], T["total"]
         disc = round(sum(_f(x.get("discount_amount")) for x in L), 2)
-        vat = round(sum(_f(x.get("vat_amount")) for x in L), 2)
-        total = round(sum(_f(x.get("line_total")) for x in L), 2)
         status = self.v["status"].get() or "open"
         _tx, _was = None, self.doc_id
         try:

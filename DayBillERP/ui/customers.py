@@ -249,6 +249,12 @@ class CustomersView:
                   relief="flat", padx=12, pady=6, cursor="hand2",
                   command=self._statement).pack(side="left", padx=(0, 6))
 
+        tk.Button(bar, text="⭐  Points",                    # v6.9.2 loyalty
+                  font=("Segoe UI", 9), bg=C["card_bg"], fg=C["text_primary"],
+                  relief="flat", padx=12, pady=6, cursor="hand2",
+                  highlightbackground=C["border"], highlightthickness=1,
+                  command=self._points).pack(side="left", padx=(0, 6))
+
         tk.Button(bar, text=f"🗑  {t('customer.delete')}",
                   font=("Segoe UI", 9), bg="#FEF2F2", fg=C["danger"],
                   relief="flat", padx=12, pady=6, cursor="hand2",
@@ -269,6 +275,7 @@ class CustomersView:
         self.ctx_menu.add_command(label="👁  View Details",    command=self._view_customer)
         self.ctx_menu.add_separator()
         self.ctx_menu.add_command(label="🧾  Account Statement", command=self._statement)
+        self.ctx_menu.add_command(label="⭐  Loyalty points", command=self._points)
         self.ctx_menu.add_separator()
         self.ctx_menu.add_command(label="🗑  Delete",          command=self._delete_customer,
                                    foreground=C["danger"])
@@ -401,6 +408,15 @@ class CustomersView:
     @perm.guard("customers", "reports")
     def _statement(self):
         self._view_invoices()
+
+    def _points(self):
+        """⭐ the customer's loyalty points (v6.9.2)."""
+        cid = self._get_selected_id()
+        if not cid:
+            messagebox.showinfo("Select", "Select a customer first.")
+            return
+        from ui.loyalty_view import LoyaltyDialog
+        LoyaltyDialog(self.frame, cid)
 
     @perm.guard("customers", "delete")
     def _delete_customer(self):

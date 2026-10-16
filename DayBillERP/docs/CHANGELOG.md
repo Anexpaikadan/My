@@ -2,6 +2,36 @@
 
 Newest first. The short guide is in the main README.md.
 
+## ⭐ v6.9.2 — loyalty points, VAT the ZATCA way
+
+- **Loyalty points** (Settings ▸ Customer ▸ ⭐ Loyalty points; off until you
+  switch it on). A named customer earns 1 point per *N* SAR on every
+  confirmed bill (default 1 point per 10 SAR); 1 point is worth a set amount
+  when spent (default 0.10 SAR, at least 50 points at a time). Spend them in
+  the Sales Invoice window (⭐ Pts box next to Bill Disc — the balance shows
+  beside it) or in the POS (⭐ Points button / F10). Points are a discount
+  spread over the lines **before VAT**, so taxable, VAT, the ZATCA e-invoice
+  and the books stay right. A sales return takes its points back; editing,
+  cancelling or deleting a bill never counts its points twice. The cash /
+  walk-in customer collects nothing. Customers ▸ ⭐ Points shows every
+  movement and gives / takes points by hand (users with the right to edit
+  customers); Report Center ▸ Sales ▸ ⭐ Loyalty Points lists earned, spent
+  and balances. New update `database/patches/zzz_v692_patch.sql`.
+- **VAT the ZATCA way on every bill**: each line's taxable amount in
+  halalas, then VAT worked out once per VAT rate on the bill total (the same
+  rule the ZATCA XML and the Phase 2 QR use), half-up rounding everywhere.
+  Sales Invoice, POS, van sales, Sales / Purchase Return, Purchase,
+  Quotation / PO, mobile goods-in and debit notes now all agree with the
+  e-invoice; the screen shows exactly what Save stores (also with a bill
+  discount). Before, a van sale could print 44.71 VAT where the e-invoice
+  said 44.73.
+- **Part returns of discounted lines**: returning 1 of 3 items from a line
+  with a discount (for example its share of a bill discount or points) now
+  gives back one third of that discount — it kept the whole discount and
+  refunded too little.
+- **Online forms live**: the shop's Tally forms are published (links in
+  README ▸ Online forms).
+
 ## ↩ v6.9.1 — returns on account settle their bill
 
 - **Returns on account come off the bill**: a sales / purchase return made

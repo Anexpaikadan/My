@@ -68,12 +68,27 @@ line to open its transaction; right-click for Open · Edit · Delete · Voucher 
 New. **🔗 Connectors** shows which window each kind of line opens and lets you
 choose what a double-click does.
 
+## ⭐ Loyalty points
+
+Settings ▸ Customer ▸ **⭐ Loyalty points**: customers earn points on every
+bill (default 1 point per 10 SAR) and spend them as a discount — Sales
+Invoice ▸ **⭐ Pts** box, POS ▸ **⭐ Points (F10)**. Customers ▸ ⭐ Points shows
+the history; Report Center ▸ ⭐ Loyalty Points lists every customer.
+
 ## 🌐 Online forms (Tally or Jotform)
 
 Customers and suppliers register — and rate their visit — on their phone.
 Settings ▸ Online forms: choose **Tally** or **Jotform**, paste the API key and
 the three form links (Customer registration, Supplier registration, How was
 your visit?). Answers wait in Customers ▸ 🌐 Online forms until you review them.
+
+The shop's three Tally forms are live (paste these links in Settings):
+
+| Form | Link |
+|------|------|
+| Customer registration · تسجيل عميل | https://tally.so/r/4aXjl5 |
+| Supplier registration · تسجيل مورد | https://tally.so/r/OQ10Ma |
+| How was your visit? · كيف كانت زيارتك؟ | https://tally.so/r/4aXjVr |
 
 ## 🌐 Language
 

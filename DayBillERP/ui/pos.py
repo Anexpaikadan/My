@@ -651,7 +651,16 @@ class POSWindow:
         self.retrieve_lbl = self._abtn(act, "Retrieve\n[F7]", "#2E86AB", self._retrieve, 0, 1)
         self._abtn(act, "New\n[F3]", "#16A085", self._new_sale, 0, 2)
         self._abtn(act, "Last Bill\n🖨", "#34495E", self._print_last_bill, 0, 3)
-        for i in range(4):
+        _ncol = 4
+        try:                                   # v6.9.2: ⭐ loyalty points
+            from modules import loyalty as _loy
+            if _loy.enabled():
+                self.points_btn = self._abtn(act, "⭐ Points\n[F10]", "#B7950B",
+                                             self._use_points, 0, 4)
+                _ncol = 5
+        except Exception:
+            pass
+        for i in range(_ncol):
             act.columnconfigure(i, weight=1, uniform="a")
 
         pad = tk.Frame(right, bg="#0F2027"); pad.pack(fill="both", expand=True)
@@ -925,6 +934,7 @@ class POSWindow:
         self.win.bind("<F7>", lambda e: self._retrieve())
         self.win.bind("<F8>", lambda e: self._price_check())
         self.win.bind("<F9>", lambda e: self._shift())
+        self.win.bind("<F10>", lambda e: (self._use_points(), "break")[1])
         self.win.bind("<space>", self._space_cycle_unit)
         self.win.bind("<Escape>", lambda e: self._clear_scan_box())
 
@@ -1448,6 +1458,8 @@ class POSWindow:
 
     # ── Customer search: name / phone / VAT — default Cash ────
     def _set_customer(self, cust, quiet=False):
+        if cust is not getattr(self, "_customer", None):
+            self._points = 0                  # points belong to the customer chosen
         self._customer = cust
         try:                                  # v6.0: prices follow the customer's list
             from modules import price_lists as PL
@@ -1632,6 +1644,8 @@ class POSWindow:
             self.cart.append(ln)
         self._sel_idx = None
         self._loaded_invoice_id = invoice_id
+        # ⭐ points this bill spent are inside its lines and stay spent (v6.9.2)
+        self._loaded_points = int(float(inv.get("loyalty_points_redeemed") or 0))
         self.bill_var.set(str(inv.get("invoice_number", invoice_id)))
         # reflect the bill's customer in the header
         cust = next((c for c in getattr(self, "_customers", [])
@@ -2058,7 +2072,8 @@ class POSWindow:
         rets = [l for l in self.cart if l["quantity"] < 0]
         s_gross = sum(l["taxable"] for l in sale)
         s_vat = sum(l["vat_amount"] for l in sale)
-        s_total = s_gross + s_vat
+        pv = self._points_value() if sale else 0.0      # ⭐ points off (v6.9.2)
+        s_total = s_gross + s_vat - pv
         if sale:
             try:  # Settings ▸ Tax: automatic round-off (same helper as invoices)
                 s_total, _adj = cfg.round_off(s_total)
@@ -2068,11 +2083,81 @@ class POSWindow:
         r_vat = -sum(l["vat_amount"] for l in rets)
         r_total = round(r_gross + r_vat, 2)
         s_total = round(s_total, 2)
+        # v6.9.2: VAT the ZATCA way (once per rate on the bill, after the
+        # round-off is spread) — the same VAT the saved bill and its QR carry
+        try:
+            from modules.doc_math import doc_totals, spread_bill_adjustment
+            if sale:
+                L = [dict(l, line_amount=l["taxable"]) for l in sale]
+                adj = round(round(sum(l["line_total"] for l in sale), 2) - s_total, 2)
+                if 0.005 <= abs(adj) <= 1.0 + pv:
+                    L = spread_bill_adjustment(L, adj, _price_incl())
+                s_vat = doc_totals(L, _price_incl(), code="vat_code")["vat"]
+                s_gross = round(s_total - s_vat, 2)
+            if rets:
+                r_vat = -doc_totals([dict(l, line_amount=l["taxable"]) for l in rets],
+                                    _price_incl(), code="vat_code")["vat"]
+                r_gross = round(r_total - r_vat, 2)
+        except Exception:
+            pass
         return {"sale": sale, "rets": rets, "s_gross": s_gross, "s_vat": s_vat,
                 "s_total": s_total, "r_gross": r_gross, "r_vat": r_vat,
                 "r_total": r_total, "net": round(s_total - r_total, 2)}
 
+    # -- ⭐ loyalty points (v6.9.2) -----------------------------
+    def _points_value(self):
+        """SAR off this bill for the points the cashier chose (sale only)."""
+        pts = int(getattr(self, "_points", 0) or 0)
+        if pts <= 0 or any(l["quantity"] < 0 for l in self.cart):
+            return 0.0
+        try:
+            from modules import loyalty
+            return loyalty.value_of(pts) if loyalty.enabled() else 0.0
+        except Exception:
+            return 0.0
+
+    def _use_points(self):
+        """F10 — spend the customer's points on this bill."""
+        try:
+            from modules import loyalty
+        except Exception:
+            return
+        if not loyalty.enabled():
+            self.status_var.set("Loyalty points are off (Settings ▸ Customer).")
+            return
+        sale = [l for l in self.cart if l["quantity"] > 0]
+        if not sale or len(sale) != len(self.cart):
+            self.status_var.set("⭐ Points: a sale bill only (no return lines).")
+            return
+        cust = getattr(self, "_customer", None)
+        if loyalty.is_walk_in(cust):
+            self.status_var.set("⭐ Points: pick the customer first.")
+            return
+        self._points = 0
+        before = round(sum(l["line_total"] for l in sale), 2)
+        have = loyalty.balance(cust["customer_id"])
+        most = loyalty.can_spend(cust["customer_id"], before)
+        if most <= 0:
+            self.status_var.set("⭐ %s has %d points (at least %d are needed)."
+                                % (cust.get("customer_name_en", ""), have, loyalty.min_redeem()))
+            self._update_totals()
+            return
+        from tkinter import simpledialog
+        n = simpledialog.askinteger(
+            "⭐ Loyalty points",
+            "%s has %d points (1 point = %.2f SAR).\nPoints to spend on this bill (up to %d):"
+            % (cust.get("customer_name_en", ""), have, loyalty.point_value(), most),
+            parent=self.win, initialvalue=most, minvalue=0, maxvalue=most)
+        if n and n >= loyalty.min_redeem():
+            self._points = int(n)
+            self.status_var.set("⭐ %d points = %.2f SAR off" % (n, loyalty.value_of(n)))
+        elif n:
+            self.status_var.set("⭐ At least %d points." % loyalty.min_redeem())
+        self._update_totals()
+
     def _update_totals(self):
+        if not self.cart:
+            self._points = 0                  # a new bill starts without points
         P = self._bill_parts()
         tqty = sum(ln["quantity"] for ln in self.cart)
         gross = P["s_gross"] - P["r_gross"]
@@ -2090,8 +2175,8 @@ class POSWindow:
         except Exception:
             pass
         self.gross_var.set("{:,.2f}".format(gross))
-        try:            # offers & promotions on this bill
-            self.disc_var.set("{:,.2f}".format(self._offer_savings()))
+        try:            # offers & promotions + ⭐ points on this bill
+            self.disc_var.set("{:,.2f}".format(self._offer_savings() + self._points_value()))
         except Exception:
             pass
         self.tax_var.set("{:,.2f}".format(vat))
@@ -2453,7 +2538,8 @@ class POSWindow:
             return self._save_exchange(pay, do_print, tenders)
         gross = sum(ln["taxable"] for ln in self.cart)
         vat = sum(ln["vat_amount"] for ln in self.cart)
-        total = gross + vat
+        _pv = self._points_value()                      # ⭐ points off (v6.9.2)
+        total = gross + vat - _pv
         try:  # Settings ▸ Tax: same round-off as the live display
             from config import settings as _cfg
             total, _adj = _cfg.round_off(total)
@@ -2522,7 +2608,11 @@ class POSWindow:
                       gross=gross, vat=vat, total=total, pay=pay,
                       pay_status=pay_status, paid_amt=paid_amt,
                       cash_amt=cash_amt, card_amt=card_amt,
-                      tender_lines=tender_lines)
+                      tender_lines=tender_lines,
+                      points=(int(getattr(self, "_loaded_points", 0) or 0)
+                              if self._loaded_invoice_id else 0)
+                             + (int(getattr(self, "_points", 0) or 0) if _pv else 0),
+                      points_value=_pv)
             self._pending_offline = (list(self.cart), _h, bool(is_credit),
                                      self._loaded_invoice_id, do_print)
             invoice_id, invoice_number = self._write_invoice(
@@ -2776,7 +2866,7 @@ class POSWindow:
         try:
             _lt = round(sum(float(l.get("line_total") or 0) for l in lines), 2)
             _adj = round(_lt - float(h.get("total") or 0), 2)
-            if lines and 0.005 <= abs(_adj) <= 1.0:
+            if lines and 0.005 <= abs(_adj) <= 1.0 + float(h.get("points_value") or 0):
                 from modules.doc_math import spread_bill_adjustment
                 _tmp = spread_bill_adjustment(
                     [dict(l, line_amount=l.get("taxable")) for l in lines], _adj, _price_incl())
@@ -2785,6 +2875,16 @@ class POSWindow:
                          for l, t in zip(lines, _tmp)]
                 h = dict(h, gross=round(sum(float(l["taxable"]) for l in lines), 2),
                          vat=round(sum(float(l["vat_amount"]) for l in lines), 2))
+        except Exception:
+            pass
+        # v6.9.2: lines in halalas, VAT the ZATCA way (once per rate on the
+        # bill); the total stays what the customer paid, taxable = total - VAT
+        try:
+            from modules.doc_math import doc_totals, round_lines
+            lines = round_lines(lines, net="taxable")
+            _v = doc_totals(lines, _price_incl(), net="taxable", code="vat_code")["vat"]
+            _t = round(float(h.get("total") or 0), 2)
+            h = dict(h, vat=_v, gross=round(_t - _v, 2), total=_t)
         except Exception:
             pass
         if invoice_id:
@@ -2917,6 +3017,11 @@ class POSWindow:
         #    credit -> the party's receivable; stock out + cost of sales.
         #    Editing a loaded bill re-syncs it. A posting hiccup never
         #    blocks the sale from saving. ──
+        try:            # ⭐ loyalty points spent on this bill (loyalty.sync_sale reads it)
+            db.execute("UPDATE sales_invoices SET loyalty_points_redeemed=? WHERE invoice_id=?",
+                       (int(h.get("points") or 0) or None, invoice_id))
+        except Exception:
+            pass
         from modules import doc_posting
         try:
             doc_posting.sync("sales", invoice_id, tenders=_td.for_posting(tl))

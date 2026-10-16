@@ -316,6 +316,9 @@ DEFAULT_SETTINGS = {
     "audit_cost_changes": True, "audit_deleted": True,
     "audit_login": True, "audit_settings": True,
     "cust_prefix": "C", "sup_prefix": "S",
+    # v6.9.2 loyalty points (off until the shop switches them on)
+    "loyalty_enabled": False, "loyalty_sar_per_point": 10, "loyalty_point_value": 0.10,
+    "loyalty_min_redeem": 50,
     "sales_start_no": 1001, "purchase_start_no": 1,
     "pwd_min_length": 4, "perf_search_limit": 50,
     "pos_paper_size": "80mm", "auto_update_cost": True,
