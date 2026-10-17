@@ -99,10 +99,12 @@ def create_year(start_date, end_date, label=None, opening_balances=None):
         if not label:
             y1, y2 = start_date[:4], end_date[:4]
             label = f"FY {y1}" if y1 == y2 else f"FY {y1}-{y2}"
+        # v6.9.5: the server's clock — "2026-10-17T15:40:12.123456" does not
+        # fit a DATETIME column (SQL Server refused it: no year was made)
         db.execute(
             "INSERT INTO financial_years (label, start_date, end_date, "
-            "is_closed, created_at) VALUES (?,?,?,0,?)",
-            (label, start_date, end_date, datetime.now().isoformat()))
+            "is_closed, created_at) VALUES (?,?,?,0,GETDATE())",
+            (label, start_date, end_date))
         return True, f"Created {label}."
     except Exception as e:
         return False, str(e)[:200]
@@ -116,9 +118,9 @@ def close_year(fy_id, lock_transactions=True):
     """
     try:
         db.execute(
-            "UPDATE financial_years SET is_closed=1, closed_at=?, "
+            "UPDATE financial_years SET is_closed=1, closed_at=GETDATE(), "
             "locked=? WHERE fy_id=?",
-            (datetime.now().isoformat(), 1 if lock_transactions else 0, fy_id))
+            (1 if lock_transactions else 0, fy_id))
         return True, "Financial year closed."
     except Exception as e:
         return False, str(e)[:200]

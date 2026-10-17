@@ -389,6 +389,19 @@ def run(out_dir=None):
             raise RuntimeError("Product summary cannot read the VAT rate")
     step("Columns tool: more columns, fonts, product summary", columns_v694)
 
+    def barcodes_v695():
+        from modules import barcode_gen as BG, barcode_resolver as BR, db_migrate as M
+        if "zzz_v695_patch.sql" not in [os.path.basename(p) for p in M.patch_files()]:
+            raise RuntimeError("update zzz_v695_patch.sql is missing")
+        if BG.SYSTEM_LENGTH != 5 or not callable(getattr(BG, "new_system_barcode", None)):
+            raise RuntimeError("system barcode generator is missing")
+        row = {"manual_barcode": "6281000000014", "system_barcode": "10001"}
+        if (BR.pick_barcode(row, "system"), BR.pick_barcode(row, "manual"),
+                BR.pick_barcode({"system_barcode": "10001"}, "manual_system")) != \
+                ("10001", "6281000000014", "10001"):
+            raise RuntimeError("labels pick the wrong barcode")
+    step("System barcode (5 digits) + manual barcode + labels", barcodes_v695)
+
     text = "DayBill ERP self-test  %s\n%s\n\n%s\n" % (
         datetime.now().strftime("%Y-%m-%d %H:%M"), "-" * 40, "\n".join(rows))
     text += "\nRESULT: %s\n" % ("ALL OK" if ok_all else "PROBLEMS FOUND")

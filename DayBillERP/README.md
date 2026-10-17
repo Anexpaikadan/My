@@ -1,4 +1,4 @@
-# 🇸🇦 DayBill ERP  v6.9.4
+# 🇸🇦 DayBill ERP  v6.9.5
 
 Billing, POS, inventory, accounts and HR for Saudi shops.
 **ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
@@ -64,6 +64,15 @@ Actions that change many records at once (Clear Stock, year close / reopen,
 restore a backup, make the payroll again, disconnect ZATCA …) need their
 right **and** a typed word; deleting a confirmed bill asks you to type its
 number.
+
+## 🏷 Barcodes
+
+Every product has its own **5-digit system barcode** (10001, 10002 …) made by
+DayBill, and can have a **manual barcode** — the one printed on the packet,
+typed or scanned in the Product window. Both scan in every barcode box (Sales,
+Purchase, Returns, POS, Price check) and the product search finds them.
+**Print Barcode Labels** shows both and prints the one you choose (system,
+manual, or manual else system); Box / Carton units have their own codes.
 
 ## ☰ Columns, fonts, product facts
 

@@ -2,6 +2,38 @@
 
 Newest first. The short guide is in the main README.md.
 
+## 🏷 v6.9.5 — 5-digit system barcode, manual barcode, labels
+
+- **System barcode for every product.** Each product has its own 5-digit
+  number made by DayBill (10001, 10002 … up to 99999; Settings ▸ Barcode ▸
+  First System Barcode moves the start). It is never typed or changed and
+  never repeats any barcode or product code. The barcode on the packet
+  (typed or scanned) is the product's **Barcode (manual)** — a separate box.
+- **Both scan everywhere.** The system barcode and the manual barcode find
+  the product in every barcode box — Sales, Purchase, Sales / Purchase
+  Return, Quotation, POS, Price check, stock screens, labels — and in the
+  product search (Products list, the Product window's search bar, the
+  product drop-down of every grid). The system barcode rings up one piece;
+  a Box / Carton has its own code.
+- **Print Barcode Labels**: the list shows a **Manual barcode** and a
+  **System barcode** column (▶ marks the one that prints) and **Print**
+  chooses system barcode (default), manual barcode, or manual else system
+  (also Settings ▸ Barcode ▸ Labels print). Rows without that barcode are
+  left out and named. The label designer has new **System Barcode No.** and
+  **Manual Barcode No.** fields, so one label can show both numbers. Checked
+  to the PDF and the label printer.
+- **Product window**: Barcode (manual) + System barcode on the Basic page,
+  "System barcode" in the Product summary, "System Barcode" in ☰ ▸ More
+  columns of every product list and report. New unit barcodes are 5 digits
+  (the 6-digit default moves to 5 once; a length you chose stays).
+- **Existing products** get their system barcode in the update
+  `database/patches/zzz_v695_patch.sql` (in product order, skipping numbers
+  already used as a barcode or product code); every old barcode still scans,
+  so labels already printed keep working.
+- **Fixed**: changing a saved product's Sales Price left the old price on its
+  base unit, which sales and labels use. The base unit now follows the
+  product's Sales Price and Purchase Price.
+
 ## ☰ v6.9.4 — columns tool with profit, PLU, units and barcodes; fonts; new Product window
 
 - **More columns in every report, list and transaction grid.** Right-click a

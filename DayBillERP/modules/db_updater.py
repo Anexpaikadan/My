@@ -10,7 +10,7 @@ import re
 try:                                    # one version for the whole app (config/version.py)
     from config.version import VERSION as APP_VERSION
 except Exception:
-    APP_VERSION = "6.9.4"
+    APP_VERSION = "6.9.5"
 
 # Ordered list of database patches shipped with the app.
 # (filename relative to project root, human description, version)
@@ -35,6 +35,19 @@ PATCHES = [
 
 # What changed in each version (shown in the Updates panel)
 CHANGELOG = [
+    ("6.9.5", ["🏷 Every product has its own 5-digit SYSTEM BARCODE (10001, 10002 …) made by "
+               "DayBill, apart from the MANUAL barcode typed or scanned from the packet. Both "
+               "scan in every barcode box — Sales, Purchase, Returns, POS, Price check, labels — "
+               "and the product search finds them. Existing products got their number in this "
+               "update; their old barcodes still scan",
+               "🖨 Print Barcode Labels: Manual barcode and System barcode columns; 'Print' "
+               "chooses what the labels carry — the system barcode, the manual barcode, or the "
+               "manual one else the system one (Settings ▸ Barcode ▸ Labels print). The label "
+               "designer has 'System Barcode No.' and 'Manual Barcode No.' fields",
+               "📦 Product window: Barcode (manual) and System barcode boxes; the Product summary "
+               "shows the system barcode; new unit barcodes (Box, Carton…) are 5 digits",
+               "🐞 Changing a product's Sales Price now also changes its base unit's price (the "
+               "price sales and labels use) — before, the old price stayed on the unit"]),
     ("6.9.4", ["☰ Columns tool on every report, list and transaction grid: ➕ More columns — "
                "Profit, Profit %, Product cost, Last purchase cost, Sale price, PLU No, Stock, "
                "Stock value, Unit 1 / 2 / 3, Barcode, Multi barcode, Arabic name, Category, "

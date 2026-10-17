@@ -14,6 +14,7 @@
 
 import tkinter as tk
 from tkinter import ttk
+from decimal import Decimal
 
 try:
     from config.database import db
@@ -498,7 +499,9 @@ class InvoiceGrid(tk.Frame):
             self.refresh_last()
         self.lines = []
         for r in rows:
-            ln = dict(r)
+            # v6.9.5: numbers from the database come as Decimal — a changed or
+            # added line is float, and float + Decimal stopped the totals / Save
+            ln = {k: (float(v) if isinstance(v, Decimal) else v) for k, v in dict(r).items()}
             ln["_blank"] = False
             ln.setdefault("box_qty", "")
             ln.setdefault("purchase_price", 0.0)
