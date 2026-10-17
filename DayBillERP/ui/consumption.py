@@ -16,6 +16,7 @@ from config import settings as cfg
 from config.database import db
 from modules import consumption as CN
 from modules import permissions as perm
+from ui import close_guard
 
 
 def _money(v):
@@ -253,8 +254,8 @@ class ConsumptionForm:
             w.bind("<Control-s>", lambda e: (self._save(confirm=True), "break")[1])
             w.bind("<Control-S>", lambda e: (self._save(confirm=True), "break")[1])
             w.bind("<Control-d>", lambda e: (self._save(confirm=False), "break")[1])
-        w.bind("<Escape>", lambda e: self._close())
-        w.protocol("WM_DELETE_WINDOW", self._close)
+        # Esc / ✕ / Close: ui/close_guard.py asks only when lines are unsaved
+        close_guard.bind_escape(w)
         if entry_id:
             self._load_entry()
         self._show_account()
@@ -403,6 +404,7 @@ class ConsumptionForm:
         self.title_v.set("🍞  Consumable Entry  %s  (%s)" % (h["entry_number"],
                                                            (h.get("entry_status") or "").title()))
         self._render()
+        self._mark_clean()
 
     # ── save / close ──────────────────────────────────────────
     def _save(self, confirm=True):
@@ -426,6 +428,7 @@ class ConsumptionForm:
             return False
         self.entry_id = eid
         self._saved = True
+        self._mark_clean()              # close guard: nothing unsaved now
         messagebox.showinfo("Consumable Entry",
                             "%s saved%s." % (number, "" if confirm else " as draft (no stock moved)")
                             + (("\n\n⚠ " + warn) if warn else ""), parent=self.win)
@@ -438,8 +441,19 @@ class ConsumptionForm:
         return True
 
     def _close(self):
-        if self.lines and not self.view_only and not getattr(self, "_saved", False) \
-                and not self.entry_id:
-            if not messagebox.askyesno("Close", "Close without saving?", parent=self.win):
-                return
-        self.win.destroy()
+        """Close button: like ✕ — close_guard asks "close without saving?"
+        only when _is_dirty() (one question, never two)."""
+        close_guard.request_close(self.win)
+
+    def _mark_clean(self):
+        """The lines now match the saved / loaded entry."""
+        self._clean_sig = close_guard.lines_sig(self.lines)
+
+    def _is_dirty(self):
+        """Lines added and not saved: a new entry, or lines changed since
+        load / save."""
+        if self.view_only or not self.lines:
+            return False
+        if not self.entry_id:
+            return True
+        return close_guard.lines_sig(self.lines) != getattr(self, "_clean_sig", None)

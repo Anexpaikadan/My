@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from config import settings as cfg
 from config.database import db
+from ui import close_guard
 
 CONF = {
     "quotation": {
@@ -174,7 +175,7 @@ class DocForm:
         self.win.geometry(f"{w}x{h}+{(sw - w) // 2}+{max(0, (sh - h) // 2 - 20)}")
         self.win.minsize(980, 600)
         self.win.configure(bg=C["content_bg"])
-        self.win.bind("<Escape>", lambda e: self._close())
+        close_guard.bind_escape(self.win)     # Esc = ✕ (asks if lines are unsaved)
         self.win.bind("<F9>", lambda e: self._save())
         self.win.bind("<Control-s>", lambda e: self._save())
         self.win.bind("<Control-p>", lambda e: self._print())
@@ -251,7 +252,7 @@ class DocForm:
         tk.Button(fi, text="Close", font=("Segoe UI", 10), bg=C["card_bg"],
                   fg=C["text_secondary"], relief="flat", padx=14, pady=3, cursor="hand2",
                   highlightbackground=C["border"], highlightthickness=1,
-                  command=self._close).pack(side="right", padx=(8, 0))
+                  command=lambda: close_guard.request_close(self.win)).pack(side="right", padx=(8, 0))
         self.btn_convert = tk.Button(
             fi, text=f"➡  Make {k['convert']}", font=("Segoe UI", 10, "bold"),
             bg=C["success"], fg="white", relief="flat", padx=14, pady=3, cursor="hand2",
@@ -402,6 +403,7 @@ class DocForm:
         self.v["party"].set(f"{p['code']} — {p['name']}" if p else (h.get(k["party_name"]) or ""))
         self.grid.set_lines(lines)
         self._on_change()
+        self._mark_clean()
         self.title_var.set(f"{k['icon']}  {k['title']}  {h[k['number']]}")
         done = st in (k["done"], "cancelled")
         self.status_badge.set(f"{STATUS_ICON.get(st, '')} {st.title()}")
@@ -534,6 +536,7 @@ class DocForm:
             except Exception:
                 pass
             _tx.commit()
+            self._mark_clean()            # close guard: nothing unsaved now
             self.title_var.set(f"{k['icon']}  {k['title']}  {self.v['number'].get()}")
             self.status_badge.set(f"{STATUS_ICON.get(status, '')} {status.title()}")
             self.msg.set(f"✔ Saved {self.v['number'].get()}  ·  {total:,.2f} SAR")
@@ -552,10 +555,37 @@ class DocForm:
             return False
 
     def _close(self):
+        """✕ handler (asks first through ui/close_guard.py); Esc and the
+        Close button go through close_guard.request_close."""
         try:
             self.win.destroy()
         except Exception:
             pass
+
+    # ── close guard: ask only when lines are not saved ────────
+    def _lines_sig(self):
+        try:
+            return close_guard.lines_sig(self.grid.data_lines())
+        except Exception:
+            return ()
+
+    def _mark_clean(self):
+        """The grid now matches the saved / loaded document."""
+        self._clean_sig = self._lines_sig()
+
+    def _is_dirty(self):
+        """✕ / Esc / Close ask first only while the grid has lines that
+        are not saved: a new document, or lines changed since load / save.
+        A converted / cancelled one (Save greyed out) never asks."""
+        try:
+            if str(self.btn_save.cget("state")) == "disabled":
+                return False
+        except Exception:
+            pass
+        sig = self._lines_sig()
+        if not sig:
+            return False
+        return not self.doc_id or sig != getattr(self, "_clean_sig", None)
 
     # ── print / whatsapp / convert ────────────────────────────
     def _ensure_saved(self):
