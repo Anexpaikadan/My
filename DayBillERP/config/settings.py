@@ -469,12 +469,34 @@ def save_settings(settings: dict = None):
         json.dump(data, f, indent=4)
 
 
+# v7.0: the company's country behaviour (tax rate, currency symbol,
+# round-off, financial year …) is laid OVER the PC's settings while that
+# company is open. It is never written to this PC's settings file, so the
+# next company opened on the PC starts from the PC's own values.
+_company = {}
+
+
+def set_company(key: str, value):
+    _company[key] = value
+
+
+def clear_company():
+    _company.clear()
+
+
+def company_values() -> dict:
+    return dict(_company)
+
+
 def get(key: str, default=None):
+    if key in _company:
+        return _company[key]
     return _settings.get(key, default)
 
 
 def set(key: str, value):
     global _theme
+    _company.pop(key, None)
     _settings[key] = value
     if key in ("theme", "theme_custom_color"):      # a new theme applies right away
         _theme = _resolve_theme()
@@ -490,7 +512,7 @@ def color(key: str) -> str:
 
 def flag(key: str, default: bool = False) -> bool:
     """Robust boolean read — checkbox settings arrive as True/1/'1'/'true'."""
-    v = _settings.get(key, default)
+    v = _company[key] if key in _company else _settings.get(key, default)
     if isinstance(v, str):
         return v.strip().lower() in ("1", "true", "yes", "on")
     return bool(v)

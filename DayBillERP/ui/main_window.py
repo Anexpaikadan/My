@@ -78,6 +78,14 @@ class MainWindow:
                         "\n".join(f"- {n}: {e}" for n, e in errs))
         except Exception as _e:
             print("[DayBill] migrate skipped:", _e)
+        # v7.0: this company's country (tax, currency, financial year …) and
+        # its business modules (restaurant, textiles, production …)
+        try:
+            from modules import country as _ctry, business as _biz
+            _ctry.apply()
+            _biz.invalidate()
+        except Exception as _e:
+            print("[DayBill] country settings skipped:", _e)
         # once: customer / supplier opening balances into the books
         try:
             from config import settings as _cfg
@@ -303,6 +311,15 @@ class MainWindow:
     }
 
     def _can_see(self, module_key):
+        # v7.0: pages this company's country / business modules do not use
+        try:
+            from modules import business as _biz, country as _ctry
+            if module_key in _biz.hidden_screens():
+                return False
+            if module_key == "zatca" and not _ctry.has_zatca():
+                return False
+        except Exception:
+            pass
         # RBAC: when the rights tables exist they decide for every screen
         try:
             from modules import permissions as _perm
@@ -314,6 +331,12 @@ class MainWindow:
                 if module_key == "vouchers":      # typed CR / CP / JV vouchers
                     return any(_perm.can(m, "view") for m in ("journal", "receipt", "payment"))
                 m = self._RBAC_NAV.get(module_key)
+                if m is None:
+                    try:
+                        from modules import business as _biz
+                        m = _biz.RIGHTS.get(module_key)
+                    except Exception:
+                        m = None
                 if m is None:
                     return False          # unknown screen: full-access users only
                 mod, act = m if isinstance(m, tuple) else (m, "view")
@@ -1014,7 +1037,26 @@ class MainWindow:
                 _v.APP_NAME, _v.VERSION, _v.subtitle(), _v.TAGLINE))
 
     def _nav_def(self):
-        """The menu: (group heading, [(key, icon, label_key), …])."""
+        """The menu: (group heading, [(key, icon, label_key), …]).
+        v7.0: the company's business modules add their groups after
+        Inventory (Restaurant, Production, Textiles) and the country
+        decides the tax pages (ZATCA only in Saudi Arabia)."""
+        groups = self._nav_base()
+        try:
+            from modules import business as _biz, country as _ctry
+            extra = _biz.nav_groups()
+            i = next((n for n, (g, _it) in enumerate(groups) if g == "Inventory"), len(groups) - 1)
+            groups[i + 1:i + 1] = [(g, list(items)) for g, items in extra]
+            p = _ctry.profile()
+            for g, items in groups:
+                for n, it in enumerate(items):
+                    if it[0] == "vat_report" and p["code"] != "SA":
+                        items[n] = (it[0], it[1], "GST Returns" if p["code"] == "IN" else "VAT 201 Return")
+        except Exception as _e:
+            print("[DayBill] business menu skipped:", _e)
+        return groups
+
+    def _nav_base(self):
         return [
             ("", [
                 ("dashboard",  "🏠", "nav.dashboard"),
@@ -2629,6 +2671,16 @@ class MainWindow:
             "bank_rec": "Bank Reconciliation",
             "year_end": "Year-End Closing",
         }
+        try:                          # v7.0: business module pages
+            from modules import business as _biz
+            for _g, _items in _biz.NAV.values():
+                for _k, _i, _l in _items:
+                    title_map.setdefault(_k, _l)
+            from modules import country as _ctry
+            if not _ctry.is_sa():
+                title_map["vat_report"] = "GST Returns" if _ctry.is_in() else "VAT 201 Return"
+        except Exception:
+            pass
         self.page_title_var.set(title_map.get(module_key, module_key.title()))
 
         # Open (or focus) an MDI child window; build the view into its body.
@@ -2872,6 +2924,12 @@ class MainWindow:
                 from ui.returns import PurchaseReturnView
                 PurchaseReturnView(self.content)
 
+            elif self._biz_screen(module_key):
+                import importlib
+                from modules import business as _biz
+                _mod, _cls = _biz.SCREENS[module_key]
+                getattr(importlib.import_module(_mod), _cls)(self.content)
+
             else:
                 self._placeholder(module_key)
 
@@ -2905,6 +2963,14 @@ class MainWindow:
             body_ref.after(400, lambda b=body_ref: fit_page(b) if b.winfo_exists() else None)
         except Exception:
             pass
+
+    @staticmethod
+    def _biz_screen(module_key):
+        try:
+            from modules import business as _biz
+            return module_key in _biz.SCREENS
+        except Exception:
+            return False
 
     def _load_error(self, module_key, err):
         """A page hit an error while opening: say so plainly (not "coming

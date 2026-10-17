@@ -267,6 +267,9 @@ def _apply_stock(kind, doc_id, header, lines):
         _bt = None
     for ln in lines:
         pid = ln.get("product_id")
+        if pid and kind in ("sales", "sales_return") and _recipe_sale(pid):
+            total_cost += _apply_recipe(kind, doc_id, header, ln, tdate, branch, _bt)
+            continue
         if not pid or not _is_stock_item(pid):
             continue
         qty = _f(ln.get("quantity"))
@@ -314,6 +317,62 @@ def _apply_stock(kind, doc_id, header, lines):
     except Exception:
         pass
     return round(total_cost, 2)
+
+
+def _recipe_sale(pid):
+    """v7.0: a dish whose recipe is marked "use up on sale"."""
+    try:
+        from modules import bom
+        return bom.deducts_on_sale(pid)
+    except Exception:
+        return False
+
+
+def _apply_recipe(kind, doc_id, header, ln, tdate, branch, _bt):
+    """Selling (or taking back) a dish moves its INGREDIENTS, not the dish:
+    each component leaves stock at its own cost; returns the total cost
+    (the dish's cost of goods sold)."""
+    from modules import bom
+    k = KINDS[kind]
+    sign = k["sign"]
+    pid = ln.get("product_id")
+    qty = _f(ln.get("quantity"))
+    if not qty:
+        return 0.0
+    qty_base = qty * unit_factor(pid, ln.get("unit_of_measure_en") or "")
+    num = str(header.get(k["number"]) or "")
+    what = str(ln.get("product_name_en") or ln.get("product_code") or pid)
+    total = 0.0
+    for cid, q, _c in bom.explode(pid, qty_base):
+        if not q or not _is_stock_item(cid):
+            continue
+        cost = unit_cost(cid)
+        delta = sign * q
+        db.execute("UPDATE products SET stock_quantity = ISNULL(stock_quantity,0) + ? "
+                   "WHERE product_id=?", (delta, cid))
+        bal = _f(db.execute_scalar("SELECT ISNULL(stock_quantity,0) FROM products "
+                                   "WHERE product_id=?", (cid,)))
+        base_unit = db.execute_scalar("SELECT unit_of_measure_en FROM products WHERE product_id=?",
+                                      (cid,)) or "Unit"
+        db.execute(
+            "INSERT INTO inventory_transactions (product_id, txn_date, txn_type, "
+            "reference_type, reference_id, unit_name, qty_in_units, qty_in_base, "
+            "qty_out_units, qty_out_base, balance_base, unit_cost, notes) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (cid, tdate, k["txn"], k["ref"], int(doc_id), base_unit,
+             q if sign > 0 else 0, q if sign > 0 else 0,
+             q if sign < 0 else 0, q if sign < 0 else 0,
+             bal, round(cost, 4), ("Recipe: %s · %s" % (what, num))[:300]))
+        total += q * cost
+        if _bt is not None:
+            try:
+                if kind == "sales_return":
+                    _bt.give_back(cid, q, k["ref"], doc_id, branch)
+                else:
+                    _bt.consume(cid, q, k["ref"], doc_id, branch)
+            except Exception:
+                pass
+    return total
 
 
 # ── journals ──────────────────────────────────────────────────
