@@ -317,16 +317,35 @@ def _acc_movement(account_id, f, t):
 REGISTRY = OrderedDict()
 
 
-def report(rid, group, title, params=("period",), desc=""):
+def report(rid, group, title, params=("period",), desc="", needs=None):
+    """needs (v7.0): who sees the report — a business module key
+    ('restaurant', 'production' …), a country 'country:IN' / 'country:AE'
+    / 'country:SA', or None for everyone."""
     def deco(fn):
         REGISTRY[rid] = {"id": rid, "group": group, "title": title,
-                         "params": tuple(params), "desc": desc, "fn": fn}
+                         "params": tuple(params), "desc": desc, "fn": fn, "needs": needs}
         return fn
     return deco
 
 
-def catalog():
-    return [{k: v for k, v in r.items() if k != "fn"} for r in REGISTRY.values()]
+def shown(spec):
+    """Does this company use the report? (its country and business modules)"""
+    need = spec.get("needs")
+    if not need:
+        return True
+    try:
+        if str(need).startswith("country:"):
+            from modules import country as _ctry
+            return _ctry.code() in str(need)[8:].upper().split(",")
+        from modules import business as _biz
+        return any(_biz.has(k.strip()) for k in str(need).split(","))
+    except Exception:
+        return True
+
+
+def catalog(all_reports=False):
+    return [{k: v for k, v in r.items() if k != "fn"} for r in REGISTRY.values()
+            if all_reports or shown(r)]
 
 
 def run(rid, **kw):
@@ -3350,3 +3369,15 @@ def r_eos_liability(date_from, date_to, **_):
                     ("Unused leave", tot["leave_value"], "money"), ("Total owed", tot["total"], "money")],
                    ["Arts. 84–85: half a month a year for 5 years, a month a year after, on the last actual wage "
                     "(Settings ▸ HR). Keep this money aside — or book it monthly as End of Service Provision (2330)."])
+
+
+# ── v7.0: country and business-module reports register themselves ──
+for _m in ("modules.country_reports", "modules.restaurant_reports",
+           "modules.production_reports", "modules.textile_reports"):
+    try:
+        __import__(_m)
+    except ImportError as _e:
+        if _m.split(".")[-1] not in str(_e):        # a real error inside the module
+            print("[DayBill] %s not loaded: %s" % (_m, _e))
+    except Exception as _e:
+        print("[DayBill] %s not loaded: %s" % (_m, _e))
