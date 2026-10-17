@@ -527,7 +527,9 @@ class MainWindow:
         additem(m_lbl, "Mobile, PDT && Van Sales", "mobile")
         additem(m_lbl, "Price Change Labels", "price_labels")
         m_lbl.add_command(label="Price Check (F8 in POS)",
-                          command=lambda: __import__("ui.price_check", fromlist=["x"]).open_price_check(self.root))
+                          command=lambda: __import__("ui.close_guard", fromlist=["x"]).single(
+                              "price_check", lambda: __import__("ui.price_check", fromlist=["x"])
+                              .open_price_check(self.root)))
         additem(m_lbl, "PLU Manager (Scale)", "plu")
         m_sys.add_cascade(label="Barcode && Labels", menu=m_lbl)
         m_sys.add_separator()
@@ -967,7 +969,8 @@ class MainWindow:
     def _calculator(self):
         try:
             from ui.calculator import Calculator
-            Calculator(self.root)
+            from ui import close_guard
+            close_guard.single("calculator", lambda: Calculator(self.root))   # one at a time
         except Exception as e:
             from tkinter import messagebox
             messagebox.showerror("Calculator", str(e)[:160])
@@ -2961,7 +2964,8 @@ class MainWindow:
         before = set(self.root.winfo_children())
         try:
             from ui.pos import POSWindow
-            POSWindow(self.root)
+            from ui import close_guard
+            close_guard.single("pos", lambda: POSWindow(self.root))   # F3 again → the open POS
         except Exception as e:
             import traceback; traceback.print_exc()
             # a POS window that failed half-way through building would

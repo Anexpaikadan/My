@@ -300,6 +300,9 @@ SECTIONS = [
         F("win11_frame", "Windows 11 window frame (white title bar, round corners)", "check"),
         F("ui_compact", "Compact window headers + clear window edges and shadows (v6.7)", "check"),
         F("ui_form_style", "Tally-style entry boxes: example text, blue focus, red note under a wrong box (v6.8)", "check"),
+        F("after_save_mode", "After saving an entry (Sales, Purchase, Returns, Receipt, Voucher, "
+          "Expense, Product …)", "choice",
+          lambda: __import__("ui.after_save", fromlist=["MODES"]).MODES),
         F("date_format", "Date Format (printed documents)", "choice",
           ["dd/MM/yyyy", "yyyy-MM-dd", "MM/dd/yyyy"]),
         F("currency", "Currency"),

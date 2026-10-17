@@ -3,13 +3,15 @@
 # ------------------------------------------------------------
 # Settings ▸ General ▸ "After saving an entry"  (after_save_mode)
 #   new    the window STAYS where it is and starts a new blank entry —
-#          the number just saved shows in it (default)
+#          the number just saved shows in it (default). When a SAVED entry
+#          was changed (edit) it stays showing that entry, like Tally.
 #   keep   the window stays showing the saved entry (print it, check it,
 #          change it again)
 #   close  the window closes (the old way)
 #
 #   after_save.finish(form, number, new=lambda: Form(parent, …),
-#                     keep=lambda: Form(parent, …, doc_id=saved_id))
+#                     keep=lambda: Form(parent, …, doc_id=saved_id),
+#                     edited=<the window was editing a saved entry>)
 # `new` / `keep` build the window again (each entry window can already
 # open itself blank or with a saved id); finish() closes the old one
 # and puts the new one at the same place and size. When a builder is
@@ -28,10 +30,12 @@ def mode():
     return m if m in ("new", "keep", "close") else "new"
 
 
-def finish(form, number="", new=None, keep=None):
+def finish(form, number="", new=None, keep=None, edited=False):
     """Call at the very end of a successful save. Returns the new form
     (or None when the window was closed)."""
     m = mode()
+    if m == "new" and edited and keep:
+        m = "keep"
     win = getattr(form, "win", None)
     build = None
     if m == "new":

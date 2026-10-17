@@ -460,12 +460,8 @@ def delete_txn(parent, txn, on_change=None):
             if why:
                 messagebox.showwarning("Delete " + label, why, parent=parent)
                 return False
-            _n, status, _d = doc_edit.info(doc, did)
-            q = (doc_edit.ask_text(doc, did, "delete") or
-                 f"Permanently delete {label.lower()} {number} ({status})?\n"
-                 "Its lines and posted journal entries are removed. "
-                 "This cannot be undone.")
-            if not messagebox.askyesno("Delete " + label, q, parent=parent):
+            # a confirmed document: type its number (v6.9.3); a draft: Yes / No
+            if not doc_edit.confirm_delete(doc, did, parent):
                 return False
             ok, msg = doc_edit.delete_document(doc, did)
         elif key in ("receipt", "payment"):

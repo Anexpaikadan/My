@@ -1021,6 +1021,7 @@ class JournalForm:
             # v6.9.3: the window stays open (Settings ▸ General ▸ After saving)
             from ui import after_save
             parent, saved = self.win.master, (self.journal_id or locals().get("jid"))
+            was_edit = bool(self.journal_id)
             num = ""
             try:
                 num = db.execute_scalar("SELECT journal_number FROM journal_entries "
@@ -1030,7 +1031,8 @@ class JournalForm:
             after_save.finish(self, num,
                               new=lambda: JournalForm(parent, on_save=self.on_save),
                               keep=(lambda: JournalForm(parent, on_save=self.on_save,
-                                                        journal_id=saved)) if saved else None)
+                                                        journal_id=saved)) if saved else None,
+                              edited=was_edit)
         except ValueError as e:
             self.status_var.set(f"❌ {e}")
         except Exception as e:

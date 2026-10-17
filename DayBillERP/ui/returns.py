@@ -40,6 +40,7 @@ CONF = {
 
 class ReturnForm:
     def __init__(self, parent, mode="sales", return_id=None, view_only=False):
+        self.parent = parent
         self.mode = mode
         self.cfg = CONF[mode]
         self.return_id = return_id
@@ -645,7 +646,13 @@ class ReturnForm:
                 messagebox.showinfo("Saved", f"{cf['title']} {number} saved as DRAFT.\n"
                                     f"Stock and accounts update when you confirm it "
                                     f"(✅ Confirm in the list).")
-            self.win.destroy()
+            # v6.9.3: the window stays open (Settings ▸ General ▸ After saving)
+            from ui import after_save
+            parent, md = self.parent, self.mode
+            after_save.finish(self, number,
+                              new=lambda: ReturnForm(parent, mode=md),
+                              keep=lambda: ReturnForm(parent, mode=md, return_id=rid),
+                              edited=editing)
             return True
         except Exception as e:
             if _tx is not None and not _tx.kept:
@@ -858,9 +865,8 @@ class _ReturnListView:
         if why:
             messagebox.showwarning("Delete", why)
             return
-        q = (doc_edit.ask_text(kind, rid, "delete") or
-             f"Delete {self.cfg['title'].lower()} {number}?")
-        if not messagebox.askyesno("Delete", q):
+        # a confirmed return: type its number (v6.9.3); a draft: Yes / No
+        if not doc_edit.confirm_delete(kind, rid):
             return
         ok, msg = doc_edit.delete_document(kind, rid)
         if not ok:

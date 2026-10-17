@@ -329,7 +329,7 @@ class SalesInvoiceView:
     def _receive_payment(self):
         """Receipt for the selected invoice (settles it, rest = advance)."""
         from modules import permissions as _pm
-        if not _pm.allowed("payment", "add"):
+        if not _pm.allowed("receipt", "add"):
             return False
         inv_id = self._get_sel_id()
         if not inv_id:
@@ -403,6 +403,9 @@ class SalesInvoiceView:
         return InvoiceForm(self.frame, invoice_id=inv_id, on_save=self._load_invoices)
 
     def _confirm_invoice(self):
+        from modules import permissions as _pm
+        if not _pm.allowed("sales", "edit"):
+            return False
         inv_id = self._get_sel_id()
         if not inv_id:
             return
@@ -510,11 +513,8 @@ class SalesInvoiceView:
         if why:
             messagebox.showwarning("Delete Invoice", why)
             return
-        q = (doc_edit.ask_text("sales", inv_id, "delete") or
-             f"Permanently delete {number} ({status})?\n"
-             "Its line items and any posted journal entries will be "
-             "removed. This cannot be undone.")
-        if not messagebox.askyesno("Delete Invoice", q):
+        # a confirmed invoice: type its number (v6.9.3); a draft: Yes / No
+        if not doc_edit.confirm_delete("sales", inv_id):
             return
         ok, msg = doc_edit.delete_document("sales", inv_id)
         if not ok:
@@ -1156,10 +1156,8 @@ class InvoiceForm:
         if why:
             messagebox.showwarning("Delete Invoice", why)
             return
-        q = (doc_edit.ask_text("sales", self.invoice_id, "delete") or
-             f"Permanently delete {number} ({status})?\n"
-             "Lines and posted journal entries are removed too.")
-        if not messagebox.askyesno("Delete Invoice", q):
+        # a confirmed invoice: type its number (v6.9.3); a draft: Yes / No
+        if not doc_edit.confirm_delete("sales", self.invoice_id, self.win):
             return
         ok, msg = doc_edit.delete_document("sales", self.invoice_id)
         if not ok:
@@ -2984,7 +2982,13 @@ class InvoiceForm:
                 self.on_save()
             if keep_open:
                 return True
-            self.win.destroy()
+            # v6.9.3: the window stays open (Settings ▸ General ▸ After saving)
+            from ui import after_save
+            parent, cb = self.parent, self.on_save
+            after_save.finish(self, inv_number,
+                              new=lambda: InvoiceForm(parent, on_save=cb),
+                              keep=lambda: InvoiceForm(parent, invoice_id=inv_id, on_save=cb),
+                              edited=bool(_was_id))
             return True
 
         except Exception as e:

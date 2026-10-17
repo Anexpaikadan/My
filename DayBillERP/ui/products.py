@@ -3761,6 +3761,13 @@ class ProductForm:
         from modules import permissions as _pm
         if not _pm.allowed("products", "edit" if self._loaded_as_edit else "add"):
             return False
+        if mode == "close":     # plain Save (F4 / Ctrl+S): Settings ▸ General ▸ After saving
+            from ui import after_save
+            m = after_save.mode()
+            if m == "keep" or (m == "new" and self._loaded_as_edit):
+                mode = "stay"
+            elif m == "new":
+                mode = "new"
         # Validate — required: Product Name, Category, Unit, Sales Price, VAT.
         # Invalid fields get a red border (cleared as soon as they're fixed).
         for w in (getattr(self, "code_entry", None),

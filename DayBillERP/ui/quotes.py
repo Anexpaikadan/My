@@ -176,8 +176,8 @@ class DocForm:
         self.win.minsize(980, 600)
         self.win.configure(bg=C["content_bg"])
         close_guard.bind_escape(self.win)     # Esc = ✕ (asks if lines are unsaved)
-        self.win.bind("<F9>", lambda e: self._save())
-        self.win.bind("<Control-s>", lambda e: self._save())
+        self.win.bind("<F9>", lambda e: self._save_and_go())
+        self.win.bind("<Control-s>", lambda e: self._save_and_go())
         self.win.bind("<Control-p>", lambda e: self._print())
         self.win.protocol("WM_DELETE_WINDOW", self._close)
 
@@ -271,7 +271,7 @@ class DocForm:
         print_menu.print_button(fi, self.kind, lambda: self.doc_id,
                                 before=self._ensure_saved, status=self.msg,
                                 text=_pt, **_ps).pack(side="right", padx=(8, 0))
-        self.btn_save = tk.Button(fi, command=self._save,
+        self.btn_save = tk.Button(fi, command=self._save_and_go,
                                   **key_style(C.get("tile_blue", C["primary"]), "F9", "Save"))
         self.btn_save.pack(side="right")
         if self.kind == "purchase_order":       # v6.0: what to order (low stock)
@@ -553,6 +553,24 @@ class DocForm:
                 e = "Not saved — " + str(e)
             self.msg.set(f"❌ {str(e)[:120]}")
             return False
+
+    def _save_and_go(self):
+        """Save button / F9 / Ctrl+S: save, then do what Settings ▸ General
+        ▸ After saving says (v6.9.3). The window already shows the saved
+        document, so 'keep' (and an edited one) needs nothing more."""
+        was = self.doc_id
+        if self._save() is not True:
+            return False
+        from ui import after_save
+        m = after_save.mode()
+        if m == "keep" or (m == "new" and was):
+            return True
+        parent, kind, cb, did = self.parent, self.kind, self.on_save, self.doc_id
+        after_save.finish(self, self.v["number"].get(),
+                          new=lambda: DocForm(parent, kind, on_save=cb),
+                          keep=lambda: DocForm(parent, kind, did, on_save=cb),
+                          edited=bool(was))
+        return True
 
     def _close(self):
         """✕ handler (asks first through ui/close_guard.py); Esc and the

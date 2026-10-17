@@ -536,9 +536,17 @@ class SupplierForm:
                 messagebox.showinfo(t("common.success"), msg)
             if self.on_save:
                 self.on_save()
-            self.win.destroy()
             if mode == "new":
+                self.win.destroy()
                 SupplierForm(self.parent, None, self.on_save)
+            else:       # plain Save: Settings ▸ General ▸ After saving (v6.9.3)
+                from ui import after_save
+                parent, cb = self.parent, self.on_save
+                sid = self.supplier_id or _ids["new"]
+                after_save.finish(self, "",
+                                  new=lambda: SupplierForm(parent, None, cb),
+                                  keep=(lambda: SupplierForm(parent, sid, cb)) if sid else None,
+                                  edited=bool(self.supplier_id))
         except Exception as e:
             err = str(e)
             if "UNIQUE" in err or "duplicate" in err.lower():

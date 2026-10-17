@@ -628,7 +628,10 @@ class StockAdjustDialog:
                 f"Stock adjusted. New balance: {new_bal:,.2f}")
             if self.on_save:
                 self.on_save()
-            self.win.destroy()
+            # v6.9.3: the window stays open (Settings ▸ General ▸ After saving)
+            from ui import after_save
+            parent, cb = self.win.master, self.on_save
+            after_save.finish(self, "", new=lambda: StockAdjustDialog(parent, on_save=cb))
         except Exception as e:
             self.status_var.set(f"❌ {str(e)[:70]}")
 

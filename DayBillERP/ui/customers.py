@@ -968,9 +968,18 @@ class CustomerForm:
                 messagebox.showinfo(t("common.success"), msg)
             if self.on_save:
                 self.on_save()
-            self.win.destroy()
             if mode == "new":
+                self.win.destroy()
                 CustomerForm(self.parent, on_save=self.on_save)
+            else:       # plain Save: Settings ▸ General ▸ After saving (v6.9.3)
+                from ui import after_save
+                parent, cb = self.parent, self.on_save
+                cid = self.customer_id or _new_cid
+                after_save.finish(self, "",
+                                  new=lambda: CustomerForm(parent, on_save=cb),
+                                  keep=(lambda: CustomerForm(parent, customer_id=cid,
+                                                             on_save=cb)) if cid else None,
+                                  edited=bool(self.customer_id))
 
         except Exception as e:
             err = str(e)

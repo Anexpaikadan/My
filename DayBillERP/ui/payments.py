@@ -1015,7 +1015,8 @@ class PaymentForm:
             after_save.finish(self, pnum,
                               new=lambda: PaymentForm(parent, self.ptype, self.on_save),
                               keep=lambda: PaymentForm(parent, self.ptype, self.on_save,
-                                                       payment_id=pay_id))
+                                                       payment_id=pay_id),
+                              edited=bool(self.payment_id))
         except Exception as e:
             if _tx is not None and not _tx.kept:
                 _tx.rollback()                 # nothing of a failed save is kept

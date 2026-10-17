@@ -427,6 +427,7 @@ class ConsumptionForm:
         except Exception as e:
             messagebox.showerror("Consumable Entry", str(e)[:300], parent=self.win)
             return False
+        was = self.entry_id
         self.entry_id = eid
         self._saved = True
         self._mark_clean()              # close guard: nothing unsaved now
@@ -438,7 +439,13 @@ class ConsumptionForm:
                 self.on_save()
             except Exception:
                 pass
-        self.win.destroy()
+        # v6.9.3: the window stays open (Settings ▸ General ▸ After saving)
+        from ui import after_save
+        parent, cb = self.win.master, self.on_save
+        after_save.finish(self, number,
+                          new=lambda: ConsumptionForm(parent, on_save=cb),
+                          keep=lambda: ConsumptionForm(parent, entry_id=eid, on_save=cb),
+                          edited=bool(was))
         return True
 
     def _close(self):

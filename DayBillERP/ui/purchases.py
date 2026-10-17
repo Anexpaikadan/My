@@ -300,8 +300,8 @@ class PurchaseInvoiceView:
         if why:
             messagebox.showwarning("Delete Purchase", why)
             return
-        q = doc_edit.ask_text("purchase", pid, "delete") or f"Delete purchase {number}?"
-        if messagebox.askyesno(t("common.warning"), q):
+        # a confirmed purchase: type its number (v6.9.3); a draft: Yes / No
+        if doc_edit.confirm_delete("purchase", pid):
             ok, msg = doc_edit.delete_document("purchase", pid)
             if not ok:
                 messagebox.showerror(t("common.error"), msg)
@@ -877,7 +877,13 @@ class PurchaseForm:
                 except Exception:
                     pass
             if not keep_open:
-                self.win.destroy()
+                # v6.9.3: the window stays open (Settings ▸ General ▸ After saving)
+                from ui import after_save
+                parent, cb, num = self.parent, self.on_save, self.hdr['number'].get()
+                after_save.finish(self, num,
+                                  new=lambda: PurchaseForm(parent, on_save=cb),
+                                  keep=lambda: PurchaseForm(parent, purchase_id=pid, on_save=cb),
+                                  edited=bool(_was_id))
             return True
         except Exception as e:
             if _tx is not None and not _tx.kept:

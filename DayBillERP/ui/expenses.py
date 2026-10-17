@@ -640,7 +640,8 @@ class ExpenseForm:
             parent, kind = self.win.master, getattr(self, "kind", "expense")
             after_save.finish(self, ref or "",
                               new=lambda: ExpenseForm(parent, self.on_saved, kind=kind),
-                              keep=lambda: ExpenseForm(parent, self.on_saved, expense_id=eid))
+                              keep=lambda: ExpenseForm(parent, self.on_saved, expense_id=eid),
+                              edited=bool(self.expense_id))
         except Exception as e:
             if _tx is not None and not _tx.kept:
                 _tx.rollback()                # nothing of a failed save is kept
