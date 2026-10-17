@@ -834,11 +834,20 @@ class AdminSignDialog:
         w.bind("<Return>", lambda e: self._ok())
         w.bind("<Escape>", lambda e: w.destroy())
         try:
+            prev = w.grab_current()          # e.g. Database Settings is modal
+        except Exception:
+            prev = None
+        try:
             w.grab_set()
             first.focus_set()
         except Exception:
             pass
         w.wait_window()
+        try:                                 # give the modal window its grab back
+            if prev is not None and prev.winfo_exists():
+                prev.grab_set()
+        except Exception:
+            pass
 
     def _ok(self):
         if self.user_var.get().strip() and self.pw_var.get():
@@ -1176,16 +1185,25 @@ class DbSettingsDialog:
         if not bak:
             return
         target = _plain_db(self.db_var.get()) or "DayBillERP"
-        if not messagebox.askyesno(
-                "Restore Database",
-                "Restore\n%s\ninto database '%s'?\n\nIf '%s' already exists "
-                "it will be REPLACED with the backup's data (a safety copy of it "
-                "is saved first)." % (bak, target, target), parent=self.dialog):
-            return
         try:
-            before = (load_db_config() or {}).get("database") or ""
+            old_conf = dict(load_db_config() or {})
         except Exception:
-            before = ""
+            old_conf = {}
+        before = old_conf.get("database") or ""
+        # v6.9.3: nobody is signed in here — an administrator signs first
+        who = self._restore_sign(old_conf, before, target)
+        if who is False:
+            return
+        from ui import danger
+        if not danger.confirm_typed(
+                self.dialog, "Restore Database",
+                "Restore\n%s\ninto database '%s'?\n\nIf '%s' already exists it will be "
+                "REPLACED with the backup's data (a safety copy of it is saved first).%s"
+                % (bak, target, target,
+                   "" if who else "\n\n(No DayBill database is in use yet, so no "
+                                  "administrator sign-in was needed.)"),
+                word=target):
+            return
         save_db_config(self._get_config())
 
         def say(txt):
@@ -1209,9 +1227,61 @@ class DbSettingsDialog:
             save_db_config(back)
             self.db_var.set(before)
             msg += "\n\nDayBill stays on '%s'." % before
+        if ok:
+            self._restore_audit(old_conf, who, bak, target, kind)
         self.status_var.set(("✅ " if ok else "❌ ") + msg.split("\n")[0])
         (messagebox.showinfo if ok else messagebox.showwarning)(
             "Restore Database", msg, parent=self.dialog)
+
+    def _restore_sign(self, old_conf, before, target):
+        """v6.9.3: who allows the restore.
+        → {"username", "user_id", "db"} · None = there is no DayBill
+        database to protect yet (new PC) · False = stop."""
+        title = "Restore Database"
+        # 1. the database DayBill uses NOW (the saved settings)
+        if before and _is_daybill_conn(old_conf, before):
+            who, _why = ask_full_access(
+                self.dialog, title,
+                "Restoring replaces data. Type the user name and password of an "
+                "administrator (Super Admin / Admin) of '%s' — the database DayBill "
+                "uses now." % before,
+                lambda: _raw_connect(old_conf, before))
+            if not who:
+                return False
+            who["db"], who["conf"] = before, old_conf
+            return who
+        # 2. no DayBill database in use: the one that would be replaced
+        new_conf = self._get_config()
+        if _is_daybill_conn(new_conf, target):
+            who, _why = ask_full_access(
+                self.dialog, title,
+                "'%s' is a DayBill database and would be REPLACED. Type the user name "
+                "and password of one of its administrators (Super Admin / Admin)." % target,
+                lambda: _raw_connect(new_conf, target))
+            if not who:
+                return False
+            who["db"], who["conf"] = target, new_conf
+            return who
+        return None
+
+    def _restore_audit(self, old_conf, who, bak, target, kind):
+        """Audit row in the restored database (and in the one the
+        administrator signed for, when that is another one)."""
+        by = ("allowed by %s (administrator of %s)" % (who["username"], who["db"])) if who \
+            else "no DayBill database was in use (no administrator needed)"
+        detail = "Restored %s from %s (%s) — %s" % (target, os.path.basename(str(bak)), kind or "?", by)
+        places = [(self._get_config(), target, who["user_id"] if who and who["db"] == target else None)]
+        if who and who["db"] != target:
+            places.append((who.get("conf") or old_conf, who["db"], who["user_id"]))
+        for conf, name, uid in places:
+            try:
+                cn = _raw_connect(conf, name)
+                try:
+                    audit_raw(cn.cursor(), uid, "restore", "database", target, detail)
+                finally:
+                    cn.close()
+            except Exception:
+                pass
 
     def _field(self, label, default="", parent=None, key=None, show=None):
         C = cfg.theme()

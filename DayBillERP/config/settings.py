@@ -316,6 +316,8 @@ DEFAULT_SETTINGS = {
     "audit_cost_changes": True, "audit_deleted": True,
     "audit_login": True, "audit_settings": True,
     "cust_prefix": "C", "sup_prefix": "S",
+    # v6.9.3 entry windows stay open after Save: new | keep | close
+    "after_save_mode": "new",
     # v6.9.2 loyalty points (off until the shop switches them on)
     "loyalty_enabled": False, "loyalty_sar_per_point": 10, "loyalty_point_value": 0.10,
     "loyalty_min_redeem": 50,

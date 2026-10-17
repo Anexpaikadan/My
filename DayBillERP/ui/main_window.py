@@ -304,6 +304,10 @@ class MainWindow:
             if _perm.tables_ready():
                 if _perm.is_full_access():
                     return True
+                if module_key == "payments":      # receipts OR supplier payments
+                    return _perm.can("receipt", "view") or _perm.can("payment", "view")
+                if module_key == "vouchers":      # typed CR / CP / JV vouchers
+                    return any(_perm.can(m, "view") for m in ("journal", "receipt", "payment"))
                 m = self._RBAC_NAV.get(module_key)
                 if m is None:
                     return False          # unknown screen: full-access users only

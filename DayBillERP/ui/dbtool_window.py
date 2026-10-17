@@ -12,6 +12,10 @@
 #                           changed), check, convert: products, barcodes,
 #                           categories, customers, suppliers, opening stock
 #                           and opening balances
+#   v6.9.3: changing a DayBill database (reset / set a password,
+#   convert, close openings) first asks the user name + password of an
+#   administrator OF THAT DATABASE, then a typed confirmation; each one
+#   is written to logs\dbtool_log.txt and the database's Audit Log.
 # ============================================================
 import os
 import queue
@@ -113,6 +117,46 @@ class DbToolApp:
     # ── helpers ──────────────────────────────────────────────
     def say(self, txt, ok=True):
         self.status.set(txt)
+
+    # v6.9.3: this tool starts without a DayBill sign-in. Changing a DayBill
+    # database (reset a password, convert into it) first needs the user name
+    # + password of one of ITS administrators (Super Admin / Admin type or
+    # the built-in admin), then a typed confirmation. All is logged.
+    def _log(self, text):
+        """One line in the tool's own log (logs\\dbtool_log.txt)."""
+        try:
+            from datetime import datetime
+            from config.paths import log_file
+            with open(log_file("dbtool_log.txt"), "a", encoding="utf-8") as f:
+                f.write("%s  %s\n" % (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), text))
+        except Exception:
+            pass
+
+    def _db_audit(self, dbname, who, action, module, ref, detail):
+        """The same line in that database's Audit Log, when it can be reached."""
+        try:
+            from ui.login_window import audit_raw
+            cn = self._pw_conn(dbname)
+            try:
+                audit_raw(cn.cursor(), (who or {}).get("user_id"), action, module, ref,
+                          "DB Tool: %s" % detail)
+            finally:
+                cn.close()
+        except Exception:
+            pass
+
+    def _admin_sign(self, dbname, title, why):
+        """→ {"username", "user_id"} of an administrator of `dbname`, or None."""
+        from ui.login_window import ask_full_access
+        who, why_not = ask_full_access(self.root, title, why, lambda: self._pw_conn(dbname))
+        if not who and why_not:
+            self._log("%s in '%s' REFUSED: %s" % (title, dbname, why_not))
+        return who
+
+    @staticmethod
+    def _typed(parent, title, message, word):
+        from ui import danger
+        return danger.confirm_typed(parent, title, message, word=word)
 
     def _btn(self, parent, text, cmd, primary=False, danger=False, side="left"):
         C = self.C
@@ -539,6 +583,14 @@ class DbToolApp:
                                 parent=self.root)
             return
         name = self.pw_db.get()
+        who = self._admin_sign(name, "Reset password", self._PW_WHY % name)
+        if not who:
+            return
+        if not self._typed(self.root, "Reset password",
+                           "'%s' in '%s' will sign in with ANY password next time, then choose a "
+                           "new one.\n\nAllowed by: %s" % (r["user"], name, who["username"]),
+                           r["user"]):
+            return
         cn = self._pw_conn(name)
         try:
             cur = cn.cursor()
@@ -549,8 +601,16 @@ class DbToolApp:
                 pass
         finally:
             cn.close()
+        line = "password of '%s' reset (asks a new one at sign-in) — allowed by %s" % (r["user"], who["username"])
+        self._log("'%s': %s" % (name, line))
+        self._db_audit(name, who, "password_reset", "users", r["user"], line)
         self.say("✅ '%s' signs in with any password next time, then chooses a new one." % r["user"])
         self._show_users()
+
+    _PW_WHY = ("Changing a DayBill password needs an administrator of '%s'. Type the user name "
+               "and password of a Super Admin / Admin user of that database.\n\nNobody knows an "
+               "administrator password? On the DayBill sign-in screen press 'Forgot password?' — "
+               "the SQL Server administrator runs the query shown there.")
 
     def _ask_new_pw(self, user):
         a = simpledialog.askstring("New password", "New password for '%s' (at least 4 characters):" % user,
@@ -572,8 +632,15 @@ class DbToolApp:
             return
         name = self.pw_db.get()
         if self._pw_mode == "daybill":
+            who = self._admin_sign(name, "Set a new password", self._PW_WHY % name)
+            if not who:
+                return
             pw = self._ask_new_pw(r["user"])
             if not pw:
+                return
+            if not self._typed(self.root, "Set a new password",
+                               "The password of '%s' in '%s' is replaced now.\n\nAllowed by: %s"
+                               % (r["user"], name, who["username"]), r["user"]):
                 return
             from modules import permissions as P
             cn = self._pw_conn(name)
@@ -582,6 +649,9 @@ class DbToolApp:
                                     (P.hash_password(pw), r["user"]))
             finally:
                 cn.close()
+            line = "new password set for '%s' — allowed by %s" % (r["user"], who["username"])
+            self._log("'%s': %s" % (name, line))
+            self._db_audit(name, who, "password_set", "users", r["user"], line)
             self.say("✅ New password saved for '%s'." % r["user"])
             self._show_users()
             return
@@ -913,15 +983,22 @@ class DbToolApp:
         if not p:
             return
         c = p.counts()
-        if not messagebox.askyesno(
-                "Convert into DayBill",
+        tgt = self.tgt_name
+        who = self._admin_sign(tgt, "Convert into DayBill",
+                               "Converting writes products, customers, suppliers and opening "
+                               "balances into '%s'. Type the user name and password of an "
+                               "administrator (Super Admin / Admin) of that database." % tgt)
+        if not who:
+            return
+        if not self._typed(
+                self.root, "Convert into DayBill",
                 "Bring into '%s':\n\n  %d products (+ %d extra barcodes)\n  %d customers, %d suppliers\n"
                 "  opening stock value %.2f\n  balances: customers %.2f · suppliers %.2f\n\n"
                 "%d records with errors are skipped (see the list). A backup of '%s' is made first.\n"
-                "The old database is not changed. Go ahead?" % (
-                    self.tgt_name, c["products"], c["barcodes"], c["customers"], c["suppliers"],
-                    c["stock_value"], c["receivable"], c["payable"], c["errors"], self.tgt_name),
-                parent=self.root):
+                "The old database is not changed.\n\nAllowed by: %s" % (
+                    tgt, c["products"], c["barcodes"], c["customers"], c["suppliers"],
+                    c["stock_value"], c["receivable"], c["payable"], c["errors"], tgt, who["username"]),
+                tgt):
             return
         from modules import db_backup as BK
         self.say("💾 Backing up '%s' first …" % self.tgt_name)
@@ -937,9 +1014,18 @@ class DbToolApp:
 
         def done(res, err):
             if err:
+                self._log("convert from '%s' into '%s' STOPPED (allowed by %s): %s"
+                          % (self.src_label.get(), tgt, who["username"], str(err)[:200]))
                 self.say("❌ Stopped: %s — the backup is %s" % (str(err)[:200], where if okb else "-"), ok=False)
                 messagebox.showerror("Convert", "Stopped:\n%s" % str(err)[:400], parent=self.root)
                 return
+            line = ("converted from '%s': %d new / %d updated products, %d customers, %d suppliers "
+                    "— allowed by %s, operator %s, backup %s"
+                    % (self.src_label.get(), res.get("inserted", 0), res.get("updated", 0),
+                       res.get("customers", 0), res.get("suppliers", 0), who["username"], op,
+                       where if okb else "none"))
+            self._log("'%s': %s" % (tgt, line))
+            self._db_audit(tgt, who, "convert", "database", tgt, line)
             self.last_result = res
             errs = res.get("errors") or []
             self._show_rows(("Result", "", "", "", "Details"),
@@ -969,10 +1055,22 @@ class DbToolApp:
         if abs(amt) < 0.005:
             self.say("Opening Balance Equity is already zero.")
             return
+        # v6.9.3: posts a journal into the DayBill database → its administrator signs
+        who = self._admin_sign(self.tgt_name, "Close openings to capital",
+                               "This posts a journal into '%s'. Type the user name and password "
+                               "of an administrator (Super Admin / Admin) of that database."
+                               % self.tgt_name)
+        if not who:
+            return
         if not messagebox.askyesno("Capital", "Move %.2f from Opening Balance Equity to Owner's Capital?"
                                    % amt, parent=self.root):
             return
         jid = OB.move_equity_to_capital()
+        if jid:
+            line = "%.2f moved from Opening Balance Equity to Owner's Capital — allowed by %s" % (
+                amt, who["username"])
+            self._log("'%s': %s" % (self.tgt_name, line))
+            self._db_audit(self.tgt_name, who, "post", "journal", jid, line)
         self.say("✅ Moved to Owner's Capital." if jid else "❌ %s" % OB.last_error)
 
 

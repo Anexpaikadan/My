@@ -320,8 +320,12 @@ class VouchersView:
                             money(l["credit"]) if float(l["credit"] or 0) else "", ""))
         self.count_var.set(f"{len(rows)} vouchers")
 
-    @perm.guard("journal", "add")
     def _new_voucher(self):
+        # v6.9.3: anyone who may post a receipt, a payment or a journal may
+        # open it — Save checks the right for the type actually posted
+        if not any(perm.can(m, "add") for m in ("receipt", "payment", "journal")):
+            perm.allowed("journal", "add", parent=self.frame)
+            return
         VoucherForm(self.frame, on_saved=self._load)
 
     @perm.guard("journal", "print")
@@ -740,10 +744,18 @@ class VoucherForm:
                             (cr, 0, amount, narr or "Journal Cr")],
                     description=narr or "Journal voucher")
             if jid:
-                messagebox.showinfo("Voucher", "Voucher saved.", parent=self.win)
+                num = db.execute_scalar("SELECT journal_number FROM journal_entries "
+                                        "WHERE journal_id=?", (jid,)) or ""
+                messagebox.showinfo("Voucher", "Voucher %s saved." % num, parent=self.win)
                 if self.on_saved:
                     self.on_saved()
-                self.win.destroy()
+                # v6.9.3: stays open for the next voucher of the same kind
+                from ui import after_save
+                parent, vt, md = self.win.master, t, method
+                after_save.finish(self, num,
+                                  new=lambda: VoucherForm(parent, self.on_saved, vtype=vt,
+                                                          mode=md if md in ("cash", "bank")
+                                                          else None))
             else:
                 messagebox.showerror(
                     "Voucher",

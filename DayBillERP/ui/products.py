@@ -109,26 +109,31 @@ class ProductsView:
                  fg=C["text_secondary"]).pack(anchor="w", padx=26, pady=(4, 0))
 
     def _bind_shortcuts(self):
-        """Keys work only while THIS screen is on show (they used to stay
-        bound to the main window after leaving Products)."""
-        w = self.frame.winfo_toplevel()
+        """Keys work only while the focus is in THIS screen. They are bound
+        on the screen's own widgets (list, search box, buttons …), never on
+        the main window: there they leaked to other screens and replaced
+        the main F2 / F5 keys (v6.9.3)."""
+        keys = (("<F2>", self._open_edit_form), ("<F5>", self._load_products),
+                ("<Insert>", self._open_add_form),
+                ("<Control-f>", self._focus_search))
 
-        def only_here(fn):
-            def h(e):
-                try:
-                    if not self.frame.winfo_exists() or not self.frame.winfo_ismapped():
-                        return None
-                    if e.widget.winfo_toplevel() is not w:
-                        return None
-                except Exception:
-                    return None
+        def run(fn):
+            def h(_e=None):
                 fn()
                 return "break"
             return h
-        for seq, fn in (("<F2>", self._open_edit_form), ("<F5>", self._load_products),
-                        ("<Insert>", self._open_add_form),
-                        ("<Control-f>", self._focus_search)):
-            w.bind(seq, only_here(fn))
+
+        def walk(w):
+            for ch in w.winfo_children():
+                if isinstance(ch, (tk.Toplevel, tk.Menu)):
+                    continue                  # pop-ups have their own keys
+                for seq, fn in keys:
+                    ch.bind(seq, run(fn), add="+")
+                walk(ch)
+        try:
+            walk(self.frame)
+        except Exception:
+            pass
         if hasattr(self, "tree"):
             self.tree.bind("<Return>", lambda e=None: self._open_edit_form())
 
@@ -635,6 +640,11 @@ class ProductsView:
                     "Deactivate the product instead.")
                 return
             db.execute("DELETE FROM products WHERE product_id=?", (pid,))
+            try:
+                from modules.doc_actions import audit
+                audit("delete", "product", pid, name)
+            except Exception:
+                pass
             messagebox.showinfo(t("common.success"), f"'{name}' deleted.")
             self._load_products()
         except Exception as e:
@@ -697,10 +707,10 @@ class ProductsView:
         CategoryManagerDialog(self.frame, on_close=self._load_lookups)
 
     def _import_excel(self):
+        """Bulk import products from an Excel file (all fields)."""
         from modules import permissions as _pm
         if not _pm.allowed("products", "add"):
             return False
-        """Bulk import products from an Excel file (all fields)."""
         from tkinter import filedialog
         C = cfg.theme()
         d = tk.Toplevel(self.frame)
@@ -753,10 +763,25 @@ class ProductsView:
                 if not rows:
                     messagebox.showwarning("Empty", "No product rows found.")
                     return
+                # codes already in DayBill are OVERWRITTEN (price, cost, VAT,
+                # category, active) → that needs the edit right too
+                n_new, n_upd = self._import_counts(rows)
+                if n_upd and not _pm.allowed("products", "edit", parent=d):
+                    return
                 if not messagebox.askyesno("Confirm Import",
-                    f"Found {len(rows)} product rows.\n\nImport now?"):
+                    f"Found {len(rows)} product rows.\n\n"
+                    f"{n_new} new  ·  {n_upd} will be UPDATED\n"
+                    "(updated = price, cost, VAT, category and active are "
+                    "replaced by the file)\n\nImport now?", parent=d):
                     return
                 ins, upd, errs = import_rows(rows)
+                try:
+                    from modules.doc_actions import audit
+                    audit("import", "products", None,
+                          "Excel import: %d new, %d updated, %d errors (%s)"
+                          % (ins, upd, len(errs), os.path.basename(path)))
+                except Exception:
+                    pass
                 msg = f"✅ Imported.\n\nNew: {ins}\nUpdated: {upd}"
                 if errs:
                     msg += f"\nErrors: {len(errs)}\n\n" + "\n".join(errs[:8])
@@ -778,6 +803,34 @@ class ProductsView:
         tk.Button(btns, text="📂 Choose File & Import", font=("Segoe UI", 10, "bold"),
                   bg=C["primary"], fg="white", relief="flat", padx=14, pady=8,
                   cursor="hand2", command=choose_file).pack(side="left", padx=6)
+
+    @staticmethod
+    def _import_counts(rows):
+        """(new, existing) product codes in the import rows — the same
+        code matching as the import (p001 = P1)."""
+        try:
+            from modules.product_lookup import norm_code
+        except Exception:
+            norm_code = lambda c: str(c or "").strip().upper()
+        try:
+            have = {norm_code(r["product_code"]) for r in
+                    (db.fetchall("SELECT product_code FROM products") or [])}
+        except Exception:
+            have = set()
+        new, upd, seen = 0, 0, set()
+        for r in rows:
+            code = str(r.get("product_code") or "").strip()
+            if not code or not str(r.get("product_name_en") or "").strip():
+                continue                      # skipped by the import too
+            n = norm_code(code)
+            if n in seen:
+                continue
+            seen.add(n)
+            if n in have:
+                upd += 1
+            else:
+                new += 1
+        return new, upd
 
     def _report_pdf(self):
         from modules import permissions as _pm
@@ -915,6 +968,14 @@ class ProductForm:
             pass
         is_edit = self.product_id is not None
         title   = "Edit Product" if is_edit else "Add Product / Service"
+        # no edit right: the form only shows the product (Save refuses)
+        try:
+            from modules import permissions as _pm
+            self._read_only = bool(is_edit and not _pm.can("products", "edit"))
+        except Exception:
+            self._read_only = False
+        if self._read_only:
+            title = "View Product (read only)"
 
         self.win = tk.Toplevel()
         self.win.withdraw()                    # no flash while building
@@ -943,7 +1004,7 @@ class ProductForm:
         hdr = tk.Frame(self.win, bg=C["primary"], height=40)
         hdr.pack(fill="x")
         hdr.pack_propagate(False)
-        icon = "✏️" if is_edit else "➕"
+        icon = "👁" if self._read_only else ("✏️" if is_edit else "➕")
         self._hdr_title = tk.Label(hdr, text=f"{icon}  {title}",
                                    font=("Segoe UI", 12, "bold"),
                                    bg=C["primary"], fg="white")
@@ -1652,6 +1713,10 @@ class ProductForm:
     def _remove_all_units(self):
         """🗑 Clear every unit row in this form. If the product already has
         saved units, offer to delete them from the database too."""
+        from modules import permissions as _pm
+        if not _pm.allowed("products", "edit" if self.product_id else "add",
+                           parent=self.win):
+            return
         if not messagebox.askyesno(
                 "Remove All Units",
                 "Clear all unit rows for this product?\n\n"
@@ -2677,6 +2742,11 @@ class ProductForm:
         want = bool(self.price_incl_var.get())
         if want == cfg.sales_price_includes_vat():
             return
+        # this changes every sales price: a company setting
+        from modules import permissions as _pm
+        if not _pm.allowed("company_settings", "settings", parent=self.win):
+            self.price_incl_var.set(not want)
+            return
         if not messagebox.askyesno(
                 "Sales Price Mode",
                 "This changes how ALL sales prices are read — in POS, Sales "
@@ -3016,6 +3086,12 @@ class ProductForm:
             return
         try:
             db.execute("DELETE FROM products WHERE product_id=?", (self.product_id,))
+            try:
+                from modules.doc_actions import audit
+                nm = self.fields.get("product_name_en")
+                audit("delete", "product", self.product_id, nm.get() if nm else "")
+            except Exception:
+                pass
             messagebox.showinfo("Deleted", "Product deleted.")
             if self.on_save:
                 self.on_save()
@@ -3112,6 +3188,9 @@ class ProductForm:
 
     def _quick_vat(self):
         """+ New — add a VAT Category without leaving the product page."""
+        from modules import permissions as _pm
+        if not _pm.allowed("company_settings", "settings", parent=self.win):
+            return
         from tkinter import simpledialog
         name = simpledialog.askstring("New VAT Category",
                                       "Name (e.g. 'Standard Rate'):",
@@ -3152,6 +3231,9 @@ class ProductForm:
                 messagebox.showerror("VAT Category", str(e)[:200], parent=self.win)
 
     def _quick_brand(self):
+        from modules import permissions as _pm
+        if not _pm.allowed("products", "edit", parent=self.win):
+            return
         from tkinter import simpledialog
         name = simpledialog.askstring("New Brand", "Brand name:", parent=self.win)
         if not name:
@@ -3332,6 +3414,9 @@ class ProductForm:
                           ).pack(side="right", padx=6)
 
     def _upload_images(self):
+        from modules import permissions as _pm
+        if not _pm.allowed("products", "edit", parent=self.win):
+            return
         if not self.product_id:
             messagebox.showinfo("Images", "Save the product first, then add images.")
             return
@@ -3358,6 +3443,12 @@ class ProductForm:
                 f"first.\n\n{str(e)[:150]}")
 
     def _delete_image(self, image_id):
+        from modules import permissions as _pm
+        if not _pm.allowed("products", "edit", parent=self.win):
+            return
+        if not messagebox.askyesno("Images", "Remove this image from the product?",
+                                   parent=self.win):
+            return
         try:
             db.execute("DELETE FROM product_images WHERE image_id=?", (image_id,))
             self._refresh_images()
@@ -3365,6 +3456,9 @@ class ProductForm:
             messagebox.showerror("Images", str(e)[:150])
 
     def _set_default_image(self, image_id):
+        from modules import permissions as _pm
+        if not _pm.allowed("products", "edit", parent=self.win):
+            return
         try:
             db.execute("UPDATE product_images SET is_default=0 WHERE product_id=?",
                       (self.product_id,))
@@ -4127,6 +4221,9 @@ class StockAdjustDialog:
                   command=self._apply).pack(side="right")
 
     def _apply(self):
+        from modules import permissions as _pm
+        if not _pm.allowed("stock_adjustment", "add", parent=self.win):
+            return
         try:
             qty = float(self.qty_var.get())
             if qty < 0:
@@ -4350,6 +4447,9 @@ class BulkRateDialog:
         self.status.set(f"Applied to {n} row(s) — review, then Save.")
 
     def _save(self):
+        from modules import permissions as _pm
+        if not _pm.allowed("products", "edit", parent=self.win):
+            return
         changes = []
         for r in self._rows:
             try:
@@ -4370,15 +4470,18 @@ class BulkRateDialog:
                 _before = _pw.snapshot([pid for pid, _n in changes])
             except Exception:
                 _before = None
-            for pid, new in changes:
-                db.execute("UPDATE products SET unit_price=?, updated_at=GETDATE() "
-                           "WHERE product_id=?", (new, pid))
-                # keep the base unit's shelf price in step with the rate
-                try:
-                    db.execute("UPDATE product_units SET selling_price=? WHERE product_id=? "
-                               "AND is_active=1 AND conversion_factor=1", (new, pid))
-                except Exception:
-                    pass
+            with db.transaction():          # all prices change, or none
+                for pid, new in changes:
+                    db.execute("UPDATE products SET unit_price=?, updated_at=GETDATE() "
+                               "WHERE product_id=?", (new, pid))
+                    # keep the base unit's shelf price in step with the rate
+                    try:
+                        with db.savepoint():
+                            db.execute("UPDATE product_units SET selling_price=? "
+                                       "WHERE product_id=? AND is_active=1 "
+                                       "AND conversion_factor=1", (new, pid))
+                    except Exception:
+                        pass
             try:
                 if _before is not None:
                     _pw.record(_before, "bulk_rate")
@@ -4396,7 +4499,7 @@ class BulkRateDialog:
                 self.on_save()
             self.win.destroy()
         except Exception as e:
-            messagebox.showerror("Bulk Rate Edit", str(e)[:200])
+            messagebox.showerror("Bulk Rate Edit", "Nothing was changed.\n\n" + str(e)[:200])
 
     def _center(self, w, h):
         self.win.update_idletasks()
@@ -4410,7 +4513,8 @@ class CategoryManagerDialog:
         C = cfg.theme()
 
         self.win = tk.Toplevel(parent)
-        self.win.bind("<Escape>", lambda e=None: self.win.destroy())
+        # Esc = the same as ✕ / Done (the product screen reloads the list)
+        self.win.bind("<Escape>", lambda e=None: self._on_close())
         self.win.title("Manage Product Categories")
         self.win.geometry("500x590")
         self.win.resizable(False, True)
@@ -4548,6 +4652,11 @@ class CategoryManagerDialog:
                                f"Delete category '{name}'?"):
             db.execute("UPDATE product_categories SET is_active=0 "
                        "WHERE category_id=?", (cid,))
+            try:
+                from modules.doc_actions import audit
+                audit("delete", "category", cid, name)
+            except Exception:
+                pass
             self._load_categories()
 
     def _on_close(self):

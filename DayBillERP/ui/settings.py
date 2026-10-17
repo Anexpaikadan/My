@@ -696,8 +696,57 @@ class SettingsView:
                      justify="left", anchor="w", wraplength=760, padx=10, pady=6).grid(
                          row=rowi, column=0, columnspan=2, sticky="we", padx=8, pady=(6, 4))
 
+    # ── v6.9.3: rights ───────────────────────────────────────
+    # Opening Settings needs only company_settings.view; SAVING needs
+    # company_settings.settings, the Audit page also audit_log.settings.
+    AUDIT_KEYS = ("audit_user_activity", "audit_price_changes", "audit_cost_changes",
+                  "audit_deleted", "audit_login", "audit_settings")
+    # changes to these are ALWAYS written to the Audit Log (switches or not)
+    WATCHED_KEYS = AUDIT_KEYS + ("allow_edit_confirmed",)
+
+    def _allowed(self, module, action):
+        try:
+            from modules import permissions as perm
+            return bool(perm.allowed(module, action, parent=self.frame))
+        except Exception:
+            return False
+
+    def _may_save(self, keys):
+        """company_settings.settings, plus audit_log.settings for audit keys."""
+        if not self._allowed("company_settings", "settings"):
+            return False
+        if any(k in self.AUDIT_KEYS for k in keys) and not self._allowed("audit_log", "settings"):
+            return False
+        return True
+
+    def _watched_old(self):
+        return {k: cfg.flag(k, cfg.DEFAULT_SETTINGS.get(k, True)) for k in self.WATCHED_KEYS}
+
+    def _audit_watched(self, old, how):
+        """One Audit Log row for each change of an audit switch or of
+        'Allow edit / delete of confirmed documents' — written straight
+        into the table, so turning the switches off is also recorded."""
+        new = self._watched_old()
+        changed = ["%s: %s → %s" % (k, "on" if old[k] else "off", "on" if new[k] else "off")
+                   for k in self.WATCHED_KEYS if bool(old[k]) != bool(new[k])]
+        if not changed:
+            return 0
+        try:
+            import platform
+            from modules import permissions as perm
+            uid = perm.session_user().get("user_id")
+            db.execute("INSERT INTO audit_logs (user_id, action, module, ref_id, details, workstation) "
+                       "VALUES (?,?,?,?,?,?)",
+                       (uid, "security_setting", "settings", how[:50],
+                        ("; ".join(changed))[:4000], platform.node()[:100]))
+        except Exception:
+            pass
+        return len(changed)
+
     def _store_section(self, key):
         """Save the fields of one section now (used by its 'test' buttons)."""
+        if not self._may_save(self.vars.get(key, {}).keys()):
+            return
         try:
             for fkey, (var, _t) in self.vars.get(key, {}).items():
                 cfg.set(fkey, var.get() if _t != "number" else (var.get() or 0))
@@ -781,6 +830,8 @@ class SettingsView:
         return ok, msg
 
     def _ai_test(self):
+        if not self._allowed("company_settings", "settings"):
+            return
         try:
             for fkey, (var, _t) in self.vars.get("ai", {}).items():
                 cfg.set(fkey, var.get() if _t != "number" else (var.get() or 0))
@@ -875,6 +926,8 @@ class SettingsView:
 
     def _make_all_barcodes(self):
         from modules import barcode_resolver as BR
+        if not self._allowed("products", "edit"):      # it changes products
+            return 0
         mp, mu = BR.missing_count()
         if not (mp or mu):
             return 0
@@ -967,7 +1020,7 @@ class SettingsView:
                 tk.Button(row, text="Reopen", font=("Segoe UI", 8, "bold"),
                           bg=C["content_bg"], fg=C["text_primary"], relief="flat",
                           padx=10, pady=4, cursor="hand2",
-                          command=lambda fid=y["fy_id"]: self._reopen_fy(fid)
+                          command=lambda fid=y["fy_id"], lbl=y["label"]: self._reopen_fy(fid, lbl)
                           ).pack(side="right")
 
         tk.Button(wrap, text="➕  Create New Financial Year", font=("Segoe UI", 9, "bold"),
@@ -976,6 +1029,8 @@ class SettingsView:
 
     def _create_fy(self):
         from tkinter import simpledialog
+        if not self._allowed("accounts", "edit"):        # v6.9.3
+            return
         start = simpledialog.askstring("New Financial Year",
                                        "Start date (YYYY-MM-DD):",
                                        initialvalue=f"{datetime.now().year}-01-01")
@@ -990,25 +1045,34 @@ class SettingsView:
         ok, msg = fy.create_year(start, end)
         (messagebox.showinfo if ok else messagebox.showerror)("Financial Year", msg)
         if ok:
+            try:
+                from ui import danger
+                danger.audit("create", "financial_year", None, "%s → %s" % (start, end))
+            except Exception:
+                pass
             self._render_section("financial_year")
 
     def _close_fy(self, fy_id, label):
         # v6.0: closing posts the year-end closing entry (profit → Retained
-        # Earnings) and then locks the year
+        # Earnings) and then locks the year.
+        # v6.9.3: needs accounts.approve + typing the year's name.
         from modules import year_end as YE
+        from ui import danger
         try:
             p = YE.preview(fy_id)
             probs = YE.checks(fy_id)
         except Exception:
             p, probs = {"profit": 0.0}, []
-        txt = (f"Close and lock '{label}'?\n\n{'Profit' if p['profit'] >= 0 else 'Loss'} of the year: "
-               f"{abs(p['profit']):,.2f} SAR — it moves to Retained Earnings, income and expense "
-               f"accounts start the new year at zero.\n\nNo new transactions can be posted into "
-               f"this year afterwards (it can be reopened).")
+        txt = f"Close and lock '{label}'?"
+        if cfg.flag("fy_warn_before_close", True) or probs:      # the full picture
+            txt += (f"\n\n{'Profit' if p['profit'] >= 0 else 'Loss'} of the year: "
+                    f"{abs(p['profit']):,.2f} SAR — it moves to Retained Earnings, income and "
+                    f"expense accounts start the new year at zero.\n\nNo new transactions can be "
+                    f"posted into this year afterwards (it can be reopened).")
         if probs:
-            txt += "\n\n⚠ Not finished yet:\n• " + "\n• ".join(probs) + "\n\nClose anyway?"
-        if (cfg.flag("fy_warn_before_close", True) or probs) and not messagebox.askyesno(
-                "Close Financial Year", txt):
+            txt += "\n\n⚠ Not finished yet:\n• " + "\n• ".join(probs)
+        if not danger.gate(self.frame, "accounts", "approve", "Close Financial Year", txt,
+                           word=label):
             return
         try:
             ok, msg = YE.close(fy_id, force=True)
@@ -1018,8 +1082,21 @@ class SettingsView:
         if ok:
             self._render_section("financial_year")
 
-    def _reopen_fy(self, fy_id):
+    def _reopen_fy(self, fy_id, label=None):
+        # v6.9.3: reopening removes the closing entry → accounts.approve +
+        # typing the year's name
         from modules import year_end as YE
+        from ui import danger
+        if not label:
+            try:
+                from modules import financial_year as fy
+                label = next((y["label"] for y in fy.list_years() if y["fy_id"] == fy_id), "")
+            except Exception:
+                label = ""
+        if not danger.gate(self.frame, "accounts", "approve", "Reopen Financial Year",
+                           "Reopen '%s'? The closing entry is removed and the year can be "
+                           "changed again." % label, word=label or "REOPEN"):
+            return
         try:
             ok, msg = YE.reopen(fy_id)
         except Exception as e:
@@ -1137,6 +1214,10 @@ class SettingsView:
         if not self._current:
             return
         sec = self._section(self._current)
+        # v6.9.3: saving needs the Settings right (Audit page: audit_log.settings too)
+        if not self._may_save([f["key"] for f in sec["fields"]]):
+            return
+        watched_before = self._watched_old()
 
         if self._current in self.CRITICAL_SECTIONS:
             if not messagebox.askyesno(
@@ -1216,6 +1297,7 @@ class SettingsView:
                        ", ".join(f"{k}={v}" for k, v in list(data.items())[:25]))
         except Exception:
             pass
+        self._audit_watched(watched_before, self._current)
 
         if apply_changes and self._current == "system":
             # Theme / language now apply live across the whole app.
@@ -1292,20 +1374,45 @@ class SettingsView:
             messagebox.showerror("Backup Error", str(e))
 
     def _restore(self):
+        # v6.9.3: replacing every setting needs the Settings right
+        if not self._allowed("company_settings", "settings"):
+            return
         path = filedialog.askopenfilename(filetypes=[("Settings", "*.json")])
         if not path:
+            return
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if not isinstance(data, dict):
+                raise ValueError("This is not a DayBill settings file.")
+        except Exception as e:
+            messagebox.showerror("Restore Error", str(e))
+            return
+        before = self._watched_old()
+
+        def on(v):                       # same reading as cfg.flag()
+            return v.strip().lower() in ("1", "true", "yes", "on") if isinstance(v, str) else bool(v)
+        # the file would change an audit switch → audit_log.settings too
+        if any(k in data and on(data[k]) != before[k] for k in self.AUDIT_KEYS) \
+                and not self._allowed("audit_log", "settings"):
             return
         if not messagebox.askyesno("Restore",
                 "Replace current settings with the selected file? "
                 "Restart afterwards."):
             return
         try:
-            with open(path, "r", encoding="utf-8") as f:
-                data = json.load(f)
             cfg.save_settings(data)
-            messagebox.showinfo("Restore", "Settings restored. Please restart the app.")
         except Exception as e:
             messagebox.showerror("Restore Error", str(e))
+            return
+        try:
+            from modules import audit as _audit
+            _audit.log("update", "settings", "restore", "Settings restored from %s"
+                       % os.path.basename(path))
+        except Exception:
+            pass
+        self._audit_watched(before, "restore")
+        messagebox.showinfo("Restore", "Settings restored. Please restart the app.")
 
 
 def key_of(sec):

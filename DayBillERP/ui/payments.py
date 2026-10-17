@@ -547,11 +547,26 @@ class PaymentForm:
             if party_id:                      # opened from an invoice
                 self._preselect(party_id, doc_id)
         self.party_cb.focus_set()
+        self._clean = self._snapshot()
         try:      # v6.9 connector bar: New · Edit · Save · Delete (user rights)
             from ui import txn_connector as _tc
             _tc.attach(self, "receipt" if is_receipt else "payment")
         except Exception:
             pass
+
+    # ── unsaved work (the generic close guard calls this) ─────
+    def _snapshot(self):
+        return (self.party_var.get(), self.date_var.get(), self.amount_var.get(),
+                self.method_var.get(), self.ref_var.get(), self.notes_var.get(),
+                tuple(sorted((k, round(float(v or 0), 2))
+                             for k, v in (self.alloc or {}).items())))
+
+    def _is_dirty(self) -> bool:
+        """True when something was typed / ticked and not saved yet."""
+        try:
+            return self._snapshot() != self._clean
+        except Exception:
+            return False
 
     def _preselect(self, party_id, doc_id=None):
         p = next((x for x in self.parties if x["id"] == party_id), None)
@@ -995,6 +1010,12 @@ class PaymentForm:
                     send_document(parent, "receipt", pay_id, auto=True)
                 except Exception:
                     pass
+            # v6.9.3: the window stays open (Settings ▸ General ▸ After saving)
+            from ui import after_save
+            after_save.finish(self, pnum,
+                              new=lambda: PaymentForm(parent, self.ptype, self.on_save),
+                              keep=lambda: PaymentForm(parent, self.ptype, self.on_save,
+                                                       payment_id=pay_id))
         except Exception as e:
             if _tx is not None and not _tx.kept:
                 _tx.rollback()                 # nothing of a failed save is kept

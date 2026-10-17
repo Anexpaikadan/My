@@ -1013,12 +1013,24 @@ class JournalForm:
                     msg = ""
                 if msg:
                     raise ValueError(msg)
-                acc.post_journal(db, self.date_var.get(), self.lines,
-                                 description_en=self.desc_var.get(), source_type="manual")
+                jid = acc.post_journal(db, self.date_var.get(), self.lines,
+                                       description_en=self.desc_var.get(), source_type="manual")
                 messagebox.showinfo(t("common.success"), "Journal entry posted.")
             if self.on_save:
                 self.on_save()
-            self.win.destroy()
+            # v6.9.3: the window stays open (Settings ▸ General ▸ After saving)
+            from ui import after_save
+            parent, saved = self.win.master, (self.journal_id or locals().get("jid"))
+            num = ""
+            try:
+                num = db.execute_scalar("SELECT journal_number FROM journal_entries "
+                                        "WHERE journal_id=?", (saved,)) or ""
+            except Exception:
+                pass
+            after_save.finish(self, num,
+                              new=lambda: JournalForm(parent, on_save=self.on_save),
+                              keep=(lambda: JournalForm(parent, on_save=self.on_save,
+                                                        journal_id=saved)) if saved else None)
         except ValueError as e:
             self.status_var.set(f"❌ {e}")
         except Exception as e:

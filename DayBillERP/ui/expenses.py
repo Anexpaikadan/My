@@ -230,6 +230,7 @@ class ExpenseForm:
         self.C = C
         self.on_saved = on_saved
         self.expense_id = expense_id
+        self.kind = kind                        # expense | asset (reopen the same)
         self.win = tk.Toplevel(parent)
         self.win.bind("<Escape>", lambda e: self.win.destroy())
         self.win.title("Edit Expense" if expense_id else "New Expense / Asset Purchase")
@@ -634,7 +635,12 @@ class ExpenseForm:
                                 parent=self.win)
             if self.on_saved:
                 self.on_saved()
-            self.win.destroy()
+            # v6.9.3: the window stays open (Settings ▸ General ▸ After saving)
+            from ui import after_save
+            parent, kind = self.win.master, getattr(self, "kind", "expense")
+            after_save.finish(self, ref or "",
+                              new=lambda: ExpenseForm(parent, self.on_saved, kind=kind),
+                              keep=lambda: ExpenseForm(parent, self.on_saved, expense_id=eid))
         except Exception as e:
             if _tx is not None and not _tx.kept:
                 _tx.rollback()                # nothing of a failed save is kept

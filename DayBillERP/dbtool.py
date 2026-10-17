@@ -4,6 +4,8 @@
 # database into DayBill. Start:  python dbtool.py
 #   (the built program: DayBillERP.exe --dbtool, or the
 #    "DayBill Database Tool" shortcut / DayBill_Database_Tool.bat)
+# v6.9.3: a password reset or a convert into a DayBill database needs
+# the user name + password of an administrator of that database.
 # ============================================================
 import os
 import sys
