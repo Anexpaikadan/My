@@ -144,8 +144,9 @@ class InvoiceGrid(tk.Frame):
                         background="#FFF6F4", fieldbackground="#FFF6F4",
                         foreground="#C0392B")
         for key, title, w, anchor in COLUMNS:
-            self.footer_tree.column(key, width=w, anchor=anchor,
-                                    stretch=(key == "product"))
+            # widths are copied from the item grid (never stretched on its own —
+            # with many columns shown it would squeeze Product and slide the totals)
+            self.footer_tree.column(key, width=w, anchor=anchor, stretch=False)
         # v6.9: placed before the item rows → never cut off on a small window
         self.footer_tree.pack(fill="x", side="bottom", before=self.tree)
         self.footer_tree.insert("", "end", iid="sum", values=(""))
@@ -172,6 +173,7 @@ class InvoiceGrid(tk.Frame):
         except Exception:
             pass
         self.tree.bind("<<ColumnsChanged>>", lambda e: self._sync_footer_widths(), add="+")
+        self.tree.bind("<Configure>", lambda e: self.after_idle(self._sync_footer_widths), add="+")
 
         self.tree.bind("<Double-1>", self._begin_edit)
         self.tree.bind("<Return>", self._on_tree_return)
