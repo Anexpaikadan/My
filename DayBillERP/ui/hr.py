@@ -5,6 +5,9 @@
 # The screens only show and ask; every change goes through
 # modules/payroll.py (payroll months, loans, final settlement) and
 # modules/hr_time.py (leave, attendance, documents).
+# v6.9.3: making a month AGAIN needs hr.delete + typing the month
+# (e.g. 2026-09); Delete month needs hr.delete + typing the month;
+# every Save checks its right; dialogs stay on top of their screen.
 # ============================================================
 
 import tkinter as tk
@@ -38,6 +41,21 @@ def _btn(parent, C, text, cmd, primary=False, side="left", danger=False):
                   highlightbackground=C["border"], highlightthickness=0 if primary else 1, command=cmd)
     b.pack(side=side, padx=(0, 6) if side == "left" else (6, 0))
     return b
+
+
+def _modal(win, parent):
+    """Dialog stays on top of the screen that opened it and blocks it."""
+    try:
+        if parent is not None:
+            win.transient(parent.winfo_toplevel())
+    except Exception:
+        pass
+    win.grab_set()
+
+
+def _month_word(m, y):
+    """What the user types to confirm a payroll month: 2026-09."""
+    return "%d-%02d" % (int(y), int(m))
 
 
 def _tree(parent, C, cols, height=None):
@@ -377,11 +395,21 @@ class HRView:
             try:
                 run_id, msg = PR.generate(m, y)
             except PR.RunExists:
-                if not messagebox.askyesno("Make again?", "The payroll of %s %d is there already.\n\nMake it "
-                                           "again? (loan instalments are given back and the old journal is "
-                                           "removed first)" % (PR.MONTHS[m], y), parent=self.frame):
+                # v6.9.3: the old month and its journal are DELETED first →
+                # hr.delete + typing the month
+                if not perm.allowed("hr", "delete", parent=self.frame):
+                    return
+                from ui import danger
+                word = _month_word(m, y)
+                if not danger.confirm_typed(
+                        self.frame, "Make the payroll again",
+                        "The payroll of %s %d is there already.\n\nMaking it again DELETES it and its "
+                        "journal first (loan instalments are given back), then makes it new — "
+                        "line changes (overtime, bonus, deductions) are lost." % (PR.MONTHS[m], y),
+                        word=word):
                     return
                 run_id, msg = PR.generate(m, y, replace=True)
+                danger.audit("regenerate", "payroll", run_id, "Payroll %s made again" % word)
         except ValueError as e:
             messagebox.showwarning("Payroll", str(e), parent=self.frame)
             return
@@ -466,8 +494,15 @@ class HRView:
     def _delete_month(self):
         if not self._need_run():
             return
-        if not messagebox.askyesno("Delete", "Delete this month's payroll? Loan instalments are given back and "
-                                             "its journal is removed.", parent=self.frame):
+        from ui import danger
+        run = PR.run_by_id(self._current_run_id) or {}
+        try:
+            word = _month_word(run["run_month"], run["run_year"])
+        except Exception:
+            word = _month_word(*self._period())
+        if not danger.gate(self.frame, "hr", "delete", "Delete payroll month",
+                           "Delete the payroll of %s? Loan instalments are given back and its "
+                           "journal is removed." % (run.get("run_label") or word), word=word):
             return
         try:
             PR.delete(self._current_run_id)
@@ -744,6 +779,8 @@ class PayLineDialog:
         w.geometry("500x470")
 
     def save(self):
+        if not perm.allowed("hr", "edit", parent=self.win):
+            return None
         try:
             ps = PR.edit_line(self.pid, overtime_hours=self.vars["ot"].get() or 0, bonus=self.vars["bonus"].get() or 0,
                               other_deduction=self.vars["other"].get() or 0, note=self.vars["note"].get())
@@ -770,11 +807,11 @@ class EmployeeForm:
         self.depts = []
         C = self.C = cfg.theme()
         title = "Edit Employee" if employee_id else "New Employee"
-        self.win = tk.Toplevel()
+        self.win = tk.Toplevel(parent)
         self.win.bind("<Escape>", lambda e: self.win.destroy())
         self.win.title(title)
         self.win.configure(bg=C["content_bg"])
-        self.win.grab_set()
+        _modal(self.win, parent)
         sh = self.win.winfo_screenheight()
         self._center(880, min(700, sh - 80))
         hdr = tk.Frame(self.win, bg=C["primary"], height=48)
@@ -1041,6 +1078,9 @@ class EmployeeForm:
         self._wage_hint()
 
     def _save(self, confirm=True):
+        # v6.9.3: hr.edit for a change, hr.add for a new employee
+        if not perm.allowed("hr", "edit" if self.employee_id else "add", parent=self.win):
+            return False
         F = self.fields
         if not F["employee_code"].get().strip():
             self.status_var.set("⚠️ Code required."); return False
@@ -1157,10 +1197,10 @@ class LoanForm:
     def __init__(self, parent, on_save=None):
         self.on_save = on_save
         C = cfg.theme()
-        self.win = tk.Toplevel(); self.win.bind("<Escape>", lambda e: self.win.destroy())
+        self.win = tk.Toplevel(parent); self.win.bind("<Escape>", lambda e: self.win.destroy())
         self.win.title("New Loan / Advance")
         self.win.configure(bg=C["content_bg"])
-        self.win.grab_set(); self._center(460, 500)
+        _modal(self.win, parent); self._center(460, 500)
         hdr = tk.Frame(self.win, bg=C["primary"], height=48)
         hdr.pack(fill="x"); hdr.pack_propagate(False)
         tk.Label(hdr, text="🏦  New Loan / Advance", font=("Segoe UI", 12, "bold"),
@@ -1208,6 +1248,8 @@ class LoanForm:
                  fg=C["danger"]).pack(anchor="w", pady=4)
 
     def _save(self):
+        if not perm.allowed("hr", "add", parent=self.win):
+            return None
         if self.emp_cb.current() < 0:
             self.status_var.set("⚠️ Select employee."); return None
         try:
@@ -1241,10 +1283,10 @@ class EOSDialog:
     def __init__(self, parent, on_save=None):
         self.on_save = on_save
         C = self.C = cfg.theme()
-        self.win = tk.Toplevel(); self.win.bind("<Escape>", lambda e: self.win.destroy())
+        self.win = tk.Toplevel(parent); self.win.bind("<Escape>", lambda e: self.win.destroy())
         self.win.title("Final settlement")
         self.win.configure(bg=C["content_bg"])
-        self.win.grab_set()
+        _modal(self.win, parent)
         sh = self.win.winfo_screenheight()
         self._center(640, min(720, sh - 60))
         hdr = tk.Frame(self.win, bg=C["primary"], height=48)
@@ -1462,6 +1504,8 @@ class EOSDialog:
         return settlement_pdf(s, path)
 
     def _save(self):
+        if not perm.allowed("hr", "edit", parent=self.win):
+            return None
         s = self._calc()
         if not s:
             return None

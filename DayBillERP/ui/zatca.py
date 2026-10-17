@@ -10,6 +10,9 @@
 #       certificate — all by itself, with a live step list)
 # Connected → status, counts, every document sent / waiting / rejected,
 # Send now, Send again after a fix, view / save the XML.
+# v6.9.3: the screen opens with reports.view, but connecting, keys,
+# auto-send and the zero-rated reason need company_settings.settings;
+# Disconnect and connecting to PRODUCTION also need typing ZATCA.
 # ============================================================
 
 import tkinter as tk
@@ -52,6 +55,15 @@ class ZatcaView:
                             and zatca_sender.off_change(self._on_sent))
         except Exception:
             pass
+
+    # ── v6.9.3: rights ───────────────────────────────────────
+    def _may_settings(self):
+        """company_settings.settings (shows the usual message when missing)."""
+        try:
+            from modules import permissions as perm
+            return bool(perm.allowed("company_settings", "settings", parent=self.frame))
+        except Exception:
+            return False
 
     # ── page switch ──────────────────────────────────────────
     def render(self):
@@ -271,6 +283,8 @@ class ZatcaView:
     def _connect(self):
         if self._busy:
             return
+        if not self._may_settings():
+            return
         probs = self._detail_problems()
         if probs:
             self.detail_msg.config(text="Fill these first:  " + "   ·   ".join(probs))
@@ -278,10 +292,12 @@ class ZatcaView:
             return
         self.detail_msg.config(text="")
         env = self.env_v.get()
-        if env == "production" and not messagebox.askyesno(
-                "ZATCA", "Connect to PRODUCTION?\n\nFrom now on every bill is signed and sent to "
-                "ZATCA for real.", parent=self.frame):
-            return
+        if env == "production":
+            from ui import danger
+            if not danger.gate(self.frame, "company_settings", "settings", "Connect to PRODUCTION",
+                               "From now on every bill is signed and sent to ZATCA for real.",
+                               word="ZATCA"):
+                return
         try:
             E.save_details({k: v.get() for k, v in self.vars.items()})
             cfg.set("zatca_env_last", env)
@@ -329,6 +345,12 @@ class ZatcaView:
                         self.connect_msg.config(text="⚠ Connected, but saving failed: %s" % e)
                         return
                     self._step("done", "ok")
+                    try:
+                        from ui import danger
+                        danger.audit("connect", "zatca", None, "Connected to ZATCA (%s)"
+                                     % (getattr(self, "env_v", None) and self.env_v.get() or ""))
+                    except Exception:
+                        pass
                     try:
                         from ui.ui_polish import toast
                         toast(self.frame.winfo_toplevel(), "Connected to ZATCA ✓", kind="success")
@@ -525,7 +547,7 @@ class ZatcaView:
         self.auto_v = tk.BooleanVar(value=bool(e.get("auto_send", 1)))
         tk.Checkbutton(b, text="Send automatically in the background", variable=self.auto_v,
                        bg=C["card_bg"], font=("Segoe UI", 9),
-                       command=lambda: E.set_auto_send(self.auto_v.get())).pack(side="left", padx=12)
+                       command=self._set_auto_send).pack(side="left", padx=12)
         tk.Button(b, text="⏻  Disconnect", font=("Segoe UI", 9), bg=C["card_bg"], fg=C["danger"],
                   relief="flat", padx=10, pady=4, cursor="hand2", highlightbackground=C["border"],
                   highlightthickness=1, command=self._disconnect).pack(side="right")
@@ -541,9 +563,8 @@ class ZatcaView:
         cb.pack(side="right")
         tk.Label(b, text="Zero-rated reason", font=("Segoe UI", 8), bg=C["card_bg"],
                  fg=C["text_secondary"]).pack(side="right", padx=(12, 4))
-        cb.bind("<<ComboboxSelected>>", lambda ev: (cfg.set("zatca_vatex_z", self.vatex_v.get().split()[0]),
-                                                    cfg.set("zatca_vatex_v692", True),
-                                                     cfg.save_settings()))
+        self._vatex_saved = self.vatex_v.get()
+        cb.bind("<<ComboboxSelected>>", lambda ev: self._set_vatex())
 
         tiles = tk.Frame(self.frame, bg=C["content_bg"]); tiles.pack(fill="x", padx=20)
         self.tile_vars = {}
@@ -609,6 +630,21 @@ class ZatcaView:
         self.fix_lbl.pack(side="bottom", fill="x", padx=20, pady=(2, 2), before=wrap)
         self.fix_lbl.bind("<Configure>", lambda ev: self.fix_lbl.config(wraplength=max(300, ev.width - 30)))
         self._fill()
+
+    def _set_auto_send(self):
+        if not self._may_settings():
+            self.auto_v.set(not self.auto_v.get())        # put the tick back
+            return
+        E.set_auto_send(self.auto_v.get())
+
+    def _set_vatex(self):
+        if not self._may_settings():
+            self.vatex_v.set(self._vatex_saved)           # put the old reason back
+            return
+        cfg.set("zatca_vatex_z", self.vatex_v.get().split()[0])
+        cfg.set("zatca_vatex_v692", True)
+        cfg.save_settings()
+        self._vatex_saved = self.vatex_v.get()
 
     def _fill(self):
         if not hasattr(self, "tree") or not self.tree.winfo_exists():
@@ -697,6 +733,13 @@ class ZatcaView:
         self.frame.after(200, poll)
 
     def _resend(self):
+        # signs the document again (next counter) → sales.edit
+        try:
+            from modules import permissions as perm
+            if not perm.allowed("sales", "edit", parent=self.frame):
+                return
+        except Exception:
+            return
         s = self._selected()
         if not s:
             return
@@ -756,6 +799,8 @@ class ZatcaView:
 
     # ── v6.0: ZATCA key protection ─────────────────────────────
     def _protect_keys(self):
+        if not self._may_settings():
+            return
         if not messagebox.askyesno(
                 "Protect ZATCA keys",
                 "Lock the ZATCA private key and certificate secrets with SQL Server's own "
@@ -773,6 +818,8 @@ class ZatcaView:
         self.render()
 
     def _recovery(self):
+        if not self._may_settings():
+            return
         from modules.zatca import vault as V
         from tkinter import simpledialog
         code = V.saved_code()
@@ -786,20 +833,32 @@ class ZatcaView:
                                                                   parent=self.frame)
 
     def _disconnect(self):
+        # v6.9.3: company_settings.settings + typing ZATCA, and an audit row
+        from ui import danger
         st = E.stats()
         extra = ("\n\n%d document(s) are still waiting to be sent." % st["waiting"]) if st["waiting"] else ""
-        if messagebox.askyesno("Disconnect", "Stop signing and sending bills to ZATCA?" + extra,
-                               parent=self.frame):
-            E.disconnect()
-            self.render()
+        if not danger.gate(self.frame, "company_settings", "settings", "Disconnect ZATCA",
+                           "Stop signing and sending bills to ZATCA?" + extra, word="ZATCA"):
+            return
+        e = E.active() or {}
+        E.disconnect()
+        danger.audit("disconnect", "zatca", e.get("egs_id"),
+                     "ZATCA disconnected (%s, %s); %d document(s) were waiting"
+                     % (e.get("egs_name") or e.get("egs_id") or "?", e.get("env") or "?",
+                        st.get("waiting") or 0))
+        self.render()
 
     def _reconnect(self):
+        if not self._may_settings():
+            return
         if messagebox.askyesno("Reconnect", "Connect again with a new OTP (new certificate)?\n\n"
                                "Use it when the certificate ends or you move to Production.",
                                parent=self.frame):
             self._force_connect_page()
 
     def _force_connect_page(self):
+        if not self._may_settings():
+            return
         for w in self.frame.winfo_children():
             w.destroy()
         C = self.C

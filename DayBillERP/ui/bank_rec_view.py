@@ -4,13 +4,25 @@
 # Account + statement date + statement balance → Load. Tick the lines
 # that are on the statement (Space / double-click / "Tick all up to");
 # Finish when the difference is 0.00.
+# v6.9.3: Load / tick = accounts.edit · Finish and Undo = accounts.approve
+# (both written to the Audit Log).
 # ============================================================
 import tkinter as tk
 from tkinter import messagebox
 from datetime import date
 
 from modules import bank_rec as BR
+from ui import danger
 from ui import v6_kit as K
+
+
+def _allowed(action, parent):
+    """accounts.<action> with the usual 'not allowed' message."""
+    try:
+        from modules import permissions as perm
+        return bool(perm.allowed("accounts", action, parent=parent))
+    except Exception:
+        return False
 
 
 class BankRecView:
@@ -72,6 +84,8 @@ class BankRecView:
         if not acc:
             self.page.say("Choose the bank account.", ok=False)
             return
+        if not _allowed("edit", self.frame):         # it starts / opens a draft
+            return
         bal = K.num(self.bal_v)
         if bal is None:
             d = BR.draft(acc)
@@ -107,38 +121,45 @@ class BankRecView:
                       ok=abs(f["difference"]) < 0.005)
 
     def _tick(self, on):
-        if not self.rec_id:
+        if not self.rec_id or not _allowed("edit", self.frame):
             return
         BR.tick(self.rec_id, self.tree.selection(), on)
         self._fill()
 
     def _toggle_row(self):
         sel = self.tree.selection()
-        if not sel or not self.rec_id:
+        if not sel or not self.rec_id or not _allowed("edit", self.frame):
             return
         on = not bool(self.tree.set(sel[0], "t"))
         BR.tick(self.rec_id, sel, on)
         self._fill()
 
     def _tick_all(self):
-        if self.rec_id:
+        if self.rec_id and _allowed("edit", self.frame):
             BR.tick(self.rec_id, self.tree.get_children(), True)
             self._fill()
 
     def _finish(self):
-        if not self.rec_id:
+        if not self.rec_id or not _allowed("approve", self.frame):
             return
-        ok, msg = BR.finish(self.rec_id)
+        rec_id = self.rec_id
+        ok, msg = BR.finish(rec_id)
         self.page.say(msg, ok=ok)
         if ok:
+            danger.audit("finish", "bank_rec", rec_id, "Bank reconciliation finished: %s · %s"
+                         % (self.acc_v.get(), self.date_v.get()))
             self.rec_id = None
             self.tree.delete(*self.tree.get_children())
             self.bal_v.set("")
 
     def _undo(self):
         acc = self._acc()
-        if not acc or not messagebox.askyesno("Undo", "Reopen the last finished reconciliation of this "
-                                              "account?", parent=self.frame):
+        if not acc or not _allowed("approve", self.frame):
+            return
+        if not messagebox.askyesno("Undo", "Reopen the last finished reconciliation of this "
+                                   "account?", parent=self.frame):
             return
         ok, msg = BR.undo_last(acc)
         self.page.say(msg, ok=ok)
+        if ok:
+            danger.audit("undo", "bank_rec", None, "%s — %s" % (self.acc_v.get(), msg))

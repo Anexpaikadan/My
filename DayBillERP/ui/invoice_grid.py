@@ -518,7 +518,7 @@ class InvoiceGrid(tk.Frame):
             self._ctrl_hold.attach(e)
         e.bind("<Return>", lambda ev: self._barcode_enter(idx, var))
         e.bind("<KP_Enter>", lambda ev: self._barcode_enter(idx, var))
-        e.bind("<Escape>", lambda ev: self._close_editor())
+        e.bind("<Escape>", self._esc_editor)       # cancel the cell only
 
     def _resolve_barcode(self, code):
         """
@@ -652,7 +652,7 @@ class InvoiceGrid(tk.Frame):
         e.bind("<Return>", lambda ev: self._product_enter(idx, var))
         e.bind("<KP_Enter>", lambda ev: self._product_enter(idx, var))
         e.bind("<Down>", lambda ev: self._dropdown_focus())
-        e.bind("<Escape>", lambda ev: self._close_editor())
+        e.bind("<Escape>", self._esc_editor)       # cancel the cell only
         if prefill:
             # carried over from the barcode cell — show matches right away
             self.after(10, lambda: self._show_dropdown(
@@ -1100,7 +1100,7 @@ class InvoiceGrid(tk.Frame):
             self._ctrl_hold.attach(e)
         e.bind("<Return>", lambda ev: self._number_enter(idx, key, var))
         e.bind("<KP_Enter>", lambda ev: self._number_enter(idx, key, var))
-        e.bind("<Escape>", lambda ev: self._close_editor())
+        e.bind("<Escape>", self._esc_editor)       # cancel the cell only
         if key == "qty":
             # Smart Multi-Unit System: Space inside Quantity CYCLES the
             # unit (Piece → Box → Carton → …) in place — no dialog box.
@@ -1359,6 +1359,16 @@ class InvoiceGrid(tk.Frame):
             if not any(l.get("_blank") and not l.get("product_id") for l in self.lines):
                 self.add_blank_row()
             self._refresh()
+
+    def _esc_editor(self, event=None):
+        """Esc in a cell: cancel that edit only — "break" so the window's
+        own Esc (close the invoice) does not run as well."""
+        self._close_editor()
+        try:
+            self.tree.focus_set()
+        except Exception:
+            pass
+        return "break"
 
     def _close_editor(self):
         if self._pad is not None:

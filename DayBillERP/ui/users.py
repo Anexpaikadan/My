@@ -1,6 +1,9 @@
 # ============================================================
 # DayBill ERP - User Management
 # List users, add/edit/deactivate, assign roles, reset password
+# v6.9.3: every button checks its right (users.add / users.edit), and
+# only a full-access user (Super Admin / Admin) may give a full-access
+# user type or change / reset the password of a full-access user.
 # ============================================================
 
 import tkinter as tk
@@ -23,6 +26,58 @@ def password_problem(pw: str) -> str:
     if n and len(pw or "") < n:
         return f"Password must be at least {n} characters."
     return ""
+
+
+# ── v6.9.3: protect the administrators (also used by ui/user_rights.py) ──
+def full_access_role_ids():
+    """role_ids whose user type always has every right."""
+    from modules import permissions as _perm
+    try:
+        return {r["role_id"] for r in db.fetchall("SELECT role_id, role_name_en FROM roles") or []
+                if (r["role_name_en"] or "").strip().lower() in _perm.FULL_ACCESS_ROLES}
+    except Exception:
+        return set()
+
+
+def is_full_access_user(user_id):
+    """True for a Super Admin / Admin type user or the built-in 'admin'.
+    When it can't be read: True (the safe answer)."""
+    try:
+        u = db.fetchone("SELECT username, role_id FROM users WHERE user_id=?", (user_id,))
+    except Exception:
+        return True
+    if not u:
+        return False
+    if str(u.get("username", "")).strip().lower() == "admin":
+        return True
+    return u.get("role_id") in full_access_role_ids()
+
+
+def admin_only_problem(user_id=None, role_id=None, username=None):
+    """'' when the signed-in user may do this, else the reason.
+    Only a full-access user may: change (or reset the password of) a
+    full-access user, give a full-access user type, or use the name
+    'admin' (that name always has full access)."""
+    from modules import permissions as _perm
+    if _perm.is_full_access():
+        return ""
+    if user_id and is_full_access_user(user_id):
+        return ("Only an administrator (Super Admin / Admin) can change an "
+                "administrator's account or password.")
+    if role_id and role_id in full_access_role_ids():
+        return "Only an administrator (Super Admin / Admin) can give an administrator user type."
+    if username is not None and str(username).strip().lower() == "admin":
+        return "The name 'admin' is kept for the built-in administrator."
+    return ""
+
+
+def _allowed(action, parent=None):
+    """users.<action> with the usual 'not allowed' message."""
+    try:
+        from modules import permissions as _perm
+        return bool(_perm.allowed("users", action, parent=parent))
+    except Exception:
+        return False
 
 
 def hash_password(plain: str) -> str:
@@ -120,21 +175,33 @@ class UsersView:
         return int(sel[0]) if sel else None
 
     def _add(self):
+        if not _allowed("add", self.frame):
+            return
         UserForm(self.frame, self._roles, on_save=self._load)
 
     def _edit(self):
+        if not _allowed("edit", self.frame):
+            return
         uid = self._sel_id()
         if not uid:
             messagebox.showinfo("Select", "Select a user first."); return
+        prob = admin_only_problem(user_id=uid)
+        if prob:
+            messagebox.showwarning("Edit User", prob, parent=self.frame); return
         UserForm(self.frame, self._roles, user_id=uid, on_save=self._load)
 
     def _reset_pw(self):
+        if not _allowed("edit", self.frame):
+            return
         uid = self._sel_id()
         if not uid:
             messagebox.showinfo("Select", "Select a user first."); return
+        prob = admin_only_problem(user_id=uid)
+        if prob:
+            messagebox.showwarning("Reset Password", prob, parent=self.frame); return
         from tkinter import simpledialog
         pw = simpledialog.askstring("Reset Password",
-                                    "Enter a new password:", show="*")
+                                    "Enter a new password:", show="*", parent=self.frame)
         if not pw:
             return
         prob = password_problem(pw)
@@ -148,19 +215,43 @@ class UsersView:
                 _pm.mark_password_changed(uid)
             except Exception:
                 pass
+            try:
+                from modules import audit
+                audit.log("reset_password", "users", uid)
+            except Exception:
+                pass
             messagebox.showinfo("Done", "Password reset.")
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
     def _toggle_active(self):
+        if not _allowed("edit", self.frame):
+            return
         uid = self._sel_id()
         if not uid:
             messagebox.showinfo("Select", "Select a user first."); return
+        prob = admin_only_problem(user_id=uid)
+        if prob:
+            messagebox.showwarning("Activate / Deactivate", prob, parent=self.frame); return
         try:
-            cur = db.execute_scalar(
-                "SELECT is_active FROM users WHERE user_id=?", (uid,))
+            row = db.fetchone("SELECT username, is_active FROM users WHERE user_id=?", (uid,)) or {}
+            cur = row.get("is_active")
+            if cur:                      # switching off: never lock everyone out
+                from modules import permissions as _pm
+                if str(row.get("username", "")).lower() == "admin":
+                    messagebox.showwarning("Deactivate", "The built-in 'admin' user can't be "
+                                           "switched off.", parent=self.frame); return
+                if uid == _pm.session_user().get("user_id"):
+                    messagebox.showwarning("Deactivate", "You can't switch off your own "
+                                           "account.", parent=self.frame); return
             new = 0 if cur else 1
             db.execute("UPDATE users SET is_active=? WHERE user_id=?", (new, uid))
+            try:
+                from modules import audit
+                audit.log("deactivate" if not new else "update", "users", uid,
+                          "%s %s" % (row.get("username", ""), "switched off" if not new else "switched on"))
+            except Exception:
+                pass
             self._load()
         except Exception as e:
             messagebox.showerror("Error", str(e))
@@ -178,6 +269,10 @@ class UserForm:
         self.win.title("Edit User" if user_id else "Add User")
         self.win.geometry("440x520")
         self.win.configure(bg=C["content_bg"])
+        try:
+            self.win.transient(parent.winfo_toplevel())
+        except Exception:
+            pass
         self.win.grab_set()
         self._center(440, 520)
 
@@ -296,6 +391,8 @@ class UserForm:
             return False
 
     def _save(self):
+        if not _allowed("edit" if self.user_id else "add", self.win):
+            return
         username = self.f["username"].get().strip()
         name = self.f["full_name_en"].get().strip()
         if not username or not name:
@@ -306,6 +403,10 @@ class UserForm:
                 role_id = r["role_id"]; break
         if not role_id:
             self.status.set("Please choose a role."); return
+        # only an administrator may touch an administrator (v6.9.3)
+        prob = admin_only_problem(user_id=self.user_id, role_id=role_id, username=username)
+        if prob:
+            self.status.set(prob); return
         pw = self.f["password"].get().strip()
         if pw or not self.user_id:
             prob = password_problem(pw)

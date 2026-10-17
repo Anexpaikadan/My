@@ -11,6 +11,10 @@
 # Every action is gated by modules.permissions.can(...) so an
 # unauthorized user can open neither the tab buttons nor the
 # destructive actions.
+# v6.9.3: only a full-access user (Super Admin / Admin) may give a
+# full-access user type, change / delete a full-access user or reset
+# their password; nobody can tick a right they don't have themselves.
+# F2 / F5 work only on this screen (bound on its own widgets).
 # ============================================================
 
 import os
@@ -50,22 +54,41 @@ def _other_active_admins(exclude_user_id):
         return 1
 
 
-def _bind_while_visible(widget, seq, fn):
-    """Bind a key on the main window that only works while `widget`'s
-    screen is on show (and stops the global F-key shortcut)."""
-    top = widget.winfo_toplevel()
-
+def _bind_on_screen(widget, seq, fn):
+    """Bind a key on this screen's OWN widgets (not on the main window), so
+    it never fires on another screen; "break" stops the global shortcut."""
     def h(e):
-        try:
-            if not widget.winfo_exists() or not widget.winfo_ismapped():
-                return None
-            if e.widget.winfo_toplevel() is not top:
-                return None
-        except Exception:
-            return None
         fn()
         return "break"
-    top.bind(seq, h)
+
+    def walk(w):
+        if isinstance(w, tk.Toplevel):          # a dialog opened from here
+            return
+        try:
+            w.bind(seq, h)
+        except Exception:
+            pass
+        for c in w.winfo_children():
+            walk(c)
+    walk(widget)
+
+
+def _admin_problem(user_id=None, role_id=None, username=None):
+    """'' or why only an administrator may do this (see ui/users.py)."""
+    try:
+        from ui.users import admin_only_problem
+        return admin_only_problem(user_id=user_id, role_id=role_id, username=username)
+    except Exception as e:
+        return "Could not check the user: %s" % str(e)[:100]
+
+
+def _modal(win, parent):
+    """Dialog stays on top of its screen and blocks it until closed."""
+    try:
+        win.transient(parent.winfo_toplevel())
+    except Exception:
+        pass
+    win.grab_set()
 
 
 # ============================================================
@@ -214,9 +237,9 @@ class UsersPanel:
                  pady=(4, 0))
 
     def _bind_keys(self):
-        _bind_while_visible(self.parent, "<F2>",
-                            lambda: self._new() if perm.can("users", "add") else None)
-        _bind_while_visible(self.parent, "<F5>", self._load)
+        _bind_on_screen(self.parent, "<F2>",
+                        lambda: self._new() if perm.can("users", "add") else None)
+        _bind_on_screen(self.parent, "<F5>", self._load)
 
     # ── data ───────────────────────────────────────────────
     def _load_roles(self):
@@ -292,6 +315,9 @@ class UsersPanel:
         uid = self._sel_id()
         if not uid:
             messagebox.showinfo("Select", "Select a user first."); return
+        prob = _admin_problem(user_id=uid)
+        if prob:
+            messagebox.showwarning("Edit User", prob, parent=self.parent); return
         UserForm(self.parent, self._roles, user_id=uid, on_save=self._load)
 
     def _delete(self):
@@ -309,6 +335,10 @@ class UsersPanel:
         if uid == _me().get("user_id"):
             messagebox.showwarning("Delete User", "You can't delete yourself while "
                                    "signed in.")
+            return
+        prob = _admin_problem(user_id=uid)
+        if prob:
+            messagebox.showwarning("Delete User", prob, parent=self.parent)
             return
         if (u or {}).get("role_id") in _full_access_role_ids() and \
                 _other_active_admins(uid) == 0:
@@ -349,6 +379,9 @@ class UsersPanel:
         uid = self._sel_id()
         if not uid:
             messagebox.showinfo("Select", "Select a user first."); return
+        prob = _admin_problem(user_id=uid)           # an admin's password: admins only
+        if prob:
+            messagebox.showwarning("Reset Password", prob, parent=self.parent); return
         from ui.users import password_problem
         _n = int(float(cfg.get("pwd_min_length", 4) or 4))
         pw = simpledialog.askstring("Reset Password",
@@ -392,7 +425,7 @@ class UserForm:
         self.win.bind("<Escape>", lambda e: self.win.destroy())
         self.win.title("Edit User" if user_id else "New User")
         self.win.configure(bg=C["content_bg"])
-        self.win.grab_set()
+        _modal(self.win, parent)
         self._center(520, 640)
 
         tk.Label(self.win, text=("✏️  Edit User" if user_id else "➕  New User"),
@@ -519,6 +552,8 @@ class UserForm:
             self.status.set(str(e)[:120])
 
     def _save(self):
+        if not perm.allowed("users", "edit" if self.user_id else "add", parent=self.win):
+            return
         username = self.f["username"].get().strip()
         name = self.f["full_name_en"].get().strip()
         if not username or not name:
@@ -529,6 +564,10 @@ class UserForm:
                 role_id = x["role_id"]; break
         if not role_id:
             self.status.set("Please choose a role."); return
+        # v6.9.3: no privilege escalation — admin accounts / types are for admins
+        prob = _admin_problem(user_id=self.user_id, role_id=role_id, username=username)
+        if prob:
+            self.status.set(prob); return
         pw = self.f["password"].get()
         pw2 = self.f["password2"].get()
         if pw or pw2:
@@ -818,7 +857,18 @@ class RightsMatrixPanel:
             return False
         return True
 
+    def _may_edit_rights(self):
+        """The matrix rule (user_rights edit or settings), checked again at
+        the button itself."""
+        if perm.can("user_rights", "edit") or perm.can("user_rights", "settings"):
+            return True
+        messagebox.showwarning("Not allowed", "Your user type can't change user rights.\n\n"
+                               "Ask the administrator.", parent=self.parent)
+        return False
+
     def _new_role(self):
+        if not self._may_edit_rights():
+            return
         name = simpledialog.askstring("New user type",
                                       "Name of the new user type (e.g. Store Keeper):",
                                       parent=self.parent)
@@ -841,6 +891,8 @@ class RightsMatrixPanel:
                         "then 💾 Save Rights.")
 
     def _rename_role(self):
+        if not self._may_edit_rights():
+            return
         rid, old = self.role_id, self.role_var.get()
         if not rid:
             return
@@ -857,6 +909,8 @@ class RightsMatrixPanel:
         self._load_roles(select=name.strip())
 
     def _delete_role(self):
+        if not self._may_edit_rights():
+            return
         rid, name = self.role_id, self.role_var.get()
         if not rid:
             return
@@ -919,6 +973,8 @@ class RightsMatrixPanel:
     def _save(self):
         if not self.role_id:
             return False
+        if not self._may_edit_rights():
+            return False
         if (self.role_var.get() or "").strip().lower() in perm.FULL_ACCESS_ROLES:
             messagebox.showinfo("Rights",
                                 "Administrator types always have full access — "
@@ -931,6 +987,19 @@ class RightsMatrixPanel:
         # any right on a module implies being able to open it
         for mk, acts in grants.items():
             acts.add("view")
+        # v6.9.3: a user who is not an administrator can't GIVE a right
+        # he doesn't have himself (rights the type already had may stay)
+        if not perm.is_full_access():
+            had = perm.role_grants(self.role_id) or {}
+            new = sorted("%s ▸ %s" % (dict(perm.MODULES).get(mk, mk), dict(perm.ACTIONS).get(ak, ak))
+                         for mk, acts in grants.items() for ak in acts
+                         if ak not in had.get(mk, set()) and not perm.can(mk, ak))
+            if new:
+                messagebox.showwarning(
+                    "Rights", "You can't give rights you don't have yourself:\n\n• "
+                    + "\n• ".join(new[:15]) + ("\n…" if len(new) > 15 else "")
+                    + "\n\nUntick them, or ask an administrator.", parent=self.parent)
+                return False
         if perm.save_role_grants(self.role_id, grants):
             audit.log("update", "user_rights", self.role_id, self.role_var.get())
             self._dirty = False
@@ -954,7 +1023,7 @@ class LoginHistoryDialog:
     def __init__(self, parent):
         C = cfg.theme()
         self.win = tk.Toplevel(parent); self.win.bind("<Escape>", lambda e: self.win.destroy()); self.win.title("Login History")
-        self.win.configure(bg=C["content_bg"]); self.win.grab_set()
+        self.win.configure(bg=C["content_bg"]); _modal(self.win, parent)
         self.win.geometry("640x460")
         tk.Label(self.win, text="🕓  Login History", font=("Segoe UI", 13, "bold"),
                  bg=C["primary"], fg="white", pady=8).pack(fill="x")
@@ -987,7 +1056,7 @@ class LoginHistoryDialog:
 def _choose_dialog(parent, title, prompt, options):
     C = cfg.theme()
     win = tk.Toplevel(parent); win.title(title); win.configure(bg=C["content_bg"])
-    win.grab_set(); win.geometry("340x160")
+    _modal(win, parent); win.geometry("340x160")
     tk.Label(win, text=prompt, font=("Segoe UI", 10), bg=C["content_bg"],
              fg=C["text_primary"], wraplength=300).pack(padx=16, pady=(16, 8))
     var = tk.StringVar(value=options[0])

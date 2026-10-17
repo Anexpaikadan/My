@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from config import settings as cfg
 from config.language import t, is_rtl
 from config.database import db
+from ui import close_guard
 from modules.zatca.qr_generator import (
     generate_zatca_qr, generate_qr_photoimage, format_zatca_datetime
 )
@@ -384,6 +385,11 @@ class SalesInvoiceView:
         inv_id = self._get_sel_id()
         if not inv_id:
             return
+        # the same invoice already open → bring that window to the front
+        close_guard.single(("sales", inv_id), lambda: self._open_edit(inv_id),
+                           match=lambda f: getattr(f, "invoice_id", None) == inv_id)
+
+    def _open_edit(self, inv_id):
         # confirmed invoices can be corrected too: on save the old stock
         # and journal are reversed and the new ones posted (doc_edit)
         from modules import doc_edit
@@ -394,7 +400,7 @@ class SalesInvoiceView:
         q = doc_edit.ask_text("sales", inv_id, "edit")
         if q and not messagebox.askyesno("Edit Invoice", q):
             return
-        InvoiceForm(self.frame, invoice_id=inv_id, on_save=self._load_invoices)
+        return InvoiceForm(self.frame, invoice_id=inv_id, on_save=self._load_invoices)
 
     def _confirm_invoice(self):
         inv_id = self._get_sel_id()
@@ -766,7 +772,7 @@ class InvoiceForm:
             self.win.bind("<F10>", lambda e: self._save_and_print("default"))
             self.win.bind("<F11>", lambda e: self._save_and_print("dotmatrix"))
             self.win.bind("<F12>", lambda e: self._save_and_print("pdf"))
-        self.win.bind("<Escape>", lambda e: self.win.destroy())
+        close_guard.bind_escape(self.win)     # Esc = ✕ (asks if lines are unsaved)
 
         # ── Minimal header band ───────────────────────────────
         hdr = tk.Frame(self.win, bg=C["primary"], height=40)
@@ -2434,7 +2440,7 @@ class InvoiceForm:
             style.update(pady=3, padx=12, justify="center", anchor="center")
             return style
 
-        tk.Button(inner, command=self.win.destroy,
+        tk.Button(inner, command=lambda: close_guard.request_close(self.win),
                   **slim(ghost_key_style("", "Esc  " + t("common.cancel")))).pack(side="right", padx=(6, 0))
 
         if not self.view_only:
@@ -2568,6 +2574,28 @@ class InvoiceForm:
         finally:
             self._loading_doc = False
         self._on_price_category(reprice=False)
+        self._mark_clean()
+
+    # ── Close guard: ask only when lines are not saved ────────
+    def _lines_sig(self):
+        try:
+            return close_guard.lines_sig(self.line_grid.data_lines())
+        except Exception:
+            return ()
+
+    def _mark_clean(self):
+        """The grid now matches the saved / loaded invoice."""
+        self._clean_sig = self._lines_sig()
+
+    def _is_dirty(self):
+        """✕ / Esc / Cancel ask first only while the grid has lines that
+        are not saved: a new bill, or lines changed since load / save."""
+        if self.view_only:
+            return False
+        sig = self._lines_sig()
+        if not sig:
+            return False
+        return not self.invoice_id or sig != getattr(self, "_clean_sig", None)
 
     def _load_invoice_body(self, inv):
         # v6.9: a saved bill discount is already inside the lines
@@ -2919,6 +2947,7 @@ class InvoiceForm:
             except Exception as e:
                 doc_posting.last_warning = str(e)[:200]
             _tx.commit()          # everything above is kept together (or the except undoes it)
+            self._mark_clean()    # close guard: nothing unsaved now
 
             if not silent:
                 messagebox.showinfo(

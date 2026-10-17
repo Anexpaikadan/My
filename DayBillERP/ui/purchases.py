@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from config import settings as cfg
 from config.language import t
 from config.database import db
+from ui import close_guard
 
 
 class PurchaseInvoiceView:
@@ -219,7 +220,10 @@ class PurchaseInvoiceView:
 
     def _open(self):
         pid = self._sel()
-        if pid:
+        if not pid:
+            return
+
+        def go():
             from modules import doc_edit
             why = doc_edit.block_reason("purchase", pid, "edit")
             if why:           # still open it to look at — saving is refused
@@ -229,7 +233,10 @@ class PurchaseInvoiceView:
                 q = doc_edit.ask_text("purchase", pid, "edit")
                 if q and not messagebox.askyesno("Edit Purchase", q):
                     return
-            PurchaseForm(self.frame, pid, self._load)
+            return PurchaseForm(self.frame, pid, self._load)
+        # the same purchase already open → bring that window to the front
+        close_guard.single(("purchase", pid), go,
+                           match=lambda f: getattr(f, "purchase_id", None) == pid)
 
     def _confirm(self):
         pid = self._sel()
@@ -411,7 +418,7 @@ class PurchaseForm:
         self.win.bind("<F9>", lambda e: self._save(confirm=False))
         self.win.bind("<F10>", lambda e: self._save(confirm=True))
         self.win.bind("<F6>", lambda e: self._focus_barcode())
-        self.win.bind("<Escape>", lambda e: self.win.destroy())
+        close_guard.bind_escape(self.win)     # Esc = ✕ (asks if lines are unsaved)
 
         hdr = tk.Frame(self.win, bg=C["primary"], height=40)
         hdr.pack(fill="x"); hdr.pack_propagate(False)
@@ -550,7 +557,7 @@ class PurchaseForm:
         self.status_var = tk.StringVar()
         tk.Label(inner, textvariable=self.status_var, font=("Segoe UI", 9),
                  bg=C["card_bg"], fg=C["danger"]).pack(side="left")
-        tk.Button(inner, command=self.win.destroy,
+        tk.Button(inner, command=lambda: close_guard.request_close(self.win),
                   **__import__("ui.ui_kit", fromlist=["x"]).slim_ghost_key_style("Esc", "Cancel")).pack(
                       side="right", padx=(8, 0))
         from ui import print_menu
@@ -714,6 +721,26 @@ class PurchaseForm:
         except Exception:
             pass
         self._on_change()
+        self._mark_clean()
+
+    # ── close guard: ask only when lines are not saved ────────
+    def _lines_sig(self):
+        try:
+            return close_guard.lines_sig(self.grid.data_lines())
+        except Exception:
+            return ()
+
+    def _mark_clean(self):
+        """The grid now matches the saved / loaded purchase."""
+        self._clean_sig = self._lines_sig()
+
+    def _is_dirty(self):
+        """✕ / Esc / Cancel ask first only while the grid has lines that
+        are not saved: a new purchase, or lines changed since load / save."""
+        sig = self._lines_sig()
+        if not sig:
+            return False
+        return not self.purchase_id or sig != getattr(self, "_clean_sig", None)
 
     # ── save ──────────────────────────────────────────────────
     def _save(self, confirm=False, keep_open=False):
@@ -830,6 +857,7 @@ class PurchaseForm:
             except Exception as e:
                 doc_posting.last_warning = str(e)[:200]
             _tx.commit()            # kept together — or the except below undoes it all
+            self._mark_clean()      # close guard: nothing unsaved now
             if keep_open:                         # saved on the way to printing
                 self.status_var.set(f"💾 Saved {self.hdr['number'].get()} "
                                     f"({'confirmed' if confirm else 'draft'}).")

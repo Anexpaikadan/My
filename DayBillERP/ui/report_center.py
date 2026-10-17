@@ -736,24 +736,94 @@ class ReportCenterView:
             messagebox.showerror("Print", str(e)[:300], parent=self.frame)
 
     def _post_missing_cogs(self):
+        # v6.9.3: posting many journals at once → journal.approve; days in a
+        # closed (or not selected) financial year are skipped and listed;
+        # everything is posted in ONE transaction (all or nothing).
         try:
             from modules import permissions as _pm
-            if not _pm.allowed("accounts", "add"):
+            if not _pm.allowed("journal", "approve", parent=self.frame):
                 return
         except Exception:
-            pass
+            return
+        d_from, d_to = self.from_var.get(), self.to_var.get()
+        try:
+            runs, skipped = self._cogs_open_days(d_from, d_to)
+        except Exception as e:
+            messagebox.showerror("Cost of sales", str(e)[:300], parent=self.frame)
+            return
+        skip_txt = ""
+        if skipped:
+            n_inv = sum(n for _d, n in skipped)
+            days = ", ".join(d for d, _n in skipped[:8]) + (" …" if len(skipped) > 8 else "")
+            skip_txt = ("\n\nSkipped: %d sale(s) on %d day(s) in a closed financial year (or "
+                        "outside the year chosen at sign-in): %s" % (n_inv, len(skipped), days))
+        if not runs:
+            messagebox.showinfo("Cost of sales", "Nothing to post in this period." + skip_txt,
+                                parent=self.frame)
+            return
         if not messagebox.askyesno(
                 "Cost of sales",
                 "Post a cost-of-sales entry (Dr Cost of Goods Sold / Cr Inventory) for "
                 "every confirmed sale in this period that has none yet?\n\n"
                 "Use this once for sales saved before this update. Stock quantities "
-                "are not changed.", parent=self.frame):
+                "are not changed." + skip_txt, parent=self.frame):
             return
         try:
+            from config.database import db
             from modules import doc_posting
-            n, amt = doc_posting.post_missing_cogs(self.from_var.get(), self.to_var.get())
-            messagebox.showinfo("Cost of sales", f"Posted {n} entr{'y' if n == 1 else 'ies'} "
-                                f"· {amt:,.2f} SAR.", parent=self.frame)
-            self.run()
+            n, amt = 0, 0.0
+            with db.transaction():                  # all or nothing
+                for a, b in runs:
+                    k, x = doc_posting.post_missing_cogs(a, b)
+                    n += k
+                    amt += x
         except Exception as e:
-            messagebox.showerror("Cost of sales", str(e)[:300], parent=self.frame)
+            messagebox.showerror("Cost of sales", "Nothing was posted:\n%s" % str(e)[:300],
+                                 parent=self.frame)
+            return
+        try:
+            from ui import danger
+            danger.audit("post", "journal", None,
+                         "Missing cost of sales %s → %s: %d entr%s, %.2f SAR; %d day(s) skipped "
+                         "(closed year)" % (d_from, d_to, n, "y" if n == 1 else "ies", amt,
+                                            len(skipped)))
+        except Exception:
+            pass
+        messagebox.showinfo("Cost of sales", f"Posted {n} entr{'y' if n == 1 else 'ies'} "
+                            f"· {amt:,.2f} SAR." + skip_txt, parent=self.frame)
+        self.run()
+
+    @staticmethod
+    def _cogs_open_days(d_from, d_to):
+        """Days with confirmed sales that have no cost entry yet →
+        ([(from, to) runs of days that may be posted], [(day, sales) skipped]).
+        A day is skipped when financial_year.guard_active() says no."""
+        from config.database import db
+        from modules import financial_year as FY
+        where = ["si.invoice_status='confirmed'",
+                 "NOT EXISTS (SELECT 1 FROM journal_entries je WHERE je.source_type='cogs' "
+                 "AND je.source_id=si.invoice_id)"]
+        params = []
+        if d_from:
+            where.append("si.invoice_date >= ?"); params.append(d_from)
+        if d_to:
+            where.append("si.invoice_date <= ?"); params.append(d_to)
+        rows = db.fetchall("SELECT si.invoice_date AS d, COUNT(*) AS n FROM sales_invoices si WHERE "
+                           + " AND ".join(where) + " GROUP BY si.invoice_date ORDER BY si.invoice_date",
+                           tuple(params)) or []
+        runs, skipped, cur = [], [], None
+        for r in rows:
+            d = str(r["d"])[:10]
+            if FY.guard_active(d):                  # closed / not the chosen year
+                skipped.append((d, int(r["n"] or 0)))
+                if cur:
+                    runs.append(tuple(cur))
+                    cur = None
+                continue
+            if cur:
+                cur[1] = d
+            else:
+                cur = [d, d]
+        if cur:
+            runs.append(tuple(cur))
+        return runs, skipped

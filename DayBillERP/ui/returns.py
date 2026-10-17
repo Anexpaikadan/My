@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from config import settings as cfg
 from config.database import db
+from ui import close_guard
 
 
 CONF = {
@@ -122,7 +123,7 @@ class ReturnForm:
             self.win.bind("<F9>",  lambda e: self._save(confirm=False))
             self.win.bind("<F10>", lambda e: self._save(confirm=True))
             self.win.bind("<F6>",  lambda e: self._focus_barcode())
-        self.win.bind("<Escape>", lambda e: self.win.destroy())
+        close_guard.bind_escape(self.win)     # Esc = ✕ (asks if lines are unsaved)
 
         hdr = tk.Frame(self.win, bg=C["primary"], height=40)
         hdr.pack(fill="x"); hdr.pack_propagate(False)
@@ -281,7 +282,7 @@ class ReturnForm:
         self.status = tk.StringVar()
         tk.Label(inner, textvariable=self.status, font=("Segoe UI", 9),
                  bg=C["card_bg"], fg=C["danger"]).pack(side="left")
-        tk.Button(inner, command=self.win.destroy,
+        tk.Button(inner, command=lambda: close_guard.request_close(self.win),
                   **__import__("ui.ui_kit", fromlist=["x"]).slim_ghost_key_style("Esc", "Cancel")).pack(
                       side="right", padx=(8, 0))
         from ui import print_menu
@@ -478,6 +479,28 @@ class ReturnForm:
         except Exception:
             pass
         self._on_change()
+        self._mark_clean()
+
+    # ── close guard: ask only when lines are not saved ────────
+    def _lines_sig(self):
+        try:
+            return close_guard.lines_sig(self.grid.data_lines())
+        except Exception:
+            return ()
+
+    def _mark_clean(self):
+        """The grid now matches the saved / loaded return."""
+        self._clean_sig = self._lines_sig()
+
+    def _is_dirty(self):
+        """✕ / Esc / Cancel ask first only while the grid has lines that
+        are not saved: a new return, or lines changed since load / save."""
+        if self.view_only:
+            return False
+        sig = self._lines_sig()
+        if not sig:
+            return False
+        return not self.return_id or sig != getattr(self, "_clean_sig", None)
 
     # ── save ──────────────────────────────────────────────────
     def _save(self, confirm=False, keep_open=False):
@@ -610,6 +633,7 @@ class ReturnForm:
                     pass
             _tx.commit()                # all kept together — or the except undoes it all
             self.return_id = rid
+            self._mark_clean()          # close guard: nothing unsaved now
             if keep_open:                          # saved on the way to printing
                 self.status.set(f"💾 Saved {number} ({'confirmed' if confirm else 'draft'}).")
                 return True

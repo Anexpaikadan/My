@@ -264,14 +264,48 @@ def _has_return_binding(w):
         return True                   # unsure -> don't interfere
 
 
+def _window_ok(w):
+    """The window of `w` when it has its own Enter = OK (login, shift,
+    print box …) — the field then lets Enter through to it. While the
+    next field is still empty Enter keeps moving there (user name →
+    password)."""
+    try:
+        top = w.winfo_toplevel()
+        if top is w or not isinstance(top, tk.Toplevel) or not top.bind("<Return>"):
+            return None
+        nxt = w.tk_focusNext()
+        if nxt is not None and nxt is not w and nxt.winfo_toplevel() is top \
+                and nxt.winfo_class() in ("Entry", "TEntry") and not str(nxt.get()).strip():
+            return None
+        return top
+    except Exception:
+        return None
+
+
+def _enter_to_window(event, top):
+    """Let Enter reach the window's OK: None for Enter; numpad Enter is
+    replayed as Enter when the window binds only <Return>."""
+    if event.keysym == "KP_Enter" and not top.bind("<KP_Enter>"):
+        try:
+            event.widget.event_generate("<Return>")
+        except Exception:
+            pass
+        return "break"
+    return None
+
+
 def _enter_advances(w):
     """Enter (and numpad Enter) moves to the next field, like Excel.
     Widgets that already bind <Return> keep their own behaviour —
-    their Enter handler stays first priority, we never stack on it."""
+    their Enter handler stays first priority, we never stack on it.
+    In a window with its own Enter = OK the field steps aside."""
     if _has_return_binding(w):
         return
 
     def advance(event, wd=w):
+        top = _window_ok(wd)
+        if top is not None:
+            return _enter_to_window(event, top)
         try:
             nxt = wd.tk_focusNext()
             if nxt:
@@ -523,6 +557,9 @@ def enable_form_flow(root):
         try:
             if w.bind("<Return>"):            # widget owns Enter — step aside
                 return
+            top = _window_ok(w)               # window's own Enter = OK
+            if top is not None:
+                return _enter_to_window(event, top)
             nxt = w.tk_focusNext()
             if nxt is not None:
                 nxt.focus_set()
@@ -543,6 +580,9 @@ def enable_form_flow(root):
             if w.bind("<Return>"):            # replay its own Enter behaviour
                 w.event_generate("<Return>")
                 return "break"
+            top = _window_ok(w)               # window's own Enter = OK
+            if top is not None:
+                return _enter_to_window(event, top)
         except Exception:
             pass
         return _advance(event)
@@ -1082,6 +1122,11 @@ def _center_new_window(e):
         if not isinstance(w, tk.Toplevel) or getattr(w, "_daybill_centred", False):
             return
         w._daybill_centred = True
+        try:                               # Esc closes it (ui/close_guard.py)
+            from ui import close_guard as _cg
+            _cg.on_map(w)
+        except Exception:
+            pass
         try:                               # v6.7: clear edge + shadow, slim title strip
             from ui import compact as _cp
             w.after_idle(lambda: w.winfo_exists() and _cp.edges(w))

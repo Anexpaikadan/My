@@ -1,5 +1,7 @@
 # ============================================================
 # DayBill ERP - HR ▸ Leave and HR ▸ Attendance tabs (v6.0)
+# v6.9.3: Save leave = hr.add · Delete leave = hr.delete ·
+# Mark / Everyone present = hr.edit (Everyone present asks first)
 # ============================================================
 import tkinter as tk
 from tkinter import messagebox
@@ -7,6 +9,15 @@ from datetime import date
 
 from modules import hr_time as HT
 from ui import v6_kit as K
+
+
+def _allowed(action, parent):
+    """hr.<action> with the usual 'not allowed' message."""
+    try:
+        from modules import permissions as perm
+        return bool(perm.allowed("hr", action, parent=parent))
+    except Exception:
+        return False
 
 
 def _emp_labels():
@@ -71,6 +82,8 @@ class LeaveTab:
         self.bal_v.set(txt)
 
     def _save(self):
+        if not _allowed("add", self.frame):
+            return
         e = self._emp()
         lt = next((k for k, v in HT.LEAVE_TYPES if v == self.type_v.get()), "other")
         try:
@@ -97,7 +110,9 @@ class LeaveTab:
 
     def _delete(self):
         sel = self.tree.selection()
-        if sel and messagebox.askyesno("Delete leave", "Delete the selected leave?", parent=self.frame):
+        if not sel or not _allowed("delete", self.frame):
+            return
+        if messagebox.askyesno("Delete leave", "Delete the selected leave?", parent=self.frame):
             HT.delete_leave(int(sel[0]))
             self.load()
             self._show_balance()
@@ -155,6 +170,8 @@ class AttendanceTab:
         if not sel:
             self.msg_v.set("Select the employee(s) first (Ctrl / Shift + click for several).")
             return
+        if not _allowed("edit", self.frame):
+            return
         st = next((k for k, v in HT.STATUSES if v == self.st_v.get()), "present")
         try:
             for eid in sel:
@@ -166,7 +183,19 @@ class AttendanceTab:
         self.load()
 
     def _all_present(self):
-        for eid in self.tree.get_children():
-            if not self.tree.set(eid, "st") or self.tree.set(eid, "st") == "—":
+        if not _allowed("edit", self.frame):
+            return
+        todo = [eid for eid in self.tree.get_children()
+                if not self.tree.set(eid, "st") or self.tree.set(eid, "st") == "—"]
+        if not todo:
+            self.msg_v.set("Everyone is marked already for %s." % self.day_v.get())
+            return
+        if not messagebox.askyesno("Everyone present", "Mark %d employee(s) with no mark yet as "
+                                   "PRESENT on %s?" % (len(todo), self.day_v.get()), parent=self.frame):
+            return
+        try:
+            for eid in todo:
                 HT.mark(int(eid), self.day_v.get(), "present")
+        except ValueError as ex:
+            self.msg_v.set(str(ex))
         self.load()
