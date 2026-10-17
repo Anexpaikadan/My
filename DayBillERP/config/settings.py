@@ -325,8 +325,10 @@ DEFAULT_SETTINGS = {
     "pwd_min_length": 4, "perf_search_limit": 50,
     "pos_paper_size": "80mm", "auto_update_cost": True,
     "cost_basis": "Last Purchase", "barcode_check_digit": True,
-    "barcode_length": 6, "plu_enabled": True,
-    "barcode_start": 100001, "barcode_system_locked": True,
+    "barcode_length": 5, "plu_enabled": True,
+    "barcode_start": 10001, "barcode_system_locked": True,
+    # v6.9.5: every product's own 5-digit system barcode + which barcode labels print
+    "system_barcode_start": 10001, "label_barcode_source": "system",
     "pos_show_favorites": True,
     # WhatsApp (Settings ▸ WhatsApp)
     "wa_enabled": False, "wa_mode": "WhatsApp app (free — you press Send)",
@@ -430,6 +432,18 @@ def load_settings() -> dict:
         if str(_settings.get("barcode_length", 13)).strip() in ("13", "13.0", ""):
             _settings["barcode_length"] = 6
         _settings["barcode_six_digit_v5221"] = True
+        try:
+            save_settings()
+        except Exception:
+            pass
+    # v6.9.5: new products / units get 5-digit numbers (10001…). Installs on
+    # the 6-digit default move to 5 once; a length the user chose stays.
+    if not _settings.get("barcode_five_digit_v695"):
+        if str(_settings.get("barcode_length", 6)).strip() in ("6", "6.0", ""):
+            _settings["barcode_length"] = 5
+            if str(_settings.get("barcode_start", "")).strip() in ("100001", "100001.0", ""):
+                _settings["barcode_start"] = 10001
+        _settings["barcode_five_digit_v695"] = True
         try:
             save_settings()
         except Exception:

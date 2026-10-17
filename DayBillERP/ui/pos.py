@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from config import settings as cfg
 from config.language import t
 from config.database import db
+from modules.barcode_gen import sys_select     # v6.9.5: 5-digit system barcode
 
 try:
     from modules.smart_search import filter_products
@@ -122,7 +123,7 @@ class POSWindow:
             try:
                 self.products = db.fetchall(
                     "SELECT p.product_id, p.product_code, p.product_name_en, "
-                    "p.product_name_ar, p.unit_price, p.barcode, "
+                    "p.product_name_ar, p.unit_price, p.barcode, " + sys_select("p") + ", "
                     "ISNULL(p.alias_name,'') AS alias_name, "
                     "ISNULL(p.stock_quantity,0) AS stock_quantity, "
                     "ISNULL(p.reorder_level,0) AS reorder_level, "
@@ -139,7 +140,7 @@ class POSWindow:
                 # fallback if some columns/tables differ on this DB
                 self.products = db.fetchall(
                     "SELECT p.product_id, p.product_code, p.product_name_en, "
-                    "p.product_name_ar, p.unit_price, p.barcode, "
+                    "p.product_name_ar, p.unit_price, p.barcode, " + sys_select("p") + ", "
                     "ISNULL(p.alias_name,'') AS alias_name, "
                     "ISNULL(vc.vat_rate,15) AS vat_rate, "
                     "ISNULL(vc.category_code,'S') AS vat_code, p.vat_category_id "

@@ -608,13 +608,22 @@ def create_product(name_en, name_ar, category_id, vat_category_id, cost_base_exc
         locked = False
     maker_base = barcode or ""
     maker_pack = (pack[2] if pack and len(pack) > 2 else "") or ""
-    if locked:
+    from modules.barcode_gen import has_system_column, new_system_barcode
+    sys_on = has_system_column()
+    if sys_on:
+        # v6.9.5: the product's own 5-digit system barcode; the maker's barcode
+        # is the product's Barcode (manual); the piece scans with both
+        bc_base = new_system_barcode(exclude=[maker_base, maker_pack])
+        db.execute("UPDATE products SET system_barcode=?, barcode=? WHERE product_id=?",
+                   (bc_base, maker_base or None, pid))
+    elif locked:
         # system barcodes (6 digits) on the product + units; the barcode
         # printed by the maker goes in as an EXTRA barcode, so it scans too
         bc_base = new_unique_barcode(exclude=[maker_base, maker_pack])
     else:
         bc_base = maker_base or new_unique_barcode()
-    db.execute("UPDATE products SET barcode=? WHERE product_id=?", (bc_base, pid))
+    if not sys_on:
+        db.execute("UPDATE products SET barcode=? WHERE product_id=?", (bc_base, pid))
     units = [("PCs", 1.0, _f(sell_price), _f(cost_base_excl), bc_base, 1, 0 if pack else 1)]
     if pack and _f(pack[1]) > 1:
         f_ = _f(pack[1])
@@ -627,7 +636,7 @@ def create_product(name_en, name_ar, category_id, vat_category_id, cost_base_exc
                    "selling_price, purchase_price, barcode, is_default, is_default_purchase, "
                    "is_sales_unit, is_purchase_unit, is_active) VALUES (?,?,?,?,?,?,?,?,1,1,1)",
                    (pid, name, fac, sp, pp, bc, dflt, dpur))
-        maker = (maker_base if k == 0 else maker_pack) if locked else ""
+        maker = (("" if sys_on else maker_base) if k == 0 else maker_pack) if locked else ""
         if maker:
             try:
                 uid = db.execute_scalar("SELECT MAX(unit_id) FROM product_units WHERE product_id=?",

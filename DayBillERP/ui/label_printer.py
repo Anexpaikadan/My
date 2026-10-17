@@ -7,6 +7,8 @@
 #   • copies per row (type, + / −, "= stock"), whole categories
 #   • pick a design (★ = default) — live preview of the real label
 #   • ⚡ makes the missing barcodes (product + every unit) in one click
+#   • v6.9.5: Manual barcode and System barcode (5-digit, made by DayBill)
+#     are separate columns; "Print" chooses which one the label carries
 #   • Print → label printer, or PDF
 # Used as the "Print Labels" tab of Barcode & Labels, and as a window
 # from the Products list.
@@ -181,6 +183,16 @@ class LabelPrintPanel:
         if self.on_edit_design:
             self._btn(dr, "✏ Edit design", self._edit_design, small=True).pack(side="left", padx=6)
         self._btn(dr, "★ Use as default", self._make_default, small=True).pack(side="left")
+        # v6.9.5: which barcode the labels carry
+        tk.Label(dr, text="Print", font=("Segoe UI", 9, "bold"), bg=C["content_bg"],
+                 fg=C["text_primary"]).pack(side="left", padx=(16, 4))
+        self._sources = list(BR.LABEL_SOURCES)
+        self.source_cb = ttk.Combobox(dr, state="readonly", width=38, font=("Segoe UI", 9),
+                                      values=[t for _k, t in self._sources])
+        self.source_cb.pack(side="left")
+        keys = [k for k, _t in self._sources]
+        self.source_cb.current(keys.index(BR.label_source()) if BR.label_source() in keys else 0)
+        self.source_cb.bind("<<ComboboxSelected>>", lambda e: self._set_source())
 
         # add row
         ar = tk.Frame(self.frame, bg=C["content_bg"]); ar.pack(fill="x", padx=14, pady=(4, 2))
@@ -227,7 +239,7 @@ class LabelPrintPanel:
         left = tk.Frame(body, bg=C["card_bg"], highlightbackground=C["border"], highlightthickness=1)
         left.pack(side="left", fill="both", expand=True)
 
-        cols = ("product", "unit", "barcode", "price", "offer", "copies")
+        cols = ("product", "unit", "manual", "system", "price", "offer", "copies")
         st = ttk.Style()
         try:
             st.configure("Labels.Treeview", rowheight=28, font=("Segoe UI", 10))
@@ -237,9 +249,11 @@ class LabelPrintPanel:
         tw = tk.Frame(left, bg=C["card_bg"]); tw.pack(fill="both", expand=True, padx=4, pady=4)
         self.tree = ttk.Treeview(tw, columns=cols, show="headings", style="Labels.Treeview",
                                  selectmode="extended")
-        for k, t, w, a in (("product", "Product", 230, "w"), ("unit", "Unit", 104, "w"),
-                           ("barcode", "Barcode", 130, "w"), ("price", "Price (VAT)", 90, "e"),
-                           ("offer", "Offer", 110, "w"), ("copies", "Copies", 70, "center")):
+        for k, t, w, a in (("product", "Product", 210, "w"), ("unit", "Unit", 96, "w"),
+                           ("manual", "Manual barcode", 125, "w"),
+                           ("system", "System barcode", 105, "w"),
+                           ("price", "Price (VAT)", 86, "e"),
+                           ("offer", "Offer", 100, "w"), ("copies", "Copies", 64, "center")):
             self.tree.heading(k, text=t)
             self.tree.column(k, width=w, anchor=a, stretch=(k == "product"))
         vsb = ttk.Scrollbar(tw, orient="vertical", command=self.tree.yview)
@@ -420,8 +434,12 @@ class LabelPrintPanel:
             unit = (r.get("unit_name") or "") + ((" ×%g" % _f(r.get("factor"), 1))
                                                  if abs(_f(r.get("factor"), 1) - 1) > 1e-9 else "")
             price = _f(r.get("offer_price")) if r.get("offer_price") else _f(r.get("price_vat"))
+            man, sysc = r.get("manual_barcode") or "", r.get("system_barcode") or ""
+
+            def mark(v):                             # ▶ = the one this label prints
+                return ("▶ " + v) if v and v == bc else (v or "—")
             self.tree.insert("", "end", iid=str(i), values=(
-                r.get("product_name_en", ""), unit, bc or "⚠ none", "%.2f" % price,
+                r.get("product_name_en", ""), unit, mark(man), mark(sysc), "%.2f" % price,
                 r.get("offer_text") or "", r.get("copies", 1)),
                 tags=(() if bc else ("nobc",)))
         sel = [str(i) for i, r in enumerate(self.rows) if self._key(r) in keep]
@@ -446,6 +464,27 @@ class LabelPrintPanel:
 
     def _selected(self):
         return [self.rows[int(i)] for i in self.tree.selection() if int(i) < len(self.rows)]
+
+    def _set_source(self, key=None):
+        """Print: system barcode / manual barcode / manual else system (v6.9.5)."""
+        keys = [k for k, _t in self._sources]
+        if key is None:
+            i = self.source_cb.current()
+            key = keys[i] if 0 <= i < len(keys) else "system"
+        else:
+            self.source_cb.current(keys.index(key))
+        try:
+            cfg.set("label_barcode_source", key)
+            cfg.save_settings()
+        except Exception:
+            pass
+        for r in self.rows:
+            fb = "" if key == "manual" else (r.get("manual_barcode") or r.get("system_barcode") or "")
+            r["barcode_value"] = BR.pick_barcode(r, key) or fb
+        miss = sum(1 for r in self.rows if not r.get("barcode_value"))
+        self.msg_v.set(("⚠ %d row(s) have no %s barcode — they are left out" %
+                        (miss, "manual" if key == "manual" else "")) if miss else "")
+        self._render()
 
     def _on_select(self):
         s = self._selected()
@@ -573,7 +612,8 @@ class LabelPrintPanel:
         if r is None:
             r = {"product_name_en": "Sample Product 1L", "product_name_ar": "منتج تجريبي",
                  "unit_name": "PCs", "price_vat": 9.5, "unit_price": 9.5,
-                 "barcode_value": "6281000000014", "company_name": self._company}
+                 "barcode_value": "10001", "system_barcode": "10001",
+                 "manual_barcode": "6281000000014", "company_name": self._company}
         if not t:
             return
         lw, lh = _f(t.get("label_width_mm"), 50), _f(t.get("label_height_mm"), 25)

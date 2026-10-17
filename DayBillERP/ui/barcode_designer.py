@@ -561,7 +561,8 @@ class BarcodeDesignerView:
         sample = [{"product_name_en": "Sample Product 1kg", "product_name_ar": "منتج تجريبي",
                    "product_code": "PRD000001", "unit_price": 9.50, "purchase_price": 7.25,
                    "category_name": "Grocery", "brand_name": "DayBill", "stock_quantity": 24,
-                   "barcode_value": "6281000000014", "copies": 1}]
+                   "barcode_value": "10001", "system_barcode": "10001",
+                   "manual_barcode": "6281000000014", "copies": 1}]
         import tempfile
         path = os.path.join(tempfile.gettempdir(), "daybill_label_preview.pdf")
         try:

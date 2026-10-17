@@ -8,6 +8,7 @@
 #   1. a unit's own barcode          (product_units.barcode)  → that unit
 #   2. an extra barcode of a unit    (product_unit_barcodes)  → that unit
 #   3. the product's main barcode    (products.barcode)       → default unit
+#   3b. its 5-digit system barcode   (products.system_barcode, v6.9.5) → base unit
 #   4. the product code typed exactly                         → default unit
 #   5. a weighing-scale label (PLU + weight or price inside)  → base unit,
 #      with the weighed quantity / label amount
@@ -109,6 +110,13 @@ def resolve(code, scale=True, products=None):
     if not r:
         via = "product"
         r = _one("SELECT product_id FROM products WHERE barcode=?", (code,))
+    if not r:                                  # v6.9.5: the 5-digit system barcode = one piece
+        via = "system"
+        r = _one("SELECT product_id FROM products WHERE system_barcode=?", (code,))
+        if r:
+            base = next((u for u in units_of(r["product_id"])
+                         if abs(float(u.get("conversion_factor") or 1) - 1) < 1e-9), None)
+            r = {"product_id": r["product_id"], "unit_id": (base or {}).get("unit_id")}
     if not r:
         via = "code"
         r = _one("SELECT product_id FROM products WHERE product_code=?", (code,))
@@ -156,25 +164,59 @@ def describe(hit):
 
 # ── every product + every unit gets its own barcode ──────────────────
 def missing_count(product_ids=None):
-    """(products without a barcode, units without a barcode) — active only."""
+    """(products without a barcode, units without a barcode) — active only.
+    v6.9.5: a product's own barcode is its system barcode (a packet barcode
+    typed by hand is extra, never required)."""
+    from modules.barcode_gen import has_system_column
     ids = list(product_ids or [])
     where, params = "", ()
     if ids:
         where = " AND product_id IN (%s)" % ",".join("?" * len(ids))
         params = tuple(ids)
+    col = "system_barcode" if has_system_column() else "barcode"
     p = _one("SELECT COUNT(*) AS n FROM products WHERE ISNULL(is_active,1)=1 "
-             "AND ISNULL(barcode,'')=''" + where, params)
+             "AND ISNULL(%s,'')=''" % col + where, params)
     u = _one("SELECT COUNT(*) AS n FROM product_units WHERE ISNULL(is_active,1)=1 "
              "AND ISNULL(barcode,'')=''" + where, params)
     return int((p or {}).get("n") or 0), int((u or {}).get("n") or 0)
 
 
+def ensure_system_barcodes(product_ids=None):
+    """v6.9.5: every product (or the given ones) gets its 5-digit system
+    barcode. Returns [(product_id, code)]."""
+    from modules.barcode_gen import has_system_column, new_system_barcode
+    if not has_system_column():
+        return []
+    if product_ids:
+        rows = [r for r in (_one("SELECT product_id FROM products WHERE product_id=? "
+                                 "AND ISNULL(system_barcode,'')=''", (pid,)) for pid in product_ids) if r]
+    else:
+        rows = _all("SELECT product_id FROM products WHERE ISNULL(system_barcode,'')='' "
+                    "ORDER BY product_id")
+    made, taken = [], []
+    for r in rows:
+        code = new_system_barcode(exclude=taken)
+        taken.append(code)
+        db.execute("UPDATE products SET system_barcode=? WHERE product_id=?", (code, r["product_id"]))
+        made.append((r["product_id"], code))
+    return made
+
+
+def system_barcode(product_id):
+    """The product's system barcode ('' before the v6.9.5 update)."""
+    r = _one("SELECT ISNULL(system_barcode,'') AS s FROM products WHERE product_id=?", (product_id,))
+    return str((r or {}).get("s") or "")
+
+
 def ensure_barcodes(product_ids=None):
-    """Fill every missing barcode. The product's main barcode and its base
-    unit share ONE code (the code printed on a single piece); every other
-    unit (Box, Carton…) gets its own. Codes follow Settings ▸ Barcode and
-    are checked unused. Returns a list of (product_id, unit_name, code)."""
-    from modules.barcode_gen import new_unique_barcode
+    """Fill every missing barcode. Every product gets its 5-digit system
+    barcode (v6.9.5); its base unit scans with the packet barcode typed on
+    the product, else with that system barcode; every other unit (Box,
+    Carton…) gets its own. Codes follow Settings ▸ Barcode and are checked
+    unused. Returns a list of (product_id, unit_name, code)."""
+    from modules.barcode_gen import new_unique_barcode, has_system_column
+    made_sys = dict(ensure_system_barcodes(product_ids))
+    sys_on = has_system_column()
     if product_ids:
         prods = []
         for pid in product_ids:
@@ -194,6 +236,9 @@ def ensure_barcodes(product_ids=None):
 
     for p in prods:
         pid, pbc = p["product_id"], (p.get("barcode") or "").strip()
+        sbc = system_barcode(pid) if sys_on else ""
+        if pid in made_sys:
+            made.append((pid, "", made_sys[pid]))
         units = units_of(pid)
         base = next((u for u in units
                      if abs(float(u.get("conversion_factor") or 1) - 1) < 1e-9), None)
@@ -203,11 +248,11 @@ def ensure_barcodes(product_ids=None):
                 from modules.product_lookup import barcode_owner
                 owner = barcode_owner(pbc, exclude_product_id=pid)
             mine = any((u.get("barcode") or "").strip() == pbc for u in units)
-            code = pbc if (pbc and not owner and not mine) else fresh()
+            code = pbc if (pbc and not owner and not mine) else (sbc or fresh())
             db.execute("UPDATE product_units SET barcode=? WHERE unit_id=?", (code, base["unit_id"]))
             base["barcode"] = code
             made.append((pid, base.get("unit_name_en") or "", code))
-        if not pbc:
+        if not pbc and not sys_on:            # before v6.9.5 the product's own code lived here
             code = (base or {}).get("barcode") or fresh()
             db.execute("UPDATE products SET barcode=? WHERE product_id=?", (code, pid))
             if base is None:
@@ -253,10 +298,45 @@ def _prices(r, rate):
     return r
 
 
-def label_rows(product_id):
+LABEL_SOURCES = [("system", "System barcode (5-digit, made by DayBill)"),
+                 ("manual", "Manual barcode (typed / from the packet)"),
+                 ("manual_system", "Manual barcode, else the system barcode")]
+
+
+def label_source():
+    """Settings: which barcode a label prints (v6.9.5)."""
+    try:
+        from config import settings as cfg
+        v = str(cfg.get("label_barcode_source", "system") or "system")
+    except Exception:
+        v = "system"
+    return v if v in dict(LABEL_SOURCES) else "system"
+
+
+def is_system_code(code):
+    """A short number made by DayBill (5 / 6 digits), not a packet barcode."""
+    c = str(code or "").strip()
+    return c.isdigit() and len(c) < 8
+
+
+def pick_barcode(row, source=None):
+    """The barcode a label row prints for the chosen source."""
+    src = source or label_source()
+    man, sysc = row.get("manual_barcode") or "", row.get("system_barcode") or ""
+    if src == "manual":
+        return man
+    if src == "manual_system":
+        return man or sysc
+    return sysc or man
+
+
+def label_rows(product_id, source=None):
     """One printable row per unit of a product (or one row for a product
     without units): everything a label field can show — the unit's own
-    barcode and price, price with VAT, and a live offer."""
+    barcode and price, price with VAT, and a live offer. v6.9.5: each row
+    has its manual_barcode and system_barcode; barcode_value is the one
+    the label prints (Settings / the label screen: system, manual, or
+    manual else system)."""
     prod = _one("SELECT p.*, c.category_name_en AS category_name FROM products p "
                 "LEFT JOIN product_categories c ON c.category_id=p.category_id "
                 "WHERE p.product_id=?", (product_id,)) or \
@@ -265,21 +345,32 @@ def label_rows(product_id):
         return []
     rate = _vat_rate(prod)
     units = units_of(product_id)
+    man0 = (prod.get("barcode") or "").strip()
+    sys0 = str(prod.get("system_barcode") or "").strip()
     if not units:
         r = dict(prod)
         r.update(unit_id=None, unit_name=prod.get("unit_of_measure_en") or "", unit_name_ar="",
-                 factor=1.0, barcode_value=(prod.get("barcode") or "").strip())
+                 factor=1.0, manual_barcode=man0 if man0 != sys0 else "",
+                 system_barcode=sys0 or (man0 if is_system_code(man0) else ""))
+        r["barcode_value"] = pick_barcode(r, source)
         return [_prices(r, rate)]
     out = []
     for u in units:
         r = dict(prod)
         price = float(u.get("selling_price") or 0) or \
             float(prod.get("unit_price") or 0) * float(u.get("conversion_factor") or 1)
+        ubc = (u.get("barcode") or "").strip()
+        fac = float(u.get("conversion_factor") or 1)
+        if abs(fac - 1) < 1e-9:              # the piece: the product's own two barcodes
+            man = man0 or ("" if (ubc == sys0 or is_system_code(ubc)) else ubc)
+            sysc = sys0 or (ubc if is_system_code(ubc) else "")
+        else:                                # Box / Carton: the unit's own barcode
+            man = "" if is_system_code(ubc) else ubc
+            sysc = ubc if is_system_code(ubc) else ""
         r.update(unit_id=u["unit_id"], unit_name=u.get("unit_name_en") or "",
                  unit_name_ar=u.get("unit_name_ar") or "",
-                 factor=float(u.get("conversion_factor") or 1), unit_price=price,
-                 barcode_value=(u.get("barcode") or "").strip())
-        if not r["barcode_value"] and abs(r["factor"] - 1) < 1e-9:
-            r["barcode_value"] = (prod.get("barcode") or "").strip()
+                 factor=fac, unit_price=price, manual_barcode=man, system_barcode=sysc)
+        src = source or label_source()
+        r["barcode_value"] = pick_barcode(r, src) or ("" if src == "manual" else ubc)
         out.append(_prices(r, rate))
     return out

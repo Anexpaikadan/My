@@ -74,12 +74,16 @@ def values(form):
         bc = str(bc or "").strip()
         if bc and bc not in codes:
             codes.append(bc)
+    sysbc = str(_get(form, "system_barcode") or "").strip()
+    if sysbc in codes:
+        codes.remove(sysbc)                  # shown on its own row
     plu = str(_get(form, "scale_plu") or "").strip()
     return {"price": price, "gross": round(gross, 2), "net": round(net, 2), "rate": rate,
             "incl": incl, "cost": round(cost, 4), "profit": round(profit, 2),
             "pct": round(pct, 2) if pct is not None else None,
             "stock": _num(_get(form, "stock_quantity")), "unit": unit,
-            "plu": plu, "units": units[:3], "more_units": max(0, len(units) - 3), "barcodes": codes}
+            "plu": plu, "units": units[:3], "more_units": max(0, len(units) - 3), "barcodes": codes,
+            "system_barcode": sysbc}
 
 
 def _safe(r, k):
@@ -120,7 +124,7 @@ class ProductSummary:
         self.p_pct = tk.Label(self.pbox, text="—", font=("Segoe UI", 9, "bold"), bg=C["success"],
                               fg="white", padx=8, pady=2)
         self.p_pct.pack(side="right", padx=10)
-        for k, lbl in (("stock", "Stock"), ("plu", "PLU No")):
+        for k, lbl in (("stock", "Stock"), ("plu", "PLU No"), ("sysbc", "System barcode")):
             self.rows[k] = self._row(inner, lbl)
         tk.Frame(inner, bg=C["border"], height=1).pack(fill="x", pady=(6, 4))
         self._head(inner, "UNITS")
@@ -182,6 +186,7 @@ class ProductSummary:
         self.p_pct.configure(text=("%.1f %%" % v["pct"]) if v["pct"] is not None else "—", bg=fg)
         self.rows["stock"][1].configure(text="%g %s" % (v["stock"], v["unit"]))
         self.rows["plu"][1].configure(text=v["plu"] or "—")
+        self.rows["sysbc"][1].configure(text=v["system_barcode"] or "—")
         for i, (a, b) in enumerate(self.unit_rows):
             if i < len(v["units"]):
                 name, f, price = v["units"][i]
@@ -191,8 +196,8 @@ class ProductSummary:
                 a.configure(text="")
                 b.configure(text="")
         self.more_units.configure(text=("+ %d more" % v["more_units"]) if v["more_units"] else "")
-        self.bc_head.configure(text="BARCODES  (%d)" % len(v["barcodes"]))
+        self.bc_head.configure(text="OTHER BARCODES  (%d)" % len(v["barcodes"]))
         bcs = v["barcodes"]
         self.bc_text.configure(text="\n".join(bcs[:5]) + (("\n+ %d more" % (len(bcs) - 5)) if len(bcs) > 5 else "")
-                               if bcs else "— (made on Save)")
+                               if bcs else "—")
         return v

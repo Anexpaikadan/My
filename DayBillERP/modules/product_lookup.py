@@ -54,6 +54,10 @@ def barcode_owner(bc, exclude_product_id=None, exclude_unit_id=None):
         if not mine(r["product_id"]):
             return {"product_id": r["product_id"], "product_name": r["product_name_en"],
                     "unit_name": "base", "unit_id": None, "where": "product barcode"}
+    for r in _q("SELECT product_id, product_name_en FROM products WHERE system_barcode=?", (bc,)):
+        if not mine(r["product_id"]):             # v6.9.5: another product's system barcode
+            return {"product_id": r["product_id"], "product_name": r["product_name_en"],
+                    "unit_name": "base", "unit_id": None, "where": "system barcode"}
     return None
 
 
@@ -69,6 +73,9 @@ def barcode_product_ids(text, exact=False):
         out.setdefault(r["product_id"], r["barcode"])
     for r in _q(f"SELECT product_id, barcode FROM product_unit_barcodes WHERE barcode {op} ?",
                 (val,)):
+        out.setdefault(r["product_id"], r["barcode"])
+    for r in _q(f"SELECT product_id, system_barcode AS barcode FROM products "
+                f"WHERE system_barcode {op} ?", (val,)):      # v6.9.5: 5-digit system barcode
         out.setdefault(r["product_id"], r["barcode"])
     return out
 

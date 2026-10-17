@@ -322,7 +322,7 @@ class ProductsView:
             from ui.table_columns import product_columns
             product_columns(self.tree, ref="code", keys=[
                 "x_profit", "x_profit_pct", "x_cost", "x_last_cost", "x_plu", "x_stock_value",
-                "x_reorder", "x_unit1", "x_unit2", "x_unit3", "x_barcode", "x_barcodes",
+                "x_reorder", "x_unit1", "x_unit2", "x_unit3", "x_system_barcode", "x_barcode", "x_barcodes",
                 "x_brand", "x_location"])
         except Exception:
             pass
@@ -1389,6 +1389,12 @@ class ProductForm:
         fld = self.fields.get("barcode")
         if fld is None:
             return
+        sv = self.fields.get("system_barcode")
+        if sv is not None:               # v6.9.5: the 5-digit system barcode is already there
+            show_toast(self.win, "System barcode %s is made by DayBill. Scan or type the "
+                                 "packet barcode in Barcode (manual)." % (sv.get() or "—"),
+                       kind="info")
+            return
         if self._bc_locked():
             show_toast(self.win, "Barcodes are made by the system on Save "
                                  "(Settings ▸ Barcode).", kind="info")
@@ -1773,10 +1779,11 @@ class ProductForm:
     def _typed_barcodes(self):
         """Barcodes already entered on this form (not yet saved)."""
         out = []
-        try:
-            out.append(self.fields["barcode"].get())
-        except Exception:
-            pass
+        for k in ("barcode", "system_barcode"):
+            try:
+                out.append(self.fields[k].get())
+            except Exception:
+                pass
         for r in getattr(self, "unit_rows", []) or []:
             try:
                 v = r.get("barcode") if isinstance(r, dict) else None
@@ -2012,6 +2019,14 @@ class ProductForm:
                 price = round(base_price * factor, 2)
             if pprice <= 0 and base_pprice:
                 pprice = round(base_pprice * factor, 2)
+            if abs(factor - 1) < 1e-9:
+                # v6.9.5: the base unit IS the product — its price follows the
+                # Sales Price / Purchase Price boxes (a changed price no longer
+                # leaves the old one on the unit that sales and labels use)
+                if base_price > 0:
+                    price = base_price
+                if base_pprice > 0:
+                    pprice = base_pprice
             bc = r["barcode"].get().strip()
             if bc:
                 if bc in codes:
@@ -2058,6 +2073,8 @@ class ProductForm:
         kept = set()
         taken = [u["barcode"] for u in rows if u["barcode"]]
         main_bc = (self.fields["barcode"].get().strip() if self.fields.get("barcode") else "")
+        if not main_bc and self.fields.get("system_barcode") is not None:
+            main_bc = self.fields["system_barcode"].get().strip()     # v6.9.5
         for u in rows:
             bc = u["barcode"]
             if not bc and auto_bc:
@@ -2502,7 +2519,28 @@ class ProductForm:
         # the Units & Barcode table below)
         bc_row = tk.Frame(cl, bg=C["content_bg"])
         bc_row.pack(fill="x", padx=14, pady=(8, 0))
-        if self._bc_locked():
+        from modules.barcode_gen import has_system_column
+        if has_system_column():
+            # v6.9.5: two barcodes — the one on the packet (typed / scanned,
+            # optional) and the product's own 5-digit system barcode
+            bc_row.columnconfigure(0, weight=3, uniform="bc")
+            bc_row.columnconfigure(1, weight=2, uniform="bc")
+            _mv, _mcell = lbl_entry(bc_row, "Barcode (manual)", "barcode", col=0)
+            self.barcode_entry = [w for w in _mcell.winfo_children() if isinstance(w, tk.Entry)][-1]
+            self.barcode_entry.bind("<FocusOut>", lambda e=None: self._check_barcode_dup(
+                self.fields["barcode"], self.barcode_entry), add="+")
+            _sv, _scell = lbl_entry(bc_row, "System barcode", "system_barcode", col=1)
+            self.sysbc_entry = [w for w in _scell.winfo_children() if isinstance(w, tk.Entry)][-1]
+            self.sysbc_entry.configure(state="readonly", readonlybackground="#EFEDF8",
+                                       font=("Segoe UI", 10, "bold"), takefocus=0)
+            if self.product_id is None:
+                try:      # the number this product will get (fixed on Save) — never
+                    # the same number as its own auto product code (less confusing)
+                    from modules.barcode_gen import new_system_barcode
+                    _sv.set(new_system_barcode(exclude=[self.fields["product_code"].get()]))
+                except Exception:
+                    pass
+        elif self._bc_locked():
             _bv, _bcell = lbl_entry(bc_row, "Barcode  (auto · system)", "barcode")
             self.barcode_entry = [w for w in _bcell.winfo_children() if isinstance(w, tk.Entry)][-1]
             self.barcode_entry.configure(state="readonly", readonlybackground="#EFEDF8",
@@ -2957,7 +2995,7 @@ class ProductForm:
                         "description_en", "description_ar", "unit_price",
                         "unit_of_measure_ar",
                         "stock_quantity", "reorder_level", "barcode", "currency",
-                        "alias_name", "weight_unit", "scale_plu"]
+                        "alias_name", "weight_unit", "scale_plu", "system_barcode"]
             for k in str_keys:
                 if k in self.fields and data.get(k) is not None:
                     self.fields[k].set(str(data[k]))
@@ -3182,8 +3220,8 @@ class ProductForm:
                               vat_cats=self.vat_cats, on_save=self.on_save)
             # pre-fill the new form from the source product (new code required)
             for key, var in dlg.fields.items():
-                if key in ("product_code", "stock_quantity"):
-                    continue    # code must be unique; the copy starts with no stock
+                if key in ("product_code", "stock_quantity", "barcode", "system_barcode"):
+                    continue    # code / barcodes must be unique; the copy starts with no stock
                 if key in row and row[key] is not None:
                     try:
                         var.set(row[key])
@@ -3954,7 +3992,19 @@ class ProductForm:
 
         # System barcode (Settings ▸ Barcode): made by DayBill, 6 digits,
         # never typed — a fresh one if empty or taken meanwhile
-        if self._bc_locked() and self.fields.get("barcode") is not None:
+        if self.fields.get("system_barcode") is not None:
+            # v6.9.5: the 5-digit system barcode — made once, never typed
+            cur = self.fields["system_barcode"].get().strip()
+            if not cur or (not self._loaded_as_edit and self._barcode_owner(cur)):
+                try:
+                    from modules.barcode_gen import new_system_barcode
+                    self.fields["system_barcode"].set(new_system_barcode(
+                        exclude=[self.fields["barcode"].get().strip(),
+                                 self.fields["product_code"].get().strip()]))
+                except Exception as e:
+                    self.status_var.set("⚠️ " + str(e)[:120])
+                    return False
+        elif self._bc_locked() and self.fields.get("barcode") is not None:
             cur = self.fields["barcode"].get().strip()
             if not cur or (not self.product_id and self._barcode_owner(cur)):
                 try:
@@ -4059,6 +4109,8 @@ class ProductForm:
             "vat_category_id":    vat_id,
             "category_id":        cat_id,
             "barcode":            v("barcode") or None,
+            **({"system_barcode": v("system_barcode") or None}
+               if self.fields.get("system_barcode") is not None else {}),
             "track_inventory":    1 if self.track_var.get() else 0,
             "stock_quantity":     float(v("stock_quantity", "0") or 0),
             "reorder_level":      float(v("reorder_level", "0") or 0),

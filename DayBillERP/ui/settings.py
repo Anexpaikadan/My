@@ -150,11 +150,16 @@ SECTIONS = [
     ]},
     {"key": "barcode", "title": "Barcode", "icon": "🏷", "store": "app", "fields": [
         F("barcode_prefix", "Product Prefix"),
-        F("barcode_length", "Barcode Length (6 = short number 100001…, 13 = EAN-13)", "number"),
+        F("barcode_length", "Unit Barcode Length (5 = short number 10001…, 13 = EAN-13)", "number"),
         F("barcode_check_digit", "Check Digit Enabled (8+ digits)", "check"),
-        F("barcode_start", "First Auto Barcode (6 digits, e.g. 100001 or 543210)", "number"),
-        F("barcode_system_locked", "System Barcodes Are Made By DayBill Only (no typing / changing; "
-          "a maker's barcode goes in 🏷 Extra Barcodes)", "check"),
+        F("barcode_start", "First Auto Unit Barcode (5 digits, e.g. 10001 or 54321)", "number"),
+        F("system_barcode_start", "First System Barcode (every product's own 5-digit number, "
+          "e.g. 10001)", "number"),
+        F("label_barcode_source", "Labels print", "choice",
+          lambda: __import__("modules.barcode_resolver", fromlist=["x"]).LABEL_SOURCES),
+        F("barcode_system_locked", "Unit Barcodes Are Made By DayBill Only (no typing / changing; "
+          "the packet barcode goes in the product's Barcode (manual) box or 🏷 Extra Barcodes)",
+          "check"),
         F("barcode_label_size", "Default Label Size", "choice",
           ["20x10 mm", "30x20 mm", "40x25 mm", "50x25 mm", "60x40 mm",
            "2 × 7 (14/page)", "3 × 8 (24/page)", "4 × 10 (40/page)"]),

@@ -127,7 +127,7 @@ class InventoryView:
             from ui.table_columns import product_columns
             product_columns(self.stock_tree, ref="code", qty="stock", keys=[
                 "x_profit", "x_profit_pct", "x_last_cost", "x_plu", "x_stock_value", "x_unit1",
-                "x_unit2", "x_unit3", "x_barcode", "x_barcodes", "x_name_ar", "x_category",
+                "x_unit2", "x_unit3", "x_system_barcode", "x_barcode", "x_barcodes", "x_name_ar", "x_category",
                 "x_brand", "x_location"])
         except Exception:
             pass
@@ -295,7 +295,8 @@ class InventoryView:
             from ui.table_columns import product_columns
             product_columns(self.low_tree, ref="code", keys=[
                 "x_cost", "x_last_cost", "x_price", "x_plu", "x_unit1", "x_unit2", "x_unit3",
-                "x_barcode", "x_barcodes", "x_name_ar", "x_category", "x_brand", "x_location"])
+                "x_system_barcode", "x_barcode", "x_barcodes", "x_name_ar", "x_category", "x_brand",
+                "x_location"])
         except Exception:
             pass
         self._load_low()

@@ -361,6 +361,8 @@ def _field_value(key, item, el):
         "mfg_date": d(g("mfg_date", "manufacture_date")),
         "exp_date": d(g("exp_date", "expiry_date")),
         "barcode_value": g("barcode_value"),
+        "system_barcode": g("system_barcode"),          # v6.9.5: the 5-digit number
+        "manual_barcode": g("manual_barcode"),          # the packet barcode
         "unit": g("unit_name", "unit_of_measure_en"),
         "unit_ar": g("unit_name_ar"),
         # the price the customer pays NOW: the offer price while an offer runs
@@ -391,6 +393,7 @@ TOOLBOX = {
         ("product_name", "Product Name"), ("product_name_ar", "Product Name (Arabic)"),
         ("product_code", "Product Code"),
         ("sku", "SKU"), ("barcode", "Barcode"), ("qr", "QR Code"),
+        ("system_barcode", "System Barcode No."), ("manual_barcode", "Manual Barcode No."),
         ("category", "Category"), ("brand", "Brand"),
         ("batch", "Batch Number"), ("serial", "Serial Number"),
     ],

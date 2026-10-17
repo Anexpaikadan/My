@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from config import settings as cfg
 from config.language import t
 from config.database import db
+from modules.barcode_gen import sys_select     # v6.9.5: 5-digit system barcode
 from ui import close_guard
 
 
@@ -379,7 +380,7 @@ class PurchaseForm:
                 "ISNULL(p.alias_name,'') AS alias_name, "
                 "ISNULL(p.purchase_price,0) AS purchase_price, "
                 "ISNULL(p.stock_quantity,0) AS stock_quantity, "
-                "ISNULL(p.barcode,'') AS barcode, "
+                "ISNULL(p.barcode,'') AS barcode, " + sys_select("p") + ", "
                 "vc.category_code AS vat_code, ISNULL(vc.vat_rate,15) AS vat_rate "
                 "FROM products p LEFT JOIN vat_categories vc "
                 "ON p.vat_category_id=vc.vat_category_id "

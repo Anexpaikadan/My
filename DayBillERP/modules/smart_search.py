@@ -72,7 +72,8 @@ def smart_score(query: str, *fields) -> int:
 
 def filter_products(query: str, products: list,
                     name_keys=("product_name_en", "product_name_ar"),
-                    extra_keys=("alias_name", "product_code", "barcode")) -> list:
+                    extra_keys=("alias_name", "product_code", "barcode",
+                                "system_barcode")) -> list:
     """
     Filter + rank a list of product dicts by the query.
     Returns the matching products sorted by relevance.

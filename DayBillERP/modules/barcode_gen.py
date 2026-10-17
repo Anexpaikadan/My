@@ -213,8 +213,13 @@ SUPPORTED_FORMATS = [("code128", "Code 128"), ("ean13", "EAN-13"), ("qr", "QR Co
 
 # ─────────────────────────────────────────────────────────────
 # Settings-driven unique barcode (used by every "Generate" button)
-# Settings ▸ Barcode: Product Prefix (digits), Barcode Length (8-14),
-# Check Digit Enabled. Default = Saudi GS1 6281, 13 digits, EAN check.
+# Settings ▸ Barcode: Product Prefix (digits), Barcode Length (5-14),
+# Check Digit Enabled. Default (v6.9.5) = a 5-digit shop number 10001…
+#
+# v6.9.5 SYSTEM BARCODE: every product also has its own 5-digit number
+# made by DayBill (products.system_barcode, 10001 … 99999), apart from
+# the barcode typed / scanned from the packet (products.barcode). Both
+# scan in every barcode box. new_system_barcode() gives the next free one.
 # ─────────────────────────────────────────────────────────────
 def _mod10_check(body: str) -> int:
     """GS1 mod-10 check digit (works for EAN-8, UPC-A, EAN-13, ITF-14):
@@ -229,13 +234,13 @@ def barcode_rules():
     try:
         from config import settings as cfg
         prefix = "".join(ch for ch in str(cfg.get("barcode_prefix", "") or "") if ch.isdigit())
-        length = int(float(cfg.get("barcode_length", 6) or 6))
+        length = int(float(cfg.get("barcode_length", 5) or 5))
         check = cfg.flag("barcode_check_digit", True)
     except Exception:
-        prefix, length, check = "", 6, False
-    length = max(6, min(14, length))
+        prefix, length, check = "", 5, False
+    length = max(5, min(14, length))
     if length < 8:
-        check = False                  # short in-store number: plain 6 digits, no check digit
+        check = False                  # short in-store number: plain 5 digits, no check digit
     if not prefix:
         prefix = SAUDI_GS1_PREFIX if length >= 12 else ""
     prefix = prefix[:max(0, length - 5)]          # leave room for a serial
@@ -243,14 +248,17 @@ def barcode_rules():
 
 
 def _short_codes_in_use(length):
-    """Every barcode of exactly `length` characters in the 3 barcode places."""
+    """Every barcode (and product code — a code typed in a barcode box finds
+    its product too) of exactly `length` characters."""
     used = set()
     try:
         from config.database import db
         pat = "_" * length
         for sql in ("SELECT barcode FROM product_units WHERE barcode LIKE ?",
                     "SELECT barcode FROM product_unit_barcodes WHERE barcode LIKE ?",
-                    "SELECT barcode FROM products WHERE barcode LIKE ?"):
+                    "SELECT barcode FROM products WHERE barcode LIKE ?",
+                    "SELECT system_barcode AS barcode FROM products WHERE system_barcode LIKE ?",
+                    "SELECT product_code AS barcode FROM products WHERE product_code LIKE ?"):
             try:
                 for r in db.fetchall(sql, (pat,)) or []:
                     v = str(r.get("barcode") or "").strip()
@@ -264,13 +272,13 @@ def _short_codes_in_use(length):
 
 
 def _next_short_code(prefix, length, exclude):
-    """Short codes (6 digits by default) are given in order: 100001,
-    100002, … — the next number after the highest one in use, never one
-    already used by any product, unit or extra barcode."""
+    """Short codes (5 digits by default) are given in order: 10001,
+    10002, … — the next number after the highest one in use, never one
+    already used by any product, unit, extra or system barcode."""
     used = _short_codes_in_use(length) | {x for x in exclude if len(x) == length}
     free = length - len(prefix)
-    lo = int(prefix + "1" + "0" * (free - 1)) if free > 0 else 0   # 100000 for 6 digits
-    hi = int(prefix + "9" * free) if free > 0 else 0              # 999999
+    lo = int(prefix + "1" + "0" * (free - 1)) if free > 0 else 0   # 10000 for 5 digits
+    hi = int(prefix + "9" * free) if free > 0 else 0              # 99999
     # Settings ▸ Barcode ▸ First Auto Barcode (e.g. 543210): numbers start there
     try:
         from config import settings as cfg
@@ -294,7 +302,9 @@ def _barcode_taken(code: str) -> bool:
         from config.database import db
         for sql in ("SELECT COUNT(*) FROM product_units WHERE barcode=?",
                     "SELECT COUNT(*) FROM product_unit_barcodes WHERE barcode=?",
-                    "SELECT COUNT(*) FROM products WHERE barcode=?"):
+                    "SELECT COUNT(*) FROM products WHERE barcode=?",
+                    "SELECT COUNT(*) FROM products WHERE system_barcode=?",
+                    "SELECT COUNT(*) FROM products WHERE product_code=?"):
             try:
                 if db.execute_scalar(sql, (code,)):
                     return True
@@ -322,3 +332,52 @@ def new_unique_barcode(exclude=()) -> str:
             return code
     body = prefix + str(random.randint(10 ** (free - 1), 10 ** free - 1))
     return body + (str(_mod10_check(body)) if check else "")
+
+
+# ── v6.9.5: the product's own 5-digit system barcode ───────────────
+SYSTEM_LENGTH = 5
+
+
+_HAS_SYS = {}
+
+
+def has_system_column():
+    """True once the v6.9.5 update added products.system_barcode."""
+    if _HAS_SYS.get("yes"):
+        return True
+    try:
+        from config.database import db
+        ok = db.execute_scalar("SELECT COL_LENGTH('products','system_barcode')") is not None
+    except Exception:
+        ok = False
+    if ok:
+        _HAS_SYS["yes"] = True
+    return ok
+
+
+def new_system_barcode(exclude=()) -> str:
+    """The next free 5-digit system barcode: 10001, 10002 … (Settings ▸
+    Barcode ▸ First System Barcode can move the start), never a number
+    already used as any barcode or product code."""
+    exclude = {str(x) for x in exclude if x}
+    try:
+        from config import settings as cfg
+        st = int(float(str(cfg.get("system_barcode_start", "") or 0)))
+    except Exception:
+        st = 0
+    lo, hi = 10 ** (SYSTEM_LENGTH - 1), 10 ** SYSTEM_LENGTH - 1
+    used = _short_codes_in_use(SYSTEM_LENGTH) | {x for x in exclude if len(x) == SYSTEM_LENGTH}
+    first = st if lo < st <= hi else lo + 1
+    nums = [int(u) for u in used if u.isdigit() and first <= int(u) <= hi]
+    n = max(nums) + 1 if nums else first
+    for cand in list(range(n, hi + 1)) + list(range(first, n)):
+        code = str(cand)
+        if code not in used and not _barcode_taken(code):
+            return code
+    raise RuntimeError("All 5-digit system barcodes (10001 – 99999) are used.")
+
+
+def sys_select(alias="p"):
+    """SQL for the system barcode in a product SELECT ('' before the update)."""
+    return ("ISNULL(%s.system_barcode,'') AS system_barcode" % alias) if has_system_column() \
+        else "'' AS system_barcode"

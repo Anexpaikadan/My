@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from config import settings as cfg
 from config.language import t, is_rtl
 from config.database import db
+from modules.barcode_gen import sys_select     # v6.9.5: 5-digit system barcode
 from ui import close_guard
 from modules.zatca.qr_generator import (
     generate_zatca_qr, generate_qr_photoimage, format_zatca_datetime
@@ -695,7 +696,7 @@ class InvoiceForm:
                 "ISNULL(p.alias_name,'') AS alias_name, "
                 "ISNULL(p.purchase_price,0) AS purchase_price, "
                 "ISNULL(p.stock_quantity,0) AS stock_quantity, "
-                "ISNULL(p.barcode,'') AS barcode, "
+                "ISNULL(p.barcode,'') AS barcode, " + sys_select("p") + ", "
                 "vc.category_code AS vat_code, vc.vat_rate "
                 "FROM products p "
                 "LEFT JOIN vat_categories vc ON p.vat_category_id=vc.vat_category_id "

@@ -65,6 +65,11 @@ class MainWindow:
                 applied, errs = db_migrate.run_pending()
                 if applied:
                     print("[DayBill] applied patches:", ", ".join(applied))
+                try:          # v6.9.5: every product has its 5-digit system barcode
+                    from modules import barcode_resolver as _BR
+                    _BR.ensure_system_barcodes()
+                except Exception:
+                    pass
                 if errs:
                     from tkinter import messagebox
                     messagebox.showwarning(

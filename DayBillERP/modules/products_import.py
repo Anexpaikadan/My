@@ -169,11 +169,16 @@ def import_rows(rows):
     def _system_barcodes(pid, maker, uom, price, pprice):
         """Locked barcodes: a 6-digit system code on the product + its base
         unit; the maker's barcode from the sheet becomes an EXTRA barcode."""
-        from modules.barcode_gen import new_unique_barcode
+        from modules.barcode_gen import new_unique_barcode, has_system_column
+        sys_code = ""
+        if has_system_column():           # v6.9.5: the piece scans with the system barcode
+            from modules import barcode_resolver as _BR
+            _BR.ensure_system_barcodes([pid])
+            sys_code = _BR.system_barcode(pid)
         unit = db.fetchone("SELECT unit_id, barcode FROM product_units WHERE product_id=? "
                            "AND ISNULL(is_active,1)=1 ORDER BY conversion_factor", (pid,))
         if not unit:
-            code_ = new_unique_barcode(exclude=[maker])
+            code_ = sys_code or new_unique_barcode(exclude=[maker])
             db.execute("INSERT INTO product_units (product_id, unit_name_en, conversion_factor, "
                        "selling_price, purchase_price, barcode, is_default, is_sales_unit, "
                        "is_purchase_unit, is_active) VALUES (?,?,1,?,?,?,1,1,1,1)",
@@ -181,9 +186,16 @@ def import_rows(rows):
             unit = db.fetchone("SELECT unit_id, barcode FROM product_units WHERE product_id=? "
                                "ORDER BY unit_id DESC", (pid,))
         elif not (unit.get("barcode") or "").strip():
-            code_ = new_unique_barcode(exclude=[maker])
+            code_ = sys_code or new_unique_barcode(exclude=[maker])
             db.execute("UPDATE product_units SET barcode=? WHERE unit_id=?", (code_, unit["unit_id"]))
             unit["barcode"] = code_
+        if sys_code:
+            # v6.9.5: the maker's barcode from the sheet is the product's
+            # Barcode (manual); its system barcode is made above
+            if maker and not barcode_owner(maker, exclude_product_id=pid):
+                db.execute("UPDATE products SET barcode=? WHERE product_id=? "
+                           "AND ISNULL(barcode,'')=''", (maker, pid))
+            return
         db.execute("UPDATE products SET barcode=? WHERE product_id=? AND ISNULL(barcode,'')=''",
                    (unit["barcode"], pid))
         if maker and not barcode_owner(maker):

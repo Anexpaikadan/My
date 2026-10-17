@@ -42,7 +42,8 @@ FIELDS = [
     ("x_unit1", "Unit 1", "text", 150, False),
     ("x_unit2", "Unit 2", "text", 150, False),
     ("x_unit3", "Unit 3", "text", 150, False),
-    ("x_barcode", "Barcode", "text", 120, False),
+    ("x_system_barcode", "System Barcode", "text", 95, False),
+    ("x_barcode", "Barcode (manual)", "text", 120, False),
     ("x_barcodes", "Multi Barcode", "text", 210, False),
     ("x_name_ar", "Arabic Name", "text", 160, False),
     ("x_category", "Category", "text", 120, False),
@@ -126,12 +127,14 @@ def _load():
              "stock": _f(p.get("stock_quantity")), "reorder": _f(p.get("reorder_level")),
              "plu": "" if p.get("scale_plu") in (None, "") else str(p.get("scale_plu")),
              "barcode": str(p.get("barcode") or ""), "name_ar": p.get("product_name_ar") or "",
+             "system_barcode": str(p.get("system_barcode") or ""),
              "category": cats.get(p.get("category_id"), ""), "brand": brands.get(p.get("brand_id"), ""),
              "vat": rate, "location": p.get("storage_location") or "",
              "base_unit": p.get("unit_of_measure_en") or "", "units": [], "barcodes": []}
-        if d["barcode"]:
-            d["barcodes"].append(d["barcode"])
-            by_bc.setdefault(d["barcode"], pid)
+        for bc in (d["system_barcode"], d["barcode"]):        # v6.9.5: system barcode first
+            if bc and bc not in d["barcodes"]:
+                d["barcodes"].append(bc)
+                by_bc.setdefault(bc, pid)
         by_id[pid] = d
         if d["code"]:
             by_code[d["code"].lower()] = pid
@@ -228,6 +231,7 @@ def values(ref, qty=None, net=None, unit=None, mode="sale"):
         "x_stock_value": round(d["stock"] * cost, 2), "x_reorder": d["reorder"],
         "x_unit1": _unit_text(units[0]),
         "x_unit2": _unit_text(units[1]), "x_unit3": _unit_text(units[2]),
+        "x_system_barcode": d["system_barcode"],
         "x_barcode": d["barcode"], "x_barcodes": ", ".join(d["barcodes"]),
         "x_name_ar": d["name_ar"], "x_category": d["category"], "x_brand": d["brand"],
         "x_vat": d["vat"], "x_location": d["location"],
