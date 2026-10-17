@@ -33,6 +33,8 @@
 # title bar (dropdowns, calendars, tooltips, toasts).
 # ============================================================
 
+import re
+import weakref
 import tkinter as tk
 from tkinter import messagebox as _mb
 
@@ -340,11 +342,28 @@ def _grab_holder(win):
         return None
 
 
+def _big_window(top):
+    """Document-size windows keep their maximize button (Windows drops it
+    on transient windows); _keep_modal_up brings them back instead."""
+    if getattr(top, "_doc_window", False):
+        return True
+    try:
+        if not any(top.resizable()):
+            return False
+        m = re.match(r"(\d+)x(\d+)", str(top.wm_geometry()))
+        w, h = (int(m.group(1)), int(m.group(2))) if m else (0, 0)
+        w, h = max(w, top.winfo_reqwidth()), max(h, top.winfo_reqheight())
+        return w >= 900 and h >= 600
+    except Exception:
+        return False
+
+
 def _modal_prep(top):
     if any(n in _EXEMPT for n in _owners(top)):
         return
     try:
-        if not top.overrideredirect() and not str(top.transient() or ""):
+        if not top.overrideredirect() and not str(top.transient() or "") \
+                and not _big_window(top):
             m = top.master.winfo_toplevel() if top.master is not None else None
             if m is not None and m is not top and m.winfo_viewable():
                 top.transient(m)          # never drops behind its window
@@ -400,6 +419,8 @@ def _give_back_grab(win):
         cur = str(win.tk.call("grab", "current", str(win)) or "")
         if cur and cur != str(win):
             return                       # another window took it meanwhile
+        if _newer_open(getattr(win, "_daybill_seq", 0)):
+            return                       # a window opened from it must stay usable
         if prev.winfo_exists() and prev.winfo_viewable():
             _orig_grab_set(prev)
         elif cur:
@@ -410,11 +431,39 @@ def _give_back_grab(win):
 
 # ── 5. focus back to the field you were in ───────────────────
 _state = {"active": "", "seq": 0, "interps": set()}
+_live = weakref.WeakValueDictionary()      # open windows by creation number
 
 
 def _track_focus(e):
     try:
-        _state["active"] = str(e.widget.winfo_toplevel())
+        top = e.widget.winfo_toplevel()
+    except Exception:
+        return
+    _state["active"] = str(top)
+    _keep_modal_up(top)
+
+
+def _keep_modal_up(top):
+    """The window behind an open modal dialog got the focus (clicked,
+    Alt+Tab): bring the dialog back on top — the app never looks frozen."""
+    try:
+        name = str(top.tk.call("grab", "current", str(top)) or "")
+        if not name or _inside(top, name):
+            return                       # no modal, or we are in it
+        g = top.nametowidget(name)
+        if not isinstance(g, tk.Toplevel) or g.overrideredirect() \
+                or not getattr(g, "_daybill_seq", 0) \
+                or any(n in _EXEMPT for n in _owners(g)) or not g.winfo_viewable():
+            return
+
+        def up():
+            try:
+                if g.winfo_exists():
+                    g.lift()
+                    g.focus_force()
+            except Exception:
+                pass
+        g.after_idle(up)
     except Exception:
         pass
 
@@ -430,23 +479,35 @@ def _focus_now(top):
     return None
 
 
+def _newer_open(seq):
+    """A window opened after window number `seq` is still open (the form
+    that replaced it after Save, the invoice made from a quotation …)."""
+    for s, w in list(_live.items()):
+        try:
+            if s > seq and w.winfo_exists() and not w.overrideredirect() \
+                    and w.state() != "withdrawn":
+                return True
+        except Exception:
+            continue
+    return False
+
+
 def _return_focus(win):
     prev = getattr(win, "_daybill_prev_focus", None)
     win._daybill_prev_focus = None
+    seq = getattr(win, "_daybill_seq", 0)
+    _live.pop(seq, None)
     if prev is None or _state["active"] != str(win):
         return                           # it was not the window in use
-    seq = getattr(win, "_daybill_seq", 0)
 
     def go():
         try:
             if not prev.winfo_exists() or not prev.winfo_viewable():
                 return
+            if _newer_open(seq):
+                return                   # a newer window took over — leave it
             top = prev.winfo_toplevel()
             cur = str(prev.tk.call("focus") or "")
-            if cur:
-                ct = prev.nametowidget(str(prev.tk.call("winfo", "toplevel", cur)))
-                if ct is not top and getattr(ct, "_daybill_seq", 0) > seq:
-                    return               # a newer window took over — leave it
             top.lift()
             if cur:
                 prev.focus_set()
@@ -569,6 +630,7 @@ def _top_init(self, *a, **k):
         _install(self)
         _state["seq"] += 1
         self._daybill_seq = _state["seq"]
+        _live[self._daybill_seq] = self
         if prev is None:
             prev = _focus_now(self)
         if prev is None and self.master is not None:

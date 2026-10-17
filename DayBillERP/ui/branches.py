@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from config import settings as cfg
 from modules import branches as BR
+from ui import close_guard
 
 
 class BranchesView:
@@ -254,6 +255,7 @@ def choose_counter(root, force=False):
         win.transient(root)
     except Exception:
         pass
+    close_guard.bind_escape(win)            # Esc = decide later (asked again next start)
     head = tk.Frame(win, bg=C["primary"]); head.pack(fill="x")
     tk.Label(head, text="🖥  Which counter is this PC?", font=("Segoe UI", 12, "bold"),
              bg=C["primary"], fg="white").pack(side="left", padx=14, pady=8)

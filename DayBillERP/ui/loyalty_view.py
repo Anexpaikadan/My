@@ -11,6 +11,7 @@ from config import settings as cfg
 from config.database import db
 from modules import loyalty
 from modules import permissions as perm
+from ui import close_guard
 
 
 class LoyaltyDialog:
@@ -26,6 +27,7 @@ class LoyaltyDialog:
         w.geometry("620x460")
         w.configure(bg=C["content_bg"])
         w.transient(parent.winfo_toplevel())
+        close_guard.bind_escape(w)          # Esc closes (like ✕)
 
         top = tk.Frame(w, bg=C["content_bg"])
         top.pack(fill="x", padx=14, pady=(10, 4))

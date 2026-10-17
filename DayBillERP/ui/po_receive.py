@@ -13,6 +13,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 
 from config import settings as cfg
+from ui import close_guard
 
 STATUS = {"ok": "✔ OK", "short": "⚠ Short", "missing": "✖ Missing", "over": "➕ More",
           "extra": "★ Not on order"}
@@ -42,6 +43,7 @@ class ReceiveDialog:
             w.geometry("880x600")
         except Exception:
             pass
+        close_guard.bind_escape(w)          # Esc closes (like ✕)
         top = tk.Frame(w, bg=C["card_bg"]); top.pack(fill="x")
         tk.Label(top, text="📦  Receive goods — %s" % (h.get("po_number") or ""),
                  font=("Segoe UI", 13, "bold"), bg=C["card_bg"], fg=C["text_primary"]).pack(

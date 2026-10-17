@@ -143,6 +143,7 @@ class ConsumptionForm:
         self.lines = []
         self._load_products()
         w = self.win = tk.Toplevel(parent)
+        w._is_dirty = self._is_dirty        # close guard: ask only when unsaved
         w.title("Consumable Entry")
         w.geometry("940x620")
         w.minsize(760, 460)

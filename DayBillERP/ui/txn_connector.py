@@ -640,7 +640,9 @@ class TxnBar:
 
         # buttons first (right side), so a narrow window never hides them
         if not in_band and not own:
-            btn("✖ Close", win.destroy, True)
+            # like ✕: asks first when the form has unsaved lines
+            from ui import close_guard as _cg
+            btn("✖ Close", lambda: _cg.request_close(win), True)
         if key not in ("opening", "system"):
             if not own:
                 btn("🗑 Delete", self.delete, r["delete"], fg=C.get("danger", "#DC2626"),
@@ -692,16 +694,14 @@ class TxnBar:
             shortcuts.show(win, "transaction")
         bind(("<F1>",), help_)
 
-        def close():
-            try:
-                h = win.protocol("WM_DELETE_WINDOW")
-                if h:
-                    win.tk.call(h)
-                    return
-            except Exception:
-                pass
-            win.destroy()
-        bind(("<Escape>",), close)
+        # Esc = ✕ (ui/close_guard.py) — but a cell editor / dropdown that
+        # handles Esc itself keeps it, and unsaved lines ask first
+        try:
+            from ui import close_guard as _cg
+            if not win.bind("<Escape>"):
+                _cg.bind_escape(win)
+        except Exception:
+            pass
 
     # current transaction (the form may have saved a new one meanwhile)
     def txn(self):
@@ -738,7 +738,11 @@ class TxnBar:
     def edit(self):
         t = self.txn()
         parent = self.win.master or self.win
-        self.win.destroy()
+        # close this view like ✕ (asks only when something is unsaved);
+        # kept open → no second window
+        from ui import close_guard as _cg
+        if not _cg.request_close(self.win, quiet=True):
+            return
         edit_txn(parent, t, self.on_change)
 
     def new(self):

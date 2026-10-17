@@ -19,6 +19,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from config import settings as cfg
 from modules import insights as AI
 from modules import inventory_ai as IA
+from ui import close_guard
 
 PRIO = {"high": "#DC2626", "medium": "#D97706", "low": "#2563EB"}
 
@@ -606,6 +607,7 @@ class AskAIWindow:
             w.geometry("760x600")
         except Exception:
             pass
+        close_guard.bind_escape(w)          # Esc closes (like ✕)
         head = tk.Frame(w, bg=C["card_bg"]); head.pack(fill="x")
         tk.Label(head, text="💬  Ask AI about your stock", font=("Segoe UI", 13, "bold"),
                  bg=C["card_bg"], fg=C["text_primary"]).pack(anchor="w", padx=14, pady=(10, 0))
