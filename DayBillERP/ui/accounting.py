@@ -885,6 +885,11 @@ class JournalForm:
         try:
             from modules import financial_year as fy
             msg = fy.guard_active(self.date_var.get())
+            if not msg:     # v6.9.5: the saved voucher's own date too (a closed
+                            # year's voucher could be moved out by a new date)
+                old = db.execute_scalar("SELECT entry_date FROM journal_entries "
+                                        "WHERE journal_id=?", (self.journal_id,))
+                msg = fy.guard_active(str(old)[:10]) if old else ""
             if msg:
                 raise ValueError(msg)
         except ValueError:

@@ -15,6 +15,8 @@
 #   • the document's date is in a closed / locked financial year
 #   • a sales invoice was already REPORTED / CLEARED to ZATCA
 #     (the law wants a credit note = Sales Return instead)
+#   • (edit only, v6.9.5) the document is cancelled, or it is a debit
+#     note (its lines are amounts — delete it and make it again)
 # ============================================================
 
 import os
@@ -73,6 +75,15 @@ def block_reason(kind, doc_id, action="edit"):
         return (f"{number} is confirmed. Editing / deleting confirmed documents is "
                 "switched off (Settings ▸ Sales ▸ Allow edit / delete of confirmed "
                 "documents).")
+    if status == "cancelled" and action == "edit":
+        # v6.9.5: Edit + Save & Confirm brought a cancelled bill back (stock
+        # out and books again) — cancelling "cannot be undone"
+        return f"{number} is cancelled — it can't be changed."
+    if kind == "sales" and action == "edit" and str(r.get("invoice_kind") or "").lower() == "debit":
+        # v6.9.5: its lines are amounts, not items — the Sales Invoice window
+        # showed it empty, and items typed there replaced the note's lines
+        return (f"{number} is a debit note — it can't be changed in the Sales Invoice "
+                "window. Delete it and make it again (Debit Notes).")
     if kind in ("sales", "sales_return"):
         z = str(r.get("zatca_status") or "").lower()
         if z in ("reported", "cleared"):

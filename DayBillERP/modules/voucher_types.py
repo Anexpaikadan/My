@@ -62,6 +62,7 @@ BY_SOURCE = {
     "expense": "EX", "transfer": "CT",
     "manual": "JV", "journal": "JV", "voucher": "JV", "blank": "JV",
     "opening": "OB", "opening_accounts": "OB", "opening_stock": "OB", "adjustment": "JV",
+    "opening_customer": "OB", "opening_supplier": "OB",          # v6.9.5
     "stock_adjust": "ADJ", "cycle_count": "ADJ", "consumption": "CE",
     "payroll": "PY", "salary_payment": "SAL", "gosi_payment": "GOSI", "eos": "EOS",
     "employee_loan": "LN", "day_close": "DC", "shift": "SH",

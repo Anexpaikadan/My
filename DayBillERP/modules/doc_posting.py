@@ -563,8 +563,14 @@ def sync(kind, doc_id, tenders=None):
         return ""
     # the whole re-post is ONE unit of work; inside a document save it is
     # a savepoint of that save's transaction (v5.27)
+    from modules import posting
     with db.transaction():
-        return _sync(kind, doc_id, tenders)
+        # v6.9.5: an edit re-posts with the journal numbers it had
+        posting.remember_numbers(KINDS[kind]["journals"], doc_id)
+        try:
+            return _sync(kind, doc_id, tenders)
+        finally:
+            posting.forget_numbers(KINDS[kind]["journals"], doc_id)
 
 
 def _sync(kind, doc_id, tenders):

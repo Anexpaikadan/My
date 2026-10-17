@@ -184,6 +184,19 @@ def apply(payment_id, kind, alloc):
     return round(total, 2)
 
 
+def party_moved(kind, doc_id, party_id):
+    """v6.9.5: True when a saved bill is being moved to another customer /
+    supplier — then unlink_document() gives what the old party paid or
+    returned on it back to the old party's account (an advance)."""
+    s = _spec(kind)
+    try:
+        old = db.execute_scalar(f"SELECT {s['party']} FROM {s['table']} WHERE {s['id']}=?",
+                                (doc_id,))
+    except Exception:
+        return False
+    return bool(old and party_id and int(old) != int(party_id))
+
+
 def unlink_document(kind, doc_id):
     """A cancelled / deleted invoice drops its links: the receipts that
     paid it become advances on the party's account again."""

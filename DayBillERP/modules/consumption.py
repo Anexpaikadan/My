@@ -109,6 +109,9 @@ def save(header, lines, entry_id=None, user_id=None):
     when = str(header.get("entry_date") or date.today().isoformat())[:10]
     from modules import financial_year as fy
     msg = fy.lock_message(when)
+    if not msg and entry_id:        # v6.9.5: the saved entry's own rules (closed
+        from modules import doc_edit    # year, …) — a new date never moves it out
+        msg = doc_edit.block_reason("consumption", entry_id, "edit")
     if msg:
         raise ValueError(msg)
     purpose = header.get("purpose") or "staff_food"

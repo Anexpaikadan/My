@@ -748,6 +748,11 @@ class PurchaseForm:
         from modules import permissions as _pm
         if not _pm.allowed("purchase", "edit" if self.purchase_id else "add"):
             return False
+        # v6.9.5: a CONFIRMED purchase stays confirmed when it is changed
+        # (F9 / Save Draft took its stock, books and payments back out)
+        if self.purchase_id and not confirm:
+            from modules import doc_edit
+            confirm = doc_edit.info("purchase", self.purchase_id)[1] == "confirmed"
         try:
             self._lines = self.grid.data_lines()
         except Exception:
@@ -787,11 +792,17 @@ class PurchaseForm:
         method = str(self.hdr["payment"].get() or "credit").lower()
         paid = total if method in ("cash", "bank_transfer", "bank", "card", "cheque") else 0
         pay_status = "paid" if paid else "unpaid"
+        _moved = False
         if self.purchase_id:
             try:   # supplier payments settled on this purchase stay counted
                 from modules import allocation
-                paid = min(total, paid + allocation.allocated_total(
-                    "disbursement", self.purchase_id))
+                # v6.9.5: moved to another supplier → what was paid / returned
+                # to the old one stays on the old one's account (below)
+                _moved = allocation.party_moved("disbursement", self.purchase_id,
+                                                s["supplier_id"])
+                if not _moved:
+                    paid = min(total, paid + allocation.allocated_total(
+                        "disbursement", self.purchase_id))
                 pay_status = ("paid" if paid >= total - 0.005 else
                               ("partial" if paid > 0.005 else "unpaid"))
             except Exception:
@@ -801,6 +812,9 @@ class PurchaseForm:
         try:
             _tx = db.begin()
             if self.purchase_id:
+                if _moved:
+                    from modules import allocation
+                    allocation.unlink_document("disbursement", self.purchase_id)
                 db.execute("UPDATE purchase_invoices SET supplier_id=?, "
                            "supplier_invoice_no=?, invoice_date=?, payment_method=?, "
                            "subtotal_amount=?, taxable_amount=?, vat_amount=?, "

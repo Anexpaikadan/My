@@ -2881,11 +2881,15 @@ class POSWindow:
             inv = db.fetchone("SELECT invoice_number FROM sales_invoices "
                               "WHERE invoice_id=?", (invoice_id,)) or {}
             invoice_number = inv.get("invoice_number", str(invoice_id))
+            # v6.9.5: a held (draft) bill paid at the till is a sale now —
+            # confirmed, so its stock and books post (it stayed a draft)
             db.execute(
                 "UPDATE sales_invoices SET customer_id=?, customer_name_en=?, "
                 "customer_name_ar=?, subtotal_amount=?, taxable_amount=?, "
                 "vat_amount=?, total_amount=?, payment_method=?, "
-                "payment_status=?, paid_amount=?, discount_amount=?, updated_at=GETDATE() "
+                "payment_status=?, paid_amount=?, discount_amount=?, updated_at=GETDATE(), "
+                "invoice_status=CASE WHEN invoice_status='draft' THEN 'confirmed' "
+                "ELSE invoice_status END "
                 "WHERE invoice_id=?",
                 (h["cust_id"], h["cust_en"], h["cust_ar"], h["gross"], h["gross"], h["vat"],
                  h["total"], h["pay"], h["pay_status"], h["paid_amt"],

@@ -594,6 +594,7 @@ class ExpenseForm:
                            "amount=?, vat_amount=?, payment_method=?, paid_from_account_id=?, "
                            "reference=?, description=?, journal_id=NULL WHERE expense_id=?",
                            (vdate, acc_id, net, vat, method, paid_from, ref, desc, eid))
+                posting.remember_numbers(("expense",), eid)    # v6.9.5: same EX number
                 _delete_expense_journals(eid, old.get("journal_id"))
             else:
                 db.execute(
@@ -616,6 +617,7 @@ class ExpenseForm:
                                        method=self.method_var.get(),
                                        on_credit=on_credit, reference=ref,
                                        description=desc or what, supplier_id=sup_id)
+            posting.forget_numbers(("expense",), eid)
             if jid:
                 db.execute("UPDATE expenses SET journal_id=? WHERE expense_id=?",
                            (jid, eid))

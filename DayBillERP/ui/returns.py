@@ -506,9 +506,16 @@ class ReturnForm:
 
     # ── save ──────────────────────────────────────────────────
     def _save(self, confirm=False, keep_open=False):
+        if self.view_only:                 # v6.9.5: a view-only window never saves
+            return False
         from modules import permissions as _pm
         if not _pm.allowed(("sales_return" if self.mode == "sales" else "purchase_return"), ("edit" if self.return_id else "add")):
             return False
+        # v6.9.5: a CONFIRMED return stays confirmed when it is changed
+        # (F9 / Save Draft took its stock and books back out)
+        if self.return_id and not confirm:
+            from modules import doc_edit
+            confirm = doc_edit.info(f"{self.mode}_return", self.return_id)[1] == "confirmed"
         try:
             self._lines = self.grid.data_lines()
         except Exception:

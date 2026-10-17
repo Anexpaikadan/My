@@ -414,6 +414,11 @@ class ConsumptionForm:
         action = "edit" if self.entry_id else "add"
         if not perm.allowed("consumption", action, parent=self.win):
             return False
+        # v6.9.5: a CONFIRMED entry stays confirmed when it is changed
+        # (Save draft / Ctrl+D took its stock and journal back out)
+        if self.entry_id and not confirm:
+            from modules import doc_edit
+            confirm = doc_edit.info("consumption", self.entry_id)[1] == "confirmed"
         if not self.lines:
             messagebox.showwarning("Consumable Entry", "Add at least one item.", parent=self.win)
             return False

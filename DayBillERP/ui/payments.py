@@ -948,6 +948,8 @@ class PaymentForm:
                     "SELECT payment_number FROM payments WHERE payment_id=?",
                     (pay_id,)) or "?"
                 from modules.doc_actions import delete_linked_journals
+                # v6.9.5: the new journal keeps the voucher number (same CR / CP …)
+                posting.remember_numbers(("receipt" if is_receipt else "payment",), pay_id)
                 delete_linked_journals("receipt" if is_receipt else "payment", pay_id)
                 allocation.release(pay_id)
                 action = "updated"
@@ -978,6 +980,7 @@ class PaymentForm:
             else:
                 jid = posting.post_payment(pay_id, iso_date, party["id"], amount,
                                            method=self.method_var.get(), reference=pnum)
+            posting.forget_numbers(("receipt" if is_receipt else "payment",), pay_id)
             # invoices it settles
             done = allocation.apply(pay_id, self.ptype, alloc)
             try:

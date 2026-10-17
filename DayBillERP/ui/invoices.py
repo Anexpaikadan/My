@@ -1564,6 +1564,12 @@ class InvoiceForm:
         if not self._lines or all(not l.get("product_id") for l in self._lines):
             messagebox.showinfo("Hold Sale", "Add at least one product first.")
             return
+        if self.invoice_id:          # v6.9.5: a confirmed bill is never put back on hold
+            from modules import doc_edit
+            if doc_edit.info("sales", self.invoice_id)[1] == "confirmed":
+                messagebox.showinfo("Hold Sale", "This bill is already confirmed — "
+                                    "Save keeps your changes.", parent=self.win)
+                return
         # Save as draft (pending) without closing
         ok = self._save(confirm=False, keep_open=True, silent=True)
         if ok is False:
@@ -2147,6 +2153,8 @@ class InvoiceForm:
         for v in ("cash_var", "card_var", "bank_var", "bill_discount_var", "round_var"):
             if hasattr(self, v):
                 getattr(self, v).set("0.00")
+        if hasattr(self, "full_pay_var"):      # v6.9.5: ticked by a loaded cash bill
+            self.full_pay_var.set(False)
         self._loaded_points = self._saved_points_extra = 0
         if hasattr(self, "points_var"):
             self.points_var.set("0")
@@ -2630,6 +2638,16 @@ class InvoiceForm:
             self.cash_var.set(f"{float(tend.get('cash') or 0):,.2f}")
             self.card_var.set(f"{float(tend.get('bank') or 0):,.2f}")
             self.bank_var.set("0.00")
+            # v6.9.5: a bill paid in full in cash stays paid in full when its
+            # lines change (Cash Rcvd ticked → the cash follows the total);
+            # before, the difference went on the customer's account
+            if hasattr(self, "full_pay_var"):
+                _tot = float(inv.get("total_amount") or 0)
+                self.full_pay_var.set(
+                    _tot > 0 and str(inv.get("invoice_status") or "").lower() == "confirmed"
+                    and str(inv.get("payment_method") or "").lower() == "cash"
+                    and not float(tend.get("bank") or 0)
+                    and abs(float(tend.get("cash") or 0) - _tot) < 0.005)
 
         # Customer
         cid = inv.get("customer_id")
@@ -2664,9 +2682,17 @@ class InvoiceForm:
 
     # ── Save ──────────────────────────────────────────────────
     def _save(self, confirm=False, keep_open=False, silent=False):
+        if self.view_only:                 # v6.9.5: a view-only window never saves
+            return False
         from modules import permissions as _pm
         if not _pm.allowed("sales", "edit" if self.invoice_id else "add"):
             return False
+        # v6.9.5: a CONFIRMED bill stays confirmed when it is changed — F9 /
+        # Save Draft / Hold turned it back into a draft (stock, books and
+        # the receipts settled on it were undone)
+        if self.invoice_id and not confirm:
+            from modules import doc_edit
+            confirm = doc_edit.info("sales", self.invoice_id)[1] == "confirmed"
         # Pull the latest lines straight from the grid
         try:
             self._lines = self.line_grid.data_lines()
@@ -2810,11 +2836,17 @@ class InvoiceForm:
             # 'credit' leaves all zero → whole bill on the customer's account
         t_bank += t_card
         paid_amt = round(min(total, t_cash + t_bank), 2)
+        _moved = False
         if self.invoice_id:
             try:   # receipts settled on this invoice later stay counted
                 from modules import allocation
-                paid_amt = round(min(total, paid_amt + allocation.allocated_total(
-                    "receipt", self.invoice_id)), 2)
+                # v6.9.5: moved to another customer → what the old one paid or
+                # returned on it goes back to the old one's account (below)
+                _moved = allocation.party_moved("receipt", self.invoice_id,
+                                                cust["customer_id"])
+                if not _moved:
+                    paid_amt = round(min(total, paid_amt + allocation.allocated_total(
+                        "receipt", self.invoice_id)), 2)
             except Exception:
                 pass
         pay_status = ("paid" if paid_amt >= total - 0.005
@@ -2826,6 +2858,9 @@ class InvoiceForm:
         try:
             _tx = db.begin()
             if self.invoice_id:
+                if _moved:
+                    from modules import allocation
+                    allocation.unlink_document("receipt", self.invoice_id)
                 # Update
                 db.execute(
                     "UPDATE sales_invoices SET "

@@ -73,6 +73,51 @@ def _next_journal_number():
 
 last_error = ""
 
+# v6.9.5: an edited document / receipt / expense is posted again — its new
+# journal gets the number the old one had (same voucher type), like Tally.
+# Before, every edit took the next number (SI-000001 became SI-000004).
+_KEEP = {}          # (source_type, source_id) -> {voucher_type: journal_number}
+
+
+def remember_numbers(source_types, source_id):
+    """Call just before the journals of a source are deleted to be
+    posted again: the new ones take these numbers back."""
+    if not source_id:
+        return
+    for st in source_types:
+        try:
+            rows = db.fetchall("SELECT journal_number, voucher_type FROM journal_entries "
+                               "WHERE source_type=? AND source_id=?", (st, int(source_id))) or []
+        except Exception:
+            rows = []
+        nums = {str(r.get("voucher_type") or "").upper(): r["journal_number"]
+                for r in rows if r.get("journal_number") and r.get("voucher_type")}
+        if nums and len(nums) == len(rows):
+            _KEEP[(st, int(source_id))] = nums
+        else:
+            _KEEP.pop((st, int(source_id)), None)
+
+
+def forget_numbers(source_types, source_id):
+    for st in source_types:
+        try:
+            _KEEP.pop((st, int(source_id)), None)
+        except Exception:
+            pass
+
+
+def _kept_number(source_type, source_id, vtype):
+    """The old number for this new journal, when it is free again."""
+    try:
+        nums = _KEEP.get((source_type, int(source_id)))
+    except Exception:
+        nums = None
+    num = nums.pop(str(vtype or "").upper(), None) if nums else None
+    if num and not db.execute_scalar("SELECT COUNT(*) FROM journal_entries "
+                                     "WHERE journal_number=?", (num,)):
+        return num
+    return None
+
 
 def _fail(msg):
     """Remember why the last posting failed (shown to the user)."""
@@ -165,7 +210,9 @@ def post_journal(entry_date, description, lines, source_type, source_id,
         for _attempt in range(4):
             try:
                 with db.transaction():
-                    jnum = _vt.next_number(vtype) if _vt and vtype else _next_journal_number()
+                    jnum = ((_kept_number(source_type, source_id, vtype) if vtype and source_id
+                             and _attempt == 0 else None)
+                            or (_vt.next_number(vtype) if _vt and vtype else _next_journal_number()))
                     db.execute(
                         "INSERT INTO journal_entries (journal_number, entry_date, reference, "
                         "description_en, source_type, source_id, total_debit, total_credit, "

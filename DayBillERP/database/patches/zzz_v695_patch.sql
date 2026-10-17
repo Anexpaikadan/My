@@ -62,3 +62,10 @@ BEGIN
     DROP TABLE #sb_used;
 END
 GO
+
+-- customer / supplier opening balances are OB vouchers (they were JV)
+IF COL_LENGTH('journal_entries','voucher_type') IS NOT NULL
+    EXEC(N'UPDATE journal_entries SET voucher_type = N''OB''
+           WHERE LOWER(ISNULL(source_type, N'''')) IN (N''opening_customer'', N''opening_supplier'')
+             AND ISNULL(voucher_type, N''JV'') = N''JV''');
+GO
