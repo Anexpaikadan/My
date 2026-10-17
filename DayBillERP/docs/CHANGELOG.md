@@ -2,6 +2,69 @@
 
 Newest first. The short guide is in the main README.md.
 
+## 💾 v6.9.3 — stay open after Save, shortcut keys, favourites, consumable entry, voucher types, rights
+
+- **Entry windows stay open after Save.** Sales Invoice, Purchase, Sales /
+  Purchase Return, Quotation / Purchase Order, Receipt / Payment, Cash /
+  Bank vouchers, Expense, Journal, Consumable Entry, Product, Customer,
+  Supplier and Stock Adjustment no longer close: the same window starts the
+  next entry at the same place and size, and shows "✔ Saved <number>".
+  Editing a saved entry stays on that entry. Settings ▸ System ▸ *After
+  saving an entry*: start a new entry (default) · show the saved entry ·
+  close the window (the old way). Save & Print and Hold already stayed open.
+- **Shortcut keys everywhere, all listed in Help.** F1 (Help ▸ ⌨ Keyboard
+  Shortcuts) opens one searchable list. Main window: F2 Sales, F3 POS,
+  F4 Purchases, F5 refresh, F6 new Cash Receipt, F7 new Cash Payment,
+  F8 Products, F9 Ledger, F11 Stock, F12 Reports, Ctrl+N new in the open
+  screen, Ctrl+L / I / E / R / P / J, Ctrl+Shift+N product, Ctrl+Shift+C
+  consumable, Ctrl+Shift+J journal voucher, Ctrl+Shift+Z day close, Ctrl+W
+  close screen, Ctrl+Tab next screen. Every transaction window: Ctrl+S save,
+  Ctrl+N new, Ctrl+E edit, Ctrl+Delete delete, Ctrl+J voucher lines, Esc
+  close. A window's own keys always win.
+- **⭐ Favourites** at the top of the side menu, per user: Cash Payment, Cash
+  Receipt, Ledger, Stock, Sales, POS, Add Product, Sales Return, Purchase,
+  Purchase Return. Right-click any menu item to add it; right-click a
+  favourite to remove it, move it up / down or reset the list. A favourite
+  the user has no right to is not shown.
+- **🍞 Consumable Entry** (Inventory ▸ Consumable Entry, Ctrl+Shift+C): stock
+  the shop uses itself — staff / room food, a production unit (bakery,
+  kitchen), shop supplies, samples, damaged / expired. Stock goes out at
+  average cost; the journal debits the purpose's expense (new accounts 5460
+  Staff Food & Welfare, 5470 Production Materials Used, 5480 Shop Supplies
+  Used, 5490 Samples & Tasting; damaged → 5160) and credits Inventory.
+  Draft, edit, delete, ledger double-click and its own user right
+  (copied from Stock Adjustment for existing user types).
+- **Voucher types on every journal**, Tally style: SI sales invoice, POS,
+  SR sales return, DN debit note, COS cost of sales, PI purchase, PR purchase
+  return, CR / BR cash / bank receipt, CP / BP cash / bank payment, EX
+  expense, CT contra, JV journal, OB opening, ADJ stock adjustment, CE
+  consumable, PY payroll, SAL salary, GOSI, EOS, LN loan, DC day close, SH
+  shift. Cash or bank is decided by the account the money went through. New
+  journals are numbered per type (CR-000015). Shown in the ledger, the
+  voucher list (filter by type), the journal list, Day Book and Journal
+  Register; new report Voucher Type Summary. Old journals get their type by
+  the update.
+- **User rights checked on every screen and button**, and one-click mass
+  changes are gone: Clear Stock (stock-adjustment approve right + type
+  CLEAR), year close / reopen (type the year), restore a backup and the DB
+  Tool (full-access user + typed name), make the payroll again / delete a
+  payroll month, connect ZATCA production / disconnect ZATCA — each needs
+  its right and a typed word, and is written to the Audit Log. Settings,
+  bulk rate change and posting missing cost of sales check their right
+  first. Deleting a
+  CONFIRMED bill, purchase, return or consumable entry asks you to type its
+  number (a draft is one Yes / No). Users cannot give themselves or others
+  more rights than they have. After 5 wrong passwords the sign-in waits a
+  minute.
+- **Pop-up windows**: Esc closes every dialog (a cell editor or open list
+  first); ✕ / Esc / Close ask "close without saving?" only when something
+  is not saved; a modal dialog stays above its window and gives the focus
+  back when it closes; the POS, calculator, price check and the same bill
+  open once (the second time brings the open one to the front); Enter = OK
+  in small dialogs, numpad Enter too.
+- New update `database/patches/zzz_v693_patch.sql` (voucher types,
+  consumable tables and accounts, rights).
+
 ## ⭐ v6.9.2 — loyalty points, VAT the ZATCA way
 
 - **Loyalty points** (Settings ▸ Customer ▸ ⭐ Loyalty points; off until you

@@ -338,6 +338,41 @@ def run(out_dir=None):
             raise RuntimeError("the cash customer would collect points")
     step("Loyalty points", loyalty_v692)
 
+    def voucher_types_v693():
+        from modules import voucher_types as VT, db_migrate as M
+        if "zzz_v693_patch.sql" not in [os.path.basename(p) for p in M.patch_files()]:
+            raise RuntimeError("update zzz_v693_patch.sql is missing")
+        want = {"sales": "SI", "pos": "POS", "purchase": "PI", "sales_return": "SR",
+                "purchase_return": "PR", "consumption": "CE", "manual": "JV"}
+        bad = [k for k, c in want.items() if VT.code_for(k) != c]
+        if bad or VT.code_for("adjustment", reference="OPENING") != "OB":
+            raise RuntimeError("wrong voucher type for %s" % (bad or "opening"))
+        if VT.code_for("receipt", [-1]) != "BR" or VT.code_for("payment", [-1]) != "BP":
+            raise RuntimeError("a receipt / payment with no cash line is not BR / BP")
+    step("Voucher types (SI, CR, CP …)", voucher_types_v693)
+
+    def consumption_v693():
+        from modules import consumption as CN, doc_posting as DP, permissions as P
+        if "consumption" not in DP.KINDS:
+            raise RuntimeError("consumable entry does not post")
+        if "consumption" not in [m for m, _l in P.MODULES]:
+            raise RuntimeError("consumable entry has no user right")
+        if CN.PURPOSES[0][0] != "staff_food" or not all(len(p) >= 3 for p in CN.PURPOSES):
+            raise RuntimeError("consumable purposes / accounts are wrong")
+    step("Consumable entry (own use)", consumption_v693)
+
+    def entry_windows_v693():
+        from ui import after_save as AS, shortcuts as SC, danger
+        if AS.mode() not in ("new", "keep", "close") or len(AS.MODES) != 3:
+            raise RuntimeError("after-save setting is broken")
+        keys = [k for k, _w in SC.GLOBAL]
+        dup = sorted(set(k for k in keys if keys.count(k) > 1))
+        if dup or "F1" not in keys or not SC.all_rows():
+            raise RuntimeError("shortcut list is wrong: %s" % (dup or "F1 missing"))
+        if not callable(getattr(danger, "gate", None)):
+            raise RuntimeError("typed confirmation for dangerous actions is missing")
+    step("Entry windows: shortcuts, stay open after Save, typed confirmations", entry_windows_v693)
+
     text = "DayBill ERP self-test  %s\n%s\n\n%s\n" % (
         datetime.now().strftime("%Y-%m-%d %H:%M"), "-" * 40, "\n".join(rows))
     text += "\nRESULT: %s\n" % ("ALL OK" if ok_all else "PROBLEMS FOUND")

@@ -10,7 +10,7 @@ import re
 try:                                    # one version for the whole app (config/version.py)
     from config.version import VERSION as APP_VERSION
 except Exception:
-    APP_VERSION = "6.9.2"
+    APP_VERSION = "6.9.3"
 
 # Ordered list of database patches shipped with the app.
 # (filename relative to project root, human description, version)
@@ -35,6 +35,25 @@ PATCHES = [
 
 # What changed in each version (shown in the Updates panel)
 CHANGELOG = [
+    ("6.9.3", ["💾 After Save the entry window stays open for the next entry — Sales, Purchase, "
+               "Returns, Quotation / PO, Receipt / Payment, Vouchers, Expense, Journal, "
+               "Consumable Entry, Product, Customer, Supplier, Stock Adjustment. Settings ▸ "
+               "System ▸ After saving an entry: new entry (default) · show the saved one · close",
+               "⌨ Shortcut keys everywhere (F1 lists them all): F2 Sales, F3 POS, F4 Purchases, "
+               "F6 Cash Receipt, F7 Cash Payment, F9 Ledger, Ctrl+N new … and in every "
+               "transaction window Ctrl+S / Ctrl+N / Ctrl+Delete / Ctrl+J / Esc",
+               "⭐ Favourites at the top of the side menu (Cash Payment, Cash Receipt, Ledger, "
+               "Stock, Sales, POS, Add Product, Sales Return, Purchase, Purchase Return); "
+               "right-click to add / remove / move",
+               "🍞 Consumable Entry: stock used by the shop itself (staff food, bakery / kitchen "
+               "production, shop supplies, samples, damaged) — stock out at cost + expense",
+               "🏷 Voucher types on every journal (SI, POS, SR, PI, PR, CR, BR, CP, BP, JV, CE …), "
+               "numbered per type (CR-000015); shown in the ledger, vouchers and Day Book",
+               "🔐 User rights checked everywhere; Clear Stock, year close / reopen, restore, "
+               "make the payroll again, disconnect ZATCA need the right AND a typed word; "
+               "deleting a confirmed bill asks for its number",
+               "🪟 Pop-ups: Esc closes every dialog, ✕ asks only when something is unsaved, a "
+               "window opens once (POS, calculator, the same bill) and focus comes back"]),
     ("6.9.2", ["⭐ Loyalty points: customers earn on every bill and spend points as a discount "
                "(Sales Invoice ▸ ⭐ Pts box, POS ▸ ⭐ Points / F10); Customers ▸ ⭐ Points shows "
                "the history and gives / takes points; Report Center ▸ ⭐ Loyalty Points. "

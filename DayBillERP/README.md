@@ -1,4 +1,4 @@
-# 🇸🇦 DayBill ERP  v6.9
+# 🇸🇦 DayBill ERP  v6.9.3
 
 Billing, POS, inventory, accounts and HR for Saudi shops.
 **ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
@@ -60,6 +60,32 @@ DayBillERP/
 Sign in as `admin` (password set at first sign-in), then make a user for each
 person in **Users & Rights** with a user type (Cashier, Sales, Manager …).
 Every screen and every New / Edit / Delete button follows those rights.
+Actions that change many records at once (Clear Stock, year close / reopen,
+restore a backup, make the payroll again, disconnect ZATCA …) need their
+right **and** a typed word; deleting a confirmed bill asks you to type its
+number.
+
+## ⌨ Keys, favourites, after Save
+
+- **F1** anywhere (Help ▸ ⌨ Keyboard Shortcuts) lists every key. F2 Sales,
+  F3 POS, F4 Purchases, F6 Cash Receipt, F7 Cash Payment, F8 Products,
+  F9 Ledger, F11 Stock, F12 Reports, Ctrl+N new in the open screen. In every
+  transaction window: Ctrl+S save, Ctrl+N new, Ctrl+Delete delete, Ctrl+J
+  voucher lines, Esc close.
+- **⭐ Favourites** at the top of the side menu: Cash Payment, Cash Receipt,
+  Ledger, Stock, Sales, POS, Add Product, Sales Return, Purchase, Purchase
+  Return. Right-click any menu item to add it; right-click a favourite to
+  remove or move it.
+- **After Save the window stays open** for the next entry (the saved number
+  shows in it). Settings ▸ System ▸ *After saving an entry*: start a new
+  entry (default) · show the saved entry · close the window.
+- Every journal carries a **voucher type**: SI sales, POS, SR sales return,
+  PI purchase, PR purchase return, CR / BR cash / bank receipt, CP / BP cash /
+  bank payment, JV journal, CE consumable entry … (Report Center ▸ Voucher
+  Types).
+- **🍞 Consumable Entry** (Inventory): stock the shop uses itself — staff /
+  room food, bakery or kitchen production, shop supplies, samples, damaged.
+  Stock goes out at cost and the expense is booked (CE voucher).
 
 ## 📒 Ledger → transaction
 
