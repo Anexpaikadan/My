@@ -317,6 +317,16 @@ class ProductsView:
         self.tree.tag_configure("inactive", foreground="#9CA3AF")
         self.tree.tag_configure("even",     background="#FAFAFA")
 
+        # v6.9.4: ☰ ▸ ➕ More columns — profit, cost, PLU, units 1-3, barcodes …
+        try:
+            from ui.table_columns import product_columns
+            product_columns(self.tree, ref="code", keys=[
+                "x_profit", "x_profit_pct", "x_cost", "x_last_cost", "x_plu", "x_stock_value",
+                "x_reorder", "x_unit1", "x_unit2", "x_unit3", "x_barcode", "x_barcodes",
+                "x_brand", "x_location"])
+        except Exception:
+            pass
+
         # Events
         self.tree.bind("<Double-1>", self._on_double)
         self.tree.bind("<Delete>",   lambda e=None: self._delete_product())

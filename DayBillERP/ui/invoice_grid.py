@@ -43,11 +43,27 @@ COLUMNS = [
     ("vat",     "VAT",          75,  "e"),
     ("total",   "Total",        95,  "e"),
     ("stock",   "Stock Details",90,  "center"),
-    ("purchase","Purchase",     80,  "e"),
+    ("purchase","Cost",         80,  "e"),
     ("x",       "X",            30,  "center"),
     ("profit",  "Profit",       70,  "e"),
     ("boxqty",  "Box Qty",      60,  "center"),
+    # v6.9.4 "More columns" — hidden until ticked (☰ / right-click a heading)
+    ("profit_pct", "Profit %",  70,  "e"),
+    ("plu",     "PLU No",       70,  "center"),
+    ("unit1",   "Unit 1",       140, "w"),
+    ("unit2",   "Unit 2",       140, "w"),
+    ("unit3",   "Unit 3",       140, "w"),
+    ("barcodes","Multi Barcode",200, "w"),
+    ("name_ar", "Arabic Name",  170, "e"),
+    ("category","Category",     110, "w"),
+    ("stock_value", "Stock Value", 95, "e"),
 ]
+OPTIONAL = {"profit_pct", "plu", "unit1", "unit2", "unit3", "barcodes", "name_ar",
+            "category", "stock_value"}
+COST_COLUMNS = {"purchase", "profit", "profit_pct", "stock_value"}
+_PI_KEY = {"plu": "x_plu", "unit1": "x_unit1", "unit2": "x_unit2", "unit3": "x_unit3",
+           "barcodes": "x_barcodes", "name_ar": "x_name_ar", "category": "x_category",
+           "stock_value": "x_stock_value"}
 
 
 def filter_exact_code(q, products):
@@ -143,6 +159,13 @@ class InvoiceGrid(tk.Frame):
         # v6.2 columns tool: hidden / moved / resized columns → the footer follows;
         # sales, purchase, return… forms each remember their own columns
         self.tree._keep_columns = {"product"}
+        self.tree._ct_optional = set(OPTIONAL)
+        try:                     # cost / profit only for users who may see cost
+            from modules import product_info as _PI
+            if not _PI.can_see_cost():
+                self.tree._ct_forbid = set(COST_COLUMNS)
+        except Exception:
+            pass
         try:
             from ui.table_columns import set_name
             set_name(self.tree, "entry_grid:%s" % (self.doc_type or "sales"))
@@ -266,13 +289,15 @@ class InvoiceGrid(tk.Frame):
         tgross = sum(float(l.get("line_amount", 0) or 0) for l in real)
         tvat = sum(float(l.get("vat_amount", 0) or 0) for l in real)
         ttot = sum(float(l.get("line_total", 0) or 0) for l in real)
-        tprofit = sum((float(l.get("unit_price", 0) or 0)
-                       - float(l.get("purchase_price", 0) or 0))
-                      * float(l.get("quantity", 0) or 0) for l in real)
+        ps = [self._line_profit(l) for l in real]
+        tprofit = sum(p for p, _s in ps)
+        tsale = sum(s for _p, s in ps)
         self.footer_tree.item("sum", values=(
             "", "", f"{len(real)} items", f"{tqty:g}", "", "", "",
             money(tgross), money(tvat), money(ttot), "", "", "",
-            money(tprofit), ""))
+            money(tprofit), "",
+            (f"{tprofit / tsale * 100:.2f}%" if tsale else ""),
+            "", "", "", "", "", "", "", ""))
 
     def _row_values(self, i, ln):
         def money(x):
@@ -281,8 +306,9 @@ class InvoiceGrid(tk.Frame):
             except Exception:
                 return "0.00"
         if ln.get("_blank") and not ln.get("product_id"):
-            return (i + 1, "", "", "", "", "", "", "", "", "", "", "", "", "", "")
-        profit = (float(ln["unit_price"]) - float(ln["purchase_price"])) * float(ln["quantity"])
+            return (i + 1,) + ("",) * (len(COLUMNS) - 1)
+        profit, sale = self._line_profit(ln)
+        xv = self._extra_values(ln)
         qty = float(ln["quantity"]) or 0
         uprice = (float(ln["line_amount"]) / qty) if qty else 0.0
         return (
@@ -298,11 +324,65 @@ class InvoiceGrid(tk.Frame):
             money(ln["vat_amount"]),
             money(ln["line_total"]),
             f"{float(ln.get('stock_quantity', 0)):g}",
-            money(ln["purchase_price"]),
+            money(self._unit_cost(ln)),
             "✕",
             money(profit),
             ln.get("box_qty", ""),
-        )
+            (f"{profit / sale * 100:.2f}%" if sale else ""),
+        ) + tuple(xv.get(k, "") for k, *_r in COLUMNS[16:])
+
+    # ── v6.9.4: profit the right way + the "More columns" ────────
+    def _product_facts(self, ln):
+        try:
+            from modules import product_info as PI
+            return PI.product(ln.get("product_id")), PI
+        except Exception:
+            return None, None
+
+    def _unit_cost(self, ln):
+        """Cost of ONE unit of the line (its box / carton = factor × cost):
+        the product's average cost, else its purchase price."""
+        d, _PI = self._product_facts(ln)
+        cost = (d or {}).get("cost") or float(ln.get("purchase_price") or 0)
+        try:
+            return cost * (float(ln.get("box_qty") or 1) or 1.0)
+        except (TypeError, ValueError):
+            return cost
+
+    def _line_profit(self, ln):
+        """(profit, sale value) of a line: the net amount (no VAT, after
+        discount) − the cost of the BASE units sold (a box of 12 = 12 ×
+        cost). Purchase documents: today's sale price (no VAT) of those
+        units − what they cost on this bill."""
+        try:
+            qty = float(ln.get("quantity") or 0)
+            try:
+                factor = float(ln.get("box_qty") or 1) or 1.0
+            except (TypeError, ValueError):
+                factor = 1.0
+            base_qty = qty * factor
+            net = float(ln.get("line_amount") or 0)
+            d, _PI = self._product_facts(ln)
+            cost = (d or {}).get("cost") or float(ln.get("purchase_price") or 0)
+            if self.doc_type in ("purchase", "purchase_return", "purchase_order"):
+                price_ex = (d or {}).get("price_ex")
+                if price_ex is None:
+                    rate = float(ln.get("vat_rate") or 0)
+                    price_ex = float(ln.get("unit_price") or 0) / factor
+                    if self.tax_mode == "inclusive" and rate:
+                        price_ex /= 1 + rate / 100.0
+                sale = price_ex * base_qty
+                return round(sale - net, 2), sale
+            return round(net - cost * base_qty, 2), net
+        except Exception:
+            return 0.0, 0.0
+
+    def _extra_values(self, ln):
+        d, PI = self._product_facts(ln)
+        if not d:
+            return {}
+        v = PI.values(d["pid"])
+        return {k: PI.text(pk, v.get(pk)) for k, pk in _PI_KEY.items()}
 
     def _search_limit(self):
         """Settings ▸ Performance ▸ Product Search Limit (5–500)."""

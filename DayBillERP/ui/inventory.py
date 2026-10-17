@@ -123,6 +123,14 @@ class InventoryView:
         self.stock_tree.pack(fill="both", expand=True)
         self.stock_tree.tag_configure("low", background="#FEF2F2", foreground="#DC2626")
         self.stock_tree.tag_configure("ok", background="#F0FDF4")
+        try:                    # v6.9.4: ☰ ▸ ➕ More columns (profit on stock, PLU, units …)
+            from ui.table_columns import product_columns
+            product_columns(self.stock_tree, ref="code", qty="stock", keys=[
+                "x_profit", "x_profit_pct", "x_last_cost", "x_plu", "x_stock_value", "x_unit1",
+                "x_unit2", "x_unit3", "x_barcode", "x_barcodes", "x_name_ar", "x_category",
+                "x_brand", "x_location"])
+        except Exception:
+            pass
         self._load_stock()
 
     def _export_stock(self, mode="excel"):
@@ -283,6 +291,13 @@ class InventoryView:
             lbl, w, a = h[col]
             self.low_tree.heading(col, text=lbl); self.low_tree.column(col, width=w, anchor=a)
         self.low_tree.pack(fill="both", expand=True)
+        try:
+            from ui.table_columns import product_columns
+            product_columns(self.low_tree, ref="code", keys=[
+                "x_cost", "x_last_cost", "x_price", "x_plu", "x_unit1", "x_unit2", "x_unit3",
+                "x_barcode", "x_barcodes", "x_name_ar", "x_category", "x_brand", "x_location"])
+        except Exception:
+            pass
         self._load_low()
 
     def _load_low(self):

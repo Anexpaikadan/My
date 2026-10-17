@@ -340,11 +340,80 @@ def run(rid, **kw):
         f, t = t, f
     kw["date_from"], kw["date_to"] = f, t
     res = spec["fn"](**kw)
+    try:
+        product_columns(res, rid)
+    except Exception:
+        pass
     res.setdefault("id", rid)
     res.setdefault("group", spec["group"])
     if not res.get("subtitle"):
         res["subtitle"] = (f"As of {t}" if "as_of" in spec["params"]
                            else _period_text(f, t))
+    return res
+
+
+# ── v6.9.4: product reports offer more columns ────────────────
+# (columns tool ▸ ➕ More columns: Profit, Profit %, Cost, PLU, Stock,
+# Unit 1-3, Multi barcode …). rid: (qty key, net key, unit key, mode,
+# extra columns the report already has).
+PRODUCT_REPORTS = {
+    "sales_items": ("qty", "net_sales", None, "sale",
+                    {"x_profit", "x_profit_pct", "x_cost", "x_category"}),
+    "sales_lines": ("qty", "net", "unit", "sale", {"x_name_ar"}),
+    "purchase_items": ("qty", "net", None, "purchase", set()),
+    "purchase_lines": ("qty", "net", "unit", "purchase", set()),
+    "stock": ("qty", None, None, "stock",
+              {"x_cost", "x_price", "x_stock", "x_stock_value", "x_reorder", "x_category"}),
+    "stock_movement": ("closing", None, None, "stock", set()),
+    "low_stock": ("qty", None, None, "stock", {"x_cost", "x_stock", "x_category"}),
+    "dead_stock": ("qty", None, None, "stock", {"x_stock", "x_category"}),
+    "stock_by_branch": ("total", None, None, "stock", set()),
+    "expiry_report": ("qty", None, None, "stock", set()),
+    "stock_transactions": (None, None, None, "unit", set()),
+}
+_KIND = {"money": "money", "pct": "pct", "qty": "qty", "text": "text"}
+
+
+def product_columns(res, rid):
+    """Add the extra product columns (hidden until the user ticks them)
+    to a product report: res["extra_columns"] lists them."""
+    spec = PRODUCT_REPORTS.get(rid)
+    rows = res.get("rows") or []
+    if not spec or not rows:
+        return res
+    from modules import product_info as PI
+    qk, nk, uk, mode, skip = spec
+    flds = [f for f in PI.fields() if f[0] not in skip]
+    have = {c["key"] for c in res["columns"]}
+    flds = [f for f in flds if f[0] not in have]
+    if not flds:
+        return res
+    tp = ts = tv = 0.0
+    hit = False
+    for r in rows:
+        if r.get("_style") or not r.get("code"):
+            continue
+        v = PI.values(r.get("code"), qty=r.get(qk) if qk else None,
+                      net=r.get(nk) if nk else None, unit=r.get(uk) if uk else None,
+                      mode="purchase" if mode == "purchase" else "sale")
+        if not v:
+            continue
+        hit = True
+        for k, *_x in flds:
+            r[k] = v.get(k)
+        tp += v.get("x_profit") or 0.0
+        ts += v.get("_sale") or 0.0
+        tv += v.get("x_stock_value") or 0.0
+    if not hit:
+        return res
+    res["columns"] = list(res["columns"]) + [col(k, lbl, _KIND.get(kind, "text"), w)
+                                             for k, lbl, kind, w, _s in flds]
+    res["extra_columns"] = [f[0] for f in flds]
+    t = res.get("totals")
+    if t is not None and qk:                       # per-unit figures have no total
+        t["x_profit"] = round(tp, 2)
+        t["x_profit_pct"] = round(tp / ts * 100.0, 2) if ts else None
+        t["x_stock_value"] = round(tv, 2)
     return res
 
 

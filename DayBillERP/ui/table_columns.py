@@ -22,6 +22,15 @@
 # its own column setting) and keep columns always shown with
 # tree._keep_columns = {"product"}.  After any change the table gets the
 # virtual event <<ColumnsChanged>>.
+#
+# v6.9.4:
+#   • tree._ct_optional = {...}  "More columns" — there but hidden until
+#     the user ticks them (Profit, Profit %, Cost, PLU, Stock, Unit 1-3,
+#     Multi barcode …); tree._ct_forbid = {...} never shown (no right)
+#   • Font ▸ size, font design, bold — per table, or for every table
+#   • product_columns(tree, ref="code", qty=…, net=…) gives any list of
+#     products the extra product columns (modules/product_info.py); they
+#     are filled in by themselves and go into Excel / PDF with the rest
 # ============================================================
 
 import json
@@ -40,6 +49,10 @@ _STORE = {"data": None, "path": None}
 _BOUND = set()
 _DRAG = {}
 MIN_W, MAX_W = 20, 1500
+FONT_FAMILIES = ["Segoe UI", "Tahoma", "Arial", "Calibri", "Verdana", "Cambria",
+                 "Consolas", "Courier New", "Times New Roman"]
+FONT_SIZES = [8, 9, 10, 11, 12, 13, 14, 16, 18]
+_SEQ = [0]
 
 
 # ── the saved layouts ────────────────────────────────────────
@@ -119,13 +132,35 @@ def _norm(t, lst, cols=None):
     return out
 
 
-def _base(t):
-    """The columns the PROGRAM shows (its own displaycolumns)."""
+def _optional(t):
+    return set(getattr(t, "_ct_optional", ()) or ())
+
+
+def _forbid(t):
+    return set(getattr(t, "_ct_forbid", ()) or ())
+
+
+def _prog(t):
+    """The PROGRAM's own column positions ("#3" = its 3rd): its
+    displaycolumns, then the optional "More columns"."""
     cols = _all_cols(t)
     b = getattr(t, "_ct_base", "#all")
-    if b == "#all" or not b:
-        return cols
-    return _norm(t, b, cols) or cols
+    out = cols if (b == "#all" or not b) else (_norm(t, b, cols) or cols)
+    return out + [c for c in cols if c in _optional(t) and c not in out]
+
+
+def _base(t):
+    """The columns the user may show: the program's, with the optional
+    "More columns"; never the forbidden ones (no right)."""
+    prog = _prog(t)
+    no = _forbid(t)
+    return [c for c in prog if c not in no] or prog[:1]
+
+
+def _default(t):
+    """What shows before the user changes anything (no optional ones)."""
+    base = _base(t)
+    return [c for c in base if c not in _optional(t)] or base[:1]
 
 
 def shown_columns(t):
@@ -162,7 +197,8 @@ def _title(t, c):
 
 
 def _key(t):
-    cols = _all_cols(t)
+    opt = _optional(t)
+    cols = [c for c in _all_cols(t) if c not in opt]     # "More columns" don't change it
     if not cols:
         return None
     return "%s|%s" % (getattr(t, "_ct_from", "?"), ",".join(cols))
@@ -177,8 +213,9 @@ def _effective(t, base, lay):
     hidden = (set(lay.get("hidden") or []) & set(base)) - _keep(t)
     order = [c for c in (lay.get("order") or []) if c in base and c not in hidden]
     seen = set(order)
+    opt = _optional(t)
     for i, c in enumerate(base):        # columns the saved layout doesn't know
-        if c in hidden or c in seen:
+        if c in hidden or c in seen or c in opt:     # a new "More column" stays off
             continue
         pos = 0
         for p in reversed(base[:i]):
@@ -196,14 +233,16 @@ def _effective(t, base, lay):
 def _set_dc(t, eff, base):
     if eff == shown_columns(t):
         return
-    if eff == base:
-        val = "#all" if getattr(t, "_ct_base", "#all") == "#all" else list(base)
+    if eff == _all_cols(t) and getattr(t, "_ct_base", "#all") == "#all":
+        val = "#all"
     else:
         val = list(eff)
     _O["configure"](t, None, displaycolumns=val)
 
 
 def _fire(t):
+    if getattr(t, "_ct_prod", None):
+        _fill_soon(t)
     try:
         g = getattr(t, "_excel_grid", None)
         if g is not None:
@@ -226,7 +265,8 @@ def _apply(t, fire=True):
     base = _base(t)
     if not base:
         return
-    _set_dc(t, _effective(t, base, lay) if lay else base, base)
+    _set_dc(t, _effective(t, base, lay) if lay else _default(t), base)
+    _apply_font(t)
     if lay:
         zf = _zf()
         for c, w in (lay.get("widths") or {}).items():
@@ -256,21 +296,25 @@ def remember(t):
             widths[c] = int(round(int(_O["column"](t, c, "width")) / zf))
         except Exception:
             pass
+    old = _tables().get(k) or {}
     _tables()[k] = {"order": shown, "hidden": [c for c in base if c not in shown],
                     "widths": widths}
+    if old.get("font"):                     # the table's font stays
+        _tables()[k]["font"] = old["font"]
     t._ct_key = k
     _write()
     _fire(t)
 
 
 def reset(t):
-    """Back to the program's own columns and widths."""
+    """Back to the program's own columns and widths (and font)."""
     k = _key(t)
     if k and k in _tables():
         _tables().pop(k, None)
         _write()
     base = _base(t)
-    _set_dc(t, base, base)
+    _set_dc(t, _default(t), base)
+    _apply_font(t)
     for c, w in dict(getattr(t, "_ct_code_w", {}) or {}).items():
         try:
             if c in base:
@@ -421,6 +465,290 @@ def ask_width(t, c):
         set_width(t, c, v)
 
 
+# ── font: size, design, bold (v6.9.4) ─────────────────────────
+def font_of(t):
+    """{"family", "size", "bold"} for this table: its own, else the one set
+    for every table, else None (the program's font)."""
+    lay = _layout(t) if getattr(t, "_ct_key", None) else None
+    f = (lay or {}).get("font")
+    if not f:
+        _tables()
+        f = (_STORE["data"] or {}).get("default_font")
+    return f if isinstance(f, dict) and f else None
+
+
+def _font_parts(t, font):
+    try:
+        a = tkfont.Font(t, font=font).actual()
+        return a.get("family") or "Segoe UI", abs(int(a.get("size") or 9)) or 9, \
+            a.get("weight") or "normal", a.get("slant") or "roman"
+    except Exception:
+        return "Segoe UI", 9, "normal", "roman"
+
+
+def _base_font(t):
+    st = ttk.Style(t)
+    style = getattr(t, "_ct_style0", None) or str(t.cget("style") or "") or "Treeview"
+    for n in (style, "Treeview"):
+        try:
+            f = st.lookup(n, "font")
+        except Exception:
+            f = ""
+        if f:
+            return _font_parts(t, f)
+    return _font_parts(t, "TkDefaultFont")
+
+
+def _scaled(t, font, spec, base_size):
+    fam, size, weight, slant = _font_parts(t, font)
+    if spec.get("family"):
+        fam = spec["family"]
+    if spec.get("size"):
+        size = max(6, size + int(spec["size"]) - base_size)
+    if spec.get("bold"):
+        weight = "bold"
+    return (fam, size, weight) + (("italic",) if slant == "italic" else ())
+
+
+def _apply_font(t):
+    """Put the table's font on it (its own ttk style, so other tables keep
+    theirs); tag fonts (bold totals …) follow the new size."""
+    try:
+        if _off(t):
+            return
+        if getattr(t, "_ct_style0", None) is None:
+            t._ct_style0 = str(t.cget("style") or "") or "Treeview"
+        spec = font_of(t)
+        base = t._ct_style0
+        mine = getattr(t, "_ct_style", None)
+        if not spec:
+            if mine and str(t.cget("style")) == mine:
+                _O["configure"](t, None, style=base)
+                for tag, f in dict(getattr(t, "_ct_tagfonts", {}) or {}).items():
+                    _O["tag_configure"](t, tag, font=f)
+            return
+        if not mine:
+            _SEQ[0] += 1
+            mine = t._ct_style = "DBF%d.%s" % (_SEQ[0], base if base.endswith("Treeview")
+                                               else "Treeview")
+        fam, bsize, bweight, _sl = _base_font(t)
+        fam = spec.get("family") or fam
+        size = int(spec.get("size") or bsize)
+        weight = "bold" if spec.get("bold") else "normal"
+        st = ttk.Style(t)
+        f = tkfont.Font(t, family=fam, size=size, weight=weight)
+        try:
+            rh0 = int(st.lookup(base, "rowheight") or 0)
+        except Exception:
+            rh0 = 0
+        rh = max(18, f.metrics("linespace") + (12 if rh0 >= 28 else 9))
+        st.configure(mine, font=(fam, size, weight), rowheight=rh)
+        st.configure(mine + ".Heading", font=(fam, size, "bold"))
+        if str(t.cget("style")) != mine:
+            _O["configure"](t, None, style=mine)
+        for tag, tf in dict(getattr(t, "_ct_tagfonts", {}) or {}).items():
+            _O["tag_configure"](t, tag, font=_scaled(t, tf, spec, bsize))
+    except Exception:
+        pass
+
+
+def set_font(t, family=None, size=None, bold=None, everywhere=False, clear=False):
+    """Change the font of this table (everywhere=True: of every table that
+    has no font of its own). clear=True goes back to the program's font."""
+    if _off(t):
+        return False
+    cur = dict(font_of(t) or {})
+    if clear:
+        cur = {}
+    if family is not None:
+        cur["family"] = family
+    if size is not None:
+        cur["size"] = int(size)
+    if bold is not None:
+        cur["bold"] = bool(bold)
+    if everywhere:
+        _tables()
+        _STORE["data"]["default_font"] = cur or None
+        lay = _layout(t)
+        if lay is not None:
+            lay.pop("font", None)
+        _write()
+        _refont_all(t)
+        return True
+    k = _key(t)
+    if not k:
+        return False
+    if k not in _tables():
+        remember(t)
+    lay = _tables().get(k)
+    if cur:
+        lay["font"] = cur
+    else:
+        lay.pop("font", None)
+    t._ct_key = k
+    _write()
+    _apply_font(t)
+    _fire(t)
+    return True
+
+
+def _refont_all(t):
+    """After 'for every table': every table on screen takes it."""
+    try:
+        stack = [t.winfo_toplevel()._root()]
+    except Exception:
+        stack = [t]
+    seen = 0
+    while stack and seen < 20000:
+        w = stack.pop()
+        seen += 1
+        try:
+            stack.extend(w.winfo_children())
+        except Exception:
+            continue
+        if isinstance(w, T) and not _off(w):
+            _apply_font(w)
+
+
+def font_menu(t, master):
+    m = tk.Menu(master, tearoff=0)
+    cur = font_of(t) or {}
+    fam0, size0, _w, _s = _base_font(t)
+    size_now = int(cur.get("size") or size0)
+    fam_now = cur.get("family") or fam0
+    sm = tk.Menu(m, tearoff=0)
+    for z in FONT_SIZES:
+        sm.add_radiobutton(label="%d%s" % (z, "   (now)" if z == size_now else ""),
+                           command=lambda z=z: set_font(t, size=z))
+    m.add_cascade(label="Size  (%d)" % size_now, menu=sm)
+    m.add_command(label="Bigger  A+", command=lambda: set_font(t, size=min(24, size_now + 1)))
+    m.add_command(label="Smaller  A−", command=lambda: set_font(t, size=max(7, size_now - 1)))
+    fm = tk.Menu(m, tearoff=0)
+    for f in FONT_FAMILIES:
+        fm.add_radiobutton(label=f + ("   (now)" if f == fam_now else ""),
+                           command=lambda f=f: set_font(t, family=f))
+    m.add_cascade(label="Design  (%s)" % fam_now, menu=fm)
+    m.add_command(label=("✔ " if cur.get("bold") else "") + "Bold rows",
+                  command=lambda: set_font(t, bold=not cur.get("bold")))
+    m.add_separator()
+    m.add_command(label="Use this font for every table",
+                  command=lambda: set_font(t, everywhere=True, **{k: cur.get(k) for k in
+                                                                  ("family", "size", "bold")}))
+    m.add_command(label="Program font for this table", command=lambda: set_font(t, clear=True),
+                  state="normal" if (_layout(t) or {}).get("font") else "disabled")
+    return m
+
+
+# ── extra product columns on any list (v6.9.4) ───────────────
+def product_columns(t, ref, qty=None, net=None, unit=None, mode="sale", keys=None):
+    """Offer Profit, Profit %, Cost, PLU, Stock, Unit 1-3, Multi barcode …
+    on a table of products. ref / qty / net / unit: the column id holding
+    the product code (or id / barcode), quantity, net amount (no VAT) and
+    unit — or a function(row dict) → value. The new columns start hidden
+    ("➕ More columns"); cost and profit only for users who may see cost."""
+    try:
+        from modules import product_info as PI
+    except Exception:
+        return False
+    flds = [f for f in PI.fields() if keys is None or f[0] in keys]
+    have = _all_cols(t)
+    add = [f for f in flds if f[0] not in have]
+    t._ct_prod = {"ref": ref, "qty": qty, "net": net, "unit": unit, "mode": mode,
+                  "keys": [f[0] for f in flds]}
+    t._ct_optional = _optional(t) | {f[0] for f in flds}
+    if add:
+        keep = {}
+        for c in have:                       # changing the columns forgets headings
+            try:
+                h = _O["heading"](t, c)
+                keep[c] = ({k: h.get(k) for k in ("text", "anchor") if h.get(k) not in (None, "")},
+                           {k: _O["column"](t, c, k) for k in ("width", "minwidth", "stretch", "anchor")})
+            except Exception:
+                pass
+        t.configure(columns=have + [f[0] for f in add])
+        for c, (h, col) in keep.items():
+            try:
+                _O["heading"](t, c, **h)
+                _O["column"](t, c, **col)
+            except Exception:
+                pass
+        for key, label, kind, width, _s in add:
+            _O["heading"](t, key, text=label, anchor="e" if kind != "text" else "w")
+            _O["column"](t, key, width=int(round(width * _zf())), minwidth=40, stretch=False,
+                         anchor="e" if kind != "text" else "w")
+        _apply(t)
+    _fill_soon(t)
+    return True
+
+
+def _fill_soon(t):
+    if getattr(t, "_ct_fill_id", None):
+        return
+    try:
+        t._ct_fill_id = t.after_idle(lambda: _fill(t))
+    except Exception:
+        t._ct_fill_id = None
+
+
+def _pick(spec, row):
+    if spec is None:
+        return None
+    if callable(spec):
+        try:
+            return spec(row)
+        except Exception:
+            return None
+    return row.get(spec)
+
+
+def _num(v):
+    if v in (None, ""):
+        return None
+    try:
+        s = str(v).replace(",", "").strip()
+        neg = s.startswith("(") and s.endswith(")")
+        x = float(s.strip("()").replace("SAR", "").strip())
+        return -x if neg else x
+    except Exception:
+        return None
+
+
+def _fill(t):
+    """Write the shown product columns of every row (others stay empty)."""
+    t._ct_fill_id = None
+    p = getattr(t, "_ct_prod", None)
+    if not p:
+        return
+    try:
+        if not t.winfo_exists():
+            return
+        from modules import product_info as PI
+        shown = [c for c in shown_columns(t) if c in p["keys"]]
+        if not shown:
+            return
+        cols = _all_cols(t)
+        for iid in _rows_of(t):
+            vals = list(_O["item"](t, iid, "values") or ())
+            row = {c: (vals[i] if i < len(vals) else "") for i, c in enumerate(cols)}
+            ref = _pick(p["ref"], row)
+            if ref in (None, ""):
+                continue
+            q, n = _num(_pick(p["qty"], row)), _num(_pick(p["net"], row))
+            v = PI.values(ref, qty=q, net=n, unit=_pick(p["unit"], row), mode=p["mode"])
+            for c in shown:
+                _O["set"](t, iid, c, PI.text(c, v.get(c)))
+    except Exception:
+        pass
+
+
+def _rows_of(t, parent=""):
+    out = []
+    for i in t.get_children(parent):
+        out.append(i)
+        out.extend(_rows_of(t, i))
+    return out
+
+
 # ── the menu (heading right-click and the ☰ corner) ──────────
 def menu(t, x_root, y_root, c=None, popup=True):
     base, shown = _base(t), shown_columns(t)
@@ -438,21 +766,31 @@ def menu(t, x_root, y_root, c=None, popup=True):
         m.add_command(label="Move right  ▶", command=lambda: move(t, c, 1),
                       state="normal" if i < len(shown) - 1 else "disabled")
         m.add_separator()
-    sub = tk.Menu(m, tearoff=0)
     m._vars = []
-    for col in base:
-        v = tk.BooleanVar(master=t, value=col in shown)
-        m._vars.append(v)
-        sub.add_checkbutton(label=_title(t, col), variable=v,
-                            command=lambda col=col, v=v: (show(t, col) if v.get() else hide(t, col),
-                                                          v.set(col in shown_columns(t))),
-                            state="disabled" if col in _keep(t) else "normal")
+    opt = _optional(t)
+
+    def checks(menu_, cols):
+        for col in cols:
+            v = tk.BooleanVar(master=t, value=col in shown)
+            m._vars.append(v)
+            menu_.add_checkbutton(label=_title(t, col), variable=v,
+                                  command=lambda col=col, v=v: (show(t, col) if v.get() else hide(t, col),
+                                                                v.set(col in shown_columns(t))),
+                                  state="disabled" if col in _keep(t) else "normal")
+    sub = tk.Menu(m, tearoff=0)
+    checks(sub, [c for c in base if c not in opt])
     m.add_cascade(label="Show / hide columns", menu=sub)
+    more = [c for c in base if c in opt]
+    if more:
+        sub2 = tk.Menu(m, tearoff=0)
+        checks(sub2, more)
+        m.add_cascade(label="➕ More columns  (profit, cost, PLU, stock, units …)", menu=sub2)
     m.add_command(label="Fit all columns to text", command=lambda: fit(t))
-    m.add_command(label="Columns…   (show, order, width)", command=lambda: ColumnsDialog(t))
+    m.add_command(label="Columns…   (show, order, width, font)", command=lambda: ColumnsDialog(t))
+    m.add_cascade(label="Font  (size, design)", menu=font_menu(t, m))
     m.add_separator()
     m.add_command(label="Reset columns to default", command=lambda: reset(t),
-                  state="normal" if _layout(t) or shown != base else "disabled")
+                  state="normal" if _layout(t) or shown != _default(t) else "disabled")
     t._ct_menu = m
     if popup:
         try:
@@ -493,10 +831,31 @@ class ColumnsDialog:
             pass
         tk.Label(win, text="Columns of this table", font=("Segoe UI", 12, "bold"),
                  bg="white", fg="#1F2937").pack(anchor="w", padx=14, pady=(12, 0))
-        tk.Label(win, text="Tick = show.   ▲ ▼ = move.   Width in pixels.\n"
+        tk.Label(win, text="Tick = show.   ▲ ▼ = move.   Width in pixels.   "
+                           "➕ = more columns (profit, cost, PLU, stock, units …).\n"
                            "Saved for this table on this PC.",
                  font=("Segoe UI", 9), bg="white", fg="#6B7280", justify="left"
                  ).pack(anchor="w", padx=14, pady=(2, 8))
+        # font of this table: design · size · bold (v6.9.4)
+        fb = tk.Frame(win, bg="white")
+        fb.pack(fill="x", padx=14, pady=(0, 6))
+        cur = font_of(t) or {}
+        fam0, size0, _w, _s = _base_font(t)
+        self.fam_var = tk.StringVar(master=t, value=cur.get("family") or fam0)
+        self.size_var = tk.StringVar(master=t, value=str(cur.get("size") or size0))
+        self.bold_var = tk.BooleanVar(master=t, value=bool(cur.get("bold")))
+        self.all_var = tk.BooleanVar(master=t, value=False)
+        self._font0 = (self.fam_var.get(), self.size_var.get(), self.bold_var.get())
+        tk.Label(fb, text="Font", font=("Segoe UI", 9, "bold"), bg="white",
+                 fg="#374151").pack(side="left")
+        ttk.Combobox(fb, textvariable=self.fam_var, values=FONT_FAMILIES, width=16,
+                     state="readonly").pack(side="left", padx=(6, 4))
+        tk.Spinbox(fb, from_=7, to=24, textvariable=self.size_var, width=4,
+                   font=("Segoe UI", 10), justify="right").pack(side="left", padx=4)
+        tk.Checkbutton(fb, text="Bold", variable=self.bold_var, bg="white",
+                       activebackground="white", highlightthickness=0).pack(side="left", padx=4)
+        tk.Checkbutton(fb, text="for every table", variable=self.all_var, bg="white",
+                       activebackground="white", highlightthickness=0).pack(side="left", padx=4)
         mid = tk.Frame(win, bg="white")
         mid.pack(fill="both", expand=True, padx=10)
         many = len(self.rows) > self.ROWS
@@ -550,9 +909,11 @@ class ColumnsDialog:
                  fg="#374151").grid(row=0, column=0, sticky="w", padx=4)
         tk.Label(self.body, text="Width", font=("Segoe UI", 9, "bold"), bg="white",
                  fg="#374151").grid(row=0, column=1, sticky="w")
+        opt = _optional(self.t)
         for i, (c, v, w) in enumerate(self.rows):
             r = i + 1
-            cb = tk.Checkbutton(self.body, text=_title(self.t, c), variable=v, bg="white",
+            cb = tk.Checkbutton(self.body, text=("➕ " if c in opt else "") + _title(self.t, c),
+                                variable=v, bg="white",
                                 anchor="w", font=("Segoe UI", 10), width=26,
                                 activebackground="white", highlightthickness=0)
             if c in keep:
@@ -598,6 +959,13 @@ class ColumnsDialog:
                 pass
         _set_dc(self.t, [c for c in order if c in self.base] or self.base[:1], self.base)
         remember(self.t)
+        try:
+            f = (self.fam_var.get(), self.size_var.get(), self.bold_var.get())
+            if f != self._font0 or self.all_var.get():
+                set_font(self.t, family=f[0], size=int(float(f[1])), bold=bool(f[2]),
+                         everywhere=bool(self.all_var.get()))
+        except Exception:
+            pass
         self._close()
 
     def cancel(self):
@@ -848,7 +1216,7 @@ def _tr(t, col):
         n = int(col[1:])
     except ValueError:
         return col
-    base = _base(t)
+    base = _prog(t)
     return base[n - 1] if 1 <= n <= len(base) else col
 
 
@@ -880,6 +1248,14 @@ def _configure(self, cnf=None, **kw):
         return _O["configure"](self, cnf, **kw)
     opts = dict(cnf or {})
     opts.update(kw)
+    if "style" in opts and str(opts["style"]) != str(getattr(self, "_ct_style", "") or ""):
+        self._ct_style0 = str(opts["style"] or "") or "Treeview"     # the program's own style
+        if getattr(self, "_ct_key", None) and font_of(self):        # keep the user's font
+            self._ct_style = None                                   # (made again on the new style)
+            opts.pop("style")
+            r = _O["configure"](self, opts) if opts else None
+            _apply_font(self)
+            return r
     if "columns" not in opts and "displaycolumns" not in opts:
         return _O["configure"](self, cnf, **kw)
     if "displaycolumns" in opts:
@@ -900,7 +1276,7 @@ def _identify(self, component, x, y):
     if component != "column" or not r or str(r) == "#0" or _off(self):
         return r
     try:
-        shown, base = shown_columns(self), _base(self)
+        shown, base = shown_columns(self), _prog(self)
         if shown == base:
             return r
         c = shown[int(str(r)[1:]) - 1]
@@ -939,12 +1315,42 @@ def _set(self, item, column=None, value=None):
     return _O["set"](self, item, _tr(self, column) if column is not None else None, value)
 
 
+def _tag_configure(self, tagname, option=None, **kw):
+    if "font" in kw and getattr(self, "_ct_on", False):
+        try:
+            tf = getattr(self, "_ct_tagfonts", None)
+            if tf is None:
+                tf = self._ct_tagfonts = {}
+            tf[tagname] = kw["font"]
+            spec = font_of(self) if getattr(self, "_ct_key", None) else None
+            if spec:
+                kw["font"] = _scaled(self, kw["font"], spec, _base_font(self)[1])
+        except Exception:
+            pass
+    return _O["tag_configure"](self, tagname, option, **kw)
+
+
+def _insert(self, parent, index, iid=None, **kw):
+    r = _O["insert"](self, parent, index, iid, **kw)
+    if getattr(self, "_ct_prod", None):
+        _fill_soon(self)
+    return r
+
+
+def _item(self, item, option=None, **kw):
+    r = _O["item"](self, item, option, **kw)
+    if "values" in kw and getattr(self, "_ct_prod", None):
+        _fill_soon(self)
+    return r
+
+
 def install():
     if _O:
         return
     _O.update({"__init__": T.__init__, "configure": tk.Misc.configure,
                "identify": T.identify, "bbox": T.bbox, "column": T.column,
-               "heading": T.heading, "set": T.set})
+               "heading": T.heading, "set": T.set, "tag_configure": T.tag_configure,
+               "insert": T.insert, "item": T.item})
     T.__init__ = _init
     T.configure = _configure
     T.config = _configure
@@ -953,6 +1359,9 @@ def install():
     T.column = _column
     T.heading = _heading
     T.set = _set
+    T.tag_configure = _tag_configure
+    T.insert = _insert
+    T.item = _item
 
 
 class ShownList(list):
@@ -977,12 +1386,15 @@ def find_table(parent, headers, rows):
             continue
         try:
             cols = _all_cols(w)
-            if len(cols) != n or shown_columns(w) == cols:
+            n_extra = len([c for c in cols if c in _optional(w) and c in
+                           ((getattr(w, "_ct_prod", None) or {}).get("keys") or ())])
+            if len(cols) - n_extra != n or (not n_extra and shown_columns(w) == cols):
                 continue
             items = w.get_children("")
             if len(items) < len(want):
                 continue
-            got = [[str(x) for x in (w.item(i, "values") or ())] for i in items[:len(want)]]
+            got = [[str(x) for x in (w.item(i, "values") or ())][:len(want[k])]
+                   for k, i in enumerate(items[:len(want)])]
             if got == want:
                 return w
         except Exception:
@@ -995,7 +1407,31 @@ def export_view(t, headers, rows, aligns=None):
     on screen, in the screen order. Unchanged when they don't line up."""
     try:
         cols = _all_cols(t)
-        if not cols or len(headers) != len(cols) or getattr(t, "_own_columns", False):
+        if not cols or getattr(t, "_own_columns", False):
+            return headers, rows, aligns
+        extra = [c for c in cols if c in _optional(t) and c in
+                 ((getattr(t, "_ct_prod", None) or {}).get("keys") or ())]
+        headers = list(headers)
+        rows = [list(r) for r in rows]
+        if extra and len(headers) == len(cols) - len(extra) and cols[-len(extra):] == extra:
+            # product columns added by the tool: their titles, and their values
+            # read from the rows on screen (same order as the export rows)
+            headers += [_title(t, c) for c in extra]
+            items = _rows_of(t)
+            got = [list(_O["item"](t, i, "values") or ()) for i in items] \
+                if len(items) == len(rows) else []
+            n0 = len(cols) - len(extra)
+            for k, r in enumerate(rows):
+                r += [""] * (n0 - len(r)) if len(r) < n0 else []
+                del r[n0:]
+                src = got[k] if got else []
+                r += [(src[n0 + j] if n0 + j < len(src) else "") for j in range(len(extra))]
+            if aligns and len(aligns) == n0:
+                aligns = list(aligns) + ["e" if c in ("x_profit", "x_profit_pct", "x_cost",
+                                                      "x_last_cost", "x_price", "x_stock",
+                                                      "x_stock_value", "x_reorder", "x_vat")
+                                         else "w" for c in extra]
+        if len(headers) != len(cols):
             return headers, rows, aligns
         shown = shown_columns(t)
         if shown == cols:

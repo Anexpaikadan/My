@@ -591,6 +591,8 @@ class ReportCenterView:
         C = self.C
         cols = res["columns"]
         self.grid.delete(*self.grid.get_children())
+        # v6.9.4: product columns start hidden (☰ ▸ ➕ More columns)
+        self.grid._ct_optional = set(res.get("extra_columns") or ())
         self.grid["columns"] = [c["key"] for c in cols]
         # wide reports: keep every column at its width and scroll sideways
         # (stretching would squeeze the name column to a few letters)
