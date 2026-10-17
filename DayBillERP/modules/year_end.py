@@ -13,6 +13,8 @@
 # Before closing, checks() lists what should be finished first:
 # ZATCA documents not yet reported, draft invoices / purchases.
 # reopen() removes the closing entry and unlocks the year.
+# v6.9.3: both refuse when the signed-in user has no accounts.approve
+# right (a second lock behind the screens' typed confirmation).
 # ============================================================
 import sys, os
 from datetime import datetime
@@ -37,6 +39,19 @@ def _year(fy_id):
 
 def _d(v):
     return str(v)[:10] if v else ""
+
+
+NO_RIGHT = ("Your user type can't approve accounts — closing or reopening a year needs "
+            "the Accounts ▸ Approve right (Users & Rights).")
+
+
+def _may_approve():
+    """Closing / reopening a year needs accounts.approve."""
+    try:
+        from modules import permissions as perm
+        return perm.can("accounts", "approve")
+    except Exception:
+        return False
 
 
 def retained_earnings_account():
@@ -118,6 +133,8 @@ def checks(fy_id):
 def close(fy_id, force=False):
     """Post the closing entry and lock the year. → (ok, message)."""
     from modules import financial_year as fy, posting
+    if not _may_approve():
+        return False, NO_RIGHT
     y = _year(fy_id)
     if not y:
         return False, "Financial year not found."
@@ -169,6 +186,8 @@ def close(fy_id, force=False):
 def reopen(fy_id):
     """Remove the closing entry and unlock the year."""
     from modules import financial_year as fy
+    if not _may_approve():
+        return False, NO_RIGHT
     with db.transaction():
         ok, msg = fy.reopen_year(int(fy_id))
         if not ok:

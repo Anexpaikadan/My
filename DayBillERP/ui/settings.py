@@ -3,6 +3,10 @@
 # Tree menu (left) + details panel (right) + search + Save/Apply/
 # Reset/Backup/Restore.  Company section reads/writes the company
 # table; everything else persists to app_settings.json via cfg.
+# v6.9.3: Save / Restore need company_settings.settings (the Audit page
+# also audit_log.settings); a change of an audit switch or of "Allow
+# edit / delete of confirmed documents" is ALWAYS written to the Audit
+# Log; closing / reopening a year needs accounts.approve + typing its name.
 # ============================================================
 
 import tkinter as tk

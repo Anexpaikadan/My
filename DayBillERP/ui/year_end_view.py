@@ -4,11 +4,12 @@
 # Pick a financial year → see its income, expenses and profit, the
 # things still open (ZATCA, drafts) → Close: the closing entry moves the
 # profit to Retained Earnings and the year is locked. Reopen undoes it.
+# v6.9.3: Close and Reopen need accounts.approve + typing the year's name.
 # ============================================================
 import tkinter as tk
-from tkinter import messagebox
 
 from modules import year_end as YE
+from ui import danger
 from ui import v6_kit as K
 
 
@@ -93,17 +94,17 @@ class YearEndView:
         self.load()
 
     def _close(self):
-        from modules import permissions as _pm
-        if not _pm.allowed("accounts", "edit", parent=self.frame):
-            return
+        # v6.9.3: accounts.approve + typing the year's name (danger.gate)
         y = self._fy()
         if not y:
             return
         probs = YE.checks(y["fy_id"])
-        q = "Close %s and lock it?" % y.get("label")
+        q = ("Close %s and lock it?\n\nIts profit (or loss) moves to Retained Earnings and no "
+             "new transactions can be posted into it." % y.get("label"))
         if probs:
-            q += "\n\nNot finished yet:\n• " + "\n• ".join(probs) + "\n\nClose anyway?"
-        if not messagebox.askyesno("Close the year", q, parent=self.frame):
+            q += "\n\nNot finished yet:\n• " + "\n• ".join(probs)
+        if not danger.gate(self.frame, "accounts", "approve", "Close the year", q,
+                           word=y.get("label") or "CLOSE"):
             return
         try:
             ok, msg = YE.close(y["fy_id"], force=True)
@@ -114,9 +115,12 @@ class YearEndView:
             self._refresh_years(y["fy_id"])
 
     def _reopen(self):
+        # v6.9.3: accounts.approve + typing the year's name (danger.gate)
         y = self._fy()
-        if not y or not messagebox.askyesno("Reopen", "Reopen %s? The closing entry is removed."
-                                            % y.get("label"), parent=self.frame):
+        if not y or not danger.gate(self.frame, "accounts", "approve", "Reopen the year",
+                                    "Reopen %s? The closing entry is removed and the year can "
+                                    "be changed again." % y.get("label"),
+                                    word=y.get("label") or "REOPEN"):
             return
         try:
             ok, msg = YE.reopen(y["fy_id"])
