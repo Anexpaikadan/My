@@ -16,6 +16,12 @@ from config.database import db
 from modules.barcode_gen import generate_ean13, validate_ean13
 
 
+def _can_edit(parent=None):
+    """Units and barcodes are part of the product: they need products.edit."""
+    from modules import permissions as perm
+    return perm.allowed("products", "edit", parent=parent)
+
+
 class UnitsManagerDialog:
     """
     Full multi-unit manager for a single product.
@@ -30,7 +36,8 @@ class UnitsManagerDialog:
         C = cfg.theme()
 
         self.win = tk.Toplevel(parent)
-        self.win.bind("<Escape>", lambda e=None: self.win.destroy())
+        # Esc = the same as ✕ (refreshes the product form too)
+        self.win.bind("<Escape>", lambda e=None: self._on_close())
         self.win.title(f"Units — {product_name}")
         self.win.geometry("860x600")
         self.win.configure(bg=C["content_bg"])
@@ -259,6 +266,8 @@ class UnitsManagerDialog:
                           self._gen_unique_barcode)
 
     def _save(self):
+        if not _can_edit(self.win):
+            return
         name = self.f_name_en.get().strip()
         if not name:
             self.status_var.set("⚠️ Unit name is required."); return
@@ -344,6 +353,8 @@ class UnitsManagerDialog:
                 self.status_var.set(f"❌ {err[:70]}")
 
     def _set_default(self):
+        if not _can_edit(self.win):
+            return
         sel = self.tree.selection()
         if not sel:
             messagebox.showwarning("Select", "Select a unit first."); return
@@ -359,6 +370,8 @@ class UnitsManagerDialog:
             messagebox.showerror("Error", str(e))
 
     def _delete(self):
+        if not _can_edit(self.win):
+            return
         sel = self.tree.selection()
         if not sel:
             messagebox.showwarning("Select", "Select a unit first."); return
@@ -566,6 +579,8 @@ class BarcodeListDialog:
         self.bc_var.set(self.gen_func())
 
     def _add(self):
+        if not _can_edit(self.win):
+            return
         bc = self.bc_var.get().strip()
         if not bc:
             self.status.set("Enter or scan a barcode, or click ⚡ Generate."); return
@@ -593,6 +608,8 @@ class BarcodeListDialog:
         return int(sel[0]) if sel else None
 
     def _edit(self):
+        if not _can_edit(self.win):
+            return
         bid = self._selected_id()
         if not bid:
             self.status.set("Select a barcode to edit."); return
@@ -617,6 +634,8 @@ class BarcodeListDialog:
             self.status.set(f"❌ {str(e)[:60]}")
 
     def _set_default(self):
+        if not _can_edit(self.win):
+            return
         bid = self._selected_id()
         if not bid:
             self.status.set("Select a barcode first."); return
@@ -630,6 +649,8 @@ class BarcodeListDialog:
             self.status.set(f"❌ {str(e)[:60]}")
 
     def _toggle_active(self):
+        if not _can_edit(self.win):
+            return
         bid = self._selected_id()
         if not bid:
             self.status.set("Select a barcode first."); return
@@ -642,9 +663,13 @@ class BarcodeListDialog:
             self.status.set(f"❌ {str(e)[:60]}")
 
     def _remove(self):
+        if not _can_edit(self.win):
+            return
         bid = self._selected_id()
         if not bid:
             self.status.set("Select a barcode to remove."); return
+        if not messagebox.askyesno("Delete Barcode", "Remove this barcode?", parent=self.win):
+            return
         try:
             db.execute("DELETE FROM product_unit_barcodes WHERE barcode_id=?", (bid,))
             self._load()
@@ -882,6 +907,8 @@ class MultiBarcodeBox(tk.Toplevel):
         self.bc_var.set(self._gen_unique_barcode())
 
     def _add(self):
+        if not _can_edit(self):
+            return
         if not self.unit_id:
             self.status.set("Pick a unit first."); return
         bc = self.bc_var.get().strip()
@@ -914,6 +941,8 @@ class MultiBarcodeBox(tk.Toplevel):
         return int(sel[0]) if sel else None
 
     def _edit(self):
+        if not _can_edit(self):
+            return
         bid = self._selected_id()
         if not bid:
             self.status.set("Select a barcode to edit."); return
@@ -935,6 +964,8 @@ class MultiBarcodeBox(tk.Toplevel):
                 self.status.set(f"❌ {str(e)[:60]}")
 
     def _set_default(self):
+        if not _can_edit(self):
+            return
         bid = self._selected_id()
         if not bid or not self.unit_id:
             self.status.set("Select a barcode to set as default."); return
@@ -948,6 +979,8 @@ class MultiBarcodeBox(tk.Toplevel):
             self.status.set(f"❌ {str(e)[:60]}")
 
     def _remove(self):
+        if not _can_edit(self):
+            return
         bid = self._selected_id()
         if not bid:
             self.status.set("Select a barcode to delete."); return
@@ -960,6 +993,8 @@ class MultiBarcodeBox(tk.Toplevel):
             self.status.set(f"❌ {str(e)[:60]}")
 
     def _toggle_active(self):
+        if not _can_edit(self):
+            return
         bid = self._selected_id()
         if not bid:
             self.status.set("Select a barcode."); return

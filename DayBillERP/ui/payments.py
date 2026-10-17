@@ -25,6 +25,12 @@ def _pay_kind(pay_id):
     return "payment" if r.get("payment_type") == "disbursement" else "receipt"
 
 
+def _right(ptype):
+    """User-rights module: receipts use 'receipt', supplier payments
+    'payment' (the same as the transaction connector and printing)."""
+    return "payment" if ptype in ("disbursement", "payment") else "receipt"
+
+
 def print_receipt(pay_id, send_to_printer=True):
     """Print the receipt / payment voucher with its default layout.
     Returns the PDF path (None on failure)."""
@@ -220,11 +226,12 @@ class PaymentsView:
         self._refresh_stats(self._all)
         self.count_var.set(f"{len(rows)} payment(s)")
 
-    @perm.guard("payment", "add")
     def _new(self, ptype):
+        # receipt → Receipt right, disbursement → Payment right
+        if not perm.allowed(_right(ptype), "add", parent=self.frame):
+            return
         PaymentForm(self.frame, ptype, self._load)
 
-    @perm.guard("payment", "edit")
     def _edit(self):
         s = self.tree.selection()
         if not s:
@@ -234,6 +241,8 @@ class PaymentsView:
         row = db.fetchone("SELECT payment_type FROM payments WHERE payment_id=?",
                           (pid,))
         ptype = (row or {}).get("payment_type", "receipt")
+        if not perm.allowed(_right(ptype), "edit", parent=self.frame):
+            return
         PaymentForm(self.frame, ptype, self._load, payment_id=pid)
 
     def _print(self, widget=None):
@@ -243,7 +252,10 @@ class PaymentsView:
             return
         from ui import print_menu
         pid = int(s[0])
-        print_menu.show_menu(self.frame, _pay_kind(pid), lambda: pid, widget=widget)
+        kind = _pay_kind(pid)             # 'receipt' / 'payment' = the right too
+        if not perm.allowed(kind, "print", parent=self.frame):
+            return
+        print_menu.show_menu(self.frame, kind, lambda: pid, widget=widget)
 
     def _whatsapp(self):
         s = self.tree.selection()
@@ -304,7 +316,6 @@ class PaymentsView:
         except Exception as e:
             messagebox.showerror("Export Error", str(e))
 
-    @perm.guard("payment", "delete")
     def _delete(self):
         s = self.tree.selection()
         if not s:
@@ -312,11 +323,26 @@ class PaymentsView:
             return
         pid = int(s[0])
         num = self.tree.item(s[0])["values"][0]
+        try:
+            row = db.fetchone("SELECT payment_type, payment_date FROM payments "
+                              "WHERE payment_id=?", (pid,)) or {}
+        except Exception as e:
+            messagebox.showerror(t("common.error"), str(e))
+            return
+        ptype = row.get("payment_type", "receipt")
+        if not perm.allowed(_right(ptype), "delete", parent=self.frame):
+            return
+        try:        # closed year / outside the login year → not deleted
+            from modules import financial_year as fy
+            d = row.get("payment_date")
+            msg = fy.guard_active(str(d)[:10]) if d else ""
+        except Exception:
+            msg = ""
+        if msg:
+            messagebox.showwarning(t("common.warning"), msg)
+            return
         if messagebox.askyesno(t("common.warning"), f"Delete payment {num}?"):
             try:
-                row = db.fetchone("SELECT payment_type FROM payments "
-                                  "WHERE payment_id=?", (pid,))
-                ptype = (row or {}).get("payment_type", "receipt")
                 with db.transaction():       # journal, links and payment go together
                     try:
                         from modules.doc_actions import delete_linked_journals, audit
@@ -832,6 +858,10 @@ class PaymentForm:
                 return num
 
     def _save(self):
+        # receipt → Receipt right, disbursement → Payment right (edit when saved)
+        if not perm.allowed(_right(self.ptype), "edit" if self.payment_id else "add",
+                            parent=self.win):
+            return
         party = self._current_party()
         if not party:
             self.status_var.set("⚠️ Select a " + ("customer." if self.ptype == "receipt"
@@ -866,6 +896,11 @@ class PaymentForm:
         try:
             from modules import financial_year as fy
             fy_msg = fy.guard_active(iso_date)
+            if not fy_msg and self.payment_id:       # the saved entry's own date
+                old = db.fetchone("SELECT payment_date FROM payments WHERE payment_id=?",
+                                  (self.payment_id,)) or {}
+                if old.get("payment_date"):
+                    fy_msg = fy.guard_active(str(old["payment_date"])[:10])
             if fy_msg:
                 self.status_var.set("⚠️ " + fy_msg)
                 return

@@ -737,6 +737,176 @@ def _plain_db(value):
     return v.strip()
 
 
+# ── v6.9.3: dangerous database work needs an administrator ────
+# Restore (on the sign-in screen) and the Database Tool (reset a
+# password, convert) work before anyone signs in. So they first ask the
+# user name + password of a FULL-ACCESS DayBill user of that database
+# (Super Admin / Admin user type, or the built-in 'admin'), checked with
+# DayBill's own password check.
+_ADMIN_FAILS = []                 # times of recent wrong administrator passwords
+ADMIN_MAX_FAILS, ADMIN_LOCK_SECONDS = 5, 60
+
+
+def check_full_access_login(cursor, username, password):
+    """→ (problem, user_id). problem '' = an ACTIVE full-access user of the
+    database behind `cursor` with this password. Nothing is written."""
+    from modules import permissions as _perm
+    uname = (username or "").strip()
+    if not uname or not password:
+        return "Type the user name and the password.", None
+    try:
+        cursor.execute("SELECT u.user_id, u.username, u.password_hash, u.is_active, r.role_name_en "
+                       "FROM users u LEFT JOIN roles r ON r.role_id = u.role_id "
+                       "WHERE u.username = ?", (uname,))
+        row = cursor.fetchone()
+    except Exception as e:
+        return "The users of this database could not be read: %s" % str(e)[:150], None
+    if not row:
+        return "Wrong user name or password.", None
+    user_id, real_name, stored, active, role = row[0], row[1], row[2] or "", row[3], row[4]
+    ok = _perm.verify_password(password, stored) or (
+        password.strip() != password and _perm.verify_password(password.strip(), stored))
+    if not ok:
+        return "Wrong user name or password.", None
+    if active not in (1, True):
+        return "'%s' is switched off (inactive)." % real_name, None
+    full = str(real_name or "").strip().lower() == "admin" or \
+        str(role or "").strip().lower() in _perm.FULL_ACCESS_ROLES
+    if not full:
+        return ("'%s' is not an administrator. Only a Super Admin / Admin user "
+                "may do this." % real_name), None
+    return "", user_id
+
+
+def audit_raw(cursor, user_id, action, module, ref_id, details):
+    """One Audit Log row written straight into this database — works before
+    sign-in and whatever the Audit switches say. Never raises."""
+    try:
+        import platform
+        cursor.execute(
+            "IF OBJECT_ID('audit_logs') IS NOT NULL "
+            "INSERT INTO audit_logs (user_id, action, module, ref_id, details, workstation) "
+            "VALUES (?,?,?,?,?,?)",
+            (user_id, str(action)[:50], str(module)[:50],
+             str(ref_id)[:50] if ref_id is not None else None,
+             str(details or "")[:4000], platform.node()[:100]))
+        return True
+    except Exception:
+        return False
+
+
+class AdminSignDialog:
+    """Small window: user name + password of an administrator."""
+
+    def __init__(self, parent, title, why):
+        C = cfg.theme()
+        self.result = None
+        w = self.win = tk.Toplevel(parent)
+        w.title(title)
+        w.configure(bg=C["content_bg"])
+        w.resizable(False, False)
+        try:
+            w.transient(parent.winfo_toplevel())
+        except Exception:
+            pass
+        tk.Label(w, text="🔐  " + title, font=("Segoe UI", 12, "bold"), bg=C["content_bg"],
+                 fg=C["text_primary"]).pack(anchor="w", padx=18, pady=(14, 4))
+        tk.Label(w, text=why, font=("Segoe UI", 9), bg=C["content_bg"], fg=C["text_secondary"],
+                 wraplength=380, justify="left").pack(anchor="w", padx=18)
+        self.user_var, self.pw_var = tk.StringVar(), tk.StringVar()
+        for label, var, show in (("Administrator user name", self.user_var, None),
+                                 ("Password", self.pw_var, "●")):
+            tk.Label(w, text=label, font=("Segoe UI", 9, "bold"), bg=C["content_bg"],
+                     fg=C["text_primary"]).pack(anchor="w", padx=18, pady=(10, 0))
+            e = tk.Entry(w, textvariable=var, font=("Segoe UI", 10), width=34, relief="solid", bd=1)
+            if show:
+                e.config(show=show)
+            e.pack(anchor="w", padx=18, ipady=3)
+            if var is self.user_var:
+                first = e
+        bb = tk.Frame(w, bg=C["content_bg"])
+        bb.pack(fill="x", padx=18, pady=14)
+        tk.Button(bb, text=t("common.cancel"), font=("Segoe UI", 9), bg=C["border"],
+                  fg=C["text_primary"], relief="flat", padx=12, pady=5,
+                  command=w.destroy).pack(side="right", padx=(6, 0))
+        tk.Button(bb, text="OK", font=("Segoe UI", 9, "bold"), bg=C["primary"], fg="white",
+                  relief="flat", padx=16, pady=5, command=self._ok).pack(side="right")
+        w.bind("<Return>", lambda e: self._ok())
+        w.bind("<Escape>", lambda e: w.destroy())
+        try:
+            w.grab_set()
+            first.focus_set()
+        except Exception:
+            pass
+        w.wait_window()
+
+    def _ok(self):
+        if self.user_var.get().strip() and self.pw_var.get():
+            self.result = (self.user_var.get().strip(), self.pw_var.get())
+            self.win.destroy()
+
+
+def ask_full_access(parent, title, why, connect):
+    """Ask an administrator of the database `connect()` opens to sign.
+    connect() gives a NEW pyodbc connection (closed here).
+    → (who, problem): who = {"username", "user_id"} when allowed, else
+    None with problem '' (cancelled) or the reason (a message was shown)."""
+    import time
+    now = time.time()
+    _ADMIN_FAILS[:] = [t0 for t0 in _ADMIN_FAILS if now - t0 < ADMIN_LOCK_SECONDS]
+    if len(_ADMIN_FAILS) >= ADMIN_MAX_FAILS:
+        messagebox.showwarning(title, "Too many wrong passwords. Try again in a minute.",
+                               parent=parent)
+        return None, "too many wrong passwords"
+    dlg = AdminSignDialog(parent, title, why)
+    if not dlg.result:
+        return None, ""
+    user, pw = dlg.result
+    try:
+        cn = connect()
+    except Exception as e:
+        messagebox.showerror(title, "The database could not be opened — nothing was changed.\n\n%s"
+                             % str(e)[:250], parent=parent)
+        return None, "database could not be opened"
+    try:
+        prob, uid = check_full_access_login(cn.cursor(), user, pw)
+    finally:
+        try:
+            cn.close()
+        except Exception:
+            pass
+    if prob:
+        if prob.startswith("Wrong"):
+            _ADMIN_FAILS.append(time.time())
+        messagebox.showwarning(title, prob + "\n\nNothing was changed.", parent=parent)
+        return None, "%s (user '%s')" % (prob, user)
+    return {"username": user, "user_id": uid}, ""
+
+
+def _raw_connect(conf, database):
+    """Own AUTOCOMMIT connection to `database` with these settings."""
+    import pyodbc
+    from config.database import build_connection_string
+    c = dict(conf or {})
+    c["database"] = database
+    return pyodbc.connect(build_connection_string(c), autocommit=True, timeout=15)
+
+
+def _is_daybill_conn(conf, database):
+    """True / False — None when it can't be opened."""
+    try:
+        from config.database import DAYBILL_CHECK_SQL
+        cn = _raw_connect(conf, database)
+        try:
+            cur = cn.cursor()
+            cur.execute(DAYBILL_CHECK_SQL)
+            return bool(int(cur.fetchone()[0]))
+        finally:
+            cn.close()
+    except Exception:
+        return None
+
+
 class DbSettingsDialog:
     def __init__(self, parent):
         C = cfg.theme()

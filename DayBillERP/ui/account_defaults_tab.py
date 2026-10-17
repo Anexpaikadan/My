@@ -184,10 +184,14 @@ class DefaultAccountsTab(tk.Frame):
             messagebox.showerror("Error", str(e))
 
     def _do_transfer(self):
+        # a transfer posts a journal → needs the Journal 'add' right
+        from modules import permissions as perm
+        if not perm.allowed("journal", "add", parent=self):
+            return
         try:
             from_code = self._code_by_label.get(self._t_from.get())
             to_code = self._code_by_label.get(self._t_to.get())
-            amount = float((self._t_amt.get() or "0").replace(",", ""))
+            amount = round(float((self._t_amt.get() or "0").replace(",", "")), 2)
             if not (from_code and to_code) or amount <= 0:
                 messagebox.showwarning("Check", "Pick both accounts and an amount.")
                 return
@@ -198,6 +202,22 @@ class DefaultAccountsTab(tk.Frame):
             to_id = ad._id_from_code(to_code)
             ref = self._t_ref.get().strip()
             today = date.today().strftime("%Y-%m-%d")
+            try:        # closed year / outside the login year
+                from modules import financial_year as fy
+                msg = fy.guard_active(today)
+            except Exception:
+                msg = ""
+            if msg:
+                messagebox.showwarning("Fund Transfer", msg, parent=self)
+                return
+            # money moves between accounts → ask first, showing what posts
+            if not messagebox.askyesno(
+                    "Fund Transfer",
+                    f"Transfer {amount:,.2f} SAR?\n\n"
+                    f"From:  {self._t_from.get()}\nTo:      {self._t_to.get()}\n"
+                    f"Date:  {today}" + (f"\nRef:    {ref}" if ref else "") +
+                    "\n\nA journal is posted (Dr To / Cr From).", parent=self):
+                return
             # record the transfer, then post its journal and link them
             with db.transaction():          # transfer + journal together (v5.27)
                 db.execute(
@@ -211,6 +231,13 @@ class DefaultAccountsTab(tk.Frame):
                                                                  "check the accounts"))
                 db.execute("UPDATE bank_transfers SET journal_id=? WHERE transfer_id=?",
                            (jid, tid))
+            try:
+                from modules.doc_actions import audit
+                audit("create", "bank_transfer", tid,
+                      f"{amount:,.2f} SAR {from_code} → {to_code}"
+                      + (f" ({ref})" if ref else ""))
+            except Exception:
+                pass
             messagebox.showinfo("Done", f"Transferred {amount:,.2f} SAR.")
             self._t_amt.delete(0, "end"); self._t_ref.delete(0, "end")
         except Exception as e:

@@ -239,21 +239,26 @@ class AccountingView:
     @perm.guard("journal", "delete")
     def _delete_journal(self):
         """Delete a manual journal entry (lines cascade). Journals that a
-        document posted automatically are protected — delete the source
-        document instead, and its journal goes with it."""
+        document or payroll / stock / year-end posted are protected —
+        delete the source instead, and its journal goes with it."""
         sel = self.jrn_tree.selection()
         if not sel:
             messagebox.showwarning("Select", "Select a journal entry first.")
             return
         jid = int(sel[0])
         vals = self.jrn_tree.item(sel[0])["values"]
-        src = str(vals[3] or "").lower()
-        if src and src != "manual":
-            messagebox.showwarning(
-                "Delete Journal Entry",
-                f"{vals[0]} was posted automatically by a "
-                f"{src.replace('_', ' ')} document.\n\nDelete the source "
-                "document instead — its journal will be removed with it.")
+        # the Source column shows the voucher type, so ask the connector
+        from ui.vouchers import voucher_owner
+        txn, why = voucher_owner(jid)
+        if not txn:
+            messagebox.showinfo("Delete Journal Entry", why, parent=self.frame)
+            self._load_journals()
+            return
+        if why:
+            messagebox.showwarning("Delete Journal Entry", why, parent=self.frame)
+            return
+        from ui import txn_connector as tc
+        if tc._locked(txn, self.frame, "Delete Journal Entry"):   # closed year
             return
         warn = f"Delete journal entry {vals[0]}?"
         if "Posted" in str(vals[6]):
@@ -597,6 +602,16 @@ def GREEN_OR(C):
     return C.get("primary", "#006C35")
 
 
+def _on_top_of(win, parent):
+    """Keep a modal form above the window that opened it — without this a
+    grabbed form can drop behind the main window and the app looks frozen."""
+    try:
+        if parent is not None:
+            win.transient(parent.winfo_toplevel())
+    except Exception:
+        pass
+
+
 # ─────────────────────────────────────────────────────────────
 # ACCOUNT FORM
 # ─────────────────────────────────────────────────────────────
@@ -614,8 +629,9 @@ class AccountForm:
                 existing = None
         title = "Edit Account" if account_id else "New Account"
         C = cfg.theme()
-        self.win = tk.Toplevel(); self.win.bind("<Escape>", lambda e: self.win.destroy()); self.win.title(title)
+        self.win = tk.Toplevel(parent); self.win.bind("<Escape>", lambda e: self.win.destroy()); self.win.title(title)
         self.win.geometry("440x400"); self.win.configure(bg=C["content_bg"])
+        _on_top_of(self.win, parent)          # stays above the main window
         self.win.grab_set(); self._center(440, 400)
         hdr = tk.Frame(self.win, bg=C["primary"], height=46)
         hdr.pack(fill="x"); hdr.pack_propagate(False)
@@ -666,6 +682,9 @@ class AccountForm:
                   command=self._save).pack(side="right")
 
     def _save(self):
+        if not perm.allowed("accounts", "edit" if self.account_id else "add",
+                            parent=self.win):
+            return
         if not self.code_var.get().strip() or not self.en_var.get().strip():
             self.status_var.set("⚠️ Code and Name required."); return
         try:
@@ -705,9 +724,11 @@ class JournalForm:
         self.accounts = []
         self.lines = []
         C = cfg.theme()
-        self.win = tk.Toplevel(); self.win.bind("<Escape>", lambda e: self.win.destroy())
+        self._edit_idx = None                 # line being changed (double-click)
+        self.win = tk.Toplevel(parent); self.win.bind("<Escape>", lambda e: self.win.destroy())
         self.win.title("Edit Journal Entry" if journal_id else "New Journal Entry")
         self.win.geometry("720x560"); self.win.configure(bg=C["content_bg"])
+        _on_top_of(self.win, parent)          # stays above the main window
         self.win.grab_set(); self._center(720, 560)
         hdr = tk.Frame(self.win, bg=C["primary"], height=48)
         hdr.pack(fill="x"); hdr.pack_propagate(False)
@@ -751,9 +772,10 @@ class JournalForm:
         self.cr_var = tk.StringVar(value="0")
         tk.Entry(ai, textvariable=self.cr_var, width=10, font=("Segoe UI", 9),
                  relief="solid", bd=1).pack(side="left", padx=(2, 8), ipady=2)
-        tk.Button(ai, text="Add Line", font=("Segoe UI", 9, "bold"), bg=C["primary"],
-                  fg="white", relief="flat", padx=12, pady=4, cursor="hand2",
-                  command=self._add_line).pack(side="left")
+        self.add_btn = tk.Button(ai, text="Add Line", font=("Segoe UI", 9, "bold"),
+                                 bg=C["primary"], fg="white", relief="flat", padx=12,
+                                 pady=4, cursor="hand2", command=self._add_line)
+        self.add_btn.pack(side="left")
 
         wrap = tk.Frame(self.win, bg=C["card_bg"],
                         highlightbackground=C["border"], highlightthickness=1)
@@ -771,7 +793,11 @@ class JournalForm:
             excel_grid(self.line_tree)
         except Exception:
             pass
-        self.line_tree.bind("<Double-1>", lambda e: self._remove_line())
+        # double-click / Enter = change the line; Delete key = remove it
+        self.line_tree.bind("<Double-1>", lambda e: self._pick_line())
+        self.line_tree.bind("<Return>", lambda e: (self._pick_line(), "break")[1])
+        self.line_tree.bind("<KP_Enter>", lambda e: (self._pick_line(), "break")[1])
+        self.line_tree.bind("<Delete>", self._delete_key)
 
         # Totals + save
         footer = tk.Frame(self.win, bg=C["card_bg"]); footer.pack(fill="x", side="bottom")
@@ -790,13 +816,33 @@ class JournalForm:
                   font=("Segoe UI", 10, "bold"), bg=C["primary"],
                   fg="white", relief="flat", padx=16, pady=6, cursor="hand2",
                   command=self._save).pack(side="right")
+        # Ctrl+S saves (bound before the connector bar so it is ours)
+        self.win.bind("<Control-s>", lambda e: (self._save(), "break")[1])
+        self.win.bind("<Control-S>", lambda e: (self._save(), "break")[1])
         if journal_id:
             self._load_existing()
+        self._clean = self._snapshot()
         try:      # v6.9 connector bar: New · Edit · Save · Delete (user rights)
             from ui import txn_connector as _tc
             _tc.attach(self, "journal")
         except Exception:
             pass
+
+    # ── unsaved work (the generic close guard calls this) ─────
+    def _snapshot(self):
+        return (self.date_var.get(), self.desc_var.get(),
+                tuple((l.get("account_id"), round(float(l.get("debit") or 0), 2),
+                       round(float(l.get("credit") or 0), 2)) for l in self.lines))
+
+    def _is_dirty(self) -> bool:
+        """True when lines / date / text changed, or a line is half typed."""
+        try:
+            half = (self.acct_var.get().strip() or
+                    self.dr_var.get().strip() not in ("", "0") or
+                    self.cr_var.get().strip() not in ("", "0"))
+            return bool(half) or self._snapshot() != self._clean
+        except Exception:
+            return False
 
     def _load_existing(self):
         """Fill the form with a saved voucher (edit mode)."""
@@ -872,19 +918,70 @@ class JournalForm:
         if dr == 0 and cr == 0:
             self.status_var.set("⚠️ Enter a debit or credit."); return
         a = self.accounts[idx]
-        self.lines.append({"account_id": a["account_id"],
-                           "label": f"{a['account_code']} {a['account_name_en']}",
-                           "debit": dr, "credit": cr})
+        line = {"account_id": a["account_id"],
+                "label": f"{a['account_code']} {a['account_name_en']}",
+                "debit": dr, "credit": cr}
+        e = self._edit_idx
+        if e is not None and 0 <= e < len(self.lines):
+            # changing a picked line: keep its place and its line text
+            line["description"] = self.lines[e].get("description", "")
+            self.lines[e] = line
+        else:
+            self.lines.append(line)
+        self._end_edit()
         self._refresh()
         self.dr_var.set("0"); self.cr_var.set("0"); self.acct_var.set("")
         self.status_var.set("")
 
-    def _remove_line(self):
+    def _end_edit(self):
+        self._edit_idx = None
+        try:
+            self.add_btn.config(text="Add Line")
+        except Exception:
+            pass
+
+    def _pick_line(self):
+        """Double-click / Enter: put the line back in the entry row to change
+        it; 'Update Line' writes it back in the same place."""
+        s = self.line_tree.selection()
+        if not s:
+            return
+        idx = self.line_tree.index(s[0])
+        if not (0 <= idx < len(self.lines)):
+            return
+        ln = self.lines[idx]
+        self.acct_var.set(ln.get("label", ""))
+        num = lambda v: f"{float(v or 0):.2f}".rstrip("0").rstrip(".")
+        self.dr_var.set(num(ln.get("debit")))
+        self.cr_var.set(num(ln.get("credit")))
+        self._edit_idx = idx
+        self.add_btn.config(text="Update Line")
+        self.status_var.set("Change the line and press 'Update Line'.")
+
+    def _delete_key(self, e=None):
+        # Ctrl+Delete is the connector's 'delete voucher' — let it pass
+        if e is not None and (int(getattr(e, "state", 0) or 0) & 0x4):
+            return None
+        self._remove_line(ask=True)
+        return "break"
+
+    def _remove_line(self, ask=False):
         s = self.line_tree.selection()
         if s:
             idx = self.line_tree.index(s[0])
             if 0 <= idx < len(self.lines):
-                del self.lines[idx]; self._refresh()
+                ln = self.lines[idx]
+                if ask and (float(ln.get("debit") or 0) or float(ln.get("credit") or 0)):
+                    if not messagebox.askyesno(
+                            "Remove Line",
+                            f"Remove line {ln.get('label', '')}?\n"
+                            f"Dr {float(ln.get('debit') or 0):,.2f}  ·  "
+                            f"Cr {float(ln.get('credit') or 0):,.2f}",
+                            parent=self.win):
+                        return
+                del self.lines[idx]
+                self._end_edit()
+                self._refresh()
 
     def _refresh(self):
         self.line_tree.delete(*self.line_tree.get_children())
@@ -898,6 +995,10 @@ class JournalForm:
         self.balance_var.set(f"{bal}  Dr {td:,.2f}  |  Cr {tc:,.2f}")
 
     def _save(self):
+        # edit a saved voucher = journal.edit, a new one = journal.add
+        if not perm.allowed("journal", "edit" if self.journal_id else "add",
+                            parent=self.win):
+            return
         if not self.lines:
             self.status_var.set("⚠️ Add lines first."); return
         try:
@@ -905,6 +1006,13 @@ class JournalForm:
                 self._update_existing()
                 messagebox.showinfo(t("common.success"), "Journal entry updated.")
             else:
+                try:      # closed year / outside the login year (edit checks its own)
+                    from modules import financial_year as fy
+                    msg = fy.guard_active(self.date_var.get())
+                except Exception:
+                    msg = ""
+                if msg:
+                    raise ValueError(msg)
                 acc.post_journal(db, self.date_var.get(), self.lines,
                                  description_en=self.desc_var.get(), source_type="manual")
                 messagebox.showinfo(t("common.success"), "Journal entry posted.")

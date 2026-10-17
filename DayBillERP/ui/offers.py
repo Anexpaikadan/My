@@ -21,6 +21,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from config import settings as cfg
 from config.database import db
 from modules import offers as O
+from modules import permissions as perm
 
 # deal buttons: key → (button text, offer_type, defaults)
 DEALS = [
@@ -282,6 +283,8 @@ class OffersView:
 
     # ── actions ──────────────────────────────────────────────
     def _new(self, preset=None, product_ids=None):
+        if not perm.allowed("products", "edit", parent=self.frame):
+            return
         if not O.tables_ready():
             messagebox.showwarning("Offers", "Offer tables are missing — open Updates ▸ "
                                    "Apply All Updates once.", parent=self.frame)
@@ -294,6 +297,8 @@ class OffersView:
             OfferEditor(self.frame, offer=o, on_saved=self._saved)
 
     def _copy(self):
+        if not perm.allowed("products", "edit", parent=self.frame):
+            return
         o = self._selected()
         if o:
             c = dict(o); c.pop("offer_id", None)
@@ -301,19 +306,34 @@ class OffersView:
             OfferEditor(self.frame, offer=c, on_saved=self._saved)
 
     def _toggle(self):
+        if not perm.allowed("products", "edit", parent=self.frame):
+            return
         o = self._selected()
         if o:
             O.set_active(o["offer_id"], not o.get("is_active"))
+            try:
+                from modules import audit
+                audit.log("edit", "offer", o["offer_id"], "%s %s" % (
+                    "started" if not o.get("is_active") else "paused", o.get("offer_name", "")))
+            except Exception:
+                pass
             self.msg.set(("▶ Running: " if not o.get("is_active") else "⏸ Paused: ")
                          + o.get("offer_name", ""))
             self.load()
 
     def _delete(self):
+        if not perm.allowed("products", "delete", parent=self.frame):
+            return
         o = self._selected()
         if o and messagebox.askyesno("Delete offer", "Delete the offer '%s'?\n\nBills already "
                                      "sold keep their discount." % o.get("offer_name", ""),
                                      parent=self.frame):
             O.delete(o["offer_id"])
+            try:
+                from modules import audit
+                audit.log("delete", "offer", o["offer_id"], o.get("offer_name", ""))
+            except Exception:
+                pass
             self.msg.set("🗑 Deleted: " + o.get("offer_name", ""))
             self.load()
 
@@ -480,6 +500,7 @@ class OfferEditor(tk.Toplevel):
         self.find_e.bind("<KeyRelease>", self._find_key)
         self.find_e.bind("<Return>", self._find_enter)
         self.find_e.bind("<Down>", lambda e: self._drop_focus())
+        self.find_e.bind("<Escape>", self._find_esc)      # Esc here must not close the offer
         tk.Button(sr, text="＋ Add", font=("Segoe UI", 9, "bold"), bg=C["primary"], fg="white",
                   relief="flat", padx=10, pady=2, cursor="hand2",
                   command=lambda: self._find_enter(None)).pack(side="left", padx=6)
@@ -494,7 +515,7 @@ class OfferEditor(tk.Toplevel):
         self.drop = tk.Listbox(p, height=6, font=("Segoe UI", 10), activestyle="dotbox")
         self.drop.bind("<Return>", lambda e: self._drop_pick())
         self.drop.bind("<Double-1>", lambda e: self._drop_pick())
-        self.drop.bind("<Escape>", lambda e: (self.drop.place_forget(), self.find_e.focus_set()))
+        self.drop.bind("<Escape>", self._drop_esc)
         self._matches = []
 
         tw = tk.Frame(p, bg=C["card_bg"]); tw.pack(fill="both", expand=True, padx=12, pady=(6, 8))
@@ -693,6 +714,20 @@ class OfferEditor(tk.Toplevel):
         y = self.find_e.master.winfo_y() + self.find_e.winfo_height() + 2
         self.drop.place(x=x, y=y, width=460)
         self.drop.lift()
+
+    def _find_esc(self, _e=None):
+        """Esc in the find box: hide the list (or clear the box), keep the offer open."""
+        if self.drop.winfo_ismapped():
+            self.drop.place_forget()
+        else:
+            self.find_v.set("")
+        return "break"
+
+    def _drop_esc(self, _e=None):
+        """Esc in the list: hide it and go back to the find box."""
+        self.drop.place_forget()
+        self.find_e.focus_set()
+        return "break"
 
     def _drop_focus(self):
         if self._matches:
@@ -913,6 +948,8 @@ class OfferEditor(tk.Toplevel):
         }
 
     def _save(self):
+        if not perm.allowed("products", "edit", parent=self):
+            return
         try:
             o = self._collect()
         except ValueError as e:
@@ -1122,6 +1159,8 @@ class PosterPromptDialog(tk.Toplevel):
 
 def open_offer_for_products(parent, product_ids):
     """Products screen ▸ 🏷 Make offer: a new offer with these products."""
+    if not perm.allowed("products", "edit", parent=parent):
+        return None
     if not O.tables_ready():
         messagebox.showwarning("Offers", "Offer tables are missing — open Updates ▸ Apply All "
                                "Updates once.", parent=parent)

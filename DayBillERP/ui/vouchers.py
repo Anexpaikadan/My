@@ -148,8 +148,8 @@ class VouchersView:
     def _delete_selected(self):
         """Delete the selected voucher (journal entry). Lines cascade.
         A posted voucher affects the ledger, so it gets a stronger warning.
-        Documents' own vouchers (sales/purchase source) are protected —
-        delete those from their source document instead."""
+        Only typed vouchers are deleted here — documents' and automatic
+        vouchers (payroll, stock, year-end …) are refused with where to go."""
         sel = self.tree.selection()
         if not sel:
             messagebox.showwarning("Select", "Select a voucher first.")
@@ -163,26 +163,20 @@ class VouchersView:
             jid = int(iid)
         except ValueError:
             return
-        row = db.fetchone("SELECT journal_number, source_type, source_id, is_posted "
+        txn, why = voucher_owner(jid)
+        if not txn:
+            messagebox.showinfo("Delete Voucher", why, parent=self.frame)
+            self._load()
+            return
+        if why:
+            messagebox.showwarning("Delete Voucher", why, parent=self.frame)
+            return
+        from ui import txn_connector as tc
+        if tc._locked(txn, self.frame, "Delete Voucher"):    # closed / other year
+            return
+        row = db.fetchone("SELECT journal_number, is_posted "
                           "FROM journal_entries WHERE journal_id=?", (jid,))
         if not row:
-            return
-        src = (row.get("source_type") or "").lower()
-        if src.startswith("opening_"):
-            messagebox.showwarning(
-                "Delete Voucher",
-                f"{row['journal_number']} is an opening balance.\n\nChange or clear "
-                "it in Accounts ▸ Opening Balances — the stock and the books are "
-                "corrected together.")
-            return
-        if src in ("sales", "pos", "cogs", "cogs_return", "purchase", "sales_return",
-                   "purchase_return", "purchase_return_cost", "expense") or \
-                (src in ("receipt", "payment") and row.get("source_id")):
-            messagebox.showwarning(
-                "Delete Voucher",
-                f"{row['journal_number']} was posted automatically by a "
-                f"{src.replace('_', ' ')} document.\n\nDelete the source "
-                "document instead — its journal will be removed with it.")
             return
         warn = f"Delete voucher {row['journal_number']}?"
         if row.get("is_posted"):
@@ -438,9 +432,27 @@ class VoucherForm:
         self._build(C)
         if vtype in ("receipt", "payment", "journal"):
             self.vtype.set(vtype)
+            # a preset voucher (⭐ favourite) keeps its type: the right was
+            # checked for THAT type only
+            for rb in self._type_radios:
+                rb.config(state="disabled")
         if mode in ("cash", "bank"):
             self.mode_var.set(mode)
         self._vtype_ui()
+        self._clean = self._snapshot()
+
+    # ── unsaved work (the generic close guard calls this) ─────
+    def _snapshot(self):
+        return tuple(v.get() for v in (
+            self.date_var, self.amount_var, self.cust_var, self.income_var,
+            self.sup_var, self.expense_var, self.jv_dr, self.jv_cr, self.narr_var))
+
+    def _is_dirty(self) -> bool:
+        """True when something was typed / picked and not saved yet."""
+        try:
+            return self._snapshot() != self._clean
+        except Exception:
+            return False
 
     def _load_data(self):
         try:
@@ -481,14 +493,16 @@ class VoucherForm:
 
         # type selector
         self.vtype = tk.StringVar(value="receipt")
+        self._type_radios = []
         tr = tk.Frame(body, bg=C["card_bg"]); tr.pack(fill="x", pady=(0, 8))
         for val, lbl in [("receipt", "Receipt (in)"), ("payment", "Payment (out)"),
                          ("journal", "Journal")]:
-            tk.Radiobutton(tr, text=lbl, value=val, variable=self.vtype,
-                           font=("Segoe UI", 9, "bold"), bg=C["card_bg"],
-                           fg=C["text_primary"], activebackground=C["card_bg"],
-                           selectcolor="white",
-                           command=self._vtype_ui).pack(side="left", padx=(0, 10))
+            rb = tk.Radiobutton(tr, text=lbl, value=val, variable=self.vtype,
+                                font=("Segoe UI", 9, "bold"), bg=C["card_bg"],
+                                fg=C["text_primary"], activebackground=C["card_bg"],
+                                selectcolor="white", command=self._vtype_ui)
+            rb.pack(side="left", padx=(0, 10))
+            self._type_radios.append(rb)
 
         # date + amount
         row = tk.Frame(body, bg=C["card_bg"]); row.pack(fill="x", pady=4)
@@ -636,7 +650,14 @@ class VoucherForm:
                     self.p_exp_frame.pack(fill="x", pady=4)
 
     # ── save (ported posting rules) ───────────────────────────
+    # voucher type → the user right that may post it
+    _RIGHT = {"receipt": "receipt", "payment": "payment", "journal": "journal"}
+
     def _save(self):
+        t = self.vtype.get()
+        # the right follows the TYPE being posted, not the button that opened it
+        if not perm.allowed(self._RIGHT.get(t, "journal"), "add", parent=self.win):
+            return
         try:
             amount = round(float((self.amount_var.get() or "0").replace(",", "")), 2)
         except Exception:
@@ -645,9 +666,16 @@ class VoucherForm:
             messagebox.showwarning("Voucher", "Enter an amount.", parent=self.win)
             return
         vdate = self.date_var.get() or date.today().strftime("%Y-%m-%d")
+        try:            # closed year / outside the login year → say why
+            from modules import financial_year as fy
+            msg = fy.guard_active(str(vdate)[:10])
+        except Exception:
+            msg = ""
+        if msg:
+            messagebox.showwarning("Voucher", msg, parent=self.win)
+            return
         narr = self.narr_var.get().strip()
         method = self.mode_var.get()
-        t = self.vtype.get()
         jid = None
         try:
             if t == "receipt":

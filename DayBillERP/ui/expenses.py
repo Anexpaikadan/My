@@ -169,6 +169,16 @@ class ExpensesView:
             return
         eid = int(sel[0])
         vals = self.tree.item(sel[0])["values"]
+        try:        # closed year / outside the login year → not deleted
+            from modules import financial_year as fy
+            r = db.fetchone("SELECT expense_date FROM expenses WHERE expense_id=?",
+                            (eid,)) or {}
+            msg = fy.guard_active(str(r["expense_date"])[:10]) if r.get("expense_date") else ""
+        except Exception:
+            msg = ""
+        if msg:
+            messagebox.showwarning("Delete Expense", msg)
+            return
         if not messagebox.askyesno(
                 "Delete Expense",
                 f"Delete {vals[1].lower()} of {vals[5]} on {vals[0]}?\n"
@@ -226,17 +236,37 @@ class ExpenseForm:
         self.win.configure(bg=C["card_bg"])
         self.win.geometry("520x640")
         self.win.transient(parent.winfo_toplevel())
-        self.win.grab_set()
         self._load_accounts()
         self._build(C, kind)
         if expense_id:
             self._load_existing()
         self._recalc()
+        self._clean = self._snapshot()
         try:      # v6.9 connector bar: New · Edit · Save · Delete (user rights)
             from ui import txn_connector as _tc
             _tc.attach(self, "expense")
         except Exception:
             pass
+        # grab only once the window is built (a failed build never leaves
+        # the app locked behind an empty modal)
+        try:
+            self.win.grab_set()
+        except tk.TclError:
+            pass
+
+    # ── unsaved work (the generic close guard calls this) ─────
+    def _snapshot(self):
+        return tuple(v.get() for v in (
+            self.kind_var, self.date_var, self.ref_var, self.acct_var,
+            self.amount_var, self.rate_var, self.vat_var, self.incl_var,
+            self.method_var, self.on_credit, self.sup_var, self.desc_var))
+
+    def _is_dirty(self) -> bool:
+        """True when something was typed / picked and not saved yet."""
+        try:
+            return self._snapshot() != self._clean
+        except Exception:
+            return False
 
     # ── data ──────────────────────────────────────────────────
     def _load_accounts(self):
@@ -495,6 +525,10 @@ class ExpenseForm:
 
     # ── save ──────────────────────────────────────────────────
     def _save(self):
+        # the Expenses screen uses the Accounts rights (edit / add)
+        if not perm.allowed("accounts", "edit" if self.expense_id else "add",
+                            parent=self.win):
+            return
         net, vat, total = self._split()
         asset = self.kind_var.get() == "asset"
         what = "Asset purchase" if asset else "Expense"
