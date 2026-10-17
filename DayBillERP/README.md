@@ -1,4 +1,4 @@
-# 🇸🇦 DayBill ERP  v6.9.3
+# 🇸🇦 DayBill ERP  v6.9.4
 
 Billing, POS, inventory, accounts and HR for Saudi shops.
 **ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
@@ -64,6 +64,16 @@ Actions that change many records at once (Clear Stock, year close / reopen,
 restore a backup, make the payroll again, disconnect ZATCA …) need their
 right **and** a typed word; deleting a confirmed bill asks you to type its
 number.
+
+## ☰ Columns, fonts, product facts
+
+Right-click any column heading (or ☰ at its top-right) in a report, a list or
+a Sales / Purchase grid: show / hide and move columns, **➕ More columns** —
+Profit, Profit %, Product cost, PLU No, Stock, Stock value, Unit 1 / 2 / 3,
+Multi barcode, Arabic name, Category, Brand … — and **Font** (size, design,
+bold) for that table or every table. Excel / PDF / print follow the columns on
+screen. The Product window shows a live **Product summary** (price with /
+without VAT, cost, profit, profit %, stock, PLU, units, barcodes) on every page.
 
 ## ⌨ Keys, favourites, after Save
 

@@ -10,7 +10,7 @@ import re
 try:                                    # one version for the whole app (config/version.py)
     from config.version import VERSION as APP_VERSION
 except Exception:
-    APP_VERSION = "6.9.3"
+    APP_VERSION = "6.9.4"
 
 # Ordered list of database patches shipped with the app.
 # (filename relative to project root, human description, version)
@@ -35,6 +35,20 @@ PATCHES = [
 
 # What changed in each version (shown in the Updates panel)
 CHANGELOG = [
+    ("6.9.4", ["☰ Columns tool on every report, list and transaction grid: ➕ More columns — "
+               "Profit, Profit %, Product cost, Last purchase cost, Sale price, PLU No, Stock, "
+               "Stock value, Unit 1 / 2 / 3, Barcode, Multi barcode, Arabic name, Category, "
+               "Brand, VAT %, Location — and they go into Excel / PDF / print too",
+               "🔤 Font size and font design (Segoe UI, Tahoma, Arial, Calibri …) and bold rows "
+               "per table, or for every table — right-click a heading ▸ Font",
+               "🧾 Sales / Purchase / Return / Quotation grid: Profit uses the amount without VAT "
+               "and the cost of the base units (a box of 12 = 12 × cost); new Profit %, PLU, "
+               "Units 1-3, Multi barcode columns; cost and profit only for users with the "
+               "purchase or reports right",
+               "📦 New Product window (designed in Figma): slim title strip with the code and the "
+               "Active switch, price / unit / VAT on the Basic page, and a live Product summary "
+               "on every page — price with / without VAT, cost, profit, profit % (red below "
+               "cost), stock, PLU, units 1-3 and every barcode; the margin follows as you type"]),
     ("6.9.3", ["💾 After Save the entry window stays open for the next entry — Sales, Purchase, "
                "Returns, Quotation / PO, Receipt / Payment, Vouchers, Expense, Journal, "
                "Consumable Entry, Product, Customer, Supplier, Stock Adjustment. Settings ▸ "

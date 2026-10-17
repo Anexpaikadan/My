@@ -90,6 +90,10 @@ WINDOWS = [
         ("Ctrl+S", "Save"), ("F9", "Save (Expense)"), ("Enter", "Next field"),
         ("Delete", "Remove a journal line"), ("Esc", "Close"),
     ]),
+    ("Product window", [
+        ("Product summary (right)", "Live price with / without VAT, cost, profit, profit %, stock, "
+                                    "PLU, units 1-3, barcodes"),
+    ]),
     ("Product / Customer / Supplier form", [
         ("Ctrl+S / F4", "Save"), ("F5", "Save & print (product)"),
         ("Ctrl+D", "Duplicate the product"), ("Ctrl+P", "Print the barcode label"),
@@ -117,6 +121,9 @@ WINDOWS = [
         ("Right-click", "Open · Edit · Delete · Voucher · New"),
     ]),
     ("Lists and tables (everywhere)", [
+        ("Right-click a heading / ☰", "Columns: show / hide, ➕ More columns (profit, profit %, cost, "
+                                      "PLU, stock, units 1-3, multi barcode …), font size and design"),
+        ("Drag a heading / its edge", "Move the column / change its width"),
         ("Double-click / Enter", "Open / edit"), ("Delete", "Delete (asks first; follows your rights)"),
         ("Ctrl+N", "New"), ("Ctrl+C", "Copy the selected rows"), ("Ctrl+A", "Select all"),
         ("Home / End", "First / last row"),

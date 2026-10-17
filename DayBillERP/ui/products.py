@@ -935,7 +935,7 @@ class ProductForm:
         if product_id:
             self._load_data()
 
-    GEOM_KEY = "product_form_geometry_v524"     # new key: old full-screen sizes are not reused
+    GEOM_KEY = "product_form_geometry_v694"     # v6.9.4 layout (summary panel): a new size
 
     def _remember_geometry(self):
         """Remember the window size/position the user left it at."""
@@ -946,8 +946,8 @@ class ProductForm:
         except Exception:
             pass
 
-    BASE_SIZE = (860, 500)      # at 100 % text; grows with Settings ▸ Text size
-    MIN_SIZE = (720, 460)
+    BASE_SIZE = (980, 580)      # at 100 % text; grows with Settings ▸ Text size
+    MIN_SIZE = (820, 500)
 
     def _saved_geometry(self):
         """The size/position the user last left the window at (real screen
@@ -1010,15 +1010,16 @@ class ProductForm:
         self.win.configure(bg=C["content_bg"])
         self.win.grab_set()
 
-        # Header — slim app-style strip
-        hdr = tk.Frame(self.win, bg=C["primary"], height=40)
+        # Header — slim title strip (v6.9.4 design: code chip + Active on the right)
+        hdr = tk.Frame(self.win, bg=C["primary"], height=34)
         hdr.pack(fill="x")
         hdr.pack_propagate(False)
+        self._hdr = hdr
         icon = "👁" if self._read_only else ("✏️" if is_edit else "➕")
         self._hdr_title = tk.Label(hdr, text=f"{icon}  {title}",
-                                   font=("Segoe UI", 12, "bold"),
+                                   font=("Segoe UI", 11, "bold"),
                                    bg=C["primary"], fg="white")
-        self._hdr_title.pack(side="left", padx=16)
+        self._hdr_title.pack(side="left", padx=14)
 
         # Footer FIRST so it always stays visible at the bottom (no scroll)
         self._build_footer(C)
@@ -1033,8 +1034,11 @@ class ProductForm:
         #    Units & Barcodes · More (suppliers, history, images, notes) ──
         outer = tk.Frame(self.win, bg=C["content_bg"])
         outer.pack(fill="both", expand=True, padx=10, pady=(6, 0))
+        # v6.9.4: live Product summary on the right of every page
+        self._summary_host = tk.Frame(outer, bg=C["content_bg"])
+        self._summary_host.pack(side="right", fill="y", padx=(8, 0))
         self._pagenav = PageNav(outer, C)
-        self._pagenav.frame.pack(fill="both", expand=True)
+        self._pagenav.frame.pack(side="left", fill="both", expand=True)
 
         def two_cols(page):
             page.columnconfigure(0, weight=1, uniform="pc")
@@ -1087,6 +1091,8 @@ class ProductForm:
         self._build_images_tab(C)
         self._build_notes_tab(C)
 
+        self._build_v694(C)
+
         # keyboard-first workflow: Enter/Shift+Enter move between fields;
         # Ctrl+S / F4 save, F5 save & print, Ctrl+D duplicate, Ctrl+B / Ctrl+P
         # barcode actions — matches the shortcuts printed on the toolbar.
@@ -1098,6 +1104,103 @@ class ProductForm:
             self.win.bind("<Control-d>", lambda e=None: self._duplicate_product())
             self.win.bind("<Control-p>", lambda e=None: self._print_product_barcode())
         self.win.bind("<Control-b>", lambda e=None: self._quick_generate_barcode())
+
+    # ── v6.9.4 design (Figma "DayBill ERP — Product window v6.9.4") ──
+    def _build_v694(self, C):
+        """Title-strip code chip + Active switch, the price / unit / VAT
+        boxes on the Basic page (the same boxes as on Price & VAT — one
+        value, two places), the live Product summary, and a margin that
+        follows the price and cost as you type."""
+        # code chip + Active on the title strip
+        try:
+            self._code_chip = tk.Label(self._hdr, text="", font=("Segoe UI", 8, "bold"),
+                                       bg=C.get("primary_dark", "#1D4ED8"), fg="white",
+                                       padx=8, pady=1)
+            act = tk.Frame(self._hdr, bg=C["primary"])
+            act.pack(side="right", padx=(6, 12))
+            ToggleSwitch(act, self.active_var, width=34, height=18).pack(side="left")
+            tk.Label(act, text="Active", font=("Segoe UI", 9), bg=C["primary"],
+                     fg="white").pack(side="left", padx=(6, 0))
+            self._code_chip.pack(side="right", padx=6)
+
+            def chip(*_a):
+                code = self.fields["product_code"].get().strip()
+                new = not getattr(self, "_loaded_as_edit", False)
+                self._code_chip.configure(text=("Next code  %s" if new else "Code  %s") % code
+                                          if code else "")
+            self.fields["product_code"].trace_add("write", chip)
+            chip()
+        except Exception:
+            pass
+        # price · unit · VAT on the Basic page (shared variables)
+        try:
+            cl = self.tab_class
+            tk.Frame(cl, bg=C["border"], height=1).pack(fill="x", padx=14, pady=(8, 0))
+            row = tk.Frame(cl, bg=C["content_bg"])
+            row.pack(fill="x", padx=14, pady=(4, 0))
+            row.columnconfigure(0, weight=1)
+            row.columnconfigure(1, weight=1)
+
+            def cell(col, text):
+                c = tk.Frame(row, bg=C["content_bg"])
+                c.grid(row=0, column=col, sticky="ew", padx=(0, 6) if col == 0 else (6, 0))
+                tk.Label(c, text=text, font=("Segoe UI", 9, "bold"), bg=C["content_bg"],
+                         fg=C["primary"]).pack(anchor="w")
+                return c
+            e = tk.Entry(cell(0, "Sales Price (SAR) *"), textvariable=self.fields["unit_price"],
+                         font=("Segoe UI", 10), bg="white", fg=C["text_primary"],
+                         relief="solid", bd=1, justify="right")
+            e.pack(fill="x", ipady=4, pady=(2, 0))
+            self.price_entry_basic = e
+            ucb = ttk.Combobox(cell(1, "Unit *"), textvariable=self.def_sales_unit,
+                               values=list(self.uom_cb["values"]), font=("Segoe UI", 10), width=10)
+            ucb.pack(fill="x", ipady=3, pady=(2, 0))
+            ucb.bind("<<ComboboxSelected>>",
+                     lambda e=None: self._on_unit_field_pick(self.def_sales_unit, ucb))
+            self._unit_combos.append(ucb)
+            vrow = tk.Frame(cl, bg=C["content_bg"])
+            vrow.pack(fill="x", padx=14, pady=(6, 0))
+            tk.Label(vrow, text="VAT Category *", font=("Segoe UI", 9, "bold"), bg=C["content_bg"],
+                     fg=C["primary"]).pack(anchor="w")
+            self.vat_cb_basic = ttk.Combobox(vrow, textvariable=self.vat_var,
+                                             values=list(self.vat_cb["values"]), state="readonly",
+                                             font=("Segoe UI", 10))
+            self.vat_cb_basic.pack(fill="x", ipady=3, pady=(2, 0))
+        except Exception:
+            pass
+        # the live summary panel
+        try:
+            from ui.product_summary import ProductSummary
+            self.summary = ProductSummary(self._summary_host, self, C)
+            self.summary.frame.pack(fill="y", expand=True)
+        except Exception:
+            self.summary = None
+        # margin on the Price page follows the boxes (no button needed)
+        for k in ("unit_price", "purchase_price", "average_cost", "last_purchase_cost",
+                  "vat_category_id"):
+            v = self.fields.get(k)
+            if isinstance(v, tk.Variable):
+                v.trace_add("write", lambda *_a: self._calc_margin_soon())
+        try:
+            self.price_incl_var.trace_add("write", lambda *_a: self._calc_margin_soon())
+        except Exception:
+            pass
+        self._calc_margin_soon()
+
+    def _calc_margin_soon(self):
+        if getattr(self, "_margin_job", None):
+            return
+        try:
+            self._margin_job = self.win.after(150, self._calc_margin_now)
+        except Exception:
+            self._margin_job = None
+
+    def _calc_margin_now(self):
+        self._margin_job = None
+        try:
+            self._calc_margin()
+        except Exception:
+            pass
 
     def _open_units_tab_dialog(self, kind):
         """Shared opener used by the Units/Rates/Barcodes tabs."""
@@ -1613,6 +1716,12 @@ class ProductForm:
         """Show how many extra barcodes each unit has on its 🏷 button."""
         counts = {}
         if self.product_id:
+            try:                      # every extra barcode → the Product summary
+                self._extra_barcodes = [str(r["barcode"]) for r in db.fetchall(
+                    "SELECT barcode FROM product_unit_barcodes WHERE product_id=? "
+                    "ORDER BY 1", (self.product_id,)) or [] if r.get("barcode")]
+            except Exception:
+                self._extra_barcodes = []
             try:
                 for rr in db.fetchall(
                         "SELECT unit_id, COUNT(*) AS n FROM product_unit_barcodes "
@@ -2171,8 +2280,8 @@ class ProductForm:
 
         row1 = tk.Frame(b, bg=C["content_bg"])
         row1.pack(fill="x", padx=14, pady=(6, 0))
-        row1.columnconfigure(0, weight=1)
-        row1.columnconfigure(1, weight=1)
+        row1.columnconfigure(0, weight=1, uniform="r1")     # code | Arabic name: half each
+        row1.columnconfigure(1, weight=1, uniform="r1")
 
         # Product Code — Polosys style: auto-generated, with a "Manual"
         # tick to type your own. Typing a code that is ALREADY SAVED
@@ -2183,9 +2292,11 @@ class ProductForm:
         self._code_max = code_max_len()
         code_cell = tk.Frame(row1, bg=C["content_bg"])
         code_cell.grid(row=0, column=0, sticky="ew", padx=(0, 10))
-        tk.Label(code_cell, text="Code *" + ("   (max %d)" % self._code_max if self._code_max else ""),
+        code_head = tk.Frame(code_cell, bg=C["content_bg"])
+        code_head.pack(fill="x")
+        tk.Label(code_head, text="Code *" + ("  ≤%d" % self._code_max if self._code_max else ""),
                  font=("Segoe UI", 9, "bold"), bg=C["content_bg"],
-                 fg=C["primary"]).pack(anchor="w")
+                 fg=C["primary"]).pack(side="left")
         code_row = tk.Frame(code_cell, bg=C["content_bg"])
         code_row.pack(fill="x", pady=(2, 0))
         cv = tk.StringVar()
@@ -2193,7 +2304,7 @@ class ProductForm:
         self.code_entry = tk.Entry(code_row, textvariable=cv,
                                    font=("Segoe UI", 10, "bold"), bg="white",
                                    fg=C["text_primary"], relief="solid", bd=1,
-                                   width=max(10, min(self._code_max or 12, 16) + 3),
+                                   width=max(8, min(self._code_max or 12, 16) + 1),
                                    disabledbackground="#EFEDF8",
                                    disabledforeground=C["text_primary"])
         self.code_entry._fixed_width = True
@@ -2201,10 +2312,10 @@ class ProductForm:
         if self._code_max:
             limit_length(self.code_entry, self._code_max)
         self.manual_code_var = tk.BooleanVar(value=self.product_id is not None)
-        tk.Checkbutton(code_row, text="Manual", variable=self.manual_code_var,
-                       font=("Segoe UI", 8), bg=C["content_bg"],
+        tk.Checkbutton(code_head, text="Manual", variable=self.manual_code_var,
+                       font=("Segoe UI", 8), bg=C["content_bg"], bd=0, pady=0,
                        activebackground=C["content_bg"],
-                       command=self._toggle_manual_code).pack(side="left", padx=(8, 0))
+                       command=self._toggle_manual_code).pack(side="right")
         self.code_entry.bind("<FocusOut>", lambda e=None: self._check_code_exists())
         self.code_entry.bind("<Return>", lambda e=None: self._check_code_exists())
         if self.product_id is None:
@@ -2217,16 +2328,16 @@ class ProductForm:
         # form, so it gets its own full-width row and a noticeably
         # larger box instead of sharing a cramped 1/3 column. ──
         name_row = tk.Frame(b, bg=C["content_bg"])
-        name_row.pack(fill="x", padx=14, pady=(10, 0))
+        name_row.pack(fill="x", padx=14, pady=(6, 0))
         tk.Label(name_row, text="Product Name (English) *",
-                 font=("Segoe UI", 11, "bold"), bg=C["content_bg"],
+                 font=("Segoe UI", 10, "bold"), bg=C["content_bg"],
                  fg=C["primary"]).pack(anchor="w")
         name_var = tk.StringVar()
         self.fields["product_name_en"] = name_var
         self.name_entry = tk.Entry(name_row, textvariable=name_var,
-                                   font=("Segoe UI", 15), bg="white",
+                                   font=("Segoe UI", 13), bg="white",
                                    fg=C["text_primary"], relief="solid", bd=1)
-        self.name_entry.pack(fill="x", ipady=10, pady=(4, 0))
+        self.name_entry.pack(fill="x", ipady=5, pady=(3, 0))
 
         # ✨ Translate the English name → Arabic (online AI when set up,
         # else the offline grocery dictionary)
@@ -2825,7 +2936,7 @@ class ProductForm:
                 if isinstance(child, tk.Entry):
                     child.config(state="disabled", disabledbackground=C["content_bg"])
                 elif isinstance(child, tk.Label):
-                    child.config(text="Current Stock  (change with Stock Adjustment)")
+                    child.config(text="Current stock  (Stock Adjustment)")
 
     # ── Load Data ─────────────────────────────────────────────
     def _load_data(self):
@@ -3329,9 +3440,11 @@ class ProductForm:
                   bg=C["primary_light"], fg=C["primary"], relief="flat", padx=12, pady=4,
                   cursor="hand2", command=self._calc_margin).pack(side="left")
         self.margin_var = tk.StringVar(value="Margin: —")
-        tk.Label(f, textvariable=self.margin_var, font=("Segoe UI", 10, "bold"),
-                 bg=C["content_bg"], fg=C["success"], wraplength=360,
-                 justify="left").pack(anchor="w", padx=14, pady=(6, 0))
+        ml = tk.Label(f, textvariable=self.margin_var, font=("Segoe UI", 10, "bold"),
+                      bg=C["content_bg"], fg=C["success"], wraplength=300,
+                      justify="left", anchor="w")
+        ml.pack(fill="x", anchor="w", padx=14, pady=(6, 0))
+        ml.bind("<Configure>", lambda e: e.widget.configure(wraplength=max(120, e.width - 6)))
 
     def _build_accounting_tab(self, C):
         """Accounting tab was removed from the product header (per-product
@@ -3479,24 +3592,20 @@ class ProductForm:
             messagebox.showerror("Images", str(e)[:150])
 
     def _calc_margin(self):
-        def num(k):
-            w = self.fields.get(k)
-            try:
-                return float(w.get() or 0)
-            except Exception:
-                return 0.0
-        cost = num("purchase_price")
-        sell = num("unit_price")  # main selling price from Details
-        if not sell:
-            sell = num("unit_price2")
-        if sell <= 0:
+        """Profit of one unit = price without VAT − cost (the average cost,
+        else the purchase price) — the same figures as the Product summary."""
+        try:
+            from ui.product_summary import values
+            v = values(self)
+        except Exception:
+            return
+        if v["net"] <= 0:
             self.margin_var.set("Margin: —")
             return
-        profit = sell - cost
-        margin = profit / sell * 100 if sell else 0
-        markup = profit / cost * 100 if cost else 0
-        self.margin_var.set(f"Profit: {profit:,.2f}   |   Margin: {margin:.1f}%   "
-                            f"|   Markup: {markup:.1f}%")
+        markup = v["profit"] / v["cost"] * 100 if v["cost"] else 0
+        self.margin_var.set(f"Profit {v['profit']:,.2f}  ·  Margin {v['pct'] or 0:.1f} %\n"
+                            f"Markup {markup:.1f} %"
+                            + ("   ⚠ below cost" if v["profit"] < 0 else ""))
 
     def _build_inventory_tab(self, C):
         f = self.tab_inv

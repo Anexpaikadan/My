@@ -373,6 +373,22 @@ def run(out_dir=None):
             raise RuntimeError("typed confirmation for dangerous actions is missing")
     step("Entry windows: shortcuts, stay open after Save, typed confirmations", entry_windows_v693)
 
+    def columns_v694():
+        from modules import product_info as PI
+        from ui import table_columns as TC
+        from ui.product_summary import vat_rate
+        keys = [f[0] for f in PI.FIELDS]
+        for k in ("x_profit", "x_profit_pct", "x_cost", "x_plu", "x_stock", "x_unit1", "x_unit2",
+                  "x_unit3", "x_barcodes"):
+            if k not in keys:
+                raise RuntimeError("More column %s is missing" % k)
+        for fn in ("product_columns", "set_font", "font_of", "font_menu"):
+            if not callable(getattr(TC, fn, None)):
+                raise RuntimeError("columns tool: %s is missing" % fn)
+        if vat_rate("S - Standard Rate (15.00%)") != 15.0:
+            raise RuntimeError("Product summary cannot read the VAT rate")
+    step("Columns tool: more columns, fonts, product summary", columns_v694)
+
     text = "DayBill ERP self-test  %s\n%s\n\n%s\n" % (
         datetime.now().strftime("%Y-%m-%d %H:%M"), "-" * 40, "\n".join(rows))
     text += "\nRESULT: %s\n" % ("ALL OK" if ok_all else "PROBLEMS FOUND")

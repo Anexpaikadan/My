@@ -110,6 +110,26 @@ class ToggleSwitch(tk.Canvas):
         self.w, self.h = width, height
         self._draw()
         self.bind("<Button-1>", self._toggle)
+        try:                 # v6.9.4: follows its variable (two switches, one value)
+            self._trace = variable.trace_add("write", lambda *_a: self._redraw())
+            self.bind("<Destroy>", lambda e: self._untrace() if e.widget is self else None, add="+")
+        except Exception:
+            self._trace = None
+
+    def _redraw(self):
+        try:
+            if self.winfo_exists():
+                self._draw()
+        except Exception:
+            pass
+
+    def _untrace(self):
+        try:
+            if self._trace:
+                self.var.trace_remove("write", self._trace)
+                self._trace = None
+        except Exception:
+            pass
 
     def _draw(self):
         self.delete("all")

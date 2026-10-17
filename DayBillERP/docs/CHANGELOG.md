@@ -2,6 +2,40 @@
 
 Newest first. The short guide is in the main README.md.
 
+## ☰ v6.9.4 — columns tool with profit, PLU, units and barcodes; fonts; new Product window
+
+- **More columns in every report, list and transaction grid.** Right-click a
+  column heading (or ☰): **➕ More columns** offers Profit, Profit %, Product
+  cost, Last purchase cost, Sale price, PLU No, Stock, Stock value, Reorder
+  level, Unit 1 / 2 / 3 (name × size = price), Barcode, Multi barcode (every
+  barcode of the product and its units), Arabic name, Category, Brand, VAT %
+  and Location. They start hidden; tick the ones you want. In the Report
+  Center they are on every product report (item-wise sales and purchases,
+  item details, stock, stock movement, low / dead stock, stock by branch,
+  expiry, stock transactions) with totals; on the Products, Stock and Low
+  stock lists; and in the Sales, Purchase, Return and Quotation grids
+  (Profit %, PLU, Units 1-3, Multi barcode, Arabic name, Category, Stock
+  value). Excel, PDF and print take exactly the columns on screen, extra
+  columns included. Cost, profit and stock value show only for users with
+  the purchase or reports right (a cashier never sees them).
+- **Profit the right way.** Profit = amount without VAT − cost of the base
+  units (2 boxes of 12 = 24 × cost); on purchases it is what the goods sell
+  for at today's price without VAT − what they cost. Profit % = profit ÷ sale.
+  Before, the grid took the price with VAT and the cost of one piece per box.
+- **Font size and font design per table.** ☰ ▸ Font: size (8 – 18, A+ / A−),
+  design (Segoe UI, Tahoma, Arial, Calibri, Verdana, Cambria, Consolas,
+  Courier New, Times New Roman), bold rows; "Use this font for every table";
+  also in Columns… . Bold total / heading rows follow the new size.
+- **New Product window** — designed in Figma ("DayBill ERP — Product window
+  v6.9.4"): a slim title strip with the code ("Next code F004") and the
+  Active switch; sales price, unit and VAT also on the Basic page (the same
+  boxes as Price & VAT); the Basic page fits without cut-off boxes; a
+  **Product summary** on the right of every page follows what you type —
+  price with / without VAT, cost, profit and profit % (red "Loss — below
+  cost"), stock, PLU, units 1-3 and every barcode. The margin on Price & VAT
+  updates by itself and uses the price without VAT. Switches follow their
+  value everywhere (Active on the title strip = Active on Stock).
+
 ## 💾 v6.9.3 — stay open after Save, shortcut keys, favourites, consumable entry, voucher types, rights
 
 - **Entry windows stay open after Save.** Sales Invoice, Purchase, Sales /
