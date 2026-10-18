@@ -75,8 +75,15 @@ def num(v):
         return str(v or "")
 
 
-def amount_in_words(n, currency="Saudi Riyal"):
-    """Simple English amount-in-words (0-999999 range, no external deps)."""
+def amount_in_words(n, currency=None):
+    """Simple English amount-in-words (0-999999 range, no external deps).
+    v7.0: without a currency, the company's country money (country.words)."""
+    if currency is None:
+        try:
+            from modules import country as _ctry
+            return _ctry.words(n)
+        except Exception:
+            currency = "Saudi Riyal"
     try:
         n = round(float(n), 2)
     except Exception:
@@ -159,7 +166,27 @@ def _header_tokens(invoice, company, lines, totals=None):
                       or invoice.get("original_purchase_no") or invoice.get("po_number") or ""),
         "notes": invoice.get("notes_en", "") or "",
         "invoice_time": _ft(invoice.get("invoice_time")) if invoice.get("invoice_time") else "",
+        **_country_tokens(invoice, tax),
     }
+
+
+def _country_tokens(invoice, tax):
+    """v7.0: country words for printed templates — currency symbol, VAT /
+    GST, VAT No. / TRN / GSTIN, India place of supply and CGST / SGST / IGST."""
+    try:
+        from modules import country as C
+        out = {"currency_symbol": C.symbol(), "tax_name": C.tax_name(),
+               "tax_no_label": C.tax_no_label(), "country_name": C.name(),
+               "place_of_supply": "", "cgst": "", "sgst": "", "igst": "",
+               "invoice_title": C.invoice_title(not str(invoice.get("customer_vat_no") or "").strip())}
+        if C.is_in():
+            pos = C.place_of_supply("sales", invoice)
+            sp = C.gst_split(tax, pos)
+            out.update(place_of_supply=C.state_label(pos), cgst=num(sp["cgst"]),
+                       sgst=num(sp["sgst"]), igst=num(sp["igst"]))
+        return out
+    except Exception:
+        return {"currency_symbol": "SAR", "tax_name": "VAT", "tax_no_label": "VAT No."}
 
 
 def _item_value(line, key):

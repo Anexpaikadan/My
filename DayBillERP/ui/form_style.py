@@ -57,12 +57,33 @@ def _digits(s):
     return re.sub(r"[\s\-()]", "", s or "")
 
 
+def _ctry():
+    """The company's country (v7.0): SA · AE · IN."""
+    try:
+        from modules import country as _c
+        return _c.code()
+    except Exception:
+        return "SA"
+
+
 def check_phone(s):
     d = _digits(s)
+    c = _ctry()
+    if re.fullmatch(r"(\+|00)\d{8,15}", d):
+        return None
+    if c == "AE":
+        if re.fullmatch(r"0[2-9]\d{7,8}", d) or re.fullmatch(r"5\d{8}", d) \
+                or re.fullmatch(r"971[2-9]\d{7,8}", d) or re.fullmatch(r"(800|600)\d{4,7}", d):
+            return None
+        return "Mobile: 05X XXX XXXX (10 digits) or +971 5X XXX XXXX"
+    if c == "IN":
+        if re.fullmatch(r"0?[6-9]\d{9}", d) or re.fullmatch(r"91[6-9]\d{9}", d) \
+                or re.fullmatch(r"0\d{9,10}", d) or re.fullmatch(r"1800\d{6,7}", d):
+            return None
+        return "Mobile: 10 digits (98XXX XXXXX) or +91 98XXX XXXXX"
     if re.fullmatch(r"0[1-9]\d{8}", d) or re.fullmatch(r"5\d{8}", d) \
             or re.fullmatch(r"(\+|00)?966[1-9]\d{8}", d) \
-            or re.fullmatch(r"(800\d{7}|9200\d{5})", d) \
-            or re.fullmatch(r"(\+|00)\d{8,15}", d):
+            or re.fullmatch(r"(800\d{7}|9200\d{5})", d):
         return None
     return "Mobile: 05X XXX XXXX (10 digits) or +966 5X XXX XXXX"
 
@@ -73,6 +94,16 @@ def check_email(s):
 
 
 def check_vat(s):
+    """The tax number of the company's country: Saudi VAT No. (15 digits,
+    3…3) · UAE TRN (15 digits, 100…) · India GSTIN (15 characters)."""
+    c = _ctry()
+    if c != "SA":
+        try:
+            from modules import country as _c
+            ok, msg = _c.valid_tax_no(s, c)
+            return None if ok else msg
+        except Exception:
+            return None
     d = _digits(s)
     if re.fullmatch(r"3\d{13}3", d):
         return None
@@ -82,20 +113,41 @@ def check_vat(s):
 
 
 def check_cr(s):
+    c = _ctry()
+    if c == "IN":
+        t = re.sub(r"\s+", "", str(s or "")).upper()
+        if re.fullmatch(r"[A-Z]{5}\d{4}[A-Z]", t) or re.fullmatch(r"[LU]\d{5}[A-Z]{2}\d{4}[A-Z]{3}\d{6}", t) \
+                or re.fullmatch(r"UDYAM-[A-Z]{2}-\d{2}-\d{7}", t):
+            return None
+        return "PAN: 10 characters (ABCDE1234F), or CIN / Udyam number"
+    if c == "AE":
+        return None                         # trade licence numbers differ by emirate
     d = _digits(s)
     return None if re.fullmatch(r"\d{10}", d) else "CR number: 10 digits (you typed %d)" % len(d)
 
 
 def check_postal(s):
+    c = _ctry()
+    if c == "IN":
+        return None if re.fullmatch(r"[1-9]\d{5}", _digits(s)) else "PIN code: 6 digits"
+    if c == "AE":
+        return None                         # P.O. Box numbers, any length
     return None if re.fullmatch(r"\d{5}", _digits(s)) else "Postal code: 5 digits"
 
 
 def check_building(s):
+    if _ctry() != "SA":
+        return None
     return None if re.fullmatch(r"\d{4}", _digits(s)) else "Building number: 4 digits"
 
 
 def check_iban(s):
     d = _digits(s).upper()
+    c = _ctry()
+    if c == "AE":
+        return None if re.fullmatch(r"AE\d{21}", d) else "IBAN: AE + 21 digits (23 in all)"
+    if c == "IN":
+        return None                         # India: account no. + IFSC, no IBAN
     return None if re.fullmatch(r"SA\d{22}", d) else "IBAN: SA + 22 digits (24 in all)"
 
 
@@ -115,9 +167,30 @@ CHECKS = {"phone": check_phone, "email": check_email, "vat": check_vat, "cr": ch
           "postal": check_postal, "building": check_building, "iban": check_iban,
           "number": check_number, "days": check_days}
 
-HINTS = {"phone": "05X XXX XXXX", "email": "name@example.com", "vat": "3XXXXXXXXXXXXX3",
-         "cr": "10 digits", "postal": "12345", "building": "1234",
-         "iban": "SA00 0000 0000 0000 0000 0000", "number": "0.00", "days": "30"}
+_HINTS_SA = {"phone": "05X XXX XXXX", "email": "name@example.com", "vat": "3XXXXXXXXXXXXX3",
+             "cr": "10 digits", "postal": "12345", "building": "1234",
+             "iban": "SA00 0000 0000 0000 0000 0000", "number": "0.00", "days": "30"}
+_HINTS_BY = {
+    "AE": {"phone": "05X XXX XXXX", "vat": "100XXXXXXXXXXXX", "cr": "Trade licence no.",
+           "postal": "P.O. Box", "building": "", "iban": "AE00 0000 0000 0000 0000 000"},
+    "IN": {"phone": "98XXX XXXXX", "vat": "27ABCDE1234F1Z5", "cr": "ABCDE1234F", "postal": "400001",
+           "building": "", "iban": ""},
+}
+
+
+class _Hints(dict):
+    """The grey example in a box — the company's country decides (v7.0)."""
+    def get(self, k, default=None):
+        d = _HINTS_BY.get(_ctry(), {})
+        if k in d:
+            return d[k] or default
+        return _HINTS_SA.get(k, default)
+
+    def __getitem__(self, k):
+        return self.get(k)
+
+
+HINTS = _Hints(_HINTS_SA)
 
 
 def guess_check(label, kind=None):

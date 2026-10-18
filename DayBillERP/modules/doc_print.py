@@ -95,6 +95,14 @@ KINDS = {
 last_message = ""
 
 
+def _cur_symbol(company):
+    """v7.0: the company's currency symbol (SAR · AED · ₹)."""
+    try:
+        from modules import country as _K
+        return _K.symbol()
+    except Exception:
+        return company.get("currency") or "SAR"
+
 def _f(v):
     try:
         return float(v or 0)
@@ -225,7 +233,7 @@ def load(kind, doc_id):
         "number": number, "date": cfg.fmt_date(row.get(k["date"])),
         "party_name": pname, "party_address": paddr, "extra": extra,
         "subtotal": row.get("subtotal_amount"), "vat": row.get("vat_amount"),
-        "total": total, "amount": total, "currency": company.get("currency") or "SAR",
+        "total": total, "amount": total, "currency": _cur_symbol(company),
         "narration": row.get("notes_en") or "", "notes": row.get("notes_en") or "",
         "payment": row.get("payment_method") or "",
         # ZATCA Phase 2 QR of a signed credit note

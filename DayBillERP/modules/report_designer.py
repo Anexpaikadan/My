@@ -10,6 +10,30 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from config.database import db
 
 
+def _cur():
+    """v7.0: the company's currency symbol / tax words in new layouts."""
+    try:
+        from modules import country as _K
+        return _K.symbol()
+    except Exception:
+        return "SAR"
+
+
+def _taxword():
+    try:
+        from modules import country as _K
+        return "VAT %g%%" % _K.std_rate() if not _K.is_in() else "GST"
+    except Exception:
+        return "VAT 15%"
+
+
+def _taxno():
+    try:
+        from modules import country as _K
+        return _K.tax_no_label()
+    except Exception:
+        return "VAT No"
+
 def tables_ready():
     try:
         return bool(db.execute_scalar(
@@ -291,17 +315,17 @@ def starter_layout(doc_type, paper="A4"):
     add("company_logo", "Company Logo", 8, 34, 60, 44, typ="image")
     add("company_name", "Company Name", 74, 34, 230, 18, 13, True)
     add("company_address", "Company Address", 74, 52, 230, 12, 8)
-    add("company_vat", "Company VAT", 74, 64, 230, 12, 8, prefix="VAT No: ")
+    add("company_vat", "Company VAT", 74, 64, 230, 12, 8, prefix="%s: " % _taxno())
     add("invoice_number", "Number", 300, 34, 154, 14, 10, True, "right", prefix="No: ")
     add("invoice_date", "Date", 300, 48, 154, 12, 9, False, "right", prefix="Date: ")
     add("reference", "Reference", 300, 60, 154, 12, 8, False, "right", prefix="Ref: ")
     add("line", "Line", 8, 84, 446, 2, typ="line")
     add("customer_name", "Party Name", 8, 90, 290, 14, 10, True, prefix=party)
-    add("customer_vat", "Party VAT", 8, 104, 290, 12, 8, prefix="VAT No: ")
+    add("customer_vat", "Party VAT", 8, 104, 290, 12, 8, prefix="%s: " % _taxno())
     add("customer_address", "Party Address", 8, 116, 290, 12, 8)
     add("payment_terms", "Payment", 300, 90, 154, 12, 8, False, "right", prefix="Payment: ")
     if doc_type in VOUCHER_DOCS:
-        add("grand_total", "Amount", 8, 140, 446, 22, 16, True, "left", prefix="Amount SAR ")
+        add("grand_total", "Amount", 8, 140, 446, 22, 16, True, "left", prefix="Amount %s " % _cur())
         add("amount_in_words", "Amount in words", 8, 166, 446, 12, 9)
         add("notes", "Narration", 8, 184, 446, 12, 9, prefix="Narration: ")
         add("signature", "Received by", 8, 560, 150, 40, typ="signature")
@@ -313,8 +337,8 @@ def starter_layout(doc_type, paper="A4"):
         els.append(c_)
     add("subtotal", "Subtotal", 300, 172, 154, 12, 9, False, "right", prefix="Subtotal: ")
     add("discount_total", "Discount", 300, 184, 154, 12, 9, False, "right", prefix="Discount: ")
-    add("tax_total", "VAT", 300, 196, 154, 12, 9, False, "right", prefix="VAT 15%: ")
-    add("grand_total", "Grand Total", 300, 210, 154, 18, 12, True, "right", prefix="TOTAL SAR ")
+    add("tax_total", "VAT", 300, 196, 154, 12, 9, False, "right", prefix="%s: " % _taxword())
+    add("grand_total", "Grand Total", 300, 210, 154, 18, 12, True, "right", prefix="TOTAL %s " % _cur())
     add("amount_in_words", "Amount in words", 8, 234, 446, 12, 8)
     add("notes", "Notes", 8, 248, 446, 12, 8, prefix="Notes: ")
     if doc_type in ("sales_invoice", "pos_invoice"):

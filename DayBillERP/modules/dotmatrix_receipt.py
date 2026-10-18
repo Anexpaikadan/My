@@ -30,9 +30,27 @@ FORM_FEED   = b"\x0c"
 
 def _money(x):
     try:
+        from modules import country as _K
+        return _K.num(x)
+    except Exception:
+        pass
+    try:
         return f"{float(x or 0):,.2f}"
     except Exception:
         return "0.00"
+
+
+def _k():
+    """v7.0: (currency for a plain-text printer, tax word, tax-number label,
+    country code) of the company's country."""
+    try:
+        from modules import country as _K
+        sym = _K.symbol()
+        if not sym.isascii():
+            sym = "Rs." if _K.is_in() else _K.currency_code()
+        return sym, _K.tax_name(), _K.tax_no_label(), _K.code()
+    except Exception:
+        return "SAR", "VAT", "VAT No", "SA"
 
 
 def _line(char="-", width=80):
@@ -132,7 +150,7 @@ def build_voucher_text(company, title, number, date_text, party_label, party_nam
         out.append(str(s)[:W])
     center(company.get("company_name_en", ""))
     if company.get("vat_registration_no"):
-        center("VAT No: " + str(company["vat_registration_no"]))
+        center(_k()[2] + ": " + str(company["vat_registration_no"]))
     out.append(_line("=", W)); center(title); out.append(_line("=", W))
     left(f"{'Number':<14}: {number}")
     left(f"{'Date':<14}: {date_text}")
@@ -143,7 +161,7 @@ def build_voucher_text(company, title, number, date_text, party_label, party_nam
         if v_:
             left(f"{str(k_)[:14]:<14}: {v_}")
     out.append(_line("-", W))
-    left(f"{'AMOUNT (SAR):':>{W-20}} {_money(amount):>18}")
+    left(f"{'AMOUNT (%s):' % _k()[0]:>{W-20}} {_money(amount):>18}")
     try:
         from modules.print_prefs import amount_in_words
         words = amount_in_words(amount)
@@ -225,9 +243,9 @@ def build_invoice_text(invoice, company, lines, width=80, template=None, labels=
         if addr:
             center(addr)
         if company.get("vat_registration_no"):
-            center("VAT No: " + str(company["vat_registration_no"]))
+            center(_k()[2] + ": " + str(company["vat_registration_no"]))
         if company.get("cr_number"):
-            center("CR No: " + str(company["cr_number"]))
+            center({"AE": "Trade Licence", "IN": "PAN"}.get(_k()[3], "CR No") + ": " + str(company["cr_number"]))
 
     def sec_title():
         out.append(_line("=", W))
@@ -256,7 +274,8 @@ def build_invoice_text(invoice, company, lines, width=80, template=None, labels=
         widths = [4, 58, 8, 14, 8, 16, 18]
     else:
         widths = [3, 28, 5, 9, 5, 10, 11]
-    heads = ["#", "Description", "Qty", "Price", "VAT%", "VAT", "Total"]
+    _tw = _k()[1]
+    heads = ["#", "Description", "Qty", "Price", _tw + "%", _tw, "Total"]
     aligns = ["r", "l", "r", "r", "r", "r", "r"]
 
     def items_header():
@@ -296,9 +315,20 @@ def build_invoice_text(invoice, company, lines, width=80, template=None, labels=
                                             invoice.get("taxable_amount", 0)))
         if float(invoice.get("discount_amount", 0) or 0):
             total_line("Discount:", invoice.get("discount_amount", 0))
-        total_line("VAT:", invoice.get("vat_amount", 0))
+        _sym, _tw, _tl, _cc = _k()
+        if _cc == "IN":                     # India: CGST + SGST, or IGST
+            from modules import country as _K
+            _pos = _K.place_of_supply("sales", invoice)
+            _sp = _K.gst_split(invoice.get("vat_amount", 0), _pos)
+            if _sp["igst"]:
+                total_line("IGST:", _sp["igst"])
+            else:
+                total_line("CGST:", _sp["cgst"])
+                total_line(_K.tax_head_label("sgst") + ":", _sp["sgst"])
+        else:
+            total_line(_tw + ":", invoice.get("vat_amount", 0))
         out.append(_line("=", W))
-        total_line("GRAND TOTAL (SAR):", invoice.get("total_amount", 0))
+        total_line("GRAND TOTAL (%s):" % _k()[0], invoice.get("total_amount", 0))
         out.append(_line("=", W))
 
     def sec_words():
@@ -321,7 +351,7 @@ def build_invoice_text(invoice, company, lines, width=80, template=None, labels=
         left(f"{'Previous Balance:':>{W-20}} {_money(prev):>18}")
         left(f"{'This Invoice Due:':>{W-20}} "
              f"{_money(float(invoice.get('total_amount', 0) or 0) - float(invoice.get('paid_amount', 0) or 0)):>18}")
-        left(f"{'NET BALANCE (SAR):':>{W-20}} {_money(net):>18}")
+        left(f"{'NET BALANCE (%s):' % _k()[0]:>{W-20}} {_money(net):>18}")
         out.append(_line("-", W))
 
     def sec_payinfo():

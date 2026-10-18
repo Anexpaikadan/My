@@ -349,7 +349,7 @@ def _field_value(key, item, el):
         "selling_price": _money(g("unit_price")),
         "cost_price": _money(g("purchase_price")),
         "discount_price": _money(g("discount_price", "offer_price")) if g("discount_price", "offer_price") not in ("", None) else "",
-        "currency": g("currency") or "SAR",
+        "currency": _cur(),
         "quantity": g("stock_quantity"),
         "category": g("category_name", "category_name_en"),
         "brand": g("brand_name", "brand"),
@@ -380,9 +380,20 @@ def _field_value(key, item, el):
     return mapping.get(key, "")
 
 
+def _cur():
+    """v7.0: the company's currency symbol on labels."""
+    try:
+        from modules import country as _K
+        return _K.symbol()
+    except Exception:
+        return "SAR"
+
+
 def _money(v):
     try:
-        return f"SAR {float(v):,.2f}"
+        s = _cur()
+        n = f"{float(v):,.2f}"
+        return (s + n) if s == "₹" else f"{s} {n}"
     except Exception:
         return ""
 

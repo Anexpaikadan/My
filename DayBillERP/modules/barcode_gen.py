@@ -139,7 +139,8 @@ def print_barcode_label(barcode_str: str, product_name: str, price: float,
 
         # Price
         c.setFont("Helvetica-Bold", 9)
-        c.drawCentredString(W / 2, 3 * mm, f"{price:,.2f} SAR")
+        from modules import country as _K
+        c.drawCentredString(W / 2, 3 * mm, _K.money(price, sym=True))
 
         c.save()
         return output_path

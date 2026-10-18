@@ -534,6 +534,9 @@ def _post_doc(kind, doc_id, h, tenders):
     vat = _f(h.get("vat_amount"))
     total = _f(h.get("total_amount"))
     method = str(h.get("payment_method") or "").lower()
+    # v7.0 India: CGST + SGST inside the state, IGST between states
+    side = "out" if kind in ("sales", "sales_return") else "in"
+    tl = posting._gst_lines(side, vat, kind=kind, header=h)
     if kind == "sales":
         cust = h.get("customer_id")
         if cust:
@@ -545,7 +548,7 @@ def _post_doc(kind, doc_id, h, tenders):
         return posting.post_sale(doc_id, d, cust, taxable, vat, total,
                                  cash=t.get("cash", 0), card=0,
                                  bank=t.get("bank", 0) + t.get("card", 0),
-                                 invoice_number=num, others=t.get("other"))
+                                 invoice_number=num, others=t.get("other"), tax_lines=tl)
     if kind == "purchase":
         sup = h.get("supplier_id")
         if sup:
@@ -556,14 +559,14 @@ def _post_doc(kind, doc_id, h, tenders):
         cash = total if method == "cash" else 0
         bank = total if method in ("bank_transfer", "bank", "card", "cheque") else 0
         return posting.post_purchase(doc_id, d, sup, taxable, vat, total,
-                                     cash=cash, bank=bank, invoice_number=num)
+                                     cash=cash, bank=bank, invoice_number=num, tax_lines=tl)
     if kind == "sales_return":
         return posting.post_sales_return(doc_id, d, h.get("customer_id"), taxable,
                                          vat, total, method=method or "cash",
-                                         number=num)
+                                         number=num, tax_lines=tl)
     return posting.post_purchase_return(doc_id, d, h.get("supplier_id"), taxable,
                                         vat, total, method=method or "credit",
-                                        number=num)
+                                        number=num, tax_lines=tl)
 
 
 # ── public API ────────────────────────────────────────────────

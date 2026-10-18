@@ -75,7 +75,7 @@ def get_prefs():
     }
 
 
-# ── Amount in words (English, SAR) ────────────────────────────
+# ── Amount in words (English; the company's country money) ────
 _ONES = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight",
          "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen",
          "Sixteen", "Seventeen", "Eighteen", "Nineteen"]
@@ -98,9 +98,19 @@ def _words_below_1000(n):
     return " ".join(out)
 
 
-def amount_in_words(value, currency="Saudi Riyals", cents="Halalas"):
+def amount_in_words(value, currency=None, cents=None):
     """1234.50 -> 'One Thousand Two Hundred Thirty-Four Saudi Riyals and
-    Fifty Halalas Only' (English; ZATCA invoices keep figures for Arabic)."""
+    Fifty Halalas Only' (English; ZATCA invoices keep figures for Arabic).
+    v7.0: without a currency, the company's country money — UAE Dirhams /
+    Fils, India 'Rupees One Lakh … and Fifty Paise Only' (lakh / crore)."""
+    if currency is None and cents is None:
+        try:
+            from modules import country as _ctry
+            return _ctry.words(value)
+        except Exception:
+            pass
+    currency = currency or "Saudi Riyals"
+    cents = cents or "Halalas"
     try:
         value = round(float(value), 2)
     except Exception:

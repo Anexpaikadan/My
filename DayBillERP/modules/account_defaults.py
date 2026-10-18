@@ -45,6 +45,13 @@ FALLBACK = {
     "default_purchase_return": "5150",
     "default_stock_adjust":    "5160",
     "default_opening_equity":  "3400",
+    # v7.0 India GST: each tax head on its own account
+    "default_cgst_output":     "2211",
+    "default_sgst_output":     "2212",
+    "default_igst_output":     "2213",
+    "default_cgst_input":      "2221",
+    "default_sgst_input":      "2222",
+    "default_igst_input":      "2223",
 }
 
 # Role key  ->  legacy app_settings.json key (so the Settings > Accounting
@@ -163,6 +170,16 @@ def cogs():            return acc("default_cogs")
 def salary_expense():  return acc("default_salary_expense")
 def discount():        return acc("default_discount")
 def round_off():       return acc("default_round_off")
+
+
+def gst_account(side, head):
+    """India: the account of a GST head — side 'out' (sales) or 'in'
+    (purchases), head 'cgst' / 'sgst' / 'igst'. Falls back to the single
+    VAT output / input account when the GST account is missing."""
+    a = acc("default_%s_%s" % (head, "output" if side == "out" else "input"))
+    if a:
+        return a
+    return tax_payable() if side == "out" else tax_receivable()
 def sales_return():    return acc("default_sales_return")
 def purchase_return(): return acc("default_purchase_return")
 def stock_adjust():    return acc("default_stock_adjust")

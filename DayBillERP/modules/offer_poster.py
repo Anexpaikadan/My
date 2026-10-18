@@ -102,8 +102,13 @@ def headline(offer):
     if t == "price":
         return "SPECIAL OFFER PRICES", "أسعار العرض الخاص"
     if t == "amount":
-        return "SAVE %s SAR" % _money(offer.get("offer_value")), \
-            "وفّر %s ريال" % _money(offer.get("offer_value"))
+        try:
+            from modules import country as _K
+            loc = _K.localize
+        except Exception:
+            loc = str
+        return loc("SAVE %s SAR" % _money(offer.get("offer_value"))), \
+            loc("وفّر %s ريال" % _money(offer.get("offer_value")))
     if t == "buy_get":
         return O.label(offer), O.label_ar(offer)
     return "SPECIAL OFFER", "عرض خاص"
@@ -184,13 +189,22 @@ def build_prompt(offer, items, company=None, size="A4 print poster (portrait)",
     if ar:
         L.append("- Arabic text must be correct Arabic script, written right-to-left with "
                  "properly joined letters (not reversed, not broken).")
-    L.append("- Prices in SAR with 2 decimals; make prices and the headline very large and "
+    try:
+        from modules import country as _K
+        _cur = _K.currency_code()
+    except Exception:
+        _cur = "SAR"
+    L.append("- Prices in " + _cur + " with 2 decimals; make prices and the headline very large and "
              "easy to read from far away.")
     L.append("- Leave clean space around the edges for printing; no watermark, no fake logos.")
     if notes.strip():
         L.append("")
         L.append("EXTRA WISHES: " + notes.strip())
-    return "\n".join(L)
+    try:                          # v7.0: the company's country money
+        from modules import country as _K
+        return _K.localize("\n".join(L))
+    except Exception:
+        return "\n".join(L)
 
 
 def chatgpt_url(prompt):

@@ -24,6 +24,24 @@ from modules.zatca.qr_generator import (
 # ─────────────────────────────────────────────────────────────
 # SALES INVOICE LIST VIEW
 # ─────────────────────────────────────────────────────────────
+def _company_country():
+    try:
+        from modules import country as _ctry
+        return _ctry.code()
+    except Exception:
+        return "SA"
+
+
+def _state_col():
+    """', state_code' when the customers table has it (v7.0)."""
+    try:
+        if db.execute_scalar("SELECT COL_LENGTH('customers','state_code')") is not None:
+            return ", state_code"
+    except Exception:
+        pass
+    return ""
+
+
 class SalesInvoiceView:
     def __init__(self, parent):
         self.parent   = parent
@@ -686,7 +704,7 @@ class InvoiceForm:
                 "SELECT customer_id, customer_code, customer_name_en, "
                 "customer_name_ar, customer_type, vat_registration_no, "
                 "city_en, phone, building_number, street_name_en, "
-                "district_en, postal_code, country_code "
+                "district_en, postal_code, country_code" + _state_col() + " "
                 "FROM customers WHERE is_active=1 ORDER BY customer_name_en"
             )
             self._products = db.fetchall(
@@ -1024,6 +1042,21 @@ class InvoiceForm:
         ttk.Combobox(r2, textvariable=self.warehouse_var, values=self._warehouses or ["Primary"],
                      font=F10, width=12,
                      state="readonly" if state == "normal" else "disabled").pack(side="left")
+        # v7.0 India: place of supply → CGST + SGST (same state) or IGST
+        self.pos_var = tk.StringVar()
+        try:
+            from modules import country as _ctry
+            if _ctry.is_in():
+                lbl(r2, "Supply to", fg=C["primary"], bold=True)
+                self.pos_combo = ttk.Combobox(
+                    r2, textvariable=self.pos_var, font=F10, width=16,
+                    values=["%s - %s" % (k, n) for k, n in _ctry.states()],
+                    state="readonly" if state == "normal" else "disabled")
+                self.pos_combo.pack(side="left")
+                self.pos_combo.bind("<<ComboboxSelected>>", lambda e: self._update_totals())
+                self.pos_var.set(_ctry.state_label(_ctry.company_state()))
+        except Exception:
+            pass
         self.in_search_var = tk.BooleanVar(value=True)
         check(r2, "In Search", self.in_search_var, fg=C["accent_dark"])
         small_btn(r2, "⤓", self._goto_last_row, padl=4)     # Goto Last Row
@@ -1931,6 +1964,8 @@ class InvoiceForm:
                     self._on_price_category()
             except Exception:
                 pass
+        if not getattr(self, "_loading_doc", False) and hasattr(self, "pos_combo"):
+            self._set_pos_from_customer(cust)
         ctype = cust.get("customer_type","B2C")
         vat   = cust.get("vat_registration_no","") or ""
         city  = cust.get("city_en","") or ""
@@ -1942,6 +1977,23 @@ class InvoiceForm:
         self.cust_info_var.set(info)
         if hasattr(self, "points_info_var"):
             self._update_totals()
+
+    def _set_pos_from_customer(self, cust):
+        """India: the place of supply follows the customer's state."""
+        try:
+            from modules import country as _ctry
+            st = _ctry.place_of_supply("sales", {"customer_id": cust.get("customer_id")})
+            self.pos_var.set(_ctry.state_label(st))
+            self._update_totals()
+        except Exception:
+            pass
+
+    def _pos_code(self):
+        try:
+            from modules import country as _ctry
+            return _ctry.state_code_of(self.pos_var.get()) if self.pos_var.get() else ""
+        except Exception:
+            return ""
 
     def _recalc_line(self, idx):
         line = self._lines[idx]
@@ -2140,6 +2192,10 @@ class InvoiceForm:
         figure("Balance", self.balance_var, C["danger"])
         figure("Tot VAT", self.vat_var, C["info"])
         figure("Net Amount", self.total_var, C["text_primary"])
+        # v7.0 India: how the GST splits (CGST + SGST, or IGST)
+        self.gst_split_var = tk.StringVar(value="")
+        tk.Label(r2, textvariable=self.gst_split_var, font=("Segoe UI", 8, "bold"), bg=C["card_bg"],
+                 fg=C["info"]).pack(side="right", padx=(10, 0))
 
     def _clear_form(self):
         if self.view_only:
@@ -2358,6 +2414,17 @@ class InvoiceForm:
         self.taxable_var.set(f"{taxable:,.2f}")
         self.vat_var.set(f"{vat:,.2f}")
         self.total_var.set(f"{grand:,.2f}")
+        if getattr(self, "gst_split_var", None) is not None:
+            try:
+                from modules import country as _ctry
+                sp = _ctry.gst_split(vat, self._pos_code() or None)
+                if sp:
+                    self.gst_split_var.set(
+                        ("IGST %s" % _ctry.num(sp["igst"])) if sp["igst"] else
+                        ("CGST %s · %s %s" % (_ctry.num(sp["cgst"]), _ctry.tax_head_label("sgst"),
+                                              _ctry.num(sp["sgst"]))))
+            except Exception:
+                pass
         # keep the Full Pay tender equal to the live grand total
         if getattr(self, "full_pay_var", None) and self.full_pay_var.get():
             self.cash_var.set(f"{grand:,.2f}")
@@ -2503,7 +2570,7 @@ class InvoiceForm:
             from ui.numpad import CashTenderDialog
             CashTenderDialog(self.win, total, on_confirm=self._apply_tender,
                              theme=cfg.theme(),
-                             currency=cfg.get("currency", "SAR"))
+                             currency=__import__("modules.country", fromlist=["symbol"]).symbol())
         except Exception as e:
             messagebox.showerror("Teller", str(e)[:200])
 
@@ -2621,6 +2688,12 @@ class InvoiceForm:
         self.hdr_vars["due_date"].set(str(inv.get("due_date") or "")[:10])   # v6.9: never "None"
         self.hdr_vars["po_number"].set(inv.get("po_number","") or "")
         self.hdr_vars["notes_en"].set(inv.get("notes_en","") or "")
+        if hasattr(self, "pos_combo"):
+            try:
+                from modules import country as _ctry
+                self.pos_var.set(_ctry.state_label(_ctry.place_of_supply("sales", inv)))
+            except Exception:
+                pass
         self.payment_var.set(inv.get("payment_method","credit"))
         # Load the paid amount into Cash Received so balance shows on edit
         if hasattr(self, "cash_var"):
@@ -2905,6 +2978,7 @@ class InvoiceForm:
 
             # Remember the id so Save+Print (F2/F3) and Hold can use it
             self.invoice_id = inv_id
+            self._save_pos(inv_id)
 
             # Insert lines (bill discount already spread in — v6.9)
             for i, ln in enumerate(save_lines, 1):
@@ -3035,6 +3109,16 @@ class InvoiceForm:
             self.save_status.set(f"❌ {str(e)[:100]}")
             return False
 
+    def _save_pos(self, inv_id):
+        """v7.0 India: keep the bill's place of supply (posting reads it)."""
+        code = self._pos_code() if hasattr(self, "pos_combo") else ""
+        if not code:
+            return
+        try:
+            db.execute("UPDATE sales_invoices SET place_of_supply=? WHERE invoice_id=?", (code, inv_id))
+        except Exception:
+            pass
+
     def _insert_header(self, inv_number, inv_uuid, inv_date, cust, subtotal, discount,
                        taxable, vat_amt, total, inv_status, pay_status, paid_amt, qr_data):
         db.execute(
@@ -3058,7 +3142,7 @@ class InvoiceForm:
              cust.get("district_en", ""),
              cust.get("postal_code", ""),
              cust.get("city_en", ""),
-             cust.get("country_code", "SA"),
+             cust.get("country_code") or _company_country(),
              self.payment_var.get(),
              self.hdr_vars["notes_en"].get(),
              subtotal, discount, taxable, vat_amt, total,

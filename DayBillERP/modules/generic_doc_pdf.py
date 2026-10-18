@@ -38,6 +38,13 @@ ACCENTS = {
 }
 
 
+def _cur():
+    try:
+        from modules import country as _K
+        return _K.symbol()
+    except Exception:
+        return "SAR"
+
 def money(n):
     try:
         return f"{float(n):,.2f}"
@@ -208,7 +215,7 @@ def generate_generic_pdf(doc_type, header, company, lines, out_path,
         c.setFont("Helvetica-Bold", 18)
         c.drawRightString(W - margin - 6 * mm, y - 11 * mm,
                           f"{money(header.get('amount', 0))} "
-                          f"{header.get('currency', 'SAR')}")
+                          f"{header.get('currency') or _cur()}")
         y -= 22 * mm
         try:
             from modules.print_prefs import amount_in_words

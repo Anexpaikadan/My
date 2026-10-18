@@ -16,6 +16,24 @@ from config.language import t, is_rtl
 from config.database import db
 
 
+def _cur_sym():
+    """The company's currency symbol (v7.0)."""
+    try:
+        from modules import country as _c
+        return _c.symbol()
+    except Exception:
+        return "SAR"
+
+
+def _tax_word():
+    """'VAT' or 'GST' — the company's country (v7.0)."""
+    try:
+        from modules import country as _c
+        return _c.tax_name()
+    except Exception:
+        return "VAT"
+
+
 # ─────────────────────────────────────────────────────────────
 # PRODUCTS LIST VIEW
 # ─────────────────────────────────────────────────────────────
@@ -1147,7 +1165,7 @@ class ProductForm:
                 tk.Label(c, text=text, font=("Segoe UI", 9, "bold"), bg=C["content_bg"],
                          fg=C["primary"]).pack(anchor="w")
                 return c
-            e = tk.Entry(cell(0, "Sales Price (SAR) *"), textvariable=self.fields["unit_price"],
+            e = tk.Entry(cell(0, "Sales Price (%s) *" % _cur_sym()), textvariable=self.fields["unit_price"],
                          font=("Segoe UI", 10), bg="white", fg=C["text_primary"],
                          relief="solid", bd=1, justify="right")
             e.pack(fill="x", ipady=4, pady=(2, 0))
@@ -1160,7 +1178,7 @@ class ProductForm:
             self._unit_combos.append(ucb)
             vrow = tk.Frame(cl, bg=C["content_bg"])
             vrow.pack(fill="x", padx=14, pady=(6, 0))
-            tk.Label(vrow, text="VAT Category *", font=("Segoe UI", 9, "bold"), bg=C["content_bg"],
+            tk.Label(vrow, text="%s Category *" % _tax_word(), font=("Segoe UI", 9, "bold"), bg=C["content_bg"],
                      fg=C["primary"]).pack(anchor="w")
             self.vat_cb_basic = ttk.Combobox(vrow, textvariable=self.vat_var,
                                              values=list(self.vat_cb["values"]), state="readonly",
@@ -2404,7 +2422,7 @@ class ProductForm:
         price_row.columnconfigure(0, weight=1)
         price_row.columnconfigure(1, weight=1)
 
-        lbl_entry(price_row, "Sales Price (SAR)", "unit_price", col=0, required=True)
+        lbl_entry(price_row, "Sales Price (%s)" % _cur_sym(), "unit_price", col=0, required=True)
 
         # Unit of measure — THIS IS the default Sales unit (same pool,
         # same variable, as the ★S column in Multi Units below; picking
@@ -2446,7 +2464,7 @@ class ProductForm:
         vat_cell = tk.Frame(vat_row, bg=C["content_bg"])
         vat_cell.grid(row=0, column=0, sticky="ew")
         vhead = tk.Frame(vat_cell, bg=C["content_bg"]); vhead.pack(fill="x")
-        tk.Label(vhead, text="VAT Category *",
+        tk.Label(vhead, text="%s Category *" % _tax_word(),
                  font=("Segoe UI", 9, "bold"), bg=C["content_bg"],
                  fg=C["primary"]).pack(side="left")
         tk.Button(vhead, text="+ New", font=("Segoe UI", 7, "bold"),
@@ -2465,8 +2483,27 @@ class ProductForm:
             self.vat_cb.current(cfg.default_vat_index([v.get("vat_rate") for v in self.vat_cats]))
 
         # (Currency box removed — products are priced in the shop currency)
-        self.fields["currency"] = tk.StringVar(value=str(cfg.get("currency", "SAR") or "SAR"))
+        try:
+            from modules import country as _ctry
+            _cur = _ctry.currency_code()
+        except Exception:
+            _ctry, _cur = None, "SAR"
+        self.fields["currency"] = tk.StringVar(value=_cur)
         vat_row.columnconfigure(1, weight=0)
+        # v7.0 India: HSN code (goods) / SAC code (services) — on the bill
+        # and in the GSTR-1 HSN summary
+        if _ctry is not None and _ctry.is_in():
+            hcell = tk.Frame(vat_row, bg=C["content_bg"])
+            hcell.grid(row=0, column=1, sticky="ew", padx=(12, 0))
+            vat_row.columnconfigure(1, weight=1)
+            tk.Label(hcell, text="HSN / SAC code", font=("Segoe UI", 9, "bold"),
+                     bg=C["content_bg"], fg=C["primary"]).pack(anchor="w")
+            self.fields["hsn_code"] = tk.StringVar()
+            tk.Entry(hcell, textvariable=self.fields["hsn_code"], font=("Segoe UI", 10),
+                     bg="white", fg=C["text_primary"], relief="solid", bd=1,
+                     width=14).pack(anchor="w", ipady=4, pady=(3, 0))
+            tk.Label(hcell, text="4 or 6 digits (goods: HSN · services: SAC)", font=("Segoe UI", 8),
+                     bg=C["content_bg"], fg=C["text_secondary"]).pack(anchor="w")
 
         # Tax Included / Tax Exclusive — a display-only toggle that flips
         # how the Price Preview below reads (the tax rate itself always
@@ -2476,7 +2513,7 @@ class ProductForm:
         # Bound to Settings ▸ Tax ▸ Sales Price Mode — the SAME switch the
         # Sales Invoice and POS use, so the price means the same everywhere
         self.price_incl_var = tk.BooleanVar(value=cfg.sales_price_includes_vat())
-        labeled_toggle(tax_row, "Sales price includes VAT (all products)",
+        labeled_toggle(tax_row, "Sales price includes %s (all products)" % _tax_word(),
                        self.price_incl_var, C,
                        command=self._on_price_mode_toggle)[0].pack(anchor="w")
 
@@ -2935,7 +2972,7 @@ class ProductForm:
                 net, vat_amt = price, price * rate / 100.0
                 total = price + vat_amt
             self.price_preview_var.set(
-                f"Net {net:,.2f} + VAT {vat_amt:,.2f} = {total:,.2f} SAR")
+                f"Net {net:,.2f} + {_tax_word()} {vat_amt:,.2f} = {total:,.2f} {_cur_sym()}")
         except Exception:
             self.price_preview_var.set("")
 
@@ -3004,7 +3041,7 @@ class ProductForm:
             # Extended pricing / inventory fields (StringVars)
             for k in ["purchase_price", "wholesale_price", "last_purchase_cost",
                       "average_cost", "min_stock", "max_stock",
-                      "reorder_quantity", "storage_location"]:
+                      "reorder_quantity", "storage_location", "hsn_code"]:
                 w = self.fields.get(k)
                 if isinstance(w, tk.StringVar) and data.get(k) is not None:
                     w.set(str(data[k]))
@@ -4138,6 +4175,7 @@ class ProductForm:
             "max_stock":          self._ext_val("max_stock", numeric=True),
             "reorder_quantity":   self._ext_val("reorder_quantity", numeric=True),
             "storage_location":   self._ext_val("storage_location"),
+            "hsn_code":           self._ext_val("hsn_code"),
             "internal_notes":     self._ext_val("internal_notes"),
             "sales_notes":        self._ext_val("sales_notes"),
             "purchase_notes":     self._ext_val("purchase_notes"),
@@ -4503,7 +4541,7 @@ class BulkRateDialog:
         ttk.Combobox(oi, textvariable=self.mode_var, state="readonly",
                      font=("Segoe UI", 9), width=22,
                      values=["pct", "amount", "margin"]).pack(side="left", padx=6)
-        tk.Label(oi, text="(pct = %  ·  amount = SAR  ·  margin = cost+%)",
+        tk.Label(oi, text="(pct = %%  ·  amount = %s  ·  margin = cost+%%)" % _cur_sym(),
                  font=("Segoe UI", 8), bg=C["card_bg"],
                  fg=C["text_secondary"]).pack(side="left", padx=(0, 8))
         self.val_var = tk.StringVar(value="10")

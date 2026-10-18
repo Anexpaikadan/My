@@ -262,18 +262,27 @@ def set_option(key, value):
 
 
 def _cast(key, v):
-    if key in ("round_off_enabled", "currency_symbol_after"):
+    """A company option (kept as text) back to its type."""
+    hint = None
+    try:
+        from modules import business as _biz
+        for d in _biz.DEFAULTS.values():
+            if key in d:
+                hint = d[key]
+    except Exception:
+        pass
+    if key in ("round_off_enabled", "currency_symbol_after") or isinstance(hint, bool):
         return str(v).strip().lower() in ("1", "true", "yes", "on")
-    if key in ("tax_sales_rate", "gst_b2cl_limit"):
+    if key in ("tax_sales_rate", "gst_b2cl_limit") or isinstance(hint, float):
         try:
             return float(v)
         except (TypeError, ValueError):
             return v
-    if key == "gst_hsn_digits":
+    if key == "gst_hsn_digits" or isinstance(hint, int):
         try:
             return int(float(v))
         except (TypeError, ValueError):
-            return 4
+            return hint if hint is not None else 4
     return v
 
 
@@ -288,6 +297,11 @@ def apply():
         from config import settings as cfg
     except Exception:
         return
+    try:
+        from modules import account_defaults as _ad
+        _ad.invalidate()
+    except Exception:
+        pass
     cfg.clear_company()
     p = profile()
     row = _row()
@@ -296,7 +310,7 @@ def apply():
         "currency_symbol_after": p["symbol_after"],
     }
     if p["code"] != "SA":
-        defaults.update(tax_sales_rate=p["std_rate"], wa_country_code=p["phone"],
+        defaults.update(tax_sales_rate=p["std_rate"], wa_country_code=p["phone"], currency=p["currency"],
                         country_tax_profile={"AE": "UAE VAT 5%"}.get(p["code"], "Custom"),
                         fiscal_year_start=p["fiscal_start"])
     fy = str(row.get("fiscal_year_start") or "").strip()
@@ -310,7 +324,7 @@ def apply():
     for k, v in defaults.items():
         cfg.set_company(k, v)
     for k, v in options().items():
-        if k in COMPANY_KEYS:
+        if not str(k).startswith("_"):
             cfg.set_company(k, _cast(k, v))
     cfg.set_company("company_country", p["code"])
 
@@ -323,8 +337,15 @@ def save_settings(values):
         from config import settings as cfg
     except Exception:
         return took
+    keys = set(COMPANY_KEYS)
+    try:
+        from modules import business as _biz
+        for d in _biz.DEFAULTS.values():
+            keys |= set(d)
+    except Exception:
+        pass
     for k, v in (values or {}).items():
-        if k in COMPANY_KEYS:
+        if k in keys:
             if set_option(k, v):
                 cfg.set_company(k, _cast(k, v))
                 took.append(k)
@@ -644,3 +665,62 @@ def invoice_title(simplified=False, ar=False):
     if ar:
         return p["simplified_title_ar"] if simplified else p["invoice_title_ar"]
     return p["simplified_title"] if simplified else p["invoice_title"]
+
+
+# ── Saudi words → the company's country (screens, messages, PDFs) ─
+_AMT = r"-?\d[\d,]*(?:\.\d+)?"
+_TAXNO = re.compile(r"\b((?:Customer |Supplier )?)VAT (?:Registration )?(?:No\b\.?|Number\b|number\b)")
+_RULES = {"key": None, "rules": []}
+
+
+def _rules(c, sym):
+    before = sym if sym == "₹" else sym + " "
+    money_rx = [
+        (re.compile(r"(%s)\s*SAR\b" % _AMT), lambda m: before + m.group(1)),
+        (re.compile(r"\bSAR\s*(%s)" % _AMT), lambda m: before + m.group(1)),
+        (re.compile(r"\bSAR\b"), lambda m: sym),
+    ]
+    if c == "AE":
+        return money_rx + [
+            (re.compile(r"\bSaudi Riyals?\b"), lambda m: "UAE Dirhams"),
+            (re.compile(r"\bHalalas?\b"), lambda m: "Fils"),
+            (re.compile(r"ريال"), lambda m: "درهم"),
+            (_TAXNO, lambda m: m.group(1) + "TRN"),
+            (re.compile(r"\bVAT 15\s?%"), lambda m: "VAT 5%"),
+            (re.compile(r"\(15\s?%\)"), lambda m: "(5%)"),
+            (re.compile(r"\b15\s?% VAT\b"), lambda m: "5% VAT"),
+        ]
+    if c == "IN":
+        return money_rx + [
+            (re.compile(r"\bSaudi Riyals?\b"), lambda m: "Rupees"),
+            (re.compile(r"\bHalalas?\b"), lambda m: "Paise"),
+            (re.compile(r"ريال"), lambda m: "₹"),
+            (_TAXNO, lambda m: m.group(1) + "GSTIN"),
+            (re.compile(r"\bVAT 15\s?%"), lambda m: "GST"),
+            (re.compile(r"\s?\(15\s?%\)"), lambda m: ""),
+            (re.compile(r"\b15\s?% VAT\b"), lambda m: "GST"),
+            (re.compile(r"\bVAT\b"), lambda m: "GST"),
+        ]
+    return []
+
+
+def localize(text):
+    """Text written for Saudi Arabia in the company's country words:
+    UAE  SAR → AED · VAT No. → TRN · 15% → 5%
+    India SAR → ₹ · VAT → GST · VAT No. → GSTIN · Riyals → Rupees
+    A Saudi company gets the text back unchanged."""
+    if not isinstance(text, str) or not text:
+        return text
+    c = code()
+    if c == "SA":
+        return text
+    if "SAR" not in text and "VAT" not in text and "Riyal" not in text and "Halala" not in text \
+            and "15" not in text and "ريال" not in text:
+        return text
+    key = (c, symbol())
+    if _RULES["key"] != key:
+        _RULES.update(key=key, rules=_rules(*key))
+    for rx, fn in _RULES["rules"]:
+        text = rx.sub(fn, text)
+    return text
+

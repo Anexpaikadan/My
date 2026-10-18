@@ -267,13 +267,23 @@ def build(day=None, lg=None):
             "expenses": exp_t, "top": top, "stock_alerts": alerts, "cashier_flags": flags,
             "shifts": shifts, "cash_short": round(short_total, 2),
             "summary": " · ".join(bits)}                 # one line (WhatsApp template {{3}})
+    try:                       # v7.0: the company's country money (AED / ₹)
+        from modules import country as _K
+        lines = [_K.localize(x) for x in lines]
+        data["summary"] = _K.localize(data["summary"])
+    except Exception:
+        pass
     return "\n".join(lines), data
 
 
 def template_params(data):
     """{{1}} date, {{2}} sales, {{3}} one-line summary — WhatsApp does not
     allow new lines or tabs in template values."""
-    cur = "ريال" if data.get("lang") == "ar" else "SAR"
+    try:
+        from modules import country as _K
+        cur = _K.localize("ريال" if data.get("lang") == "ar" else "SAR")
+    except Exception:
+        cur = "ريال" if data.get("lang") == "ar" else "SAR"
     vals = [data["date_text"], "%s %s" % (_m(data["sales"]), cur), data["summary"]]
     return [re.sub(r"\s{2,}", " ", str(v).replace("\n", " ").replace("\t", " ")).strip() or "-" for v in vals]
 

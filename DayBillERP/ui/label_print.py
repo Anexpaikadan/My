@@ -243,7 +243,7 @@ class LabelPrintDialog:
         out = os.path.join(tempfile.gettempdir(), "labels.pdf")
         try:
             generate_label_sheet(items, out, cols=layout[0], rows=layout[1],
-                                  currency=cfg.get("currency", "SAR"))
+                                  currency=__import__("modules.country", fromlist=["symbol"]).symbol())
             try:
                 from modules import audit
                 audit.log("print", "labels", None, f"{sum(i['copies'] for i in items)} labels")

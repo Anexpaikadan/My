@@ -31,6 +31,20 @@ SYSTEM = (
     "or a list when there are several items. If a tool returns nothing, say so plainly.")
 
 
+def _system():
+    """v7.0: the prompt names the company's country and money."""
+    try:
+        from modules import country as _K
+        if not _K.is_sa():
+            return (SYSTEM.replace("in Saudi Arabia", "in " + _K.name())
+                    .replace("Money is SAR", "Money is %s (%s)" % (_K.currency_code(), _K.symbol()))
+                    .replace("(Arabic or English)", "(English or the language asked)"
+                             if _K.is_in() else "(Arabic or English)"))
+    except Exception:
+        pass
+    return SYSTEM
+
+
 def _schema(props=None, required=None):
     return {"type": "object", "properties": props or {}, "required": required or []}
 
@@ -135,7 +149,7 @@ class Chat:
         self._post = post or AI._post
 
     def _payload(self):
-        return {"model": AI._model("vision"), "max_tokens": 1600, "system": SYSTEM,
+        return {"model": AI._model("vision"), "max_tokens": 1600, "system": _system(),
                 "tools": TOOLS, "messages": self.messages}
 
     def _after_reply(self, res):

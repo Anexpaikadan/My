@@ -282,9 +282,44 @@ def _party_ledger(kind, party_id):
     return acc or (ad.receivable() if kind == "customer" else ad.payable())
 
 
+def _tax(lines, vat, tax_lines, account, label, credit):
+    """The tax line(s) of a document. tax_lines (v7.0, India GST):
+    [(account_id, amount, label)] — CGST + SGST, or IGST — adding up to
+    vat; else one line on the VAT account."""
+    vat = round(vat or 0, 2)
+    if not vat:
+        return
+    parts = [(a, round(x or 0, 2), l) for a, x, l in (tax_lines or []) if round(x or 0, 2)]
+    if not parts or abs(sum(x for _a, x, _l in parts) - vat) > 0.009:
+        parts = [(account, vat, label)]
+    for a, x, l in parts:
+        lines.append((a or account, 0, x, l) if credit else (a or account, x, 0, l))
+
+
+def _gst_lines(side, vat, kind=None, header=None, supplier_id=None):
+    """India: the CGST + SGST (same state) or IGST (other state) lines of a
+    tax amount, by the document's place of supply; None elsewhere."""
+    try:
+        from modules import country as C
+        if not C.is_in() or not round(vat or 0, 2):
+            return None
+        if header is None:
+            header = {"supplier_id": supplier_id} if supplier_id else {}
+            kind = kind or ("purchase" if side == "in" else "sales")
+        pos = C.place_of_supply(kind, header)
+        parts = C.gst_split(vat, pos)
+        word = "output" if side == "out" else "input"
+        rev = " reversal" if kind in ("sales_return", "purchase_return") else ""
+        return [(ad.gst_account(side, head), amt, "%s %s%s" % (C.tax_head_label(head, pos), word, rev))
+                for head, amt in (("cgst", parts["cgst"]), ("sgst", parts["sgst"]),
+                                  ("igst", parts["igst"])) if amt]
+    except Exception:
+        return None
+
+
 # ── Sale posting ──────────────────────────────────────────────
 def post_sale(invoice_id, invoice_date, customer_id, taxable, vat, total,
-              cash=0, card=0, bank=0, invoice_number="", others=None):
+              cash=0, card=0, bank=0, invoice_number="", others=None, tax_lines=None):
     """
     Cash sale (no customer)  -> Dr Cash | Cr Sales + Cr VAT
     Credit sale (customer)   -> Dr Customer ledger | Cr Sales + Cr VAT
@@ -317,8 +352,7 @@ def post_sale(invoice_id, invoice_date, customer_id, taxable, vat, total,
         cust = _party_ledger("customer", customer_id)
         lines.append((cust, on_credit, 0, "On account"))
     lines.append((ad.sales(), 0, round(taxable, 2), "Sales revenue"))
-    if vat:
-        lines.append((ad.tax_payable(), 0, round(vat, 2), "VAT output"))
+    _tax(lines, vat, tax_lines, ad.tax_payable(), "VAT output", credit=True)
     _round_line(lines, True)
 
     return post_journal(invoice_date, f"Sales Invoice {invoice_number}".strip(),
@@ -327,7 +361,7 @@ def post_sale(invoice_id, invoice_date, customer_id, taxable, vat, total,
 
 # ── POS sale (split tenders mapped to per-method ledgers) ─────
 def post_pos_sale(invoice_id, invoice_date, taxable, vat, total,
-                  payments=None, method="cash", invoice_number=""):
+                  payments=None, method="cash", invoice_number="", tax_lines=None):
     """
     payments: dict of {tender: amount}, e.g. {"cash":50,"card":65}.
               If omitted, the whole total is taken via `method`.
@@ -344,15 +378,14 @@ def post_pos_sale(invoice_id, invoice_date, taxable, vat, total,
         if amt:
             lines.append((ad.method_account(tender), amt, 0, f"{tender} tender"))
     lines.append((ad.sales(), 0, round(taxable, 2), "POS sales revenue"))
-    if vat:
-        lines.append((ad.tax_payable(), 0, round(vat, 2), "VAT output"))
+    _tax(lines, vat, tax_lines, ad.tax_payable(), "VAT output", credit=True)
     return post_journal(invoice_date, f"POS Sale {invoice_number}".strip(),
                         lines, "pos", invoice_id, reference=invoice_number)
 
 
 # ── Purchase posting ──────────────────────────────────────────
 def post_purchase(invoice_id, invoice_date, supplier_id, taxable, vat, total,
-                  cash=0, bank=0, invoice_number=""):
+                  cash=0, bank=0, invoice_number="", tax_lines=None):
     if not enabled():
         return None
     total = round(total or 0, 2)
@@ -362,8 +395,7 @@ def post_purchase(invoice_id, invoice_date, supplier_id, taxable, vat, total,
         on_credit = 0
 
     lines = [(ad.inventory(), round(taxable, 2), 0, "Inventory")]
-    if vat:
-        lines.append((ad.tax_receivable(), round(vat, 2), 0, "VAT input"))
+    _tax(lines, vat, tax_lines, ad.tax_receivable(), "VAT input", credit=False)
     if cash:
         lines.append((ad.cash(), 0, cash, "Cash paid"))
     if bank:
@@ -379,7 +411,7 @@ def post_purchase(invoice_id, invoice_date, supplier_id, taxable, vat, total,
 
 # ── Sales Return ──────────────────────────────────────────────
 def post_sales_return(return_id, entry_date, customer_id, taxable, vat, total,
-                      method="cash", number=""):
+                      method="cash", number="", tax_lines=None):
     """
     Dr Sales Returns (contra-revenue) + Dr VAT Output reversal
     Cr Cash/Card/Bank refunded, or Cr Customer ledger (credit note).
@@ -387,8 +419,7 @@ def post_sales_return(return_id, entry_date, customer_id, taxable, vat, total,
     if not enabled():
         return None
     lines = [(ad.sales_return(), round(taxable, 2), 0, "Sales return")]
-    if vat:
-        lines.append((ad.tax_payable(), round(vat, 2), 0, "VAT output reversal"))
+    _tax(lines, vat, tax_lines, ad.tax_payable(), "VAT output reversal", credit=False)
     m = (method or "cash").lower()
     refund = (ad.method_account(m) if m in ("cash", "card", "mada", "cheque", "bank",
               "bank_transfer", "gateway") else None)
@@ -404,7 +435,7 @@ def post_sales_return(return_id, entry_date, customer_id, taxable, vat, total,
 
 # ── Purchase Return ───────────────────────────────────────────
 def post_purchase_return(return_id, entry_date, supplier_id, taxable, vat, total,
-                         method="credit", number=""):
+                         method="credit", number="", tax_lines=None):
     """
     Dr Cash/Bank refunded, or Dr Supplier ledger (reduce payable)
     Cr Inventory (the goods leave stock at their purchase value)
@@ -426,8 +457,7 @@ def post_purchase_return(return_id, entry_date, supplier_id, taxable, vat, total
     # leave the stock value overstated.
     lines.append((ad.inventory() or ad.purchase_return(), 0, round(taxable, 2),
                   "Purchase return (stock out)"))
-    if vat:
-        lines.append((ad.tax_receivable(), 0, round(vat, 2), "VAT input reversal"))
+    _tax(lines, vat, tax_lines, ad.tax_receivable(), "VAT input reversal", credit=True)
     _round_line(lines, False)
     return post_journal(entry_date, f"Purchase Return {number}".strip(),
                         lines, "purchase_return", return_id, reference=number)
@@ -471,8 +501,8 @@ def post_expense(expense_id, date, expense_account_id, amount, vat=0,
         return None
     amount = round(amount, 2); vat = round(vat or 0, 2)
     lines = [(expense_account_id, amount, 0, description or "Expense")]
-    if vat:
-        lines.append((ad.tax_receivable(), vat, 0, "VAT input"))
+    _tax(lines, vat, _gst_lines("in", vat, supplier_id=supplier_id), ad.tax_receivable(),
+         "VAT input", credit=False)
     if on_credit:
         credit = _party_ledger("supplier", supplier_id)
     else:

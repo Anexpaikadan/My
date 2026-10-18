@@ -368,7 +368,29 @@ def run(rid, **kw):
     if not res.get("subtitle"):
         res["subtitle"] = (f"As of {t}" if "as_of" in spec["params"]
                            else _period_text(f, t))
+    _localize(res)
     return res
+
+
+def _localize(res):
+    """v7.0: report words in the company's country (SAR → AED / ₹, VAT →
+    GST) — on screen, in Excel / PDF exports and for the connector."""
+    try:
+        from modules import country as _K
+        if _K.is_sa():
+            return
+        L = _K.localize
+        for k in ("title", "subtitle"):
+            if isinstance(res.get(k), str):
+                res[k] = L(res[k])
+        for c_ in res.get("columns") or []:
+            if isinstance(c_, dict) and isinstance(c_.get("label"), str):
+                c_["label"] = L(c_["label"])
+        res["notes"] = [L(n) if isinstance(n, str) else n for n in (res.get("notes") or [])]
+        res["summary"] = [((L(s[0]),) + tuple(s[1:])) if isinstance(s, (list, tuple)) and s
+                          and isinstance(s[0], str) else s for s in (res.get("summary") or [])]
+    except Exception:
+        pass
 
 
 # ── v6.9.4: product reports offer more columns ────────────────

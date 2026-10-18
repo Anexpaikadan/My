@@ -342,20 +342,41 @@ class SupplierForm:
                  maxlen=200, colspan=2)
         FK.field(g, C, 2, 0, "الاسم (عربي)", var("supplier_name_ar"), rtl=True,
                  maxlen=200, colspan=2)
-        FK.section(right, C, "Tax", "🧾")
+        from modules import country as _ctry
+        _p = _ctry.profile()
+        FK.section(right, C, "GST" if _p["code"] == "IN" else "Tax", "🧾")
         g2 = FK.grid(right, C, cols=1)
-        FK.field(g2, C, 0, 0, "VAT Number  (15 digits)", var("vat_registration_no"),
-                 kind="vat", maxlen=15)
-        cr_cell, cr = FK.field(g2, C, 1, 0, "CR Number", var("cr_number"),
-                               kind="vat", maxlen=20)
-        cr.pack_forget()
-        row = tk.Frame(cr_cell, bg=C["content_bg"])
-        row.pack(anchor="w", pady=(2, 0))
-        cr.pack(in_=row, side="left", ipady=4)
-        cr.lift(row)                      # made before the row: keep it on top
-        tk.Button(row, text="⤓ Wathq", font=("Segoe UI", 8, "bold"),
-                  bg=C["primary"], fg="white", relief="flat", padx=8,
-                  cursor="hand2", command=self._wathq_fill).pack(side="left", padx=(6, 0))
+        FK.field(g2, C, 0, 0, "VAT Number  (15 digits)" if _p["code"] == "SA"
+                 else "%s  (%s)" % (_p["tax_no_label"], _p["tax_no_hint"]),
+                 var("vat_registration_no"), kind="vat", maxlen=15)
+        cr_cell, cr = FK.field(g2, C, 1, 0,
+                               {"AE": "Trade Licence No.", "IN": "PAN"}.get(_p["code"], "CR Number"),
+                               var("cr_number"), kind="vat", maxlen=20,
+                               check=None if _p["code"] == "SA" else "cr")
+        # v7.0: region / emirate / GST state (India: CGST+SGST or IGST input)
+        F["state_code"] = tk.StringVar()
+        self.state_disp = tk.StringVar()
+        _st = tk.Frame(g2, bg=C["content_bg"])
+        _st.grid(row=2, column=0, sticky="ew", pady=(0, 8))
+        tk.Label(_st, text=_p["states_label"], font=("Segoe UI", 9, "bold"), bg=C["content_bg"],
+                 fg=C["text_primary"]).pack(anchor="w")
+        ttk.Combobox(_st, textvariable=self.state_disp, width=34, state="readonly",
+                     values=["%s - %s" % (k, n) for k, n in _p["states"]]).pack(anchor="w", pady=(2, 0), ipady=2)
+        if _p["code"] == "IN":
+            def _gst_state(*_a):
+                g = F["vat_registration_no"].get().strip().upper()
+                if len(g) >= 2 and g[:2].isdigit() and _ctry.state_name(g[:2]) != g[:2]:
+                    self.state_disp.set(_ctry.state_label(g[:2]))
+            F["vat_registration_no"].trace_add("write", _gst_state)
+        if _p["code"] == "SA":
+            cr.pack_forget()
+            row = tk.Frame(cr_cell, bg=C["content_bg"])
+            row.pack(anchor="w", pady=(2, 0))
+            cr.pack(in_=row, side="left", ipady=4)
+            cr.lift(row)                      # made before the row: keep it on top
+            tk.Button(row, text="⤓ Wathq", font=("Segoe UI", 8, "bold"),
+                      bg=C["primary"], fg="white", relief="flat", padx=8,
+                      cursor="hand2", command=self._wathq_fill).pack(side="left", padx=(6, 0))
         FK.section(right, C, "Status", "✅")
         self.active_var = tk.BooleanVar(value=True)
         labeled_toggle(right, "Active supplier (shows in purchases)",
@@ -368,7 +389,7 @@ class SupplierForm:
         FK.field(ga, C, 0, 1, "العنوان (AR)", var("address_ar"), rtl=True, maxlen=500)
         FK.field(ga, C, 1, 0, "City (EN)", var("city_en"), maxlen=100)
         FK.field(ga, C, 1, 1, "المدينة (AR)", var("city_ar"), rtl=True, maxlen=100)
-        FK.field(ga, C, 2, 0, "Country Code", var("country_code", "SA"),
+        FK.field(ga, C, 2, 0, "Country Code", var("country_code", _p["code"]),
                  kind="country", maxlen=3)
 
         # page 3 — Contact & Payment
@@ -384,7 +405,7 @@ class SupplierForm:
         gp = FK.grid(rc, C, cols=1)
         FK.field(gp, C, 0, 0, "Payment Terms (days)", var("payment_terms_days"),
                  kind="days", maxlen=4)
-        FK.field(gp, C, 1, 0, "Opening Balance (SAR)", var("opening_balance"),
+        FK.field(gp, C, 1, 0, "Opening Balance (%s)" % _ctry.symbol(), var("opening_balance"),
                  kind="number")
         tk.Label(rc, text="Opening balance is posted to the books when you save\n"
                           "(Dr Opening Balance Equity / Cr supplier).",
@@ -415,6 +436,11 @@ class SupplierForm:
                 if d.get(k) is not None:
                     v.set(str(d[k]))
             self.active_var.set(bool(d.get("is_active", 1)))
+            try:
+                from modules import country as _ctry
+                self.state_disp.set(_ctry.state_label(d.get("state_code")) if d.get("state_code") else "")
+            except Exception:
+                pass
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
@@ -430,7 +456,7 @@ class SupplierForm:
 
     # columns added to the form in v5.25 (in the table since the first
     # install) — left out again if an old database does not have them
-    _EXTRA = ("address_en", "address_ar", "city_ar", "contact_person_ar", "country_code")
+    _EXTRA = ("address_en", "address_ar", "city_ar", "contact_person_ar", "country_code", "state_code")
 
     def _save(self, mode="close"):
         # a new supplier needs 'add', changing one needs 'edit'
@@ -486,6 +512,18 @@ class SupplierForm:
             "contact_person_ar": v("contact_person_ar") or None,
             "country_code": v("country_code", "SA") or "SA",
         }
+        try:                    # v7.0: tax number of the company's country + state
+            from modules import country as _ctry
+            _vat = data["vat_registration_no"]
+            _ok, _m = _ctry.valid_tax_no(_vat)
+            if _vat and not _ok:
+                self.status_var.set("⚠️ " + _m)
+                self._pagenav.show_page(self.page_basic)
+                return
+            if db.execute_scalar("SELECT COL_LENGTH('suppliers','state_code')") is not None:
+                data["state_code"] = _ctry.state_code_of(self.state_disp.get()) or None
+        except Exception:
+            pass
 
         _ids = {"new": None}
 

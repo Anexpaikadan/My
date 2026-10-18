@@ -274,9 +274,17 @@ def company():
                                           "building_number", "street_name_en")})
 
 
+def _currency():
+    """v7.0: the company's currency symbol for the phone app."""
+    try:
+        from modules import country as _K
+        return _K.symbol()
+    except Exception:
+        return cfg.get("currency", "SAR") or "SAR"
+
 def app_settings():
     return {"price_incl_vat": _price_incl(), "vat_enabled": cfg.flag("vat_enabled", True),
-            "currency": cfg.get("currency", "SAR") or "SAR",
+            "currency": _currency(),
             "approve_stock": cfg.flag("mobile_approve_stock", False),
             "out_reasons": OUT_REASONS,
             "receipt_footer": cfg.get("receipt_footer", "") or "Thank you!"}

@@ -6,7 +6,7 @@
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sys, os, re
+import sys, os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -613,19 +613,37 @@ class CustomerForm:
         FK.field(g, C, 2, 0, t("customer.name_ar"), var("customer_name_ar"),
                  rtl=True, maxlen=200, state=state, colspan=2)
 
-        FK.section(right, C, "Tax (ZATCA)", "🧾")
+        from modules import country as _ctry
+        _p = _ctry.profile()
+        FK.section(right, C, {"SA": "Tax (ZATCA)", "AE": "Tax (FTA)", "IN": "GST"}.get(_p["code"], "Tax"), "🧾")
         g2 = FK.grid(right, C, cols=1)
+        _tax_label = (f"{t('customer.vat_no')}  (15 digits, starts with 3)" if _p["code"] == "SA"
+                      else "%s  (%s)" % (_p["tax_no_label"], _p["tax_no_hint"]))
         vat_cell, self.vat_entry = FK.field(
-            g2, C, 0, 0, f"{t('customer.vat_no')}  (15 digits, starts with 3)",
+            g2, C, 0, 0, _tax_label,
             var("vat_registration_no"), kind="vat", maxlen=15, state=state)
         self.vat_indicator = tk.Label(vat_cell, text="", font=("Segoe UI", 8),
                                       bg=C["content_bg"], fg=C["danger"])
         self.vat_indicator.pack(anchor="w")
         if state == "normal":
             F["vat_registration_no"].trace("w", self._validate_vat)
-        cr_cell, _cr = FK.field(g2, C, 1, 0, t("customer.cr_no"), var("cr_number"),
-                                kind="vat", maxlen=20, state=state)
-        if state == "normal":
+        cr_cell, _cr = FK.field(g2, C, 1, 0,
+                                {"AE": "Trade Licence No.", "IN": "PAN"}.get(_p["code"], t("customer.cr_no")),
+                                var("cr_number"), kind="vat", maxlen=20, state=state,
+                                check=None if _p["code"] == "SA" else "cr")
+        # v7.0: region / emirate / GST state (India: decides CGST+SGST or IGST)
+        F["state_code"] = tk.StringVar()
+        self.state_disp = tk.StringVar()
+        _st = tk.Frame(g2, bg=C["content_bg"])
+        _st.grid(row=2, column=0, sticky="ew", pady=(0, 8))
+        tk.Label(_st, text=_p["states_label"] + ("  (place of supply)" if _p["code"] == "IN" else ""),
+                 font=("Segoe UI", 9, "bold"), bg=C["content_bg"],
+                 fg=C["text_primary"]).pack(anchor="w")
+        self.state_combo = ttk.Combobox(_st, textvariable=self.state_disp, width=34,
+                                        values=["%s - %s" % (k, n) for k, n in _p["states"]],
+                                        state="disabled" if state != "normal" else "readonly")
+        self.state_combo.pack(anchor="w", pady=(2, 0), ipady=2)
+        if state == "normal" and _p["code"] == "SA":
             _cr.pack_forget()
             row = tk.Frame(cr_cell, bg=C["content_bg"])
             row.pack(anchor="w", pady=(2, 0))
@@ -634,6 +652,8 @@ class CustomerForm:
             tk.Button(row, text="⤓ Wathq", font=("Segoe UI", 8, "bold"),
                       bg=C["primary"], fg="white", relief="flat", padx=8,
                       cursor="hand2", command=self._wathq_fill).pack(side="left", padx=(6, 0))
+        if state == "normal" and _p["code"] == "IN":
+            F["vat_registration_no"].trace_add("write", lambda *a: self._state_from_gstin())
         FK.section(right, C, "Status", "✅")
         self.active_var = tk.BooleanVar(value=True)
         F["is_active"] = self.active_var
@@ -643,7 +663,8 @@ class CustomerForm:
 
         # ── page 2: Address (ZATCA Phase 2 needs it for B2B) ──
         pa = self.page_address
-        tk.Label(pa, text="ZATCA Phase 2: B2B invoices need the full Saudi national address.",
+        tk.Label(pa, text="ZATCA Phase 2: B2B invoices need the full Saudi national address."
+                 if _p["code"] == "SA" else "The address prints on tax invoices.",
                  font=("Segoe UI", 9), bg=C["content_bg"],
                  fg=C["text_secondary"]).pack(anchor="w", padx=18, pady=(10, 2))
         ga = FK.grid(pa, C)
@@ -660,7 +681,7 @@ class CustomerForm:
         FK.field(ga, C, 3, 0, "City (EN)", var("city_en"), maxlen=100, state=state)
         FK.field(ga, C, 3, 1, "المدينة (AR)", var("city_ar"), rtl=True,
                  maxlen=100, state=state)
-        FK.field(ga, C, 4, 0, "Country Code", var("country_code", "SA"),
+        FK.field(ga, C, 4, 0, "Country Code", var("country_code", _p["code"]),
                  kind="country", maxlen=3, state=state)
 
         # ── page 3: Contact & Credit ──────────────────────────
@@ -676,11 +697,11 @@ class CustomerForm:
                  maxlen=100, state=state)
         FK.section(rc, C, "Credit", "💰")
         gr = FK.grid(rc, C, cols=1)
-        FK.field(gr, C, 0, 0, "Credit Limit (SAR)", var("credit_limit"),
+        FK.field(gr, C, 0, 0, "Credit Limit (%s)" % _ctry.symbol(), var("credit_limit"),
                  kind="number", state=state)
         FK.field(gr, C, 1, 0, "Payment Terms (days)", var("payment_terms_days"),
                  kind="days", maxlen=4, state=state)
-        FK.field(gr, C, 2, 0, "Opening Balance (SAR)", var("opening_balance"),
+        FK.field(gr, C, 2, 0, "Opening Balance (%s)" % _ctry.symbol(), var("opening_balance"),
                  kind="number", state=state)
         # v6.0: the price list this customer buys at
         try:
@@ -750,6 +771,7 @@ class CustomerForm:
     # ── VAT Validation ────────────────────────────────────────
     def _validate_vat(self, *args):
         C = cfg.theme()
+        from modules import country as _ctry
         vat = self.fields["vat_registration_no"].get().strip()
         if not vat:
             self.vat_indicator.config(text="", fg=C["danger"])
@@ -760,9 +782,10 @@ class CustomerForm:
             except Exception:
                 pass
             return
+        ok, msg = _ctry.valid_tax_no(vat)
         try:                        # v6.8: a wrong number gets the red note under the box
             from ui import form_style as _FS
-            if _FS.on() and not re.match(r'^3\d{14}$', vat):
+            if _FS.on() and not ok:
                 self.vat_indicator.config(text="")
                 self.vat_indicator.pack_forget()
                 return
@@ -770,16 +793,25 @@ class CustomerForm:
                 self.vat_indicator.pack(anchor="w")
         except Exception:
             pass
-        # ZATCA: VAT must be exactly 15 digits, starting with 3
-        if re.match(r'^3\d{14}$', vat):
+        label = _ctry.tax_no_label()
+        if ok:
             self.vat_indicator.config(
-                text="✅ Valid ZATCA VAT number", fg=C["success"])
-        elif len(vat) == 15 and vat.isdigit():
+                text=("✅ Valid ZATCA VAT number" if _ctry.is_sa() else "✅ Valid %s" % label),
+                fg=C["success"])
+        elif _ctry.is_sa() and len(vat) == 15 and vat.isdigit():
             self.vat_indicator.config(
                 text="⚠️ Must start with 3", fg=C["warning"])
         else:
-            self.vat_indicator.config(
-                text="❌ Must be 15 digits starting with 3", fg=C["danger"])
+            self.vat_indicator.config(text="❌ " + msg, fg=C["danger"])
+
+    def _state_from_gstin(self):
+        """India: a GSTIN's first 2 digits are the customer's state."""
+        from modules import country as _ctry
+        g = self.fields["vat_registration_no"].get().strip().upper()
+        if len(g) >= 2 and g[:2].isdigit():
+            lab = _ctry.state_label(g[:2])
+            if lab and lab != g[:2]:
+                self.state_disp.set(lab)
 
     # ── Load Data ─────────────────────────────────────────────
     def _load_data(self):
@@ -801,6 +833,11 @@ class CustomerForm:
                 from modules import price_lists as _PL
                 _pk = data.get("price_list_id")
                 self.price_list_var.set(_PL.label_for_key(int(_pk)) if _pk else _PL.STANDARD)
+            except Exception:
+                pass
+            try:
+                from modules import country as _ctry
+                self.state_disp.set(_ctry.state_label(data.get("state_code")) if data.get("state_code") else "")
             except Exception:
                 pass
             self._on_type_change()
@@ -836,12 +873,16 @@ class CustomerForm:
             errors.append("Customer Code is required.")
         if not self.fields["customer_name_en"].get().strip():
             errors.append("Customer Name (EN) is required.")
+        from modules import country as _ctry
+        _lab = _ctry.tax_no_label()
+        vat = self.fields["vat_registration_no"].get().strip()
         if self.type_var.get() == "B2B":
-            vat = self.fields["vat_registration_no"].get().strip()
             if not vat:
-                errors.append("VAT Number required for B2B customers.")
-            elif not re.match(r'^3\d{14}$', vat):
-                errors.append("VAT Number must be 15 digits starting with 3.")
+                errors.append("%s required for B2B customers." % _lab)
+            elif not _ctry.valid_tax_no(vat)[0]:
+                errors.append(_ctry.valid_tax_no(vat)[1])
+        elif vat and not _ctry.valid_tax_no(vat)[0]:
+            errors.append(_ctry.valid_tax_no(vat)[1])
         # Settings ▸ Customer: extra mandatory fields
         try:
             if cfg.flag("cust_mandatory_mobile") and \
@@ -906,7 +947,7 @@ class CustomerForm:
             "city_en":              v("city_en") or None,
             "city_ar":              v("city_ar") or None,
             "postal_code":          v("postal_code") or None,
-            "country_code":         v("country_code", "SA"),
+            "country_code":         v("country_code", _ctry.code()),
             "phone":                v("phone") or None,
             "email":                v("email") or None,
             "contact_person_en":    v("contact_person_en") or None,
@@ -916,6 +957,12 @@ class CustomerForm:
             "opening_balance":      float(v("opening_balance", "0") or 0),
             "is_active":            1 if self.active_var.get() else 0,
         }
+
+        try:                    # v7.0: region / emirate / GST state
+            if db.execute_scalar("SELECT COL_LENGTH('customers','state_code')") is not None:
+                data["state_code"] = _ctry.state_code_of(self.state_disp.get()) or None
+        except Exception:
+            pass
 
         _new_cid = None
         try:

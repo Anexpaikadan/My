@@ -84,6 +84,8 @@ class MainWindow:
             from modules import country as _ctry, business as _biz
             _ctry.apply()
             _biz.invalidate()
+            from ui import country_text as _ctext       # SAR → AED / ₹, VAT → GST on screens
+            _ctext.install()
         except Exception as _e:
             print("[DayBill] country settings skipped:", _e)
         # once: customer / supplier opening balances into the books

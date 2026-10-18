@@ -116,6 +116,96 @@ def _register_fonts():
 
 
 # ── Main generator ────────────────────────────────────────────
+# ── v7.0: country words and tax lines ────────────────────────
+def _with_hsn(lines):
+    """India: each line's HSN / SAC code (from the product)."""
+    try:
+        from modules import country as C
+        if not C.is_in():
+            return lines
+        from config.database import db
+    except Exception:
+        return lines
+    out, cache = [], {}
+    for ln in lines or []:
+        d = dict(ln)
+        pid = d.get("product_id")
+        if not d.get("hsn_code") and pid:
+            if pid not in cache:
+                try:
+                    cache[pid] = db.execute_scalar("SELECT hsn_code FROM products WHERE product_id=?", (pid,)) or ""
+                except Exception:
+                    cache[pid] = ""
+            d["hsn_code"] = cache[pid]
+        out.append(d)
+    return out
+
+
+def _country_ctx(company, invoice, lines):
+    """What the bill prints for the company's country."""
+    try:
+        from modules import country as C
+        p = C.profile()
+        code = p["code"]
+        sym = C.symbol()
+        num = C.num
+    except Exception:
+        C, p, code, sym = None, {}, "SA", "SAR"
+        num = lambda v, *a, **k: "{:,.2f}".format(float(v or 0))  # noqa: E731
+    k = {"code": code, "symbol": sym, "num": lambda v: num(v),
+         "tax": p.get("tax", "VAT"), "tax_no_label": p.get("tax_no_label", "VAT"),
+         "reg_label": {"AE": "Trade Licence", "IN": "PAN"}.get(code, "CR"),
+         "qr": code == "SA", "pos_text": "", "heads": [], "rate_rows": [],
+         "bill_of_supply": False,
+         "vat_label": "VAT %g%%" % float(p.get("std_rate", 15)) if code != "IN" else "GST",
+         "footer": {"SA": "This is a ZATCA-compliant electronic tax invoice",
+                    "AE": "Tax invoice issued by a VAT registered supplier (TRN %s)"
+                          % (company.get("vat_registration_no") or "—"),
+                    "IN": "This is a computer generated invoice"}.get(code, "")}
+    rates = {round(float(l.get("vat_rate") or 0), 2) for l in lines or [] if float(l.get("vat_amount") or 0)}
+    if code != "IN" and len(rates) == 1:
+        k["vat_label"] = "%s %g%%" % (k["tax"], list(rates)[0])
+    elif code != "IN" and len(rates) > 1:
+        k["vat_label"] = k["tax"]
+    if code == "IN" and C is not None:
+        pos = C.place_of_supply("sales", invoice)
+        k["pos_text"] = C.state_label(pos)
+        sp = C.gst_split(invoice.get("vat_amount", 0), pos)
+        if sp.get("igst"):
+            k["heads"] = [("IGST", sp["igst"])]
+        else:
+            k["heads"] = [("CGST", sp.get("cgst", 0)), (C.tax_head_label("sgst", C.company_state()),
+                                                        sp.get("sgst", 0))]
+        k["rate_rows"] = C.split_lines(lines, pos)
+        k["bill_of_supply"] = not any(float(l.get("vat_amount") or 0) for l in lines or [])
+    return k
+
+
+def _gst_table(c, x, y, K, F, FB, DARK, GREY, BORDER, mm):
+    """India: GST by rate — taxable, CGST, SGST, IGST. Returns the y below."""
+    cols = [("GST %", 16), ("Taxable", 26), ("CGST", 22), ("SGST", 22), ("IGST", 22)]
+    c.setFont(FB, 8); c.setFillColor(DARK)
+    c.drawString(x, y - 4 * mm, "GST summary")
+    yy = y - 9 * mm
+    cx = x
+    c.setFont(FB, 7)
+    for name, w in cols:
+        c.drawRightString(cx + w * mm - 1 * mm, yy, name)
+        cx += w * mm
+    c.setStrokeColor(BORDER); c.setLineWidth(0.3)
+    c.line(x, yy - 1.5 * mm, cx, yy - 1.5 * mm)
+    c.setFont(F, 7)
+    for r in K["rate_rows"][:6]:
+        yy -= 4.2 * mm
+        vals = ["%g%%" % r["rate"], K["num"](r["taxable"]), K["num"](r["cgst"]),
+                K["num"](r["sgst"]), K["num"](r["igst"])]
+        cx = x
+        for (name, w), v in zip(cols, vals):
+            c.drawRightString(cx + w * mm - 1 * mm, yy, v)
+            cx += w * mm
+    return yy - 2 * mm
+
+
 def generate_invoice_pdf(invoice: dict, company: dict, lines: list,
                          output_path: str, qr_base64: str = None) -> str:
     """
@@ -138,6 +228,7 @@ def generate_invoice_pdf(invoice: dict, company: dict, lines: list,
 
     if qr_base64 is None:
         qr_base64 = invoice.get("qr_code_data") or invoice.get("zatca_qr_phase2")
+    lines = _with_hsn(lines)
 
     W, H = A4
     c = canvas.Canvas(output_path, pagesize=A4)
@@ -153,6 +244,15 @@ def generate_invoice_pdf(invoice: dict, company: dict, lines: list,
     F, FB = _prefs["font"], _prefs["font_bold"]
     HDR, TBL = _prefs["header"], _prefs["table"]
     SHOW_AR, SHOW_QR = _prefs["show_arabic"], _prefs["show_qr"]
+
+    # v7.0: the company's country decides the words, the tax lines, the
+    # QR (Saudi ZATCA only) and Arabic (not on Indian bills)
+    K = _country_ctx(company, invoice, lines)
+    if not K["qr"]:
+        SHOW_QR = False
+    if K["code"] == "IN":
+        SHOW_AR = False
+    money = K["num"]
 
     GREEN = colors.HexColor(_prefs["accent"])   # template accent
     DARK  = colors.HexColor("#1A1438")
@@ -205,9 +305,9 @@ def generate_invoice_pdf(invoice: dict, company: dict, lines: list,
             text_en(margin, H - 16 * mm, company.get("company_name_en", "Company"),
                     FB, 16, colors.white)
             text_en(margin, H - 22 * mm,
-                    f"VAT: {company.get('vat_registration_no', '')}", F, 9, LIGHT)
+                    f"{K['tax_no_label']}: {company.get('vat_registration_no', '')}", F, 9, LIGHT)
             if company.get("cr_number"):
-                text_en(margin, H - 27 * mm, f"CR: {company.get('cr_number')}",
+                text_en(margin, H - 27 * mm, f"{K['reg_label']}: {company.get('cr_number')}",
                         F, 9, LIGHT)
             text_en(margin, H - 32 * mm, addr, F, 8, LIGHT)
             text_ar_right(W - margin, H - 16 * mm,
@@ -220,9 +320,9 @@ def generate_invoice_pdf(invoice: dict, company: dict, lines: list,
             text_en(margin, H - 18 * mm, company.get("company_name_en", "Company"),
                     FB, 16, GREEN)
             text_en(margin, H - 24 * mm,
-                    f"VAT: {company.get('vat_registration_no', '')}", F, 9, GREY)
+                    f"{K['tax_no_label']}: {company.get('vat_registration_no', '')}", F, 9, GREY)
             if company.get("cr_number"):
-                text_en(margin, H - 28.5 * mm, f"CR: {company.get('cr_number')}",
+                text_en(margin, H - 28.5 * mm, f"{K['reg_label']}: {company.get('cr_number')}",
                         F, 9, GREY)
             text_en(margin, H - 33 * mm, addr, F, 8, GREY)
             text_ar_right(W - margin, H - 18 * mm,
@@ -238,7 +338,7 @@ def generate_invoice_pdf(invoice: dict, company: dict, lines: list,
             text_ar_right(W - margin, H - 16 * mm,
                           company.get("company_name_ar", ""), 12, DARK, bold=True)
             text_en(margin, H - 21.5 * mm,
-                    f"VAT: {company.get('vat_registration_no', '')}   {addr}",
+                    f"{K['tax_no_label']}: {company.get('vat_registration_no', '')}   {addr}",
                     F, 8, GREY)
             c.setStrokeColor(BORDER); c.setLineWidth(0.6)
             c.line(margin, H - 25 * mm, W - margin, H - 25 * mm)
@@ -255,8 +355,10 @@ def generate_invoice_pdf(invoice: dict, company: dict, lines: list,
     title_ar = {"388": "فاتورة ضريبية", "381": "إشعار دائن",
                 "383": "إشعار مدين"}.get(type_code, "فاتورة ضريبية")
     # B2C (buyer without VAT number) = Simplified Tax Invoice
-    if type_code == "388" and not str(invoice.get("customer_vat_no") or "").strip():
+    if type_code == "388" and not str(invoice.get("customer_vat_no") or "").strip() and K["code"] != "IN":
         title_en, title_ar = "SIMPLIFIED TAX INVOICE", "فاتورة ضريبية مبسطة"
+    if type_code == "388" and K["code"] == "IN" and K["bill_of_supply"]:
+        title_en = "BILL OF SUPPLY"            # India: no GST on any line
     text_en(margin + 4 * mm, y - 6.2 * mm, title_en, "Helvetica-Bold", 12, GREEN)
     text_ar_right(W - margin - 4 * mm, y - 6.2 * mm, title_ar, 12, GREEN, bold=True)
     y -= 14 * mm
@@ -305,12 +407,14 @@ def generate_invoice_pdf(invoice: dict, company: dict, lines: list,
                       invoice.get("customer_name_ar", ""), 9, DARK, bold=True)
     ry -= 5 * mm
     if invoice.get("customer_vat_no"):
-        text_en(rx, ry, f"VAT: {invoice['customer_vat_no']}",
+        text_en(rx, ry, f"{K['tax_no_label']}: {invoice['customer_vat_no']}",
                 "Helvetica", 8, GREY); ry -= 5 * mm
     cust_addr = ", ".join(filter(None, [
         invoice.get("customer_city_en"), invoice.get("customer_country_code")]))
     if cust_addr:
-        text_en(rx, ry, cust_addr, "Helvetica", 8, GREY)
+        text_en(rx, ry, cust_addr, "Helvetica", 8, GREY); ry -= 5 * mm
+    if K["pos_text"]:                     # India: place of supply
+        text_en(rx, ry, "Place of supply: " + K["pos_text"], "Helvetica-Bold", 8, DARK)
 
     y = box_top - box_h - 8 * mm
 
@@ -318,6 +422,12 @@ def generate_invoice_pdf(invoice: dict, company: dict, lines: list,
     headers = ["#", "Description", "Qty", "Price", "VAT%", "VAT", "Total"]
     headers_ar = ["", "الوصف", "الكمية", "السعر", "%", "الضريبة", "الإجمالي"]
     col_widths = [8, 70, 16, 24, 14, 24, 24]  # in mm, sums < 180
+    if K["code"] == "IN":                 # India: HSN / SAC column, GST
+        headers = ["#", "Description", "HSN/SAC", "Qty", "Rate", "GST%", "Taxable", "Total"]
+        headers_ar = ["", "", "", "", "", "", "", ""]
+        col_widths = [8, 58, 18, 14, 22, 12, 24, 24]
+    elif K["tax"] != "VAT":
+        headers = [h.replace("VAT", K["tax"]) for h in headers]
     total_w = sum(col_widths)
     scale = (W - 2 * margin) / (total_w * mm)
     col_x = [margin]
@@ -327,6 +437,8 @@ def generate_invoice_pdf(invoice: dict, company: dict, lines: list,
     # Header row — as a function so it repeats atop every page
     row_h = 8 * mm
     aligns = ["c", "l", "c", "r", "c", "r", "r"]
+    if K["code"] == "IN":
+        aligns = ["c", "l", "c", "c", "r", "c", "r", "r"]
 
     def draw_table_header(yy):
         c.setFillColor(GREEN)
@@ -400,7 +512,7 @@ def generate_invoice_pdf(invoice: dict, company: dict, lines: list,
                                 _shape_arabic(label_ar))
             c.setFont("Helvetica-Bold" if bold else "Helvetica", 9 if bold else 8)
             c.setFillColor(txtcol)
-            c.drawRightString(tx + totals_w - 2 * mm, ty - 5 * mm, f"{float(val):,.2f}")
+            c.drawRightString(tx + totals_w - 2 * mm, ty - 5 * mm, money(val))
             if not fill:
                 c.setStrokeColor(BORDER); c.setLineWidth(0.3)
                 c.line(tx, ty - lh, tx + totals_w, ty - lh)
@@ -410,8 +522,13 @@ def generate_invoice_pdf(invoice: dict, company: dict, lines: list,
         total_line("Subtotal", "المجموع الفرعي", invoice.get("subtotal_amount", 0))
         if float(invoice.get("discount_amount", 0)):
             total_line("Discount", "الخصم", invoice.get("discount_amount", 0))
-        total_line("VAT 15%", "ضريبة القيمة المضافة", invoice.get("vat_amount", 0))
-        total_line("Total (SAR)", "الإجمالي", invoice.get("total_amount", 0),
+        if K["code"] == "IN":             # India: taxable value, then each GST head
+            total_line("Taxable value", "", invoice.get("taxable_amount") or invoice.get("subtotal_amount", 0))
+            for head, amt in K["heads"]:
+                total_line(head, "", amt)
+        else:
+            total_line(K["vat_label"], "ضريبة القيمة المضافة", invoice.get("vat_amount", 0))
+        total_line("Total (%s)" % K["symbol"], "الإجمالي", invoice.get("total_amount", 0),
                    bold=True, fill=True)
 
         # ── Entry sections (Print & Invoice ▸ Invoice sections) ────
@@ -451,6 +568,8 @@ def generate_invoice_pdf(invoice: dict, company: dict, lines: list,
 
         # bank details (left column, under the QR)
         by = y - 38 * mm if (qr_base64 and SHOW_QR) else y - 4 * mm
+        if K["code"] == "IN" and K["rate_rows"]:     # India: GST by rate
+            by = _gst_table(c, margin, y, K, F, FB, DARK, GREY, BORDER, mm) - 4 * mm
         if _prefs.get("show_bank") and _prefs.get("bank_text"):
             c.setFont(FB, 8); c.setFillColor(DARK)
             c.drawString(margin, by, "Bank Details")
@@ -550,11 +669,16 @@ def generate_invoice_pdf(invoice: dict, company: dict, lines: list,
             str(idx),
             name_en[:42],
             f"{float(ln.get('quantity', 0)):g}",
-            f"{float(ln.get('unit_price', 0)):,.2f}",
+            money(ln.get('unit_price', 0)),
             f"{float(ln.get('vat_rate', 15)):g}",
-            f"{float(ln.get('vat_amount', 0)):,.2f}",
-            f"{float(ln.get('line_total', 0)):,.2f}",
+            money(ln.get('vat_amount', 0)),
+            money(ln.get('line_total', 0)),
         ]
+        if K["code"] == "IN":
+            vals = [str(idx), name_en[:34], str(ln.get("hsn_code") or ""),
+                    f"{float(ln.get('quantity', 0)):g}", money(ln.get('unit_price', 0)),
+                    f"{float(ln.get('vat_rate', 0)):g}", money(ln.get('line_amount', 0)),
+                    money(ln.get('line_total', 0))]
         for i, (v, al) in enumerate(zip(vals, aligns)):
             cx = col_x[i]; cw = col_x[i + 1] - col_x[i]
             c.setFont("Helvetica", 8)
@@ -609,9 +733,8 @@ def generate_invoice_pdf(invoice: dict, company: dict, lines: list,
         c.drawCentredString(W / 2, 17.5 * mm, _prefs["footer"][:120])
     c.setFillColor(GREY)
     c.setFont("Helvetica", 7)
-    c.drawCentredString(W / 2, 13 * mm,
-                        "This is a ZATCA-compliant electronic tax invoice")
-    if SHOW_AR:
+    c.drawCentredString(W / 2, 13 * mm, K["footer"])
+    if SHOW_AR and K["code"] == "SA":
         c.setFont(_AR_FONT, 7)
         c.drawCentredString(W / 2, 9.5 * mm,
                             _shape_arabic("فاتورة ضريبية إلكترونية متوافقة مع "

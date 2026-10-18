@@ -100,9 +100,18 @@ def message_for(kind, ctx):
     tpl = str(_get(MSG_KEYS.get(kind, ""), "") or "") or DEFAULT_MESSAGES.get(kind, "{text}")
     tpl = tpl.replace("\\n", "\n")
     try:
-        return tpl.format_map(_SafeDict(ctx))
+        return _local(tpl.format_map(_SafeDict(ctx)))
     except Exception:
-        return tpl
+        return _local(tpl)
+
+
+def _local(text):
+    """v7.0: the message in the company's country words (SAR → AED / ₹)."""
+    try:
+        from modules import country as _K
+        return _K.localize(text)
+    except Exception:
+        return text
 
 
 # ── WhatsApp app / web ────────────────────────────────────────
@@ -285,7 +294,7 @@ def usage_text(today=None):
                                 sorted(u["by_kind"].items(), key=lambda x: -x[1]))
     s += "\nSince 1 Oct 2026 Meta charges every Cloud API message (also replies). " \
          "WhatsApp app mode is free." + ("" if u["rate"] else " Type your price per message to see the cost.")
-    return s
+    return _local(s)
 
 
 def log(kind, doc_id, phone, ok, info=""):

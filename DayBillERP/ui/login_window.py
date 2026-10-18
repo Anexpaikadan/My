@@ -120,7 +120,7 @@ class LoginWindow:
         # Version
         tk.Label(
             left,
-            text="v%s  |  Saudi Arabia VAT 15%%" % _APP_VERSION,
+            text="v%s  |  Saudi Arabia · UAE · India  ·  VAT / GST" % _APP_VERSION,
             font=("Segoe UI", 8),
             bg=C["sidebar_bg"],
             fg="#6EAA8A"
@@ -1031,7 +1031,7 @@ class DbSettingsDialog:
                   font=("Segoe UI", 9, "bold"), bg="#8E44AD", fg="white",
                   relief="flat", padx=12, pady=6, cursor="hand2",
                   command=self._restore_db).pack(side="left", padx=5)
-        tk.Button(tools, text="🆕  Create New Database…",
+        tk.Button(tools, text="🆕  Create New Company…",
                   font=("Segoe UI", 9, "bold"), bg="#27AE60", fg="white",
                   relief="flat", padx=12, pady=6, cursor="hand2",
                   command=self._create_db).pack(side="left", padx=5)
@@ -1052,38 +1052,22 @@ class DbSettingsDialog:
         self.db_combo["values"] = vals or self._all_dbs
 
     def _create_db(self):
-        """New installation: create a fresh company database and run the
-        all-in-one setup script into it."""
-        from tkinter import simpledialog
+        """New installation / another company (v7.0): the New Company
+        wizard asks the company, its COUNTRY (Saudi Arabia, UAE, India)
+        and its BUSINESS (retail, supermarket, restaurant, textiles,
+        production), makes the database and sets it up that way."""
         save_db_config(self._get_config())
-        name = simpledialog.askstring(
-            "Create New Database",
-            "Name of the new company database (letters/numbers):",
-            parent=self.dialog)
-        if not name or not name.strip():
-            return
-        from modules import db_backup as dbb
-        script = dbb.find_install_script()
-        run_it = False
-        if script:
-            run_it = messagebox.askyesno(
-                "Create New Database",
-                "Also run the full setup script into it?\n\n"
-                "%s\n\n(Yes = ready-to-use company with all tables. "
-                "This can take a minute.)" % script, parent=self.dialog)
-        self.status_var.set("⏳ Creating database — please wait…")
-        self.dialog.update_idletasks()
-        ok, msg = dbb.create_database(name.strip(),
-                                      install_script=script if run_it else None)
-        self.status_var.set(("✅ " if ok else "❌ ") + msg[:180])
-        if ok:
-            self._list_dbs()
-            self.db_var.set("".join(ch for ch in name.strip()
-                                    if ch.isalnum() or ch in "_-"))
-            messagebox.showinfo("Create New Database",
-                                msg + "\n\nPick it in the Database box and "
-                                "press Save to switch to the new company.",
-                                parent=self.dialog)
+        from ui.new_company import NewCompanyWizard
+
+        def done(name):
+            try:
+                self._list_dbs()
+            except Exception:
+                pass
+            if name:
+                self.db_var.set(name)
+                self.status_var.set("✅ New company '%s' is ready — press Save, then sign in." % name)
+        NewCompanyWizard(self.dialog, self._get_config(), on_done=done)
 
     def _backup_now(self):
         save_db_config(self._get_config())

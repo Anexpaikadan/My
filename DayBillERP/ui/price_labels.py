@@ -280,7 +280,7 @@ class PriceLabelsView:
                 generate_label_sheet([{"name": i["product_name_en"], "price": i["unit_price"],
                                        "barcode": i["barcode_value"], "copies": copies}
                                       for i in items], path, cols=cols, rows=rws,
-                                     currency=cfg.get("currency", "SAR"))
+                                     currency=__import__("modules.country", fromlist=["symbol"]).symbol())
         except Exception as e:
             messagebox.showerror("Labels", str(e)[:300])
             return

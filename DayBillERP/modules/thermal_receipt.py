@@ -78,6 +78,20 @@ def generate_thermal_receipt(invoice: dict, company: dict, lines: list,
         c.drawRightString(width - 4 * mm, y, str(right))
         y -= 4 * mm
 
+    # v7.0: the company's country — tax word, tax-number label, symbol,
+    # Saudi QR only, no Arabic on Indian bills, CGST / SGST / IGST
+    try:
+        from modules import country as _K
+        _code, _sym, _tax, _taxno = _K.code(), _K.symbol(), _K.tax_name(), _K.tax_no_label()
+        _num = _K.num
+    except Exception:
+        _K, _code, _sym, _tax, _taxno = None, "SA", "SAR", "VAT", "VAT"
+        _num = lambda v, *a, **k: "{:,.2f}".format(float(v or 0))  # noqa: E731
+    if _code == "IN":
+        _SHOW_AR = False
+    if _code != "SA":
+        qr_data = None
+
     # ── Header ───────────────────────────────────────────────
     center(company.get("company_name_en", "Store"), 11, "Helvetica-Bold", 5)
     if _SHOW_AR and company.get("company_name_ar"):
@@ -91,7 +105,7 @@ def generate_thermal_receipt(invoice: dict, company: dict, lines: list,
     except Exception:
         _print_vat_no = True
     if company.get("vat_registration_no") and _print_vat_no:
-        center(f"VAT: {company['vat_registration_no']}", 7)
+        center(f"{_taxno}: {company['vat_registration_no']}", 7)
     if company.get("address_en"):
         center(company.get("address_en", "")[:40], 6, "Helvetica", 4)
     y -= 1 * mm
@@ -101,9 +115,11 @@ def generate_thermal_receipt(invoice: dict, company: dict, lines: list,
         center_ar("إشعار مدين", 9, 4.5)
         if invoice.get("original_invoice_no"):
             center("For invoice %s" % invoice.get("original_invoice_no"), 7)
-    elif str(invoice.get("customer_vat_no") or "").strip():
-        center("TAX INVOICE", 9, "Helvetica-Bold", 4.2)
-        center_ar("فاتورة ضريبية", 9, 4.5)
+    elif str(invoice.get("customer_vat_no") or "").strip() or _code == "IN":
+        center("TAX INVOICE" if (_code != "IN" or float(invoice.get("vat_amount") or 0))
+               else "BILL OF SUPPLY", 9, "Helvetica-Bold", 4.2)
+        if _SHOW_AR:
+            center_ar("فاتورة ضريبية", 9, 4.5)
     else:
         center("SIMPLIFIED TAX INVOICE", 9, "Helvetica-Bold", 4.2)
         center_ar("فاتورة ضريبية مبسطة", 9, 4.5)
@@ -121,6 +137,12 @@ def generate_thermal_receipt(invoice: dict, company: dict, lines: list,
     row("Date", _dt_txt)
     if invoice.get("customer_name_en"):
         row("Customer", invoice.get("customer_name_en", ""))
+    if invoice.get("customer_vat_no") and _code != "SA":
+        row(_taxno, invoice.get("customer_vat_no"))
+    _pos = ""
+    if _code == "IN" and _K is not None:
+        _pos = _K.place_of_supply("sales", invoice)
+        row("Place of supply", _K.state_label(_pos)[:26], 6)
     rule()
 
     # ── Column headers ───────────────────────────────────────
@@ -140,7 +162,7 @@ def generate_thermal_receipt(invoice: dict, company: dict, lines: list,
     c.drawRightString(X_QTY, y, "Qty")
     c.drawRightString(X_PRICE, y, "Price")
     if X_VAT:
-        c.drawRightString(X_VAT, y, "VAT")
+        c.drawRightString(X_VAT, y, _tax)
     c.drawRightString(X_TOT, y, "Total")
     y -= 4 * mm
     rule()
@@ -164,7 +186,7 @@ def generate_thermal_receipt(invoice: dict, company: dict, lines: list,
         y -= 4.5 * mm
         if _vat_item and not X_VAT and abs(_lvat) > 0.004:    # 58 mm: small line
             c.setFont("Helvetica", 5.5)
-            c.drawRightString(X_TOT, y + 1.2 * mm, "VAT %g%%  %s" % (
+            c.drawRightString(X_TOT, y + 1.2 * mm, _tax + " %g%%  %s" % (
                 float(ln.get("vat_rate") or 0), f"{_lvat:,.2f}"))
             y -= 2.6 * mm
         _disc = float(ln.get("discount_amount") or 0)
@@ -188,17 +210,30 @@ def generate_thermal_receipt(invoice: dict, company: dict, lines: list,
         _rate = float(_c2.get("tax_sales_rate", 15) or 15)
     except Exception:
         _show_vat, _rate = True, 15.0
-    row("Subtotal", f"{sub:,.2f}", 7)
+    _rates = {round(float(l.get("vat_rate") or 0), 2) for l in lines if abs(float(l.get("vat_amount") or 0)) > 0.004}
+    if len(_rates) == 1:
+        _rate = list(_rates)[0]
+    row("Subtotal", _num(sub), 7)
     if _show_vat:
-        row("VAT %g%%" % _rate, f"{vat:,.2f}", 7)
+        if _code == "IN" and _K is not None:      # India: CGST + SGST, or IGST
+            _sp = _K.gst_split(vat, _pos)
+            if _sp["igst"]:
+                row("IGST", _num(_sp["igst"]), 7)
+            else:
+                row("CGST", _num(_sp["cgst"]), 7)
+                row(_K.tax_head_label("sgst"), _num(_sp["sgst"]), 7)
+        else:
+            row((_tax + " %g%%" % _rate) if len(_rates) <= 1 else _tax, _num(vat), 7)
     c.setFont("Helvetica-Bold", 9)
     c.drawString(4 * mm, y, "TOTAL")
-    c.drawRightString(width - 4 * mm, y, f"{grand:,.2f} SAR")
+    _gt = _num(grand)
+    c.drawRightString(width - 4 * mm, y, (_sym + _gt) if _sym == "₹" else
+                      ("%s %s" % (_gt, _sym) if _code == "SA" else "%s %s" % (_sym, _gt)))
     y -= 6 * mm
     if _saved > 0.004:                  # what the offers saved the customer
-        center(f"*** YOU SAVED {_saved:,.2f} SAR ***", 8, "Helvetica-Bold", 4.2)
+        center(f"*** YOU SAVED {_num(_saved)} {_sym} ***", 8, "Helvetica-Bold", 4.2)
         if _SHOW_AR:
-            center_ar("وفّرت %s ريال" % f"{_saved:,.2f}", 8, 4.5)
+            center_ar("وفّرت %s %s" % (f"{_saved:,.2f}", "درهم" if _code == "AE" else "ريال"), 8, 4.5)
     rule()
 
     # ── ZATCA QR code ────────────────────────────────────────
