@@ -1094,6 +1094,12 @@ class InvoiceForm:
                                     tax_mode=cfg.get("sales_price_tax_mode", "inclusive"),
                                     doc_type="sales", use_offers=True)
             self.line_grid.pack(fill="both", expand=True, padx=8, pady=(4, 0))
+            if not self.view_only:       # v7.0: Textiles size / colour grid (Ctrl+G)
+                try:
+                    from ui import textiles as _tx
+                    _tx.attach_matrix(self.win, self.line_grid, items_hdr)
+                except Exception:
+                    pass
             # now that the grid exists, sync totals once
             self._on_grid_change()
             # focus the first product cell for fast selling

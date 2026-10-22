@@ -73,6 +73,18 @@ def filter_exact_code(q, products):
     return any(str(p.get("product_code") or "").strip().lower() == ql for p in products)
 
 
+def _loose_number(text):
+    """v7.0: a number float() refused — '2,75' (decimal comma, e.g. 2.75 m
+    of cloth), '1,250' (thousands), Arabic '٢٫٧٥'. 0.0 when not a number."""
+    import re
+    s = str(text or "").strip().replace("٫", ".").replace("٬", "").replace("،", ",")
+    s = s.replace(",", ".") if re.fullmatch(r"-?\d+,\d{1,2}", s) else s.replace(",", "")
+    try:
+        return float(s)
+    except ValueError:
+        return 0.0
+
+
 class InvoiceGrid(tk.Frame):
     def __init__(self, parent, theme, products, product_units, on_change=None,
                  tax_mode="exclusive", doc_type="sales", last_kind="auto",
@@ -492,6 +504,43 @@ class InvoiceGrid(tk.Frame):
 
     def data_lines(self):
         return [l for l in self.lines if l.get("product_id")]
+
+    def add_product_lines(self, items):
+        """v7.0 (Textiles size / colour grid): add [(product_id, qty)] — one
+        line per product in its default unit; a product already on the grid
+        in that unit gets the quantity added. Products not in this window's
+        list are skipped. Returns how many lines were added or changed."""
+        n = 0
+        for pid, qty in items or []:
+            try:
+                qty = float(qty or 0)
+            except (TypeError, ValueError):
+                qty = 0.0
+            p = next((x for x in self.products if x.get("product_id") == pid), None)
+            if p is None or qty <= 0:
+                continue
+            idx = next((i for i, l in enumerate(self.lines)
+                        if l.get("_blank") and not l.get("product_id")), None)
+            if idx is None:
+                self.add_blank_row()
+                idx = len(self.lines) - 1
+            self._apply_product(idx, p, merge=False)
+            ln = self.lines[idx]
+            if ln.get("product_id") != pid:          # refused (Barcode Mandatory)
+                continue
+            same = next((l for l in self.lines if l is not ln and l.get("product_id") == pid
+                         and l.get("unit_of_measure_en") == ln.get("unit_of_measure_en")), None)
+            if same is not None:
+                del self.lines[idx]
+                ln = same
+                qty += float(same.get("quantity") or 0)
+                if not any(l.get("_blank") and not l.get("product_id") for l in self.lines):
+                    self.add_blank_row()
+            ln["quantity"] = qty
+            self._recalc(ln)
+            n += 1
+        self._refresh()
+        return n
 
     def set_lines(self, rows):
         """Load existing invoice lines (edit mode)."""
@@ -1222,7 +1271,7 @@ class InvoiceGrid(tk.Frame):
         try:
             val = float(var.get())
         except ValueError:
-            val = 0.0
+            val = _loose_number(var.get())          # v7.0: 2,75 · ٢٫٧٥ (was 0)
         ln = self.lines[idx]
         if key == "qty":
             ln["quantity"] = val

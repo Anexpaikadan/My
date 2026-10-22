@@ -938,6 +938,11 @@ class POSWindow:
         self.win.bind("<F10>", lambda e: (self._use_points(), "break")[1])
         self.win.bind("<space>", self._space_cycle_unit)
         self.win.bind("<Escape>", lambda e: self._clear_scan_box())
+        try:                             # v7.0: Textiles size / colour grid (Ctrl+G)
+            from ui import textiles as _tx
+            _tx.attach_pos(self)
+        except Exception:
+            pass
 
     # ── v6.0: keep selling when the server is briefly gone ────
     def _keep_offline(self, err):

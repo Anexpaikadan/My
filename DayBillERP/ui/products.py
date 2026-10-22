@@ -2445,6 +2445,11 @@ class ProductForm:
         self._unit_combos = []
         self.def_sales_unit = tk.StringVar(value="PCs")
         self.def_purch_unit = tk.StringVar(value="PCs")
+        try:                      # v7.0 Textiles: Metre / Yard; new product's base unit follows
+            from ui import textiles as _tx
+            _tx.product_form_hook(self)
+        except Exception:
+            pass
         self.fields["unit_of_measure_en"] = self.def_sales_unit
         self.uom_cb = ttk.Combobox(um_cell, textvariable=self.def_sales_unit,
                                values=self._unit_choices + [self._ADD_NEW],

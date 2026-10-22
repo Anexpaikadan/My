@@ -61,6 +61,7 @@ WINDOWS = [
         ("F8", "Cash received box"), ("F9", "Save as draft"), ("F10", "Save & print"),
         ("F11", "Dot-matrix print"), ("F12", "PDF"), ("Ctrl+S", "Save"),
         ("Ctrl+End", "Last row of the grid"), ("Ctrl+M", "Voice search"),
+        ("Ctrl+G", "Sizes & colours grid (Textiles shops)"),
         ("Enter", "Next field / add the item"), ("Delete", "Remove the line"),
         ("Space", "Change the unit of the line (in the grid)"),
         ("Hold Ctrl", "Show the item's stock / cost box"),
@@ -71,12 +72,14 @@ WINDOWS = [
         ("F6", "Hold the bill"), ("F7", "Retrieve a held bill"), ("F8", "Price check"),
         ("F9", "Shift: open / close"), ("F10", "⭐ Spend loyalty points"),
         ("Space", "Change the unit of the selected line"), ("Esc", "Clear the scan box"),
+        ("Ctrl+G", "Sizes & colours grid (Textiles shops)"),
         ("Enter", "Add the scanned / typed item"),
     ]),
     ("Purchase / Sales Return / Purchase Return", [
         ("F6", "Barcode box"), ("F9", "Save as draft"), ("F10", "Save & confirm"),
         ("Ctrl+S", "Save"), ("Enter", "Next field / add the item"),
         ("Delete", "Remove the line"), ("Space", "Change the unit (grid)"), ("Esc", "Close"),
+        ("Ctrl+G", "Sizes & colours grid (Purchase, Textiles shops)"),
     ]),
     ("Quotation / Purchase Order", [
         ("F9 / Ctrl+S", "Save"), ("Ctrl+P", "Print"), ("Delete", "Remove the line"),
@@ -110,6 +113,10 @@ WINDOWS = [
     ]),
     ("Reports", [
         ("Enter (in a filter) / F5", "Run the report"),
+    ]),
+    ("Sizes & colours grid (Textiles)", [
+        ("Arrows", "Next box up / down / left / right"), ("Enter", "Next box"),
+        ("Ctrl+Enter / F9", "Add the quantities to the bill"), ("Esc", "Close"),
     ]),
     ("Consumable Entry", [
         ("Enter", "Add the item"), ("Delete", "Remove the line"),
