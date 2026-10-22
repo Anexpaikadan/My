@@ -121,6 +121,12 @@ def generate_thermal_receipt(invoice: dict, company: dict, lines: list,
     row("Date", _dt_txt)
     if invoice.get("customer_name_en"):
         row("Customer", invoice.get("customer_name_en", ""))
+    try:                       # v7.0 restaurant: order type, table, guests, delivery
+        from modules import restaurant as _rest
+        for _lbl, _val in _rest.receipt_rows(invoice.get("invoice_id")):
+            row(_lbl, _val)
+    except Exception:
+        pass
     rule()
 
     # ── Column headers ───────────────────────────────────────

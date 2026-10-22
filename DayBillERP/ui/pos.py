@@ -58,6 +58,7 @@ class POSWindow:
         self._sel_idx = None
         self._pad_target = "qty"
         self._pad_buffer = ""
+        self._rest = None                      # v7.0: restaurant strip (ui/restaurant_pos.py)
 
         self.win = tk.Toplevel(parent) if parent else tk.Tk()
         self.win._no_zoom = True           # POS keeps its own size (Settings ▸ POS ▸ Screen size)
@@ -90,6 +91,14 @@ class POSWindow:
         if isinstance(self.win, tk.Toplevel):
             self.win.protocol("WM_DELETE_WINDOW", self._close_pos)
         self._bind_keys()
+        try:                                   # v7.0: restaurant — tables, KOT, order type
+            from modules import business as _biz
+            if _biz.has("restaurant"):
+                from ui.restaurant_pos import RestaurantBar
+                self._rest = RestaurantBar(self)
+        except Exception as _e:
+            print("[DayBill] restaurant strip not shown:", _e)
+            self._rest = None
         self._offline_job = None
         try:                                   # v6.0: bills kept while the server was gone
             from modules import offline_pos as _off
@@ -438,6 +447,7 @@ class POSWindow:
         STRIP = "#16313F"
         cust = tk.Frame(self.win, bg=STRIP)
         cust.pack(fill="x", after=top)
+        self._cust_strip = cust
         tk.Label(cust, text="Customer  (name / phone / VAT #)",
                  font=("Segoe UI", 9, "bold"), bg=STRIP, fg="#9FC3D6").pack(
                      side="left", padx=(12, 6))
@@ -1617,6 +1627,8 @@ class POSWindow:
     def _load_bill(self, invoice_id):
         """Pull a saved bill into the cart: view it, edit lines and Save
         to UPDATE it, Delete Bill to remove it, 🖨 to print it."""
+        if self._rest is not None and not self._rest.leave():   # v7.0: keep the order first
+            return
         inv = db.fetchone("SELECT * FROM sales_invoices WHERE invoice_id=?",
                           (invoice_id,))
         if not inv:
@@ -1765,7 +1777,7 @@ class POSWindow:
 
         for ln in self.cart:
             if ln["product_id"] == p["product_id"] and ln["unit_name"] == unit_name \
-                    and ln["quantity"] > 0:
+                    and ln["quantity"] > 0 and not ln.get("note"):
                 ln["quantity"] += 1
                 self._recalc(ln)
                 self._render_cart(select_line=ln)
@@ -1933,6 +1945,8 @@ class POSWindow:
             ln["line_total"] = gross_line + ln["vat_amount"]
 
     def _render_cart(self, select_pid=None, select_unit=None, select_line=None):
+        if self._rest is not None:             # v7.0: dine-in service charge line
+            self._rest.sync_service()
         self.tree.delete(*self.tree.get_children())
         sel_iid = None
         for idx, ln in enumerate(self.cart):
@@ -1942,7 +1956,8 @@ class POSWindow:
             self.tree.insert("", "end", iid=iid, values=(
                 idx + 1, ln["product_code"],
                 ("↩ RETURN  " if ret else "") + ln["product_name_en"]
-                + (("   🏷 " + ln["offer_text"]) if ln.get("offer_text") else ""),
+                + (("   🏷 " + ln["offer_text"]) if ln.get("offer_text") else "")
+                + (("   📝 " + ln["note"]) if ln.get("note") else ""),
                 ln.get("product_name_ar", "") or "",
                 "%g" % ln["quantity"], ln["unit_name"],
                 "{:,.2f}".format(ln["unit_price"]),
@@ -2360,6 +2375,8 @@ class POSWindow:
                 return
         except Exception:
             pass
+        if self._rest is not None and self._rest.hold():    # v7.0: kept on its table / order
+            return
         if not self.cart:
             self.status_var.set("Nothing to hold."); return
         label = datetime.now().strftime("%H:%M:%S")
@@ -2380,6 +2397,8 @@ class POSWindow:
             pass
 
     def _retrieve(self):
+        if self._rest is not None and self._rest.retrieve():    # v7.0: running orders
+            return
         if not self._held:
             self.status_var.set("No held sales."); return
         d = tk.Toplevel(self.win); d.title("Retrieve Held Sale")
@@ -2416,6 +2435,8 @@ class POSWindow:
 
     # -- New / Delete ------------------------------------------
     def _new_sale(self, ask=True):
+        if self._rest is not None and not self._rest.leave():   # v7.0: keep the order first
+            return
         if ask and self.cart and self._loaded_invoice_id is None and \
                 not messagebox.askyesno("New Sale",
             "Start a new sale? Current items will be cleared (use Hold to keep them)."):
@@ -2443,6 +2464,8 @@ class POSWindow:
         from modules import permissions as _pm
         if not _pm.allowed("pos", "delete"):
             return False
+        if self._rest is not None and self._rest.delete_bill():  # v7.0: cancel the order
+            return
         """Delete Bill — if a saved bill is loaded (via ▲▼), it is
         deleted from the database (lines + posted journals + audit),
         with an extra warning for confirmed bills. Otherwise it just
@@ -2847,7 +2870,12 @@ class POSWindow:
         accounts. Returns (invoice_id, invoice_number). One transaction:
         a bill is saved whole or not at all (v5.27)."""
         with db.transaction():
-            return self._write_invoice_body(lines, h, invoice_id)
+            res = self._write_invoice_body(lines, h, invoice_id)
+            if self._rest is not None:         # v7.0: the restaurant order is paid with this bill
+                self._rest.on_paid(res[0], lines)
+        if self._rest is not None:
+            self._rest.after_paid(res[0])
+        return res
 
     def _write_invoice_body(self, lines, h, invoice_id=None):
         # v6.9: a rounded total (Settings ▸ Tax ▸ round-off) is spread over
@@ -3094,6 +3122,8 @@ class POSWindow:
 
     def _close_pos(self):
         """✕ / window close: Yes / No first (warns about an unsaved bill)."""
+        if self._rest is not None and not self._rest.leave(on_close=True):  # v7.0
+            return
         n = len(self.cart)
         txt = ("This bill has %d product(s) that are NOT saved.\nClose POS anyway?" % n
                if n and self._loaded_invoice_id is None else "Close POS?")
@@ -3250,6 +3280,7 @@ class POSWindow:
             for other in self.cart:
                 if other is not ln and other["product_id"] == ln["product_id"] \
                         and other["unit_name"] == ln["unit_name"] \
+                        and (other.get("note") or "") == (ln.get("note") or "") \
                         and (other["quantity"] < 0) == (ln["quantity"] < 0):
                     other["quantity"] += ln["quantity"]
                     self.cart.remove(ln)
