@@ -1632,7 +1632,7 @@ class POSWindow:
     def _load_bill(self, invoice_id):
         """Pull a saved bill into the cart: view it, edit lines and Save
         to UPDATE it, Delete Bill to remove it, 🖨 to print it."""
-        if self._rest is not None and not self._rest.leave():   # v7.0: keep the order first
+        if getattr(self, "_rest", None) is not None and not self._rest.leave():   # v7.0: keep the order first
             return
         inv = db.fetchone("SELECT * FROM sales_invoices WHERE invoice_id=?",
                           (invoice_id,))
@@ -1950,7 +1950,7 @@ class POSWindow:
             ln["line_total"] = gross_line + ln["vat_amount"]
 
     def _render_cart(self, select_pid=None, select_unit=None, select_line=None):
-        if self._rest is not None:             # v7.0: dine-in service charge line
+        if getattr(self, "_rest", None) is not None:             # v7.0: dine-in service charge line
             self._rest.sync_service()
         self.tree.delete(*self.tree.get_children())
         sel_iid = None
@@ -2380,7 +2380,7 @@ class POSWindow:
                 return
         except Exception:
             pass
-        if self._rest is not None and self._rest.hold():    # v7.0: kept on its table / order
+        if getattr(self, "_rest", None) is not None and self._rest.hold():    # v7.0: kept on its table / order
             return
         if not self.cart:
             self.status_var.set("Nothing to hold."); return
@@ -2402,7 +2402,7 @@ class POSWindow:
             pass
 
     def _retrieve(self):
-        if self._rest is not None and self._rest.retrieve():    # v7.0: running orders
+        if getattr(self, "_rest", None) is not None and self._rest.retrieve():    # v7.0: running orders
             return
         if not self._held:
             self.status_var.set("No held sales."); return
@@ -2440,7 +2440,7 @@ class POSWindow:
 
     # -- New / Delete ------------------------------------------
     def _new_sale(self, ask=True):
-        if self._rest is not None and not self._rest.leave():   # v7.0: keep the order first
+        if getattr(self, "_rest", None) is not None and not self._rest.leave():   # v7.0: keep the order first
             return
         if ask and self.cart and self._loaded_invoice_id is None and \
                 not messagebox.askyesno("New Sale",
@@ -2469,7 +2469,7 @@ class POSWindow:
         from modules import permissions as _pm
         if not _pm.allowed("pos", "delete"):
             return False
-        if self._rest is not None and self._rest.delete_bill():  # v7.0: cancel the order
+        if getattr(self, "_rest", None) is not None and self._rest.delete_bill():  # v7.0: cancel the order
             return
         """Delete Bill — if a saved bill is loaded (via ▲▼), it is
         deleted from the database (lines + posted journals + audit),
@@ -2876,9 +2876,9 @@ class POSWindow:
         a bill is saved whole or not at all (v5.27)."""
         with db.transaction():
             res = self._write_invoice_body(lines, h, invoice_id)
-            if self._rest is not None:         # v7.0: the restaurant order is paid with this bill
+            if getattr(self, "_rest", None) is not None:         # v7.0: the restaurant order is paid with this bill
                 self._rest.on_paid(res[0], lines)
-        if self._rest is not None:
+        if getattr(self, "_rest", None) is not None:
             self._rest.after_paid(res[0])
         return res
 
@@ -3127,7 +3127,7 @@ class POSWindow:
 
     def _close_pos(self):
         """✕ / window close: Yes / No first (warns about an unsaved bill)."""
-        if self._rest is not None and not self._rest.leave(on_close=True):  # v7.0
+        if getattr(self, "_rest", None) is not None and not self._rest.leave(on_close=True):  # v7.0
             return
         n = len(self.cart)
         txt = ("This bill has %d product(s) that are NOT saved.\nClose POS anyway?" % n
