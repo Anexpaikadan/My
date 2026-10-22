@@ -87,6 +87,11 @@ class DefaultAccountsTab(tk.Frame):
         cb = ttk.Combobox(parent, textvariable=var, values=self._labels,
                           state="readonly", width=34)
         self._vars[key] = var
+        try:                       # v7.0: type → the matching accounts drop down
+            from ui import search_drop as _SD
+            _SD.attach(cb, var, list(self._labels), width=380)
+        except Exception:
+            pass
         return cb
 
     def _build(self):

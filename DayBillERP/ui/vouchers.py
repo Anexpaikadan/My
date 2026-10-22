@@ -69,6 +69,37 @@ def voucher_owner(journal_id):
     return txn, why
 
 
+
+def _typeable(cb, var, tree=False):
+    """v7.0: type in the box → the matching names / accounts drop down
+    (accounts as a tree of groups); the box keeps its own list too."""
+    try:
+        from ui import search_drop as _SD
+        vals = list(cb["values"])
+        if tree:
+            from modules import account_tree as _AT
+            have = set(vals)
+
+            def src():
+                out, stack = [], []          # a group shows only above its own choices
+                for it in _AT.items(value_fmt=lambda a: "%s · %s" % (a["code"], a["name"])):
+                    while stack and stack[-1]["depth"] >= it["depth"]:
+                        stack.pop()
+                    if it["value"] in have:
+                        out.extend(g for g in stack if not g.get("_in"))
+                        for g in stack:
+                            g["_in"] = True
+                        out.append(dict(it, group=False))
+                    elif it.get("group"):
+                        stack.append(dict(it))
+                return out
+            _SD.attach(cb, var, src, tree=True, pick_groups=False, width=420)
+        else:
+            _SD.attach(cb, var, vals)
+    except Exception:
+        pass
+    return cb
+
 class VouchersView:
     def __init__(self, parent):
         self.parent = parent
@@ -545,18 +576,18 @@ class VoucherForm:
         tk.Label(self.r_cust_frame, text="Customer", font=("Segoe UI", 9),
                  bg=C["card_bg"], fg=C["text_secondary"]).pack(anchor="w")
         self.cust_var = tk.StringVar()
-        ttk.Combobox(self.r_cust_frame, textvariable=self.cust_var,
+        _typeable(ttk.Combobox(self.r_cust_frame, textvariable=self.cust_var,
                      values=[c["customer_name_en"] for c in self.customers],
-                     state="readonly").pack(fill="x")
+                     state="readonly"), self.cust_var, tree=False).pack(fill="x")
 
         self.r_inc_frame = tk.Frame(self.sec_receipt, bg=C["card_bg"])
         tk.Label(self.r_inc_frame, text="Income account", font=("Segoe UI", 9),
                  bg=C["card_bg"], fg=C["text_secondary"]).pack(anchor="w")
         self.income_var = tk.StringVar()
-        ttk.Combobox(self.r_inc_frame, textvariable=self.income_var,
+        _typeable(ttk.Combobox(self.r_inc_frame, textvariable=self.income_var,
                      values=[f"{a['account_code']} · {a['account_name_en']}"
                              for a in self.income_accts],
-                     state="readonly").pack(fill="x")
+                     state="readonly"), self.income_var, tree=True).pack(fill="x")
 
         # ── payment section ──
         self.sec_payment = tk.Frame(body, bg=C["card_bg"])
@@ -572,9 +603,9 @@ class VoucherForm:
         tk.Label(self.p_sup_frame, text="Supplier", font=("Segoe UI", 9),
                  bg=C["card_bg"], fg=C["text_secondary"]).pack(anchor="w")
         self.sup_var = tk.StringVar()
-        ttk.Combobox(self.p_sup_frame, textvariable=self.sup_var,
+        _typeable(ttk.Combobox(self.p_sup_frame, textvariable=self.sup_var,
                      values=[s["supplier_name_en"] for s in self.suppliers],
-                     state="readonly").pack(fill="x")
+                     state="readonly"), self.sup_var, tree=False).pack(fill="x")
 
         self.p_exp_frame = tk.Frame(self.sec_payment, bg=C["card_bg"])
         tk.Label(self.p_exp_frame, text="Expense account", font=("Segoe UI", 9),
@@ -582,8 +613,8 @@ class VoucherForm:
         self.expense_var = tk.StringVar()
         exp_vals = [f"{a['account_code']} · {a['account_name_en']}"
                     for a in self.expense_accts]
-        ttk.Combobox(self.p_exp_frame, textvariable=self.expense_var,
-                     values=exp_vals, state="readonly").pack(fill="x")
+        _typeable(ttk.Combobox(self.p_exp_frame, textvariable=self.expense_var,
+                     values=exp_vals, state="readonly"), self.expense_var, tree=True).pack(fill="x")
         if exp_vals:
             self.expense_var.set(exp_vals[-1])     # Misc expense default
 
@@ -597,14 +628,14 @@ class VoucherForm:
         tk.Label(left, text="Debit account", font=("Segoe UI", 9), bg=C["card_bg"],
                  fg=C["text_secondary"]).pack(anchor="w")
         self.jv_dr = tk.StringVar()
-        ttk.Combobox(left, textvariable=self.jv_dr, values=all_vals,
-                     state="readonly").pack(fill="x")
+        _typeable(ttk.Combobox(left, textvariable=self.jv_dr, values=all_vals,
+                     state="readonly"), self.jv_dr, tree=True).pack(fill="x")
         right = tk.Frame(jr, bg=C["card_bg"]); right.pack(side="left", fill="x", expand=True)
         tk.Label(right, text="Credit account", font=("Segoe UI", 9), bg=C["card_bg"],
                  fg=C["text_secondary"]).pack(anchor="w")
         self.jv_cr = tk.StringVar()
-        ttk.Combobox(right, textvariable=self.jv_cr, values=all_vals,
-                     state="readonly").pack(fill="x")
+        _typeable(ttk.Combobox(right, textvariable=self.jv_cr, values=all_vals,
+                     state="readonly"), self.jv_cr, tree=True).pack(fill="x")
 
         # narration + buttons
         self._narr_label = tk.Label(body, text="Narration", font=("Segoe UI", 9),

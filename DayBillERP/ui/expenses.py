@@ -352,6 +352,12 @@ class ExpenseForm:
         self.acct_cb = ttk.Combobox(body, textvariable=self.acct_var, state="readonly",
                                     values=self._acct_values())
         self.acct_cb.pack(fill="x")
+        try:                       # v7.0: type → the matching accounts drop down
+            from ui import search_drop as _SD
+            _SD.attach(self.acct_cb, self.acct_var, lambda: list(self.acct_cb["values"]),
+                       on_pick=lambda it: self.acct_cb.event_generate("<<ComboboxSelected>>"))
+        except Exception:
+            pass
 
         # amount + VAT
         r2 = tk.Frame(body, bg=C["card_bg"]); r2.pack(fill="x")
@@ -405,6 +411,12 @@ class ExpenseForm:
         self.sup_cb = ttk.Combobox(body, textvariable=self.sup_var, state="readonly",
                                    values=["—"] + [x["supplier_name_en"] for x in self.suppliers])
         self.sup_cb.pack(fill="x")
+        try:                       # v7.0: type a supplier name → it drops down
+            from ui import search_drop as _SD
+            _SD.attach(self.sup_cb, self.sup_var, lambda: list(self.sup_cb["values"]),
+                       on_pick=lambda it: self.sup_cb.event_generate("<<ComboboxSelected>>"))
+        except Exception:
+            pass
         label(body, "Description")
         self.desc_var = tk.StringVar()
         tk.Entry(body, textvariable=self.desc_var, font=("Segoe UI", 10)).pack(fill="x", ipady=2)

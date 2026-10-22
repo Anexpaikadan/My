@@ -440,6 +440,15 @@ class StockAdjustDialog:
                                             for p in self.products], font=("Segoe UI", 10))
         self.prod_cb.pack(fill="x", ipady=4, pady=(0, 2))
         self.prod_cb.bind("<<ComboboxSelected>>", self._on_prod)
+        try:                       # v7.0: type → matching products drop down (barcodes too)
+            from ui import search_drop as _SD
+            _SD.attach(self.prod_cb, self.prod_var,
+                       [{"label": f"{p['product_code']} — {p['product_name_en']}",
+                         "value": f"{p['product_code']} — {p['product_name_en']}",
+                         "search": str(p.get("barcode") or "")} for p in self.products],
+                       on_pick=lambda it: self.prod_cb.event_generate("<<ComboboxSelected>>"), width=420)
+        except Exception:
+            pass
         self.prod_cb.bind("<Return>", self._scan_or_search)
         self.prod_cb.bind("<KP_Enter>", self._scan_or_search)
         self._view = list(range(len(self.products)))

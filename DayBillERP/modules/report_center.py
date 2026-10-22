@@ -924,6 +924,63 @@ def r_input_vat(date_from, date_to, party="", **_):
                     ("Input VAT", tot["vat"], "money")], notes)
 
 
+@report("trial_balance_groups", GROUP_ACC, "Trial Balance by Group",
+        desc="The chart of accounts as a tree: each group with its ledgers and a subtotal — "
+             "opening, period movement and closing.")
+def r_trial_balance_groups(date_from, date_to, **_):
+    """v7.0: groups (masters) with their ledgers indented and subtotals."""
+    from modules import account_tree as AT
+    f, t = date_from, date_to
+    data = {r["account_id"]: r for r in _q(
+        "SELECT jl.account_id, "
+        "SUM(CASE WHEN je.entry_date < ? THEN jl.debit - jl.credit ELSE 0 END) AS o, "
+        "SUM(CASE WHEN je.entry_date >= ? THEN jl.debit ELSE 0 END) AS dr, "
+        "SUM(CASE WHEN je.entry_date >= ? THEN jl.credit ELSE 0 END) AS cr "
+        "FROM journal_lines jl JOIN journal_entries je ON je.journal_id=jl.journal_id "
+        "WHERE je.is_posted=1 AND je.entry_date <= ? GROUP BY jl.account_id", (f, f, f, t))}
+    by = AT.rows(active_only=False)
+    own = {aid: (_f(r["o"]), _f(r["dr"]), _f(r["cr"])) for aid, r in data.items()}
+    total = {}
+
+    def sums(aid):
+        if aid in total:
+            return total[aid]
+        o, d, c = own.get(aid, (0.0, 0.0, 0.0))
+        for ch in by.get(aid, {}).get("children", []):
+            o2, d2, c2 = sums(ch)
+            o, d, c = o + o2, d + d2, c + c2
+        total[aid] = (o, d, c)
+        return total[aid]
+    rows = []
+    for a in AT.ordered(by):
+        o, d, c = sums(a["account_id"])
+        cl = o + d - c
+        if not any(abs(x) > 0.004 for x in (o, d, c, cl)):
+            continue
+        grp = a["is_group"]
+        rows.append({"code": a["code"], "name": ("      " * a["depth"]) + a["name"],
+                     "kind": "Group" if grp else "Ledger",
+                     "op_dr": round(o, 2) if o > 0 else 0.0, "op_cr": round(-o, 2) if o < 0 else 0.0,
+                     "dr": round(d, 2), "cr": round(c, 2),
+                     "cl_dr": round(cl, 2) if cl > 0 else 0.0, "cl_cr": round(-cl, 2) if cl < 0 else 0.0,
+                     "_style": "hi" if grp else None, "_top": not a["parent_id"]})
+    cols = [col("code", "Code", width=80), col("name", "Group / Ledger", width=280),
+            col("kind", "", width=60),
+            col("op_dr", "Opening Dr", "money"), col("op_cr", "Opening Cr", "money"),
+            col("dr", "Debit", "money"), col("cr", "Credit", "money"),
+            col("cl_dr", "Closing Dr", "money"), col("cl_cr", "Closing Cr", "money")]
+    tops = [r for r in rows if r["_top"]]
+    tot = {k: round(sum(r[k] for r in tops), 2) for k in ("op_dr", "op_cr", "dr", "cr", "cl_dr", "cl_cr")}
+    tot["name"] = "TOTAL"
+    for r in rows:
+        r.pop("_top", None)
+    ok = abs(tot["cl_dr"] - tot["cl_cr"]) < 0.01
+    return _result("Trial Balance by Group", cols, rows, tot,
+                   [("Closing debit", tot["cl_dr"], "money"), ("Closing credit", tot["cl_cr"], "money"),
+                    ("Balanced", "Yes ✔" if ok else "NO — difference %.2f" % (tot["cl_dr"] - tot["cl_cr"]), "text")],
+                   ["A group's figures include every ledger under it. Totals are the main heads only."])
+
+
 @report("trial_balance", GROUP_ACC, "Trial Balance",
         desc="Opening, period movement and closing balance of every account.")
 def r_trial_balance(date_from, date_to, **_):
