@@ -11,6 +11,7 @@
 #   ADJ Stock Adjustment     CE  Consumable Entry   PY  Payroll
 #   SAL Salary Payment       GOSI GOSI Payment      EOS End of Service
 #   LN  Employee Loan        DC  Day Close          SH  Shift
+#   PRD Production (v7.0: materials used, finished goods made)
 #
 # Receipts / payments are CR / BR and CP / BP by the account the money
 # went through: a cash (or petty cash / till) account → cash, else bank.
@@ -50,6 +51,7 @@ TYPES = [
     ("LN", "Employee Loan", "سلفة موظف"),
     ("DC", "Day Close", "إقفال اليوم"),
     ("SH", "Shift", "وردية"),
+    ("PRD", "Production", "إنتاج"),
 ]
 _NAMES = {c: (en, ar) for c, en, ar in TYPES}
 
@@ -66,6 +68,7 @@ BY_SOURCE = {
     "stock_adjust": "ADJ", "cycle_count": "ADJ", "consumption": "CE",
     "payroll": "PY", "salary_payment": "SAL", "gosi_payment": "GOSI", "eos": "EOS",
     "employee_loan": "LN", "day_close": "DC", "shift": "SH",
+    "production": "PRD",                                          # v7.0
 }
 MONEY_IN, MONEY_OUT = ("receipt",), ("payment",)
 
