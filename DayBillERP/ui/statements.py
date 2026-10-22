@@ -63,6 +63,14 @@ class StatementView:
             f, textvariable=self.party_var, width=34, state="readonly",
             values=[f"{p['code']} — {p['name']}" for p in self.parties])
         self.party_combo.pack(side="left", padx=(0, 12))
+        try:                        # v7.0: type a name / code → the matches drop down
+            from ui import search_drop as _SD
+            _SD.attach(self.party_combo, self.party_var,
+                       [{"label": "%s — %s" % (p["code"], p["name"]), "value": "%s — %s" % (p["code"], p["name"]),
+                         "search": str(p.get("phone") or "")} for p in self.parties],
+                       on_pick=lambda it: self.party_combo.event_generate("<<ComboboxSelected>>"))
+        except Exception:
+            pass
         today = date.today()
         self.from_var = tk.StringVar(value=cfg.fiscal_year_bounds(today)[0].strftime("%Y-%m-%d"))
         self.to_var = tk.StringVar(value=today.strftime("%Y-%m-%d"))

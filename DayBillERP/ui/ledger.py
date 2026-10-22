@@ -66,6 +66,10 @@ class LedgerView:
     def _label(self, a):
         return f"{a['account_code']} · {a['account_name_en']}"
 
+    @staticmethod
+    def _label_tree(a):
+        return f"{a['code']} · {a['name']}"
+
     def _selected_code(self):
         return (self.acct_var.get() or "").split(" · ")[0]
 
@@ -85,9 +89,16 @@ class LedgerView:
         self.acct_combo = ttk.Combobox(f, textvariable=self.acct_var, values=vals,
                                        width=38)
         self.acct_combo.pack(side="left", padx=(0, 10))
-        # type-to-filter: narrow the list as the user types
-        self.acct_combo.bind("<KeyRelease>", self._filter_accounts)
+        # v7.0: type to search — the matching accounts drop down at once;
+        # ↓ or ▾ shows every account as a tree (groups and their ledgers)
         self.acct_combo.bind("<<ComboboxSelected>>", lambda e: self._load())
+        try:
+            from ui import search_drop as _SD
+            from modules import account_tree as _AT
+            _SD.attach(self.acct_combo, self.acct_var, lambda: _AT.items(value_fmt=self._label_tree),
+                       tree=True, on_pick=lambda it: self._load(), width=440)
+        except Exception:
+            self.acct_combo.bind("<KeyRelease>", self._filter_accounts)
 
         today = date.today()
         self.from_var = tk.StringVar(value=today.replace(day=1).strftime("%Y-%m-%d"))

@@ -1,6 +1,6 @@
 -- ============================================================
 -- DayBill ERP — FULL DATABASE INSTALLER  (clean new installation)
--- generated 2026-10-17 22:40  ·  ONE file = the whole database
+-- generated 2026-10-22 21:10  ·  ONE file = the whole database
 -- ------------------------------------------------------------
 -- WHAT IT MAKES
 --   • the DayBillERP database (Arabic collation) and EVERY table,

@@ -181,6 +181,11 @@ class ReportsView:
                                     values=[c["customer_name_en"] for c in self._stmt_custs],
                                     font=("Segoe UI", 9), width=30)
         self.stmt_cb.pack(side="left", padx=8)
+        try:                        # v7.0: type a name → the matches drop down
+            from ui import search_drop as _SD
+            _SD.attach(self.stmt_cb, self.stmt_var, [c["customer_name_en"] for c in self._stmt_custs])
+        except Exception:
+            pass
         tk.Button(inner, text="🔍 Generate", font=("Segoe UI", 9, "bold"),
                   bg=C["primary"], fg="white", relief="flat", padx=14, pady=5,
                   cursor="hand2", command=self._run_statement).pack(side="left")

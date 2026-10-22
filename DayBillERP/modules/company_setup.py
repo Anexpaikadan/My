@@ -235,10 +235,28 @@ def _financial_year(fy_start):
                (label, s.isoformat(), e.isoformat()))
 
 
+def _country_default(t, ctry):
+    """New customers / suppliers made anywhere (forms, import, POS quick
+    add) belong to the company's country, not Saudi Arabia."""
+    if not _has_col(t, "country_code"):
+        return
+    try:
+        name = _scalar("SELECT dc.name FROM sys.default_constraints dc JOIN sys.columns c "
+                       "ON c.object_id=dc.parent_object_id AND c.column_id=dc.parent_column_id "
+                       "WHERE dc.parent_object_id=OBJECT_ID(?) AND c.name='country_code'", (t,))
+        if name:
+            db.execute("ALTER TABLE %s DROP CONSTRAINT [%s]" % (t, str(name).replace("]", "]]")))
+        db.execute("ALTER TABLE %s ADD CONSTRAINT DF_%s_country DEFAULT N'%s' FOR country_code"
+                   % (t, t, ctry.replace("'", "")))
+    except Exception:
+        pass
+
+
 def _parties(ctry, state):
     for t in ("customers", "suppliers"):
         if not _has_table(t):
             continue
+        _country_default(t, ctry)
         sets, vals = [], []
         if _has_col(t, "country_code"):
             sets.append("country_code=?"); vals.append(ctry)

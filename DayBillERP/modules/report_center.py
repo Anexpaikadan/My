@@ -640,7 +640,8 @@ def vat_return_data(date_from, date_to, corrections=0.0, credit_bf=None,
 
 @report("vat_return", GROUP_ACC, "VAT Return",
         desc="Output VAT on sales less returns, input VAT on purchases and "
-             "expenses less purchase returns, net VAT payable.")
+             "expenses less purchase returns, net VAT payable.",
+        needs="country:SA")
 def r_vat_return(date_from, date_to, **_):
     d = vat_return_data(date_from, date_to)
     cols = [col("box", "Box", width=50), col("label", "Description", width=330),
@@ -3254,7 +3255,7 @@ def r_payroll_register(date_from, date_to, **_):
                    [("Payslips", len(rows), "int"), ("Gross", tot["gross"], "money"), ("Net", tot["net"], "money")])
 
 
-@report("gosi_report", GROUP_HR, "GOSI Contributions",
+@report("gosi_report", GROUP_HR, "GOSI Contributions", needs="country:SA",
         desc="Per employee and month: the GOSI wage (basic + housing, capped), the employee share, the employer "
              "share and the total to pay GOSI.")
 def r_gosi(date_from, date_to, **_):

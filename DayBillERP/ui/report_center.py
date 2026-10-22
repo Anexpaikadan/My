@@ -18,7 +18,10 @@ from config import settings as cfg
 from modules import report_center as RC
 
 ICONS = {RC.GROUP_ACC: "📒", RC.GROUP_SALES: "🧾", RC.GROUP_PUR: "🛒", RC.GROUP_INV: "📦",
-         getattr(RC, "GROUP_HR", "HR & Payroll"): "👔"}
+         getattr(RC, "GROUP_HR", "HR & Payroll"): "👔",
+         # v7.0: country tax returns and business modules
+         "GST (India)": "🇮🇳", "VAT 201 (UAE)": "🇦🇪", "Restaurant": "🍽", "Production": "🏭",
+         "Textiles": "🧵"}
 
 QUICK = ["Today", "Yesterday", "This week", "This month", "Last month",
          "This quarter", "Last quarter", "This year", "Last year", "Custom"]
@@ -483,7 +486,9 @@ class ReportCenterView:
             tk.Label(self.bar, text="Current stock (as of now)", font=("Segoe UI", 9, "italic"),
                      bg=C["card_bg"], fg=C["text_secondary"]).pack(side="left", padx=(0, 14))
 
-        def combo(key, label, values, width=18, default=None):
+        from ui import search_drop as SD
+
+        def combo(key, label, values, width=18, default=None, source=None, tree=False):
             tk.Label(self.bar, text=label, font=("Segoe UI", 9), bg=C["card_bg"],
                      fg=C["text_secondary"]).pack(side="left", padx=(0, 4))
             v = tk.StringVar(value=old.get(key) if old.get(key) in values else
@@ -493,16 +498,22 @@ class ReportCenterView:
             cbx.pack(side="left", padx=(0, 12))
             cbx.bind("<<ComboboxSelected>>", lambda e: self.run())
             self.param_vars[key] = v
+            # v7.0: type in the box → the matching choices drop down
+            SD.attach(cbx, v, source or values, tree=tree, on_pick=lambda it: self.run(),
+                      width=max(320, width * 9))
 
-        def entry(key, label, width=16, hint=""):
+        def entry(key, label, width=16, hint="", source=None):
             tk.Label(self.bar, text=label, font=("Segoe UI", 9), bg=C["card_bg"],
                      fg=C["text_secondary"]).pack(side="left", padx=(0, 4))
             v = tk.StringVar(value=old.get(key, ""))
             en = tk.Entry(self.bar, textvariable=v, width=width, font=("Segoe UI", 10),
                           relief="solid", bd=1)
             en.pack(side="left", ipady=3, padx=(0, 12))
-            en.bind("<Return>", lambda e: self.run())
+            en.bind("<Return>", lambda e: None if getattr(en, "_search_drop", None)
+                    and en._search_drop.is_open() else self.run())
             self.param_vars[key] = v
+            if source is not None:          # v7.0: matches drop down while typing
+                SD.attach(en, v, source, on_pick=lambda it: self.run(), width=360)
 
         try:
             if "cashbank" in p or "account" in p:
@@ -511,15 +522,19 @@ class ReportCenterView:
                 role = "bank" if rid == "bank_book" else "cash"
                 dc = RC._default_code(role)
                 default = next((x for x in vals if x.split()[0] == dc), vals[0] if vals else "")
-                combo("account", "Account", vals, 30, default)
+                src = None
+                if "cashbank" not in p:      # every account, as a tree of groups
+                    from modules import account_tree as _AT
+                    src = lambda: _AT.items(value_fmt=lambda a: "%s  %s" % (a["code"], a["name"]))  # noqa: E731
+                combo("account", "Account", vals, 30, default, source=src, tree=src is not None)
             if "category" in p:
                 combo("category", "Category", ["All"] + RC.category_names(), 16)
         except Exception:
             pass
         if "product" in p:
-            entry("product", "Product", 18)
+            entry("product", "Product", 18, source=SD.products_source(RC._db()))
         if "party" in p:
-            entry("party", "Customer / Supplier", 18)
+            entry("party", "Customer / Supplier", 18, source=SD.parties_source(RC._db()))
         if "channel" in p:
             combo("channel", "Channel", ["All", "POS", "Invoice"], 9)
         if "method" in p:

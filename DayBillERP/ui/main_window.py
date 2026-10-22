@@ -2724,8 +2724,13 @@ class MainWindow:
                 ZatcaView(self.content)
 
             elif module_key == "vat_report":
-                from ui.vat_report import VatReportView
-                VatReportView(self.content)
+                from modules import country as _ctry
+                if _ctry.is_sa():
+                    from ui.vat_report import VatReportView
+                    VatReportView(self.content)
+                else:                    # v7.0: GSTR-3B (India) / VAT 201 (UAE)
+                    from ui.report_center import ReportCenterView
+                    ReportCenterView(self.content, initial="gstr3b" if _ctry.is_in() else "uae_vat201")
 
             elif module_key == "suppliers":
                 from ui.suppliers import SuppliersView
