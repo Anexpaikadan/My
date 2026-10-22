@@ -75,6 +75,14 @@ WINDOWS = [
         ("Ctrl+G", "Sizes & colours grid (Textiles shops)"),
         ("Enter", "Add the scanned / typed item"),
     ]),
+    ("POS — Restaurant (when the Restaurant module is on)", [
+        ("F4", "Send to Kitchen (KOT): only new or changed items"),
+        ("F5", "Print Bill for the guest (before payment)"),
+        ("F6", "Hold: keep the order on its table / as takeaway"),
+        ("F7", "Running orders: open one"), ("F11", "Kitchen note for the line (no onion …)"),
+        ("F12", "Tables: a free one starts an order, a busy one opens it"),
+        ("Delete Bill", "Cancel the order (the kitchen gets a CANCEL ticket)"),
+    ]),
     ("Purchase / Sales Return / Purchase Return", [
         ("F6", "Barcode box"), ("F9", "Save as draft"), ("F10", "Save & confirm"),
         ("Ctrl+S", "Save"), ("Enter", "Next field / add the item"),

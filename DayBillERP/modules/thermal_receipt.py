@@ -143,6 +143,12 @@ def generate_thermal_receipt(invoice: dict, company: dict, lines: list,
     if _code == "IN" and _K is not None:
         _pos = _K.place_of_supply("sales", invoice)
         row("Place of supply", _K.state_label(_pos)[:26], 6)
+    try:                       # v7.0 restaurant: order type, table, guests, delivery
+        from modules import restaurant as _rest
+        for _lbl, _val in _rest.receipt_rows(invoice.get("invoice_id")):
+            row(_lbl, _val)
+    except Exception:
+        pass
     rule()
 
     # ── Column headers ───────────────────────────────────────
