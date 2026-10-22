@@ -576,6 +576,11 @@ class PurchaseForm:
         tk.Button(inner, command=lambda: self._save(confirm=False),
                   **__import__("ui.ui_kit", fromlist=["x"]).slim_key_style(
                       C.get("tile_blue", C["primary"]), "F9", "Save Draft")).pack(side="right")
+        try:                             # v7.0: Textiles size / colour grid (Ctrl+G)
+            from ui import textiles as _tx
+            _tx.attach_matrix(self.win, lambda: getattr(self, "grid", None), inner)
+        except Exception:
+            pass
 
     def _focus_barcode(self):
         try:
