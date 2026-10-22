@@ -217,6 +217,17 @@ def std_rate(c=None):
     return float(profile(c)["std_rate"])
 
 
+def rate_or_std(v):
+    """A tax rate read from a product / line: 0 stays 0 (nil, zero rated,
+    exempt); only a missing rate becomes the country's standard rate."""
+    if v is None or (isinstance(v, str) and not v.strip()):
+        return std_rate()
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return std_rate()
+
+
 def has_zatca():
     return is_sa()
 

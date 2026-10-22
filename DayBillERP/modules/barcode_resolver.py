@@ -271,7 +271,7 @@ def _vat_rate(prod):
              (prod.get("vat_category_id"),)) if prod.get("vat_category_id") else None
     if r and r.get("vat_rate") is not None:
         return float(r["vat_rate"])
-    return float(prod.get("vat_rate") or 15)
+    return __import__("modules.country", fromlist=["x"]).rate_or_std(prod.get("vat_rate"))
 
 
 def _prices(r, rate):

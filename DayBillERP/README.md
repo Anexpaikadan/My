@@ -1,7 +1,26 @@
-# 🇸🇦 DayBill ERP  v6.9.5
+# DayBill ERP  v7.0.0
 
-Billing, POS, inventory, accounts and HR for Saudi shops.
-**ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
+Billing, POS, inventory, accounts and HR for shops in 🇸🇦 Saudi Arabia, 🇦🇪 the UAE and 🇮🇳 India.
+**VAT / GST by country · ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
+
+## 🌍 v7.0 — countries and business modules
+
+- **New Company** (Login ▸ ⚙ Database Settings ▸ 🆕 Create New Company…): pick the
+  country, state / emirate, tax number, currency symbol and the business modules;
+  DayBill makes the database and sets it up for that country.
+- **Saudi Arabia**: VAT 15 %, ZATCA QR / Phase 2, VAT return — as before.
+- **UAE**: VAT 5 %, TRN, AED, VAT 201 return with sales by emirate and imports
+  under reverse charge.
+- **India**: GST 5 / 18 / 40 % (+ nil, exempt, zero rated), GSTIN check, HSN / SAC,
+  place of supply → CGST + SGST or IGST on their own accounts, ₹ with lakh /
+  crore, GSTR-3B (with Rule 88A set-off), GSTR-1 (B2B, B2CL, B2CS, CDNR, HSN,
+  documents), April–March year, round-off to the rupee.
+- **Business modules**: Restaurant (tables, dine-in / takeaway / delivery, KOT,
+  kitchen screen, recipes that use up ingredients), Textiles (size / colour
+  variants, Ctrl+G sizes grid, metre / yard), Production (bill of materials,
+  production entries, finished-goods cost), Supermarket, Retail.
+- **Accounts**: chart of accounts as a tree of groups and ledgers; every
+  account picker drops down as a searchable tree.
 
 ---
 

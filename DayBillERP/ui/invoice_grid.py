@@ -85,6 +85,15 @@ def _loose_number(text):
         return 0.0
 
 
+
+def _rate_or_std(v):
+    """0 % stays 0 % (nil / zero rated); only a missing rate is standard."""
+    try:
+        from modules import country as _K
+        return _K.rate_or_std(v)
+    except Exception:
+        return 15.0 if v is None else float(v or 0)
+
 class InvoiceGrid(tk.Frame):
     def __init__(self, parent, theme, products, product_units, on_change=None,
                  tax_mode="exclusive", doc_type="sales", last_kind="auto",
@@ -1166,7 +1175,7 @@ class InvoiceGrid(tk.Frame):
         ln["stock_quantity"] = float(p.get("stock_quantity", 0) or 0)
         ln["vat_category_id"] = p.get("vat_category_id")
         ln["vat_category_code"] = p.get("vat_code", "S") or "S"
-        ln["vat_rate"] = float(p.get("vat_rate", 15) or 15)
+        ln["vat_rate"] = _rate_or_std(p.get("vat_rate"))
         units = self.product_units.get(p["product_id"], [])
         if matched_unit is not None:
             # a specific unit was identified (e.g. by barcode scan) — use it

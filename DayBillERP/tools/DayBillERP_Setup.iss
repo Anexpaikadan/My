@@ -12,7 +12,7 @@
 ; ============================================================
 #define AppName "DayBill ERP"
 #ifndef AppVersion
-  #define AppVersion "6.9.5"
+  #define AppVersion "7.0.0"
 #endif
 
 [Setup]

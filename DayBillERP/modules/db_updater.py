@@ -10,7 +10,7 @@ import re
 try:                                    # one version for the whole app (config/version.py)
     from config.version import VERSION as APP_VERSION
 except Exception:
-    APP_VERSION = "6.9.5"
+    APP_VERSION = "7.0.0"
 
 # Ordered list of database patches shipped with the app.
 # (filename relative to project root, human description, version)
@@ -35,6 +35,17 @@ PATCHES = [
 
 # What changed in each version (shown in the Updates panel)
 CHANGELOG = [
+    ("7.0.0", ["🌍 Countries: a company is Saudi Arabia (VAT 15 %, ZATCA), UAE (VAT 5 %, TRN, VAT 201) or "
+               "India (GST: CGST + SGST in the state, IGST between states, GSTIN, HSN, GSTR-1 / GSTR-3B). "
+               "Currency symbol, tax words, bills, returns and reports follow the country.",
+               "🆕 New Company wizard: company, country, state / emirate, tax number, currency symbol, "
+               "financial year and business modules — makes the database ready to use.",
+               "🏪 Business modules: Retail, Supermarket, Restaurant (tables, KOT, kitchen screen, recipes), "
+               "Textiles (size / colour variants, sizes grid, selling by the metre), Production (bill of "
+               "materials, production entries, cost). Settings ▸ Company switches them on / off.",
+               "📒 Chart of accounts as a tree: every ledger under a group; New Group / New Ledger; "
+               "accounts drop down as a tree everywhere.",
+               "🔍 Report and picker boxes: typing drops the matching choices down at once."]),
     ("6.9.5", ["🏷 Every product has its own 5-digit SYSTEM BARCODE (10001, 10002 …) made by "
                "DayBill, apart from the MANUAL barcode typed or scanned from the packet. Both "
                "scan in every barcode box — Sales, Purchase, Returns, POS, Price check, labels — "

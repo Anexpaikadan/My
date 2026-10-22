@@ -402,6 +402,27 @@ def run(out_dir=None):
             raise RuntimeError("labels pick the wrong barcode")
     step("System barcode (5 digits) + manual barcode + labels", barcodes_v695)
 
+    def countries_v700():
+        from modules import country as K, business as B, db_migrate as M
+        names = [os.path.basename(p) for p in M.patch_files()]
+        for f in ("zzz_v700_patch.sql", "zzz_v700_accounts_patch.sql", "zzz_v700_restaurant_patch.sql",
+                  "zzz_v700_production_patch.sql", "zzz_v700_textiles_patch.sql"):
+            if f not in names:
+                raise RuntimeError("update %s is missing" % f)
+        if set(K.COUNTRIES) != {"SA", "AE", "IN"}:
+            raise RuntimeError("country profiles are missing")
+        if not K.valid_tax_no("27AAPFU0939F1ZV", "IN")[0] or K.valid_tax_no("27AAPFU0939F1ZA", "IN")[0]:
+            raise RuntimeError("GSTIN check is wrong")
+        if K.num(1234567.5, c="IN") != "12,34,567.50":
+            raise RuntimeError("Indian number grouping is wrong")
+        if set(B.KEYS) != {"retail", "supermarket", "restaurant", "textiles", "production"}:
+            raise RuntimeError("business modules are missing")
+        for mod, cls in B.SCREENS.values():
+            __import__(mod)
+            if not hasattr(sys.modules[mod], cls):
+                raise RuntimeError("screen %s.%s is missing" % (mod, cls))
+    step("Countries (SA / UAE / India) + business modules", countries_v700)
+
     text = "DayBill ERP self-test  %s\n%s\n\n%s\n" % (
         datetime.now().strftime("%Y-%m-%d %H:%M"), "-" * 40, "\n".join(rows))
     text += "\nRESULT: %s\n" % ("ALL OK" if ok_all else "PROBLEMS FOUND")

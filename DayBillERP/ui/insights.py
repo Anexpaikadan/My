@@ -558,7 +558,7 @@ class InsightsView:
                 for r in items:
                     prod = next((x for x in f._products
                                  if x["product_id"] == r["product_id"]), {})
-                    rate = float(prod.get("vat_rate") or 15)
+                    rate = __import__("modules.country", fromlist=["x"]).rate_or_std(prod.get("vat_rate"))
                     amt = round(r["order_qty"] * r["unit_cost"], 2)
                     lines.append({
                         "product_id": r["product_id"], "product_code": r["code"],

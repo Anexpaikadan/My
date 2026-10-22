@@ -1,6 +1,6 @@
 -- ============================================================
 -- DayBill ERP — FULL DATABASE INSTALLER  (clean new installation)
--- generated 2026-10-22 21:10  ·  ONE file = the whole database
+-- generated 2026-10-22 21:33  ·  ONE file = the whole database
 -- ------------------------------------------------------------
 -- WHAT IT MAKES
 --   • the DayBillERP database (Arabic collation) and EVERY table,
@@ -5237,6 +5237,35 @@ GO
 
 GO
 
+-- ▼▼▼  PATCH: zzz_v700_accounts_patch.sql  ▼▼▼
+-- ============================================================
+-- DayBill ERP v7.0 — account groups (masters)
+--   accounts.is_group   1 = a group that holds ledgers (Assets, Current
+--                       Assets, Expenses …). Every ledger sits under a
+--                       group (parent_account_id). An account that has
+--                       accounts under it is shown as a group too.
+-- Idempotent: safe on every database.
+-- ============================================================
+
+IF OBJECT_ID('accounts','U') IS NOT NULL AND COL_LENGTH('accounts','is_group') IS NULL
+    EXEC(N'ALTER TABLE accounts ADD is_group BIT NOT NULL CONSTRAINT DF_accounts_is_group DEFAULT 0');
+GO
+
+-- the main heads and every account that already has accounts under it
+IF COL_LENGTH('accounts','is_group') IS NOT NULL
+    EXEC(N'UPDATE a SET is_group = 1 FROM accounts a
+           WHERE a.is_group = 0
+             AND (a.parent_account_id IS NULL AND a.account_code IN (N''1000'', N''2000'', N''3000'', N''4000'', N''5000'')
+                  OR EXISTS (SELECT 1 FROM accounts c WHERE c.parent_account_id = a.account_id))');
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_accounts_parent')
+   AND OBJECT_ID('accounts','U') IS NOT NULL
+    CREATE INDEX IX_accounts_parent ON accounts(parent_account_id);
+GO
+
+GO
+
 -- ▼▼▼  PATCH: zzz_v700_patch.sql  ▼▼▼
 -- ============================================================
 -- DayBill ERP v7.0 — countries and business modules
@@ -5359,6 +5388,326 @@ CREATE TABLE bom_lines (
 GO
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_bom_lines_bom')
     CREATE INDEX IX_bom_lines_bom ON bom_lines(bom_id);
+GO
+
+GO
+
+-- ▼▼▼  PATCH: zzz_v700_production_patch.sql  ▼▼▼
+-- ============================================================
+-- DayBill ERP v7.0 — Production (manufacturing)
+--   production_entries   one production run: the product made, how
+--                        many, status (draft / confirmed / cancelled)
+--                        and what it cost (materials + labour +
+--                        overhead = total, cost of one unit)
+--   production_lines     the materials of a run: planned (from the
+--                        bill of materials) and really used, unit,
+--                        cost each, line cost
+--   account 5250         Production Labour & Overheads Applied — the
+--                        credit side of labour and overhead put into
+--                        the finished goods' cost
+--   journal voucher type PRD (Production)
+-- Confirming an entry moves the stock and posts the journal
+-- (modules/production.py); a draft moves nothing.
+-- Idempotent: safe on every database.
+-- ============================================================
+
+IF OBJECT_ID('production_entries','U') IS NULL
+CREATE TABLE production_entries (
+    entry_id          INT IDENTITY(1,1) PRIMARY KEY,
+    entry_number      NVARCHAR(30) NOT NULL UNIQUE,
+    entry_date        DATE NOT NULL,
+    product_id        INT NOT NULL,                 -- the finished product made
+    product_code      NVARCHAR(50) NULL,
+    product_name_en   NVARCHAR(300) NULL,
+    bom_id            INT NULL,                     -- the bill of materials used
+    quantity          DECIMAL(18,4) NOT NULL DEFAULT 0,   -- made, in unit_name
+    unit_name         NVARCHAR(50) NULL,
+    unit_factor       DECIMAL(18,6) NOT NULL DEFAULT 1,   -- base units in one unit_name
+    qty_base          DECIMAL(18,4) NOT NULL DEFAULT 0,   -- made, in base units
+    entry_status      NVARCHAR(20) NOT NULL DEFAULT 'draft',
+    material_cost     DECIMAL(18,2) NOT NULL DEFAULT 0,
+    labour_cost       DECIMAL(18,2) NOT NULL DEFAULT 0,
+    overhead_cost     DECIMAL(18,2) NOT NULL DEFAULT 0,
+    total_cost        DECIMAL(18,2) NOT NULL DEFAULT 0,
+    unit_cost         DECIMAL(18,6) NOT NULL DEFAULT 0,   -- cost of one unit_name
+    branch_id         INT NULL,
+    counter_id        INT NULL,
+    notes             NVARCHAR(500) NULL,
+    -- what confirming did to the finished product's average cost, so
+    -- cancel / edit can put it back exactly
+    fg_avg_before     DECIMAL(18,4) NULL,
+    fg_avg_after      DECIMAL(18,4) NULL,
+    fg_stock_after    DECIMAL(18,4) NULL,
+    created_by        INT NULL,
+    created_at        DATETIME NOT NULL DEFAULT GETDATE(),
+    updated_at        DATETIME NULL,
+    confirmed_at      DATETIME NULL,
+    cancelled_at      DATETIME NULL
+);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_production_entries_date')
+    CREATE INDEX IX_production_entries_date ON production_entries(entry_date, entry_status);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_production_entries_product')
+    CREATE INDEX IX_production_entries_product ON production_entries(product_id);
+GO
+
+IF OBJECT_ID('production_lines','U') IS NULL
+CREATE TABLE production_lines (
+    line_id           INT IDENTITY(1,1) PRIMARY KEY,
+    entry_id          INT NOT NULL REFERENCES production_entries(entry_id) ON DELETE CASCADE,
+    line_number       INT NOT NULL,
+    component_id      INT NOT NULL,                 -- the material
+    product_code      NVARCHAR(50) NULL,
+    product_name_en   NVARCHAR(300) NULL,
+    qty_planned       DECIMAL(18,4) NOT NULL DEFAULT 0,   -- from the bill of materials
+    qty_used          DECIMAL(18,4) NOT NULL DEFAULT 0,   -- really used (can differ)
+    unit_name         NVARCHAR(50) NULL,
+    unit_factor       DECIMAL(18,6) NOT NULL DEFAULT 1,
+    is_stock          BIT NOT NULL DEFAULT 1,       -- 0 = a service: cost only, no stock
+    cost_each         DECIMAL(18,6) NOT NULL DEFAULT 0,   -- one unit_name, at its average cost
+    line_cost         DECIMAL(18,2) NOT NULL DEFAULT 0,
+    notes             NVARCHAR(200) NULL
+);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_production_lines_entry')
+    CREATE INDEX IX_production_lines_entry ON production_lines(entry_id);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_production_lines_component')
+    CREATE INDEX IX_production_lines_component ON production_lines(component_id);
+GO
+
+-- the account labour + overhead are applied to (only added when missing)
+IF OBJECT_ID('accounts','U') IS NOT NULL
+BEGIN
+    DECLARE @p INT = (SELECT account_id FROM accounts WHERE account_code='5000');
+    IF NOT EXISTS (SELECT 1 FROM accounts WHERE account_code='5250')
+        INSERT INTO accounts (account_code, account_name_en, account_name_ar, account_type, parent_account_id)
+        VALUES ('5250', N'Production Labour & Overheads Applied',
+                N'تكاليف العمالة والمصاريف المحملة على الإنتاج', 'expense', @p);
+END
+GO
+
+GO
+
+-- ▼▼▼  PATCH: zzz_v700_restaurant_patch.sql  ▼▼▼
+-- ============================================================
+-- DayBill ERP v7.0 — Restaurant module
+--   rest_areas               dining areas (Hall, Family, Terrace …)
+--   rest_tables              tables: name, area, seats, sort, active
+--   rest_stations            kitchen stations (Kitchen, Grill, Drinks …)
+--                            and the printer each one prints its KOT on
+--   rest_station_categories  which product category goes to which station
+--                            (station_id NULL = never sent to the kitchen)
+--   rest_orders              one running or finished order: Dine-in /
+--                            Takeaway / Delivery, table, guests, waiter,
+--                            delivery customer + driver, status, the POS
+--                            bill (sales_invoices.invoice_id) when paid
+--   rest_order_lines         what the order holds while it is running
+--                            (the POS screen of the table)
+--   rest_kots / rest_kot_lines   kitchen order tickets; a line with a
+--                            NEGATIVE quantity cancels an item sent before
+-- The bill is a normal POS sale, written when the order is paid, so
+-- stock, recipes (ingredients), VAT and the books post as for any sale.
+-- Idempotent: safe on every database.
+-- ============================================================
+
+IF OBJECT_ID('rest_areas','U') IS NULL
+CREATE TABLE rest_areas (
+    area_id         INT IDENTITY(1,1) PRIMARY KEY,
+    area_name       NVARCHAR(100) NOT NULL,
+    sort_order      INT NOT NULL DEFAULT 0,
+    is_active       BIT NOT NULL DEFAULT 1,
+    created_at      DATETIME DEFAULT GETDATE()
+);
+GO
+
+IF OBJECT_ID('rest_tables','U') IS NULL
+CREATE TABLE rest_tables (
+    table_id        INT IDENTITY(1,1) PRIMARY KEY,
+    table_name      NVARCHAR(50) NOT NULL,
+    area_id         INT NULL,
+    seats           INT NOT NULL DEFAULT 4,
+    sort_order      INT NOT NULL DEFAULT 0,
+    is_active       BIT NOT NULL DEFAULT 1,
+    created_at      DATETIME DEFAULT GETDATE()
+);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_rest_tables_area')
+    CREATE INDEX IX_rest_tables_area ON rest_tables(area_id);
+GO
+
+IF OBJECT_ID('rest_stations','U') IS NULL
+CREATE TABLE rest_stations (
+    station_id      INT IDENTITY(1,1) PRIMARY KEY,
+    station_name    NVARCHAR(100) NOT NULL,
+    printer_name    NVARCHAR(200) NULL,          -- empty = the default kitchen printer
+    paper_mm        INT NOT NULL DEFAULT 80,     -- 58 / 80
+    copies          INT NOT NULL DEFAULT 1,
+    sort_order      INT NOT NULL DEFAULT 0,
+    is_active       BIT NOT NULL DEFAULT 1,
+    created_at      DATETIME DEFAULT GETDATE()
+);
+GO
+
+IF OBJECT_ID('rest_station_categories','U') IS NULL
+CREATE TABLE rest_station_categories (
+    category_id     INT NOT NULL PRIMARY KEY,
+    station_id      INT NULL                     -- NULL = not sent to the kitchen
+);
+GO
+
+IF OBJECT_ID('rest_orders','U') IS NULL
+CREATE TABLE rest_orders (
+    order_id            INT IDENTITY(1,1) PRIMARY KEY,
+    order_no            INT NOT NULL,                -- running number of the day (#1, #2 …)
+    order_date          DATE NOT NULL DEFAULT CAST(GETDATE() AS DATE),
+    order_type          NVARCHAR(20) NOT NULL DEFAULT N'Dine-in',   -- Dine-in / Takeaway / Delivery
+    table_id            INT NULL,
+    guests              INT NULL,
+    waiter_name         NVARCHAR(100) NULL,
+    customer_name       NVARCHAR(200) NULL,          -- delivery / takeaway customer
+    customer_phone      NVARCHAR(30) NULL,
+    delivery_address    NVARCHAR(500) NULL,
+    driver_name         NVARCHAR(100) NULL,
+    status              NVARCHAR(20) NOT NULL DEFAULT N'open',      -- open / billed / closed / cancelled / merged
+    invoice_id          INT NULL,                    -- the POS bill (sales_invoices) once paid
+    merged_into         INT NULL,                    -- merged: the order it went into
+    service_on          BIT NOT NULL DEFAULT 1,      -- dine-in service charge on this order
+    running_total       DECIMAL(18,2) NOT NULL DEFAULT 0,
+    bill_printed_at     DATETIME NULL,
+    bill_total          DECIMAL(18,2) NULL,          -- total on the printed bill
+    cancel_reason       NVARCHAR(200) NULL,
+    notes               NVARCHAR(500) NULL,
+    opened_at           DATETIME NOT NULL DEFAULT GETDATE(),
+    closed_at           DATETIME NULL,
+    opened_by           INT NULL,
+    closed_by           INT NULL,
+    version             INT NOT NULL DEFAULT 1,      -- +1 on every save (two PCs on one order)
+    updated_at          DATETIME NULL
+);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_rest_orders_status')
+    CREATE INDEX IX_rest_orders_status ON rest_orders(status, table_id);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_rest_orders_invoice')
+    CREATE INDEX IX_rest_orders_invoice ON rest_orders(invoice_id);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_rest_orders_day')
+    CREATE INDEX IX_rest_orders_day ON rest_orders(order_date, order_no);
+GO
+
+IF OBJECT_ID('rest_order_lines','U') IS NULL
+CREATE TABLE rest_order_lines (
+    line_id             INT IDENTITY(1,1) PRIMARY KEY,
+    order_id            INT NOT NULL REFERENCES rest_orders(order_id) ON DELETE CASCADE,
+    line_no             INT NOT NULL DEFAULT 0,
+    product_id          INT NULL,
+    product_code        NVARCHAR(50) NULL,
+    product_name_en     NVARCHAR(200) NOT NULL,
+    product_name_ar     NVARCHAR(200) NULL,
+    unit_name           NVARCHAR(50) NULL,
+    factor              DECIMAL(18,6) NOT NULL DEFAULT 1,
+    quantity            DECIMAL(18,3) NOT NULL,
+    unit_price          DECIMAL(18,4) NOT NULL DEFAULT 0,   -- the rate as typed on the POS
+    price_incl          BIT NOT NULL DEFAULT 1,             -- that rate includes VAT
+    price_typed         BIT NOT NULL DEFAULT 0,             -- the cashier typed the rate
+    vat_rate            DECIMAL(5,2) NOT NULL DEFAULT 0,
+    vat_code            NVARCHAR(5) NULL,
+    vat_category_id     INT NULL,
+    line_total          DECIMAL(18,2) NOT NULL DEFAULT 0,
+    kitchen_note        NVARCHAR(200) NULL                  -- "no onion", "extra spicy"
+);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_rest_order_lines_order')
+    CREATE INDEX IX_rest_order_lines_order ON rest_order_lines(order_id);
+GO
+
+IF OBJECT_ID('rest_kots','U') IS NULL
+CREATE TABLE rest_kots (
+    kot_id              INT IDENTITY(1,1) PRIMARY KEY,
+    kot_no              INT NOT NULL,                -- running number of the day
+    kot_date            DATE NOT NULL DEFAULT CAST(GETDATE() AS DATE),
+    order_id            INT NOT NULL,
+    station_id          INT NULL,
+    station_name        NVARCHAR(100) NULL,
+    status              NVARCHAR(20) NOT NULL DEFAULT N'new',       -- new / preparing / ready / served
+    sent_at             DATETIME NOT NULL DEFAULT GETDATE(),
+    sent_by             INT NULL,
+    started_at          DATETIME NULL,
+    ready_at            DATETIME NULL,
+    served_at           DATETIME NULL,
+    print_count         INT NOT NULL DEFAULT 0,
+    kot_note            NVARCHAR(200) NULL
+);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_rest_kots_order')
+    CREATE INDEX IX_rest_kots_order ON rest_kots(order_id);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_rest_kots_status')
+    CREATE INDEX IX_rest_kots_status ON rest_kots(status, sent_at);
+GO
+
+IF OBJECT_ID('rest_kot_lines','U') IS NULL
+CREATE TABLE rest_kot_lines (
+    kot_line_id         INT IDENTITY(1,1) PRIMARY KEY,
+    kot_id              INT NOT NULL REFERENCES rest_kots(kot_id) ON DELETE CASCADE,
+    product_id          INT NULL,
+    product_name        NVARCHAR(200) NOT NULL,
+    product_name_ar     NVARCHAR(200) NULL,
+    unit_name           NVARCHAR(50) NULL,
+    quantity            DECIMAL(18,3) NOT NULL,      -- negative = CANCEL (item taken off)
+    unit_price          DECIMAL(18,4) NULL,          -- price per unit with VAT (value of a cancel)
+    kitchen_note        NVARCHAR(200) NULL
+);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_rest_kot_lines_kot')
+    CREATE INDEX IX_rest_kot_lines_kot ON rest_kot_lines(kot_id);
+GO
+
+GO
+
+-- ▼▼▼  PATCH: zzz_v700_textiles_patch.sql  ▼▼▼
+-- ============================================================
+-- DayBill ERP v7.0 — Textiles & Garments: size / colour variants
+--   products.variant_parent_id   the style (main product) a size /
+--                                colour belongs to (NULL = not a variant)
+--   products.variant_size        its size   ('' when the style has no sizes)
+--   products.variant_colour      its colour ('' when the style has no colours)
+-- Every variant is a normal product (own code, own 5-digit system
+-- barcode, own stock), so sales, purchases, POS, stock and reports work
+-- as before; these columns only link it to its style.
+-- No foreign key on purpose: deleting a style never fails because of
+-- its variants (they stay as normal products).
+-- Idempotent: safe on every database.
+-- ============================================================
+
+IF OBJECT_ID('products','U') IS NOT NULL AND COL_LENGTH('products','variant_parent_id') IS NULL
+    EXEC(N'ALTER TABLE products ADD variant_parent_id INT NULL');
+GO
+IF OBJECT_ID('products','U') IS NOT NULL AND COL_LENGTH('products','variant_size') IS NULL
+    EXEC(N'ALTER TABLE products ADD variant_size NVARCHAR(40) NULL');
+GO
+IF OBJECT_ID('products','U') IS NOT NULL AND COL_LENGTH('products','variant_colour') IS NULL
+    EXEC(N'ALTER TABLE products ADD variant_colour NVARCHAR(40) NULL');
+GO
+
+-- the variants of a style, fast
+IF COL_LENGTH('products','variant_parent_id') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_products_variant_parent'
+                   AND object_id = OBJECT_ID('products'))
+    EXEC(N'CREATE INDEX IX_products_variant_parent ON products(variant_parent_id)
+           INCLUDE (variant_size, variant_colour)');
+GO
+
+-- one product per style + size + colour (adding sizes later never
+-- makes a second "Shirt - M - Red")
+IF COL_LENGTH('products','variant_parent_id') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UX_products_variant'
+                   AND object_id = OBJECT_ID('products'))
+    EXEC(N'CREATE UNIQUE INDEX UX_products_variant
+           ON products(variant_parent_id, variant_size, variant_colour)
+           WHERE variant_parent_id IS NOT NULL');
 GO
 
 GO

@@ -600,7 +600,7 @@ class InvoiceImportDialog:
             sug = PA.suggest_from_similar(name) or {}
             cat = sug.get("category_id") or (PA._q("SELECT TOP 1 category_id FROM product_categories "
                                                    "ORDER BY category_id") or [{}])[0].get("category_id")
-            rate = float(s.get("vat_rate") or 15)
+            rate = __import__("modules.country", fromlist=["x"]).rate_or_std(s.get("vat_rate"))
             vat_id = PA.default_vat_for_rate(rate)
             ppu = float(s.get("pieces_per_unit") or 1) or 1.0
             unit = str(s.get("unit") or "PCs").strip() or "PCs"

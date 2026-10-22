@@ -94,7 +94,14 @@ def _line_rate(ln, rate_key, vat_key, code_key):
     code = str(ln.get(code_key) or "S").strip().upper()[:1]
     if code in ("Z", "E", "O"):
         return 0.0
-    return _f(ln.get(rate_key)) or 15.0
+    r = _f(ln.get(rate_key))
+    if r:
+        return r
+    try:                              # a line with tax but no rate: the country's standard rate
+        from modules import country as _K
+        return _K.std_rate()
+    except Exception:
+        return 15.0
 
 
 def doc_totals(lines, inclusive=True, net="line_amount", vat="vat_amount",

@@ -2,6 +2,41 @@
 
 Newest first. The short guide is in the main README.md.
 
+## 🌍 v7.0.0 — countries, business modules, account groups
+
+- **Countries.** Each company is Saudi Arabia, the UAE or India (kept in its own
+  database, so every PC behaves the same). Currency symbol, VAT / GST, tax
+  number (VAT No. / TRN / GSTIN, checked as typed), regions / emirates / GST
+  states, financial year, number grouping and amount in words follow it.
+- **New Company wizard** on the login's Database Settings: company → country →
+  business → create. It runs the installer, then sets the tax categories, tax
+  accounts, financial year and options for the country.
+- **India GST.** CGST + SGST inside the state (UTGST in Union Territories), IGST
+  to other states and abroad, by place of supply (on the Sales Invoice, else the
+  customer's state). Output / Input CGST, SGST, IGST accounts. HSN / SAC on
+  products. Bills show the place of supply, HSN and each tax head; Bill of
+  Supply when nothing is taxed. GSTR-3B and GSTR-1 (B2B, B2CL, B2CS, CDNR, HSN,
+  documents issued) in the Reports Center.
+- **UAE VAT.** 5 %, TRN, AED, VAT 201 (boxes 1a–14, sales by emirate of the
+  branch, imports under reverse charge, expenses).
+- **Saudi Arabia** works as before; the ZATCA screens and the VAT return show
+  only for Saudi companies.
+- **Business modules** (Settings ▸ Company ▸ Country & business):
+  Restaurant — tables & orders, KOT to kitchen stations, kitchen screen,
+  pre-bill, service charge, recipes that take ingredients out when a dish is
+  sold, restaurant reports. Textiles — size / colour variants with their own
+  barcodes, Ctrl+G sizes grid in Sales, Purchase and POS, Metre / Yard,
+  stock by size & colour, textile reports. Production — bill of materials /
+  recipes editor with cost roll-up, production entries (materials out at
+  cost, finished goods in at cost), production reports.
+- **Chart of accounts as a tree.** Every ledger sits under a group; New Group /
+  New Ledger under the selected group; the next free code is filled in and the
+  type comes from the group; accounts drop down as a tree in the Journal,
+  Ledger and reports.
+- **Type-to-search everywhere in reports.** Product, customer / supplier,
+  account and category boxes drop the matches down as you type.
+- Fix: a 0 % product (nil / zero rated) was taxed at 15 % on the invoice.
+
 ## 🏷 v6.9.5 — 5-digit system barcode, manual barcode, labels
 
 - **System barcode for every product.** Each product has its own 5-digit

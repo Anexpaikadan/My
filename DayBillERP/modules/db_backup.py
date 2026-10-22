@@ -350,6 +350,8 @@ def run_sql_script(path, database=None, progress=None):
         for b in batches:
             try:
                 cur.execute(b)
+                while cur.nextset():          # read every result: a pooled connection
+                    pass                      # must not go back busy (v7.0)
             except Exception as e:
                 # keep going: patches are idempotent; report at the end
                 print("[install] batch skipped:", str(e)[:120])

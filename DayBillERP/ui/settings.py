@@ -603,6 +603,79 @@ class SettingsView:
     def _section(self, key):
         return next((s for s in SECTIONS if s["key"] == key), None)
 
+    # ── v7.0: country + business modules of this company ──────
+    def _render_country_panel(self, holder, C, rowi):
+        """Country (set when the company was made), currency symbol and
+        the business modules — tick / untick and Save: the menu follows."""
+        from modules import country as K, business as B
+        p = K.profile()
+        box = tk.Frame(holder, bg=C["card_bg"], highlightbackground=C["border"], highlightthickness=1)
+        box.grid(row=rowi, column=0, columnspan=2, sticky="ew", padx=8, pady=(14, 6))
+        tk.Label(box, text="🌍  Country & business", font=("Segoe UI", 11, "bold"), bg=C["card_bg"],
+                 fg=C["primary"]).pack(anchor="w", padx=12, pady=(10, 2))
+        st = K.company_state()
+        tk.Label(box, text="%s %s  ·  %s %g%%  ·  %s  ·  %s%s" % (
+            p["flag"], p["name"], p["tax"], p["std_rate"], p["tax_no_label"], p["currency"],
+            ("  ·  %s %s" % (p["states_label"], K.state_label(st))) if st else ""),
+            font=("Segoe UI", 10), bg=C["card_bg"], fg=C["text_primary"]).pack(anchor="w", padx=12)
+        tk.Label(box, text="The country is chosen when the company is made (Login ▸ Database Settings ▸ "
+                           "Create New Company). Each company keeps its own country.",
+                 font=("Segoe UI", 8), bg=C["card_bg"], fg=C["text_secondary"], wraplength=640,
+                 justify="left").pack(anchor="w", padx=12, pady=(0, 6))
+        row = tk.Frame(box, bg=C["card_bg"]); row.pack(anchor="w", padx=12)
+        tk.Label(row, text="Currency symbol", font=("Segoe UI", 9), bg=C["card_bg"],
+                 fg=C["text_secondary"]).pack(side="left")
+        self._sym_var = tk.StringVar(value=K.symbol())
+        ttk.Combobox(row, textvariable=self._sym_var, values=p["symbols"], width=8,
+                     font=("Segoe UI", 10)).pack(side="left", padx=6)
+        tk.Label(box, text="Business modules", font=("Segoe UI", 9, "bold"), bg=C["card_bg"],
+                 fg=C["text_primary"]).pack(anchor="w", padx=12, pady=(8, 2))
+        self._mod_vars = {}
+        grid = tk.Frame(box, bg=C["card_bg"]); grid.pack(anchor="w", padx=12)
+        for i, (k, title, icon, desc) in enumerate(B.MODULES):
+            v = tk.BooleanVar(value=B.has(k))
+            self._mod_vars[k] = v
+            tk.Checkbutton(grid, text="%s  %s" % (icon, title), variable=v, font=("Segoe UI", 9),
+                           bg=C["card_bg"], activebackground=C["card_bg"],
+                           state="disabled" if k == "retail" else "normal").grid(
+                               row=i // 3, column=i % 3, sticky="w", padx=(0, 18), pady=1)
+        self._biz_msg = tk.StringVar(value="")
+        brow = tk.Frame(box, bg=C["card_bg"]); brow.pack(anchor="w", padx=12, pady=(6, 10))
+        tk.Button(brow, text="💾  Save country & business", font=("Segoe UI", 9, "bold"), bg=C["primary"],
+                  fg="white", relief="flat", padx=12, pady=5, cursor="hand2",
+                  command=self._save_country_panel).pack(side="left")
+        tk.Label(brow, textvariable=self._biz_msg, font=("Segoe UI", 9), bg=C["card_bg"],
+                 fg=C["success"]).pack(side="left", padx=10)
+
+    def _save_country_panel(self):
+        from modules import country as K, business as B
+        from modules import permissions as perm
+        if not perm.allowed("company_settings", "settings", parent=self.frame):
+            return
+        before = B.enabled()
+        keys = [k for k, v in self._mod_vars.items() if v.get()]
+        B.set_enabled(keys)
+        for k in set(keys) - before:                # a module switched on: its starting settings
+            for opt, val in B.defaults_for([k]).items():
+                if K.option(opt) is None:
+                    K.set_option(opt, "1" if val is True else ("0" if val is False else val))
+        sym = self._sym_var.get().strip()
+        if sym:
+            try:
+                db.execute("UPDATE company SET currency_symbol=?", (sym,))
+            except Exception:
+                pass
+            K.set_option("currency_symbol", sym)
+        K.apply()
+        try:
+            from ui import main_window as _mw
+            app = getattr(_mw, "APP", None)
+            if app is not None:
+                app._rebuild_sidebar_soon()
+        except Exception:
+            pass
+        self._biz_msg.set("✓ Saved — the menu now shows: " + B.summary())
+
     def _render_section(self, key):
         C = cfg.theme()
         sec = self._section(key)
@@ -657,6 +730,9 @@ class SettingsView:
                     col = 0
                     rowi += 1
 
+        if key == "company":
+            rowi += 1
+            self._render_country_panel(holder, C, rowi)
         if key == "financial_year":
             rowi += 1
             self._render_fy_panel(holder, C, rowi)
@@ -1280,8 +1356,20 @@ class SettingsView:
                 messagebox.showerror("Save Error", str(e))
                 return
         else:
+            # v7.0: company settings (tax rate, round-off, financial year …)
+            # are kept in the company's database; a UAE / India company
+            # never writes them into this PC's file
+            took = []
+            try:
+                from modules import country as _K
+                took = _K.save_settings(data)
+                if _K.is_sa():
+                    took = []                     # Saudi PCs keep them in the file too
+            except Exception:
+                pass
             for k, v in data.items():
-                cfg.set(k, v)
+                if k not in took:
+                    cfg.set(k, v)
             if "pos_paper_size" in data and str(cfg.get("paper_width", "80")) in ("58", "80"):
                 # keep Print & Invoice ▸ Paper size in step with this one
                 cfg.set("paper_width", "58" if str(data["pos_paper_size"]).startswith("58") else "80")
