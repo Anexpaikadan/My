@@ -50,6 +50,14 @@ class NewCompanyWizard:
 
     def __init__(self, parent, conf, on_done=None):
         self.C = cfg.theme()
+        # every country's own words here (not the open company's: SAR / VAT
+        # must stay SAR / VAT on the Saudi card)
+        try:
+            from ui import country_text as _CT
+            self._ct_was_on = _CT._STATE["on"]
+            _CT.uninstall()
+        except Exception:
+            self._ct_was_on = False
         self.conf = dict(conf or {})
         self.on_done = on_done
         self.step = 0
@@ -454,6 +462,12 @@ class NewCompanyWizard:
         except Exception:
             pass
         self.win.destroy()
+        if getattr(self, "_ct_was_on", False):
+            try:
+                from ui import country_text as _CT
+                _CT.install()
+            except Exception:
+                pass
 
     def _center(self):
         try:

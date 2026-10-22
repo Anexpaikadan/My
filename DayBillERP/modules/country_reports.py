@@ -453,7 +453,8 @@ def r_gstr3b(date_from, date_to, **_):
     rows = []
 
     def sec(title):
-        rows.append({"sec": title, "_style": "total"})
+        no, _, text = title.partition("  ")
+        rows.append({"sec": no, "label": text.upper(), "_style": "total"})
 
     def row(no, label, b, style=""):
         rows.append({"sec": no, "label": label, "taxable": None if b.get("taxable") is None else R(b.get("taxable")),

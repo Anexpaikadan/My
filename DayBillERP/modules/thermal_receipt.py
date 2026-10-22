@@ -84,6 +84,8 @@ def generate_thermal_receipt(invoice: dict, company: dict, lines: list,
         from modules import country as _K
         _code, _sym, _tax, _taxno = _K.code(), _K.symbol(), _K.tax_name(), _K.tax_no_label()
         _num = _K.num
+        if _sym == "₹":
+            _sym = "Rs."           # receipt fonts have no ₹ sign
     except Exception:
         _K, _code, _sym, _tax, _taxno = None, "SA", "SAR", "VAT", "VAT"
         _num = lambda v, *a, **k: "{:,.2f}".format(float(v or 0))  # noqa: E731

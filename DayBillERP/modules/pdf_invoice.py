@@ -152,6 +152,8 @@ def _country_ctx(company, invoice, lines):
     except Exception:
         C, p, code, sym = None, {}, "SA", "SAR"
         num = lambda v, *a, **k: "{:,.2f}".format(float(v or 0))  # noqa: E731
+    if sym == "₹":
+        sym = "Rs."                # the PDF fonts have no ₹ sign: Indian bills print Rs.
     k = {"code": code, "symbol": sym, "num": lambda v: num(v),
          "tax": p.get("tax", "VAT"), "tax_no_label": p.get("tax_no_label", "VAT"),
          "reg_label": {"AE": "Trade Licence", "IN": "PAN"}.get(code, "CR"),
@@ -376,8 +378,9 @@ def generate_invoice_pdf(invoice: dict, company: dict, lines: list,
     lx = margin + 3 * mm
     ly = box_top - 6 * mm
     text_en(lx, ly, "Invoice Details", "Helvetica-Bold", 9, GREEN)
-    c.setFont(_AR_FONT, 8); c.setFillColor(GREEN)
-    c.drawRightString(margin + col_w - 4 * mm, ly, _shape_arabic("تفاصيل الفاتورة"))
+    if SHOW_AR:
+        c.setFont(_AR_FONT, 8); c.setFillColor(GREEN)
+        c.drawRightString(margin + col_w - 4 * mm, ly, _shape_arabic("تفاصيل الفاتورة"))
     ly -= 6 * mm
     meta = [
         ("Invoice No", invoice.get("invoice_number", "")),
@@ -397,8 +400,9 @@ def generate_invoice_pdf(invoice: dict, company: dict, lines: list,
     rx = rx0 + 3 * mm
     ry = box_top - 6 * mm
     text_en(rx, ry, "Bill To", "Helvetica-Bold", 9, GREEN)
-    c.setFont(_AR_FONT, 8); c.setFillColor(GREEN)
-    c.drawRightString(rx0 + col_w - 3 * mm, ry, _shape_arabic("فاتورة إلى"))
+    if SHOW_AR:
+        c.setFont(_AR_FONT, 8); c.setFillColor(GREEN)
+        c.drawRightString(rx0 + col_w - 3 * mm, ry, _shape_arabic("فاتورة إلى"))
     ry -= 6 * mm
     text_en(rx, ry, invoice.get("customer_name_en", ""),
             "Helvetica-Bold", 9, DARK)
@@ -507,9 +511,10 @@ def generate_invoice_pdf(invoice: dict, company: dict, lines: list,
             c.setFillColor(txtcol)
             c.setFont("Helvetica-Bold" if bold else "Helvetica", 9 if bold else 8)
             c.drawString(tx + 2 * mm, ty - 5 * mm, label_en)
-            c.setFont(_AR_FONT_BOLD if bold else _AR_FONT, 9 if bold else 8)
-            c.drawCentredString(tx + totals_w / 2 + 4 * mm, ty - 5 * mm,
-                                _shape_arabic(label_ar))
+            if SHOW_AR and label_ar:
+                c.setFont(_AR_FONT_BOLD if bold else _AR_FONT, 9 if bold else 8)
+                c.drawCentredString(tx + totals_w / 2 + 4 * mm, ty - 5 * mm,
+                                    _shape_arabic(label_ar))
             c.setFont("Helvetica-Bold" if bold else "Helvetica", 9 if bold else 8)
             c.setFillColor(txtcol)
             c.drawRightString(tx + totals_w - 2 * mm, ty - 5 * mm, money(val))
