@@ -157,6 +157,60 @@ def _base(t):
     return [c for c in prog if c not in no] or prog[:1]
 
 
+# ── v7.8: read-only columns ──────────────────────────────────
+# A table lists the columns you may type in:  tree._ct_editable = {...}
+# (item grid: Bar Code, Product, Qty, Rate). Each of them gets
+# "🔒 Read only" in the right-click menu and the Columns… window: a
+# locked column shows its value but cannot be typed in (e.g. the sales
+# Rate always comes from the product). Kept per table on this PC, and
+# kept when the columns are reset.
+LOCK_EVENT = "<<ColumnsLocked>>"
+
+
+def editable(t):
+    return set(getattr(t, "_ct_editable", ()) or ())
+
+
+def _locks():
+    _tables()
+    return _STORE["data"].setdefault("locks", {})
+
+
+def _lock_key(t):
+    return getattr(t, "_ct_lock_key", None) or getattr(t, "_ct_from", None) or _key(t)
+
+
+def locked(t):
+    """The columns of this table that are read only."""
+    ed = editable(t)
+    if not ed:
+        return set()
+    k = _lock_key(t)
+    return (set(_locks().get(k) or []) & ed) if k else set()
+
+
+def is_locked(t, c):
+    return c in locked(t)
+
+
+def set_locked(t, c, on=True):
+    k = _lock_key(t)
+    if not k or c not in editable(t):
+        return False
+    cur = set(_locks().get(k) or [])
+    cur = (cur | {c}) if on else (cur - {c})
+    if cur:
+        _locks()[k] = sorted(cur)
+    else:
+        _locks().pop(k, None)
+    _write()
+    try:
+        t.event_generate(LOCK_EVENT)
+    except Exception:
+        pass
+    return True
+
+
 def _default(t):
     """What shows before the user changes anything (no optional ones)."""
     base = _base(t)
@@ -765,6 +819,11 @@ def menu(t, x_root, y_root, c=None, popup=True):
                       state="normal" if i > 0 else "disabled")
         m.add_command(label="Move right  ▶", command=lambda: move(t, c, 1),
                       state="normal" if i < len(shown) - 1 else "disabled")
+        if c in editable(t):
+            lv = tk.BooleanVar(master=t, value=is_locked(t, c))
+            m._lock_var = lv
+            m.add_checkbutton(label='🔒 "%s" read only (can\'t be typed in)' % name, variable=lv,
+                              command=lambda: set_locked(t, c, bool(lv.get())))
         m.add_separator()
     m._vars = []
     opt = _optional(t)
@@ -821,6 +880,8 @@ class ColumnsDialog:
                 w = 100
             self.rows.append([c, tk.BooleanVar(master=t, value=c in shown),
                               tk.StringVar(master=t, value=str(w))])
+        lk = locked(t)
+        self.locks = {c: tk.BooleanVar(master=t, value=c in lk) for c in editable(t)}
         self.win = win = tk.Toplevel(t)
         t._ct_dialog = self
         win.title("Columns  ·  الأعمدة")
@@ -833,7 +894,8 @@ class ColumnsDialog:
                  bg="white", fg="#1F2937").pack(anchor="w", padx=14, pady=(12, 0))
         tk.Label(win, text="Tick = show.   ▲ ▼ = move.   Width in pixels.   "
                            "➕ = more columns (profit, cost, PLU, stock, units …).\n"
-                           "Saved for this table on this PC.",
+                           "🔒 Read only = shown, but can't be typed in (e.g. the Rate always comes "
+                           "from the product).\nSaved for this table on this PC.",
                  font=("Segoe UI", 9), bg="white", fg="#6B7280", justify="left"
                  ).pack(anchor="w", padx=14, pady=(2, 8))
         # font of this table: design · size · bold (v6.9.4)
@@ -909,6 +971,9 @@ class ColumnsDialog:
                  fg="#374151").grid(row=0, column=0, sticky="w", padx=4)
         tk.Label(self.body, text="Width", font=("Segoe UI", 9, "bold"), bg="white",
                  fg="#374151").grid(row=0, column=1, sticky="w")
+        if self.locks:
+            tk.Label(self.body, text="🔒 Read only", font=("Segoe UI", 9, "bold"), bg="white",
+                     fg="#374151").grid(row=0, column=4, sticky="w", padx=(4, 6))
         opt = _optional(self.t)
         for i, (c, v, w) in enumerate(self.rows):
             r = i + 1
@@ -928,6 +993,9 @@ class ColumnsDialog:
             tk.Button(self.body, text="▼", width=2, relief="flat", bg="#EEF2F7", bd=0,
                       state="normal" if i < len(self.rows) - 1 else "disabled",
                       command=lambda i=i: self.move(i, 1)).grid(row=r, column=3, padx=(1, 6))
+            if c in self.locks:
+                tk.Checkbutton(self.body, variable=self.locks[c], bg="white", activebackground="white",
+                               highlightthickness=0, cursor="hand2").grid(row=r, column=4, padx=(4, 6))
 
     def move(self, i, d):
         j = i + d
@@ -959,6 +1027,9 @@ class ColumnsDialog:
                 pass
         _set_dc(self.t, [c for c in order if c in self.base] or self.base[:1], self.base)
         remember(self.t)
+        for c, v in self.locks.items():
+            if bool(v.get()) != is_locked(self.t, c):
+                set_locked(self.t, c, bool(v.get()))
         try:
             f = (self.fam_var.get(), self.size_var.get(), self.bold_var.get())
             if f != self._font0 or self.all_var.get():

@@ -1023,8 +1023,18 @@ class InvoiceForm:
         self.salesman_var = tk.StringVar()
         self.warehouse_var = tk.StringVar(
             value=self._warehouses[0] if self._warehouses else "Primary")
+        self.cust_vat_var = tk.StringVar()
         lbl(r2, "Name", padl=0)
         entry(r2, self.cust_name_var, 16, expand=True)
+        # v7.8: a customer who is not in Customers — the name and tax number
+        # typed here go on the bill and are printed
+        try:
+            from modules import country as _ctry0
+            _tax_lbl = _ctry0.tax_no_label()
+        except Exception:
+            _tax_lbl = "VAT No."
+        lbl(r2, _tax_lbl)
+        entry(r2, self.cust_vat_var, 14)
         lbl(r2, "Mobile")
         entry(r2, self.cust_mobile_var, 11)
         lbl(r2, "Address")
@@ -2021,6 +2031,9 @@ class InvoiceForm:
         if city:
             info += f"  |  City: {city}"
         self.cust_info_var.set(info)
+        if not getattr(self, "_loading_doc", False) and hasattr(self, "cust_vat_var"):
+            self._fill_party_boxes(cust)
+        self._show_party_facts(cust)
         if hasattr(self, "points_info_var"):
             self._update_totals()
 
@@ -2214,9 +2227,10 @@ class InvoiceForm:
         self.points_var.trace("w", lambda *a: self._update_totals())
 
         # ── row 2: last bill · options · Net / VAT / Balance ───
-        self.lbill_var = tk.StringVar(value="L.Bill: 0.00   Bal: 0.00")
-        tk.Label(r2, textvariable=self.lbill_var, font=("Segoe UI", 8, "bold"),
+        self.lbill_var = tk.StringVar(value="L.Bill: —")
+        tk.Label(r2, textvariable=self.lbill_var, font=("Segoe UI", 9, "bold"),
                  bg=C["card_bg"], fg=C["primary"]).pack(side="left")
+        self.win.after_idle(self._show_party_facts)          # v7.8: balance + last bills
         self.print_after_var = tk.BooleanVar(value=True)
         self.vatno_var = tk.BooleanVar(value=False)
         self.auto_calc_var = tk.BooleanVar(value=True)
@@ -2260,6 +2274,9 @@ class InvoiceForm:
         self._loaded_points = self._saved_points_extra = 0
         if hasattr(self, "points_var"):
             self.points_var.set("0")
+        if hasattr(self, "cust_vat_var"):          # v7.8: the next bill starts with the boxes of its customer
+            self._fill_party_boxes(getattr(self, "_selected_customer", None) or {})
+        self._show_party_facts()
         # a cleared form is a NEW document: back to today's system date
         today = date.today().isoformat()
         self.hdr_vars["invoice_date"].set(today)
@@ -2777,6 +2794,8 @@ class InvoiceForm:
                 self.cust_combo.set(
                     f"{cust['customer_code']} — {cust['customer_name_en']}")
                 self._on_customer_select()
+                if hasattr(self, "cust_vat_var"):
+                    self._fill_party_boxes(cust, inv)       # v7.8: what the bill was saved with
 
         # Lines → load into the new grid
         lines = db.fetchall(
@@ -2883,6 +2902,11 @@ class InvoiceForm:
                       "to permit this.")
                 self.save_status.set("⚠️  Insufficient stock.")
                 return False
+
+        _vat_err = self._check_typed_vat()        # v7.8: the tax number typed on the bill
+        if _vat_err:
+            self.save_status.set("❌ " + _vat_err)
+            return False
 
         # Get customer id
         sel_code = self.cust_var.get().split(" — ")[0]
@@ -3025,6 +3049,7 @@ class InvoiceForm:
             # Remember the id so Save+Print (F2/F3) and Hold can use it
             self.invoice_id = inv_id
             self._save_pos(inv_id)
+            self._save_party_snapshot(inv_id, cust)
 
             # Insert lines (bill discount already spread in — v6.9)
             for i, ln in enumerate(save_lines, 1):
@@ -3168,6 +3193,63 @@ class InvoiceForm:
                 e = "Not saved — " + str(e)
             self.save_status.set(f"❌ {str(e)[:100]}")
             return False
+
+    # ── v7.8: the customer typed on the bill ───────────────────
+    def _typed_party(self):
+        g = lambda n: (getattr(self, n).get().strip() if hasattr(self, n) else "")
+        vat = "".join(g("cust_vat_var").split()).upper()
+        return {"name": g("cust_name_var"), "vat": vat, "mobile": g("cust_mobile_var"),
+                "address": g("cust_addr_var")}
+
+    def _check_typed_vat(self):
+        """'' when fine, else what is wrong with the typed tax number."""
+        from modules import party_info as _PI
+        return _PI.check_tax_no(self._typed_party()["vat"])
+
+    def _save_party_snapshot(self, inv_id, cust):
+        """Name / tax no. / mobile / address typed in the window → on the bill
+        (printed). Blank boxes keep what the customer card has."""
+        from modules import party_info as _PI
+        _PI.save_typed(inv_id, self._typed_party(), cust)
+
+    def _fill_party_boxes(self, cust, inv=None):
+        """A customer from the list fills Name / tax no. / mobile / address
+        (they can be changed for this bill); the Cash Customer leaves them
+        empty to type in. A saved bill shows what it was saved with."""
+        try:
+            from modules import party_info as _PI
+            cash = _PI.is_cash("customer", cust.get("customer_id"))
+        except Exception:
+            cash = False
+        if inv is not None:
+            nm = inv.get("customer_name_en") or ""
+            same_as_card = nm == (cust.get("customer_name_en") or "")
+            self.cust_name_var.set("" if (cash and same_as_card) else nm)
+            self.cust_vat_var.set(inv.get("customer_vat_no") or "")
+            self.cust_mobile_var.set(inv.get("customer_phone") or ("" if cash else cust.get("mobile") or cust.get("phone") or ""))
+            self.cust_addr_var.set(inv.get("customer_address_en") or ("" if cash else cust.get("address_en") or cust.get("city_en") or ""))
+            return
+        if cash:
+            for v in (self.cust_name_var, self.cust_vat_var, self.cust_mobile_var, self.cust_addr_var):
+                v.set("")
+            return
+        self.cust_name_var.set(cust.get("customer_name_en") or "")
+        self.cust_vat_var.set(cust.get("vat_registration_no") or "")
+        self.cust_mobile_var.set(cust.get("mobile") or cust.get("phone") or "")
+        self.cust_addr_var.set(cust.get("address_en") or cust.get("city_en") or "")
+
+    def _show_party_facts(self, cust=None):
+        """L.Bill / Bal under the grid: the customer's ledger balance and last
+        bill, and the last bill of this counter."""
+        cust = cust or getattr(self, "_selected_customer", None) or {}
+        try:
+            from modules import party_info as _PI
+            txt = _PI.text("customer", cust.get("customer_id"), exclude_id=self.invoice_id)
+        except Exception:
+            txt = "L.Bill: —"
+        if hasattr(self, "lbill_var"):
+            self.lbill_var.set(txt)
+        return txt
 
     def _save_pos(self, inv_id):
         """v7.0 India: keep the bill's place of supply (posting reads it)."""

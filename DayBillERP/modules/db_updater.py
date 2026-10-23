@@ -10,7 +10,7 @@ import re
 try:                                    # one version for the whole app (config/version.py)
     from config.version import VERSION as APP_VERSION
 except Exception:
-    APP_VERSION = "7.7.0"
+    APP_VERSION = "7.8.0"
 
 # Ordered list of database patches shipped with the app.
 # (filename relative to project root, human description, version)
@@ -35,6 +35,12 @@ PATCHES = [
 
 # What changed in each version (shown in the Updates panel)
 CHANGELOG = [
+    ("7.8.0", ["👤 Sales window, POS, Purchase, vouchers: picking a customer / supplier shows the ledger "
+               "balance, his last bill and the last bill of this counter.",
+               "✍ A customer not in the list: type Name, VAT / GST No., Mobile, Address on the bill — printed on "
+               "the invoice (POS: Name + tax no.; Purchase: supplier name + tax no.). The tax no. is checked.",
+               "🔒 Columns tool: Bar Code / Product / Qty / Rate can be made read only (right-click a heading or "
+               "Columns…); POS ▤ Columns: Qty / Rate read only."]),
     ("7.7.0", ["⌨ Sales / Purchase / Return / Order grids: ← → walk the cells (Rate → Qty → Product → Bar Code), "
                "↑ ↓ in Qty / Rate; ← at the start of any box of a transaction window goes back one box.",
                "🪟 Transaction windows open as a big normal window (not full size) — POS stays full screen.",

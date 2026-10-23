@@ -2,6 +2,24 @@
 
 Newest first. The short guide is in the main README.md.
 
+## 👤 v7.8.0 — party balance & last bill, customer typed on the bill, read-only columns
+
+- Sales window (L.Bill line under the grid), POS (customer strip), Purchase
+  (under the supplier) and vouchers: the party's ledger balance (Dr / Cr),
+  their last bill (number, date, amount) and the last bill of this counter;
+  the Cash Customer shows the counter's last bill (modules/party_info).
+- A customer who is not in Customers: Name, VAT / TRN / GSTIN, Mobile and
+  Address typed in the Sales window are kept on the bill (snapshot columns,
+  new sales_invoices.customer_phone — patch zzz_v780_party_snapshot) and
+  printed in "Bill To". A customer from the list fills the boxes (they can
+  be changed for one bill). POS: Name + tax no. boxes; Purchase: supplier
+  name + tax no. The tax number is checked against the country's format
+  before saving.
+- Columns tool: Bar Code, Product, Qty and Rate of the item grid can be made
+  🔒 read only (right-click the heading, or Columns… ▸ Read only) — kept per
+  window type on this PC; Enter / arrows skip a read-only cell. POS ▤
+  Columns: Qty / Rate read only (pad, + / −, line window).
+
 ## 🍽 v7.7.0 — arrow keys, normal-size windows, POS picture menu, account groups, Print at
 
 - Item grid of Sales / Purchase / Returns / Quotations / Orders: ← at the start

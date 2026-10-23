@@ -511,6 +511,24 @@ class PurchaseForm:
         self.sup_cb.pack(fill="x", ipady=6, pady=(2, 0))
         tk.Button(supc, text="📥 Load purchase order", font=("Segoe UI", 8), relief="flat",
                   bg=C["content_bg"], cursor="hand2", command=self._load_order).pack(anchor="w", pady=(2, 0))
+        # v7.8: a supplier who is not in the list — name / tax no. kept on the
+        # bill; and the supplier's balance + last bill
+        try:
+            from modules import country as _ctry0
+            _tax_lbl = _ctry0.tax_no_label()
+        except Exception:
+            _tax_lbl = "VAT No."
+        tr = tk.Frame(supc, bg=C["card_bg"]); tr.pack(fill="x", pady=(2, 0))
+        self.sup_name_var, self.sup_vat_var = tk.StringVar(), tk.StringVar()
+        for _t, _v, _w in (("Name", self.sup_name_var, 14), (_tax_lbl, self.sup_vat_var, 13)):
+            tk.Label(tr, text=_t, font=("Segoe UI", 8), bg=C["card_bg"],
+                     fg=C["text_secondary"]).pack(side="left", padx=(0, 3))
+            tk.Entry(tr, textvariable=_v, width=_w, font=("Segoe UI", 9), relief="solid",
+                     bd=1).pack(side="left", padx=(0, 6))
+        self.sup_facts_var = tk.StringVar(value="")
+        tk.Label(supc, textvariable=self.sup_facts_var, font=("Segoe UI", 8, "bold"), bg=C["card_bg"],
+                 fg=C["primary"], anchor="w", justify="left", wraplength=420).pack(fill="x")
+        self.sup_cb.bind("<<ComboboxSelected>>", lambda e: self._show_supplier_facts(), add="+")
 
         # Warehouse
         whc = cell(1, 1, "Warehouse")
@@ -526,6 +544,33 @@ class PurchaseForm:
         self.hdr["notes"] = tk.StringVar()
         tk.Entry(nc, textvariable=self.hdr["notes"], font=("Segoe UI", 10),
                  relief="solid", bd=1).pack(fill="x", ipady=6, pady=(2, 0))
+
+    # ── v7.8: supplier facts / typed supplier ─────────────────
+    def _cur_supplier(self):
+        code = (self.sup_var.get() or "").split(" — ")[0]
+        return next((x for x in self.suppliers if x["supplier_code"] == code), None)
+
+    def _show_supplier_facts(self):
+        s = self._cur_supplier() or {}
+        try:
+            from modules import party_info as _PI
+            txt = _PI.text("supplier", s.get("supplier_id"), exclude_id=self.purchase_id) if s else ""
+        except Exception:
+            txt = ""
+        if hasattr(self, "sup_facts_var"):
+            self.sup_facts_var.set(txt)
+        return txt
+
+    def _save_supplier_snapshot(self, pid, s):
+        """The supplier's name / tax no. on the bill: the typed ones, else the card's."""
+        nm = self.sup_name_var.get().strip() if hasattr(self, "sup_name_var") else ""
+        vat = "".join((self.sup_vat_var.get() if hasattr(self, "sup_vat_var") else "").split()).upper()
+        same = not nm or nm == (s.get("supplier_name_en") or "")
+        db.execute("UPDATE purchase_invoices SET supplier_name_en=?, supplier_name_ar=?, supplier_vat_no=? "
+                   "WHERE purchase_id=?",
+                   ((nm or s.get("supplier_name_en") or "")[:200],
+                    ((s.get("supplier_name_ar") or "") if same else nm)[:200],
+                    (vat or s.get("vat_registration_no") or "")[:15], pid))
 
     def _load_order(self):
         """📥 Load a purchase order: pick it, pick its lines and quantities
@@ -649,6 +694,11 @@ class PurchaseForm:
                      or "walk" in str(s.get("supplier_name_en", "")).lower()), None)
         if cash:
             self.sup_cb.set(f"{cash['supplier_code']} — {cash['supplier_name_en']}")
+        for _v in ("sup_name_var", "sup_vat_var"):        # v7.8
+            if hasattr(self, _v):
+                getattr(self, _v).set("")
+        if hasattr(self, "sup_facts_var"):
+            self.win.after_idle(self._show_supplier_facts)
 
     def _next_number(self):
         try:
@@ -728,6 +778,12 @@ class PurchaseForm:
             s = next((x for x in self.suppliers if x["supplier_id"] == sid), None)
             if s:
                 self.sup_cb.set(f"{s['supplier_code']} — {s['supplier_name_en']}")
+                if hasattr(self, "sup_name_var"):        # v7.8: a typed supplier name / tax no.
+                    nm = inv.get("supplier_name_en") or ""
+                    self.sup_name_var.set("" if nm == (s.get("supplier_name_en") or "") else nm)
+                    v = inv.get("supplier_vat_no") or ""
+                    self.sup_vat_var.set("" if v == (s.get("vat_registration_no") or "") else v)
+        self._show_supplier_facts()
         lines = db.fetchall("SELECT * FROM purchase_invoice_lines WHERE purchase_id=? "
                             "ORDER BY line_number", (self.purchase_id,))
         try:
@@ -796,6 +852,14 @@ class PurchaseForm:
             pass
         self.status_var.set("")
         s = self.suppliers[self.sup_cb.current()]
+        try:                                       # v7.8: a typed tax number must be right
+            from modules import party_info as _PI
+            _why = _PI.check_tax_no(self.sup_vat_var.get() if hasattr(self, "sup_vat_var") else "")
+        except Exception:
+            _why = ""
+        if _why:
+            self.status_var.set("❌ " + _why)
+            return False
         from modules.doc_math import doc_totals, round_lines
         self._lines = round_lines(self._lines)
         T = doc_totals(self._lines, (getattr(getattr(self, "grid", None), "tax_mode", "exclusive") == "inclusive"))     # v6.9.2: the ZATCA way
@@ -856,6 +920,7 @@ class PurchaseForm:
                             sub, sub, vat, total, status, pay_status, paid))
                 pid = db.last_identity("purchase_invoices", "purchase_id")
             self.purchase_id = pid
+            self._save_supplier_snapshot(pid, s)
             for i, ln in enumerate(self._lines, 1):
                 db.execute("INSERT INTO purchase_invoice_lines (purchase_id, "
                            "line_number, product_id, product_code, product_name_en, "

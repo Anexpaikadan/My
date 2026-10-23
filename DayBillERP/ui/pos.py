@@ -46,6 +46,12 @@ def _set_price_incl(on):
     except Exception:
         pass
 
+def _pos_locked(col):
+    """v7.8: POS ▸ ▤ Columns ▸ 🔒 read only (qty / rate): shown on the bill,
+    but the cashier can't type a new value."""
+    return cfg.flag("pos_lock_%s" % col, False)
+
+
 # v7.6 picture menu colours (light card grid, 4.5:1 text)
 PIC_BG, PIC_CHIP, PIC_ON = "#F1F5F9", "#E2E8F0", "#1D4ED8"
 PIC_INK, PIC_MUTED, PIC_EDGE, PIC_PRICE = "#0F172A", "#475569", "#CBD5E1", "#15803D"
@@ -370,6 +376,22 @@ class POSWindow:
                                 state="disabled" if k == "name" else "normal",
                                 cursor="hand2")
             cb.pack(fill="x", padx=18, pady=2)
+        tk.Label(d, text="🔒 Read only (shown, but can't be typed in)", font=("Segoe UI", 9, "bold"),
+                 bg="white", fg=self.MUTED, anchor="w", padx=14).pack(fill="x", pady=(10, 2))
+        lock_vars = {}
+
+        def lock_changed():
+            for col, v in lock_vars.items():
+                cfg.set("pos_lock_%s" % col, bool(v.get()))
+            try:
+                cfg.save_settings()
+            except Exception:
+                pass
+        for col, txt in (("qty", "Qty — only scanning / +1 adds"), ("rate", "Rate — always the product's price")):
+            lock_vars[col] = tk.BooleanVar(value=_pos_locked(col))
+            tk.Checkbutton(d, text="🔒 " + txt, variable=lock_vars[col], command=lock_changed, bg="white",
+                           font=("Segoe UI", 11), anchor="w", activebackground="white",
+                           cursor="hand2").pack(fill="x", padx=18, pady=2)
         tk.Button(d, text="Done", font=("Segoe UI", 11, "bold"), bg=self.BLUE, fg="white",
                   relief="flat", cursor="hand2", command=d.destroy).pack(
                       fill="x", padx=14, pady=12, ipady=6)
@@ -478,6 +500,23 @@ class POSWindow:
         self.cust_label_var = tk.StringVar(value="Cash Account")
         tk.Label(cust, textvariable=self.cust_label_var, font=("Segoe UI", 10, "bold"),
                  bg=STRIP, fg="#2ECC71").pack(side="left", padx=10)
+        # v7.8: a customer who is not in Customers — the name and tax number
+        # typed here are printed on the bill
+        try:
+            from modules import country as _ctry0
+            _tax_lbl = _ctry0.tax_no_label()
+        except Exception:
+            _tax_lbl = "VAT No."
+        self.walkin_name_var, self.walkin_vat_var = tk.StringVar(), tk.StringVar()
+        for _txt, _var, _w in (("Name", self.walkin_name_var, 16), (_tax_lbl, self.walkin_vat_var, 15)):
+            tk.Label(cust, text=_txt, font=("Segoe UI", 9, "bold"), bg=STRIP, fg="#9FC3D6").pack(
+                side="left", padx=(8, 4))
+            tk.Entry(cust, textvariable=_var, font=("Segoe UI", 11), width=_w, bg="#EAF4FA",
+                     relief="flat", bd=0).pack(side="left", ipady=3)
+        # the customer's balance / last bill and this counter's last bill
+        self.party_info_var = tk.StringVar(value="")
+        tk.Label(cust, textvariable=self.party_info_var, font=("Segoe UI", 9, "bold"),
+                 bg=STRIP, fg="#F1C40F").pack(side="right", padx=(6, 12))
         self.cust_entry.bind("<KeyRelease>", self._on_cust_type)
         self.cust_entry.bind("<Down>", lambda e: self._cust_dd_move(1))
         self.cust_entry.bind("<Up>", lambda e: self._cust_dd_move(-1))
@@ -1758,8 +1797,30 @@ class POSWindow:
             self.cust_label_var.set(label)
         except Exception:
             pass
+        self._show_party_facts()
         if not quiet:
             self.status_var.set("Customer: " + label + _extra)
+
+    def _show_party_facts(self):
+        """v7.8: balance + last bill of the customer, last bill of this counter."""
+        try:
+            from modules import party_info as _PI
+            cid = (getattr(self, "_customer", None) or {}).get("customer_id")
+            txt = _PI.text("customer", cid, exclude_id=getattr(self, "_loaded_invoice_id", None))
+        except Exception:
+            txt = ""
+        try:
+            self.party_info_var.set(txt)
+        except Exception:
+            pass
+        return txt
+
+    def _walkin(self):
+        """What the cashier typed in Name / tax no. (printed on the bill)."""
+        try:
+            return {"name": self.walkin_name_var.get().strip(), "vat": self.walkin_vat_var.get().strip()}
+        except Exception:
+            return {}
 
     def _loyalty_card(self, code):
         """The customer of a scanned loyalty card → this bill's customer."""
@@ -1785,6 +1846,9 @@ class POSWindow:
         return True
 
     def _reset_customer(self):
+        for _v in ("walkin_name_var", "walkin_vat_var"):        # v7.8: no typed name / tax no. either
+            if hasattr(self, _v):
+                getattr(self, _v).set("")
         self.cust_search_var.set("")
         self._close_cust_dd()
         self._set_customer(self._default_customer)
@@ -2334,6 +2398,11 @@ class POSWindow:
     def _bump(self, delta):
         if self._sel_idx is None or not (0 <= self._sel_idx < len(self.cart)):
             self.status_var.set("Select a line first."); return
+        if _pos_locked("qty"):
+            self.status_var.set("🔒 Qty is read only (▤ Columns) — scan the item again to add one.")
+            try: self.win.bell()
+            except Exception: pass
+            return
         ln = self.cart[self._sel_idx]
         sign = -1 if ln["quantity"] < 0 else 1          # a RETURN line counts down
         mag = abs(ln["quantity"]) + delta
@@ -2556,6 +2625,14 @@ class POSWindow:
             try: self.win.bell()
             except Exception: pass
             target = "qty"
+        if target in ("qty", "rate") and _pos_locked(target):
+            if not quiet:
+                self.status_var.set("🔒 %s is read only (▤ Columns)." % target.title())
+                try: self.win.bell()
+                except Exception: pass
+            target = "rate" if target == "qty" and not _pos_locked("rate") and \
+                cfg.flag("allow_price_edit", True) else "paid"
+            quiet = True
         pending = getattr(self, "_pad_buffer", "")
         if pending and target in ("qty", "rate") and not quiet \
                 and getattr(self, "_pad_target", "qty") != "paid":
@@ -2644,6 +2721,10 @@ class POSWindow:
         except ValueError:
             self.status_var.set("Invalid number."); return
         ln = self.cart[idx]
+        if self._pad_target in ("qty", "rate") and _pos_locked(self._pad_target):
+            self.status_var.set("🔒 %s is read only (▤ Columns)." % self._pad_target.title())
+            self._pad_buffer = ""; self._pad_show()
+            return
         if self._pad_target == "qty":
             if val <= 0:
                 self.status_var.set("Quantity must be more than 0 (use ✕ / Remove line).")
@@ -2753,6 +2834,7 @@ class POSWindow:
         self.paid_var.set("0.00")
         # every new sale starts on the default Cash account
         self._reset_customer()
+        self._show_party_facts()
         self._render_cart()
         self.barcode_var.set("")
         self.barcode_entry.focus_set()
@@ -2827,6 +2909,15 @@ class POSWindow:
                 return
         if not self._shift_ok():
             return
+        try:                                   # v7.8: a tax number typed for the bill must be right
+            from modules import party_info as _PI
+            _why = _PI.check_tax_no(self._walkin().get("vat"))
+        except Exception:
+            _why = ""
+        if _why:
+            self.status_var.set("❌ " + _why)
+            messagebox.showwarning("Tax number", _why, parent=self.win)
+            return False
         if tenders is not None:
             _c, _k = float(tenders[0] or 0), float(tenders[1] or 0)
             if _k > 0.004 and not cfg.payment_enabled("card"):
@@ -2915,7 +3006,7 @@ class POSWindow:
                                   ("partial" if paid_amt > 0.005 else "unpaid"))
                 except Exception:
                     pass
-            _h = dict(cust_id=cust_id, cust_en=cust_en, cust_ar=cust_ar,
+            _h = dict(cust_id=cust_id, cust_en=cust_en, cust_ar=cust_ar, walkin=self._walkin(),
                       gross=gross, vat=vat, total=total, pay=pay,
                       pay_status=pay_status, paid_amt=paid_amt,
                       cash_amt=cash_amt, card_amt=card_amt,
@@ -3063,6 +3154,7 @@ class POSWindow:
                         pay_label = _td.method_name(_tl) if paid_amt > 0.005 else pay_label
                     invoice_id, invoice_number = self._write_invoice(
                         P["sale"], dict(cust_id=cust_id, cust_en=cust_en, cust_ar=cust_ar,
+                                        walkin=self._walkin(),
                                         gross=P["s_gross"], vat=P["s_vat"], total=S,
                                         pay=pay_label, pay_status=pay_status,
                                         paid_amt=paid_amt, cash_amt=inv_cash,
@@ -3265,6 +3357,13 @@ class POSWindow:
                                (_when[11:19] or None, _when, invoice_id))
                 except Exception:
                     pass
+        if h.get("walkin"):                              # v7.8: name / tax no. typed at the till
+            try:
+                from modules import party_info as _PI
+                _PI.save_typed(invoice_id, h["walkin"], {"customer_name_en": h.get("cust_en"),
+                                                         "customer_name_ar": h.get("cust_ar")})
+            except Exception as _e:
+                print("[DayBill] typed customer not kept on the bill:", _e)
         for i, ln in enumerate(lines, 1):
             db.execute(
                 "INSERT INTO sales_invoice_lines (invoice_id, line_number, product_id, "
@@ -3952,7 +4051,8 @@ class CartLineEditDialog(tk.Toplevel):
                             or line.get("factor", 1) or 1) or 1.0
         self.base_unit = (min(self.units, key=lambda u: float(u.get("conversion_factor") or 1))
                           .get("unit_name_en", "Unit")) if self.units else line.get("unit_name", "Unit")
-        self.can_price = cfg.flag("allow_price_edit", True)
+        self.can_price = cfg.flag("allow_price_edit", True) and not _pos_locked("rate")
+        self.can_qty = not _pos_locked("qty")
 
         hdr = tk.Frame(self, bg=self.NAVY); hdr.pack(fill="x")
         tk.Label(hdr, text=line.get("product_name_en", ""), font=("Segoe UI", 14, "bold"),
@@ -4004,7 +4104,8 @@ class CartLineEditDialog(tk.Toplevel):
                   relief="flat", cursor="hand2", width=3,
                   command=lambda: self._step(-1)).pack(side="left", ipady=4)
         self.qe = tk.Entry(qf, textvariable=self.qty_var, font=("Segoe UI", 20, "bold"),
-                           width=6, justify="center", relief="solid", bd=1, bg="#EAF4FA")
+                           width=6, justify="center", relief="solid", bd=1, bg="#EAF4FA",
+                           state="normal" if self.can_qty else "readonly")
         self.qe.pack(side="left", ipady=6, padx=3)
         tk.Button(qf, text="+", font=("Segoe UI", 16, "bold"), bg="#15803D", fg="white",
                   relief="flat", cursor="hand2", width=3,
@@ -4086,6 +4187,8 @@ class CartLineEditDialog(tk.Toplevel):
             return 0.0
 
     def _step(self, d):
+        if not self.can_qty:
+            return
         q = max(0.0, self._val(self.qty_var) + d)
         self.qty_var.set("%g" % q)
         self._refresh()
@@ -4094,6 +4197,8 @@ class CartLineEditDialog(tk.Toplevel):
         e = self.active
         var = self.price_var if e is self.pe else self.qty_var
         if e is self.pe and not self.can_price:
+            return
+        if e is self.qe and not self.can_qty:
             return
         cur = var.get()
         try:

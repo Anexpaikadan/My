@@ -413,10 +413,15 @@ def generate_invoice_pdf(invoice: dict, company: dict, lines: list,
     if invoice.get("customer_vat_no"):
         text_en(rx, ry, f"{K['tax_no_label']}: {invoice['customer_vat_no']}",
                 "Helvetica", 8, GREY); ry -= 5 * mm
-    cust_addr = ", ".join(filter(None, [
+    # v7.8: the address / mobile typed on the bill (a customer not in the list)
+    typed_addr = str(invoice.get("customer_address_en") or invoice.get("customer_address") or "").strip()
+    cust_addr = typed_addr[:70] or ", ".join(filter(None, [
         invoice.get("customer_city_en"), invoice.get("customer_country_code")]))
     if cust_addr:
         text_en(rx, ry, cust_addr, "Helvetica", 8, GREY); ry -= 5 * mm
+    if str(invoice.get("customer_phone") or "").strip():
+        text_en(rx, ry, "Mobile: %s" % str(invoice["customer_phone"]).strip()[:30], "Helvetica", 8, GREY)
+        ry -= 5 * mm
     if K["pos_text"]:                     # India: place of supply
         text_en(rx, ry, "Place of supply: " + K["pos_text"], "Helvetica-Bold", 8, DARK)
 

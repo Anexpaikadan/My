@@ -1,7 +1,16 @@
-# DayBill ERP  v7.7.0
+# DayBill ERP  v7.8.0
 
 Billing, POS, inventory, accounts and HR for shops in 🇸🇦 Saudi Arabia, 🇦🇪 the UAE and 🇮🇳 India.
 **VAT / GST by country · ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
+
+## 👤 v7.8 — party balance, customer typed on the bill, read-only columns
+
+- **Balance and last bill** of the customer / supplier you pick (Sales,
+  POS, Purchase, vouchers), and the last bill of this counter.
+- **A customer who is not in the list:** type Name, VAT / GST No., Mobile
+  and Address on the bill — they are printed on the invoice.
+- **🔒 Read-only columns:** right-click a heading (Bar Code, Product, Qty,
+  Rate) ▸ Read only — e.g. the Rate always comes from the product.
 
 ## 🍽 v7.7 — arrow keys, normal-size windows, POS picture menu, account groups
 

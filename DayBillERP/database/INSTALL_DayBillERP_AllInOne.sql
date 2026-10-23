@@ -1,6 +1,6 @@
 -- ============================================================
 -- DayBill ERP — FULL DATABASE INSTALLER  (clean new installation)
--- generated 2026-10-23 16:10  ·  ONE file = the whole database
+-- generated 2026-10-23 17:05  ·  ONE file = the whole database
 -- ------------------------------------------------------------
 -- WHAT IT MAKES
 --   • the DayBillERP database (Arabic collation) and EVERY table,
@@ -5971,6 +5971,20 @@ BEGIN
     -- Employee Loans is money staff owe the shop: an asset (it was filed as one, outside any group)
     UPDATE accounts SET account_type = N'asset' WHERE account_code = N'2320' AND account_type <> N'asset';
 END;
+GO
+
+GO
+
+-- ▼▼▼  PATCH: zzz_v780_party_snapshot_patch.sql  ▼▼▼
+-- ============================================================
+-- DayBill ERP v7.8 — the customer typed on the bill
+--   A sale to someone who is not in Customers: the Name, VAT / GST No.,
+--   Mobile and Address typed in the Sales window / POS are kept ON THE
+--   BILL (the snapshot columns) and printed. The mobile number gets its
+--   own column.
+-- ============================================================
+IF OBJECT_ID('sales_invoices','U') IS NOT NULL AND COL_LENGTH('sales_invoices','customer_phone') IS NULL
+    ALTER TABLE sales_invoices ADD customer_phone NVARCHAR(30) NULL;
 GO
 
 GO

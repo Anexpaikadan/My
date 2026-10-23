@@ -625,6 +625,14 @@ class MultiVoucherForm:
             txt += "   →   after this voucher: %s" % mv.balance_text(bal + amt)
         if self.journal_id:
             txt += "   (this voucher's saved amount is already in the balance)"
+        if k in ("customer", "supplier"):          # v7.8: and their last bill
+            try:
+                from modules import party_info as _PI
+                lb = _PI.last_bill(k, i)
+                if lb:
+                    txt += "   ·   last bill #%s  %s  (%s)" % (lb["number"], _PI.money(lb["total"]), lb["date"])
+            except Exception:
+                pass
         self.info_var.set(txt)
 
     def _editing_line(self):

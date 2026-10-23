@@ -194,6 +194,9 @@ class InvoiceGrid(tk.Frame):
             set_name(self.tree, "entry_grid:%s" % (self.doc_type or "sales"))
         except Exception:
             pass
+        # v7.8: the cells you type in — each can be made 🔒 read only in the
+        # Columns tool (e.g. the sales Rate always comes from the product)
+        self.tree._ct_editable = {"barcode", "product", "qty", "rate"}
         self.tree.bind("<<ColumnsChanged>>", lambda e: self._sync_footer_widths(), add="+")
         self.tree.bind("<Configure>", lambda e: self.after_idle(self._sync_footer_widths), add="+")
 
@@ -669,6 +672,8 @@ class InvoiceGrid(tk.Frame):
             return
         col_no = int(col.replace("#", "")) - 1
         key = COLUMNS[col_no][0]
+        if key in ("product", "barcode", "qty", "rate") and self._locked(key):
+            return self._say_locked(key)
         if key == "product":
             self._edit_product(idx)
         elif key == "barcode":
@@ -682,6 +687,28 @@ class InvoiceGrid(tk.Frame):
         col_index = [c[0] for c in COLUMNS].index(key)
         return self.tree.bbox(str(idx), f"#{col_index+1}")
 
+    def _locked(self, key):
+        """🔒 read only in the Columns tool (v7.8)."""
+        try:
+            from ui.table_columns import is_locked
+            return is_locked(self.tree, key)
+        except Exception:
+            return False
+
+    def _say_locked(self, key):
+        name = {"barcode": "Bar Code", "product": "Product", "qty": "Qty", "rate": "Rate"}.get(key, key)
+        try:
+            from ui.fluent_widgets import show_toast
+            show_toast(self.winfo_toplevel(), "🔒  %s is read only here (right-click the heading ▸ "
+                                              "Read only to change)" % name, kind="info", ms=2200)
+        except Exception:
+            pass
+        try:
+            self.bell()
+        except Exception:
+            pass
+        return None
+
     def _hidden(self, key):
         """True when the user hid this column (columns tool)."""
         try:
@@ -692,7 +719,9 @@ class InvoiceGrid(tk.Frame):
 
     def _edit_barcode(self, idx):
         """Scan or type a barcode; Enter resolves the product instantly."""
-        if self._hidden("barcode"):             # Bar Code column hidden → Product
+        if self._hidden("barcode") or self._locked("barcode"):   # hidden / 🔒 → Product
+            if self._locked("product"):
+                return None                      # both read only: no typing in this grid
             return self._edit_product(idx)
         if self._editor is not None:            # never leave an old editor behind
             self._close_editor()
@@ -835,6 +864,10 @@ class InvoiceGrid(tk.Frame):
         return "break"
 
     def _edit_product(self, idx, prefill=None):
+        if self._locked("product"):
+            if not self._locked("barcode") and not self._hidden("barcode") and prefill is None:
+                return self._edit_barcode(idx)
+            return self._say_locked("product")
         if self._editor is not None:            # never leave an old editor behind
             self._close_editor()
         bbox = self._cell_bbox(idx, "product")
@@ -1266,20 +1299,22 @@ class InvoiceGrid(tk.Frame):
         if not any(l.get("_blank") and not l.get("product_id") for l in self.lines):
             self.add_blank_row()
 
+    def _price_edit_off(self):
+        """Settings ▸ Sales ▸ Allow Price Edit off (sales documents)."""
+        if self.cfg is None or self.doc_type not in ("sales", "sales_return", "pos"):
+            return False
+        try:
+            return not self.cfg.flag("allow_price_edit", True)
+        except Exception:
+            return False
+
     def _edit_number(self, idx, key):
-        # Settings ▸ Sales: price editing can be locked for sales documents
-        if key == "rate" and self.cfg is not None and \
-                self.doc_type in ("sales", "sales_return", "pos"):
-            try:
-                if not self.cfg.flag("allow_price_edit", True):
-                    self.bell()
-                    return
-            except Exception:
-                pass
         self._close_editor()
         if idx >= len(self.lines):
             return
-        if self._hidden(key):                   # column hidden → next step of the flow
+        # hidden, 🔒 read only, or (Rate) price editing turned off → the next
+        # step of the flow, so Enter never gets stuck on a cell you can't type in
+        if self._hidden(key) or self._locked(key) or (key == "rate" and self._price_edit_off()):
             if key == "qty":
                 return self._edit_number(idx, "rate")
             nxt = idx + 1
@@ -1325,7 +1360,7 @@ class InvoiceGrid(tk.Frame):
     CELL_ORDER = ("barcode", "product", "qty", "rate")
 
     def _cells(self):
-        return [k for k in self.CELL_ORDER if not self._hidden(k)]
+        return [k for k in self.CELL_ORDER if not self._hidden(k) and not self._locked(k)]
 
     def _open_cell(self, idx, key):
         if key == "barcode":
@@ -1356,7 +1391,7 @@ class InvoiceGrid(tk.Frame):
 
     def _keep_number(self, idx, key, var):
         """Leaving Qty / Rate with an arrow keeps what was typed (no flow)."""
-        if key not in ("qty", "rate") or idx >= len(self.lines):
+        if key not in ("qty", "rate") or idx >= len(self.lines) or self._locked(key):
             return
         ln = self.lines[idx]
         if not ln.get("product_id"):
