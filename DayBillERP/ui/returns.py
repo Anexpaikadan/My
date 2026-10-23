@@ -275,6 +275,18 @@ class ReturnForm:
                                   ("Discount", "disc", C["danger"]), ("Taxable", "taxable", None),
                                   ("VAT", "vat", C["info"])],
                                  ("NET TOTAL (SAR)", "total"), C)
+        # v7.9: refunded from / into which cash / bank account(s); the rest
+        # goes on the party's account
+        from ui.pay_panel import PayPanel
+        self._cur_total = 0.0
+        self.pay = PayPanel(self.bottom_bar, C, lambda: self._cur_total,
+                            title="Refund from" if self.mode == "sales" else "Refund into",
+                            state="disabled" if self.view_only else "normal")
+        try:
+            self.hdr["payment"].trace_add("write", lambda *a: self.pay.set_auto(self.hdr["payment"].get()))
+            self.pay.set_auto(self.hdr["payment"].get())
+        except Exception:
+            pass
 
     def _build_footer(self, C):
         footer = tk.Frame(self.win, bg=C["card_bg"],
@@ -328,10 +340,16 @@ class ReturnForm:
         self.tvars["taxable"].set(f"{T['taxable']:,.2f}")
         self.tvars["vat"].set(f"{vat:,.2f}")
         self.tvars["total"].set(f"{total:,.2f}")
+        self._cur_total = total
+        if getattr(self, "pay", None) is not None:
+            self.pay.total_changed()
 
     def _set_defaults(self):
         self.hdr["date"].set(date.today().isoformat())
         self.hdr["number"].set(self._next_number())
+        if getattr(self, "pay", None) is not None:       # v7.9: the panel follows Refund as
+            self.pay.manual = False
+            self.pay.set_auto(self.hdr["payment"].get())
         # Default party = Cash customer/supplier, so a cash return
         # doesn't require picking a party first (mirrors Sales Invoice
         # and Purchase Invoice).
@@ -501,6 +519,17 @@ class ReturnForm:
         except Exception:
             pass
         self._on_change()
+        if getattr(self, "pay", None) is not None:       # v7.9: what it was refunded with
+            try:
+                from modules import tenders as _td
+                rows = _td.lines_for(f"{self.mode}_return", self.return_id)
+            except Exception:
+                rows = []
+            if rows:
+                self.pay.set_rows(rows)
+            else:
+                self.pay.manual = False
+                self.pay.set_auto(self.hdr["payment"].get())
         self._mark_clean()
 
     # ── close guard: ask only when lines are not saved ────────
@@ -590,6 +619,22 @@ class ReturnForm:
         disc = sum(l.get("discount_amount", 0) for l in self._lines)
         cf = self.cfg
         editing = bool(self.return_id)
+        pp = getattr(self, "pay", None)
+        if pp is not None:                         # v7.9: the payment area decides
+            self._cur_total = total
+            if pp.manual:
+                from ui.pay_panel import ok_for_party
+                why = ok_for_party(self._party_id() is None, total, pp.paid(),
+                                   "customer" if self.mode == "sales" else "supplier")
+                if why:
+                    self.status.set("⚠️  " + why)
+                    messagebox.showwarning("Refund", why, parent=self.win)
+                    return False
+                m = pp.method()
+                if m in ("cash", "credit", "card", "bank_transfer"):
+                    self.hdr["payment"].set(m)
+            else:
+                pp.set_auto(self.hdr["payment"].get())
         number = self.hdr["number"].get() if editing else self._next_number()
 
         # v5.27: header, lines, stock, journal and ZATCA are ONE transaction
@@ -640,6 +685,8 @@ class ReturnForm:
                      self.hdr["payment"].get(), self.hdr["notes"].get(),
                      "confirmed" if confirm else "draft"))
             rid = self.return_id if editing else db.last_identity(cf["table"], "return_id")
+            if pp is not None:                     # v7.9: which accounts refunded how much
+                pp.save(f"{self.mode}_return", rid)
             for i, ln in enumerate(self._lines, 1):
                 db.execute(
                     f"INSERT INTO {cf['lines']} (return_id, line_number, product_id, "

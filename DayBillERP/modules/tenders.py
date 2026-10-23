@@ -146,7 +146,7 @@ def save_lines(doc_type, doc_id, lines):
         db.execute("INSERT INTO payment_tenders (doc_type, doc_id, method, amount, reference, "
                    "account_id) VALUES (?,?,?,?,?,?)",
                    (doc_type, int(doc_id), x["method"], x["amount"], x.get("reference") or None,
-                    account_for(x["method"])))
+                    x.get("account_id") or account_for(x["method"])))   # v7.9: the account picked
     return True
 
 
@@ -154,9 +154,12 @@ def lines_for(doc_type, doc_id):
     if not doc_id:
         return []
     try:
-        return [dict(r) for r in db.fetchall(
+        rows = [dict(r) for r in db.fetchall(
             "SELECT method, amount, reference, account_id FROM payment_tenders "
             "WHERE doc_type=? AND doc_id=? ORDER BY tender_id", (doc_type, int(doc_id))) or []]
+        for r in rows:                     # DECIMAL from the database → float (sums with floats)
+            r["amount"] = round(_f(r.get("amount")), 2)
+        return rows
     except Exception:
         return []
 
@@ -194,15 +197,16 @@ def for_posting(lines):
     out = {"cash": 0.0, "bank": 0.0, "other": {}}
     cash_acc, bank_acc = ad.cash(), ad.bank()
     for x in lines or []:
-        acc = account_for(x["method"])
+        acc = x.get("account_id") or account_for(x["method"])   # v7.9: the account picked on the bill
         if acc is None:
             continue
+        amt = _f(x.get("amount"))
         if acc == cash_acc:
-            out["cash"] = round(out["cash"] + x["amount"], 2)
+            out["cash"] = round(out["cash"] + amt, 2)
         elif acc == bank_acc:
-            out["bank"] = round(out["bank"] + x["amount"], 2)
+            out["bank"] = round(out["bank"] + amt, 2)
         else:
-            out["other"][acc] = round(out["other"].get(acc, 0.0) + x["amount"], 2)
+            out["other"][acc] = round(out["other"].get(acc, 0.0) + amt, 2)
     return out
 
 

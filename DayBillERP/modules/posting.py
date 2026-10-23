@@ -385,12 +385,19 @@ def post_pos_sale(invoice_id, invoice_date, taxable, vat, total,
 
 # ── Purchase posting ──────────────────────────────────────────
 def post_purchase(invoice_id, invoice_date, supplier_id, taxable, vat, total,
-                  cash=0, bank=0, invoice_number="", tax_lines=None):
+                  cash=0, bank=0, invoice_number="", tax_lines=None, others=None):
+    """others (v7.9): {account_id: amount} paid from another cash / bank
+    account (Petty Cash, a second bank …); the rest stays on the supplier's
+    account."""
     if not enabled():
         return None
     total = round(total or 0, 2)
-    cash, bank = _clamp_tenders(total, cash, bank)
-    on_credit = round(total - (cash + bank), 2)
+    others = {a: round(v or 0, 2) for a, v in (others or {}).items() if a and round(v or 0, 2)}
+    o_keys = list(others)
+    vals = _clamp_tenders(total, cash, bank, *[others[k] for k in o_keys])
+    cash, bank = vals[:2]
+    others = {k: v for k, v in zip(o_keys, vals[2:]) if v}
+    on_credit = round(total - (cash + bank + sum(others.values())), 2)
     if on_credit < 0:
         on_credit = 0
 
@@ -400,6 +407,8 @@ def post_purchase(invoice_id, invoice_date, supplier_id, taxable, vat, total,
         lines.append((ad.cash(), 0, cash, "Cash paid"))
     if bank:
         lines.append((ad.bank(), 0, bank, "Bank paid"))
+    for acc_id, amt in others.items():
+        lines.append((acc_id, 0, amt, "Paid"))
     if on_credit > 0:
         sup = _party_ledger("supplier", supplier_id)
         lines.append((sup, 0, on_credit, "On account"))
@@ -410,16 +419,45 @@ def post_purchase(invoice_id, invoice_date, supplier_id, taxable, vat, total,
 
 
 # ── Sales Return ──────────────────────────────────────────────
+def _split_money(total, paid):
+    """paid {"cash", "bank", "other": {account: amount}} → ([(account, amount)],
+    rest left on the party's account). Above the total is change (cash first)."""
+    paid = paid or {}
+    pairs = []
+    if round(paid.get("cash") or 0, 2):
+        pairs.append([ad.cash(), round(paid.get("cash") or 0, 2)])
+    if round((paid.get("bank") or 0) + (paid.get("card") or 0), 2):
+        pairs.append([ad.bank(), round((paid.get("bank") or 0) + (paid.get("card") or 0), 2)])
+    for acc, amt in (paid.get("other") or {}).items():
+        if acc and round(amt or 0, 2):
+            pairs.append([acc, round(amt, 2)])
+    vals = _clamp_tenders(total, *[a for _acc, a in pairs])
+    pairs = [(acc, v) for (acc, _a), v in zip(pairs, vals) if v and acc]
+    rest = round(round(total or 0, 2) - sum(v for _acc, v in pairs), 2)
+    return pairs, max(rest, 0.0)
+
+
 def post_sales_return(return_id, entry_date, customer_id, taxable, vat, total,
-                      method="cash", number="", tax_lines=None):
+                      method="cash", number="", tax_lines=None, paid=None):
     """
     Dr Sales Returns (contra-revenue) + Dr VAT Output reversal
     Cr Cash/Card/Bank refunded, or Cr Customer ledger (credit note).
+    paid (v7.9): {"cash", "bank", "other": {account: amount}} — part refunded
+    from those accounts, the rest credited to the customer's account.
     """
     if not enabled():
         return None
     lines = [(ad.sales_return(), round(taxable, 2), 0, "Sales return")]
     _tax(lines, vat, tax_lines, ad.tax_payable(), "VAT output reversal", credit=False)
+    if paid is not None:
+        pairs, rest = _split_money(total, paid)
+        for acc, amt in pairs:
+            lines.append((acc, 0, amt, "Refund to customer"))
+        if rest > 0:
+            lines.append((_party_ledger("customer", customer_id), 0, rest, "Credit to customer account"))
+        _round_line(lines, True)
+        return post_journal(entry_date, f"Sales Return {number}".strip(),
+                            lines, "sales_return", return_id, reference=number)
     m = (method or "cash").lower()
     refund = (ad.method_account(m) if m in ("cash", "card", "mada", "cheque", "bank",
               "bank_transfer", "gateway") else None)
@@ -435,11 +473,13 @@ def post_sales_return(return_id, entry_date, customer_id, taxable, vat, total,
 
 # ── Purchase Return ───────────────────────────────────────────
 def post_purchase_return(return_id, entry_date, supplier_id, taxable, vat, total,
-                         method="credit", number="", tax_lines=None):
+                         method="credit", number="", tax_lines=None, paid=None):
     """
     Dr Cash/Bank refunded, or Dr Supplier ledger (reduce payable)
     Cr Inventory (the goods leave stock at their purchase value)
     + Cr VAT Input reversal.
+    paid (v7.9): part refunded into those cash / bank accounts, the rest
+    reduces what we owe the supplier.
     """
     if not enabled():
         return None
@@ -447,7 +487,13 @@ def post_purchase_return(return_id, entry_date, supplier_id, taxable, vat, total
     debit = (ad.method_account(m) if m in ("cash", "card", "mada", "cheque", "bank",
                                           "bank_transfer") else None)
     lines = []
-    if debit:
+    if paid is not None:
+        pairs, rest = _split_money(total, paid)
+        for acc, amt in pairs:
+            lines.append((acc, amt, 0, "Refund from supplier"))
+        if rest > 0:
+            lines.append((_party_ledger("supplier", supplier_id), rest, 0, "Reduce payable"))
+    elif debit:
         lines.append((debit, round(total, 2), 0, "Refund from supplier"))
     else:
         lines.append((_party_ledger("supplier", supplier_id),

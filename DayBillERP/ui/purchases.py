@@ -526,6 +526,12 @@ class PurchaseForm:
         # ── the supplier's balance card
         self._bal_card = H.balance_card()
 
+    def _pay_values(self):
+        try:
+            return list(cfg.payment_methods(["cash", "credit", "card", "bank_transfer", "cheque"]))
+        except Exception:
+            return ["cash", "credit", "card", "bank_transfer", "cheque"]
+
     # ── v7.8: supplier facts / typed supplier ─────────────────
     def _cur_supplier(self):
         code = (self.sup_var.get() or "").split(" — ")[0]
@@ -587,6 +593,15 @@ class PurchaseForm:
                                   ("Discount", "disc", C["danger"]), ("Taxable", "taxable", None),
                                   ("VAT", "vat", C["info"])],
                                  ("NET TOTAL (SAR)", "total"), C)
+        # v7.9: paid from which cash / bank account(s); the rest on the supplier's account
+        from ui.pay_panel import PayPanel
+        self._cur_total = 0.0
+        self.pay = PayPanel(self.bottom_bar, C, lambda: self._cur_total, title="Paid from")
+        try:
+            self.hdr["payment"].trace_add("write", lambda *a: self.pay.set_auto(self.hdr["payment"].get()))
+            self.pay.set_auto(self.hdr["payment"].get())
+        except Exception:
+            pass
 
     def _build_footer(self, C):
         footer = tk.Frame(self.win, bg=C["card_bg"],
@@ -665,10 +680,16 @@ class PurchaseForm:
         self.tvars["taxable"].set(f"{T['taxable']:,.2f}")
         self.tvars["vat"].set(f"{vat:,.2f}")
         self.tvars["total"].set(f"{total:,.2f}")
+        self._cur_total = total
+        if getattr(self, "pay", None) is not None:
+            self.pay.total_changed()
 
     def _set_defaults(self):
         self.hdr["date"].set(date.today().isoformat())
         self.hdr["number"].set(self._next_number())
+        if getattr(self, "pay", None) is not None:       # v7.9: a new bill: the panel follows Payment
+            self.pay.manual = False
+            self.pay.set_auto(self.hdr["payment"].get())
         # Default supplier = Cash ledger supplier, so a cash purchase
         # (walk-in / spot-buy) doesn't require picking a supplier first —
         # mirrors the Sales Invoice's default-to-Cash-customer behaviour.
@@ -776,6 +797,17 @@ class PurchaseForm:
         except Exception:
             pass
         self._on_change()
+        if getattr(self, "pay", None) is not None:       # v7.9: what it was paid with
+            try:
+                from modules import tenders as _td
+                rows = _td.lines_for("purchase", self.purchase_id)
+            except Exception:
+                rows = []
+            if rows:
+                self.pay.set_rows(rows)
+            else:
+                self.pay.manual = False
+                self.pay.set_auto(inv.get("payment_method") or "credit")
         self._mark_clean()
 
     # ── close guard: ask only when lines are not saved ────────
@@ -853,7 +885,26 @@ class PurchaseForm:
         # paid now (cash / bank / card / cheque) or on the supplier's account
         method = str(self.hdr["payment"].get() or "credit").lower()
         paid = total if method in ("cash", "bank_transfer", "bank", "card", "cheque") else 0
-        pay_status = "paid" if paid else "unpaid"
+        pp = getattr(self, "pay", None)
+        if pp is not None:                         # v7.9: the payment area decides
+            self._cur_total = total
+            if pp.manual:
+                try:
+                    from modules import party_info as _PI
+                    from ui.pay_panel import ok_for_party
+                    why = ok_for_party(_PI.is_cash("supplier", s["supplier_id"]), total, pp.paid(), "supplier")
+                except Exception:
+                    why = ""
+                if why:
+                    self.status_var.set("⚠️  " + why)
+                    messagebox.showwarning("Payment", why, parent=self.win)
+                    return False
+                method = pp.method()
+                self.hdr["payment"].set(method) if method in (self._pay_values() or [method]) else None
+            else:
+                pp.set_auto(method)
+            paid = round(min(total, pp.paid()), 2)
+        pay_status = ("paid" if paid >= total - 0.005 else ("partial" if paid > 0.005 else "unpaid"))
         _moved = False
         if self.purchase_id:
             try:   # supplier payments settled on this purchase stay counted
@@ -906,6 +957,8 @@ class PurchaseForm:
                 pid = db.last_identity("purchase_invoices", "purchase_id")
             self.purchase_id = pid
             self._save_supplier_snapshot(pid, s)
+            if getattr(self, "pay", None) is not None:      # v7.9: which accounts paid how much
+                self.pay.save("purchase", pid)
             for i, ln in enumerate(self._lines, 1):
                 db.execute("INSERT INTO purchase_invoice_lines (purchase_id, "
                            "line_number, product_id, product_code, product_name_en, "

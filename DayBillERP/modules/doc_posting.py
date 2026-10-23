@@ -549,6 +549,9 @@ def _post_doc(kind, doc_id, h, tenders):
                                  cash=t.get("cash", 0), card=0,
                                  bank=t.get("bank", 0) + t.get("card", 0),
                                  invoice_number=num, others=t.get("other"), tax_lines=tl)
+    # v7.9: money split saved on the document (payment area: one row per
+    # cash / bank account) — the rest stays on the party's account
+    paid = tenders if tenders is not None else _saved_split(kind, doc_id)
     if kind == "purchase":
         sup = h.get("supplier_id")
         if sup:
@@ -556,6 +559,10 @@ def _post_doc(kind, doc_id, h, tenders):
                 posting.ensure_party_account("supplier", sup)
             except Exception:
                 pass
+        if paid is not None:
+            return posting.post_purchase(doc_id, d, sup, taxable, vat, total,
+                                         cash=paid.get("cash", 0), bank=paid.get("bank", 0),
+                                         invoice_number=num, tax_lines=tl, others=paid.get("other"))
         cash = total if method == "cash" else 0
         bank = total if method in ("bank_transfer", "bank", "card", "cheque") else 0
         return posting.post_purchase(doc_id, d, sup, taxable, vat, total,
@@ -563,10 +570,33 @@ def _post_doc(kind, doc_id, h, tenders):
     if kind == "sales_return":
         return posting.post_sales_return(doc_id, d, h.get("customer_id"), taxable,
                                          vat, total, method=method or "cash",
-                                         number=num, tax_lines=tl)
+                                         number=num, tax_lines=tl, paid=paid)
     return posting.post_purchase_return(doc_id, d, h.get("supplier_id"), taxable,
                                         vat, total, method=method or "credit",
-                                        number=num, tax_lines=tl)
+                                        number=num, tax_lines=tl, paid=paid)
+
+
+def _saved_split(kind, doc_id):
+    """The payment rows a purchase / return was saved with → for posting;
+    None when it has none (it then posts by its payment method, as before)."""
+    try:
+        from modules import tenders as _td
+        rows = _td.lines_for(kind, doc_id)
+        if rows or _split_marker(kind, doc_id):
+            return _td.for_posting(rows)
+    except Exception:
+        pass
+    return None
+
+
+def _split_marker(kind, doc_id):
+    """A document saved with the payment area but nothing paid (all on the
+    party's account) keeps one 0.00 'on_account' row as a marker."""
+    try:
+        return bool(db.execute_scalar("SELECT COUNT(*) FROM payment_tenders WHERE doc_type=? AND doc_id=? "
+                                      "AND method='on_account'", (kind, int(doc_id))))
+    except Exception:
+        return False
 
 
 # ── public API ────────────────────────────────────────────────

@@ -2236,6 +2236,20 @@ class InvoiceForm:
         self.lbill_var = tk.StringVar(value="L.Bill: —")
         tk.Label(r2, textvariable=self.lbill_var, font=("Segoe UI", 9, "bold"),
                  bg=C["card_bg"], fg=C["primary"]).pack(side="left")
+        # v7.9: which cash account the Cash Rcvd goes into, which bank / card
+        # account the Card amount goes into — every cash and bank account
+        from ui.pay_panel import money_accounts
+        _ma = money_accounts()
+        self._cash_accts = {"%s · %s" % (a["code"], a["name"]): a["account_id"] for a in _ma if a["kind"] == "cash"}
+        self._bank_accts = {"%s · %s" % (a["code"], a["name"]): a["account_id"] for a in _ma if a["kind"] != "cash"}
+        self.cash_acct_var = tk.StringVar(value=next(iter(self._cash_accts), ""))
+        self.bank_acct_var = tk.StringVar(value=next(iter(self._bank_accts), ""))
+        for _t, _v, _vals in (("Cash a/c", self.cash_acct_var, list(self._cash_accts)),
+                              ("Card a/c", self.bank_acct_var, list(self._bank_accts))):
+            if _vals:
+                tk.Label(r2, text=_t, font=F8, bg=C["card_bg"], fg=C["text_secondary"]).pack(side="left", padx=(8, 2))
+                ttk.Combobox(r2, textvariable=_v, values=_vals, width=16, font=("Segoe UI", 8),
+                             state="disabled" if self.view_only else "readonly").pack(side="left")
         self.win.after_idle(self._show_party_facts)          # v7.8: balance + last bills
         self.print_after_var = tk.BooleanVar(value=True)
         self.vatno_var = tk.BooleanVar(value=False)
@@ -2780,6 +2794,23 @@ class InvoiceForm:
             self.cash_var.set(f"{float(tend.get('cash') or 0):,.2f}")
             self.card_var.set(f"{float(tend.get('bank') or 0):,.2f}")
             self.bank_var.set("0.00")
+            try:                    # v7.9: the accounts it was paid into
+                from modules import tenders as _td
+                rows = _td.lines_for("sales", self.invoice_id)
+                cash_amt = bank_amt = 0.0
+                for r in rows:
+                    acc = r.get("account_id")
+                    lab_c = next((l for l, a in self._cash_accts.items() if a == acc), None)
+                    lab_b = next((l for l, a in self._bank_accts.items() if a == acc), None)
+                    if lab_c:
+                        self.cash_acct_var.set(lab_c); cash_amt += float(r.get("amount") or 0)
+                    elif lab_b:
+                        self.bank_acct_var.set(lab_b); bank_amt += float(r.get("amount") or 0)
+                if cash_amt or bank_amt:
+                    self.cash_var.set(f"{cash_amt:,.2f}")
+                    self.card_var.set(f"{bank_amt:,.2f}")
+            except Exception:
+                pass
             # v6.9.5: a bill paid in full in cash stays paid in full when its
             # lines change (Cash Rcvd ticked → the cash follows the total);
             # before, the difference went on the customer's account
@@ -2964,6 +2995,7 @@ class InvoiceForm:
 
         inv_status = "confirmed" if confirm else "draft"
         inv_uuid   = str(uuid.uuid4())
+        self._walkin_cust = cust
 
         # ── Money taken now (Cash / Card / Bank boxes) ──────────
         # Cash→cash account, Card/Bank→bank account, the rest→customer.
@@ -2985,6 +3017,18 @@ class InvoiceForm:
             # 'credit' leaves all zero → whole bill on the customer's account
         t_bank += t_card
         paid_amt = round(min(total, t_cash + t_bank), 2)
+        if confirm:                       # v7.9: the Cash customer has no account of its own
+            try:
+                from modules import party_info as _PI
+                from ui.pay_panel import ok_for_party
+                _why = ok_for_party(_PI.is_cash("customer", cust.get("customer_id")), total, paid_amt)
+            except Exception:
+                _why = ""
+            if _why:
+                self.save_status.set("❌ " + _why)
+                if not silent:
+                    messagebox.showwarning("Payment", _why, parent=self.win)
+                return False
         _moved = False
         if self.invoice_id:
             try:   # receipts settled on this invoice later stay counted
@@ -3127,8 +3171,9 @@ class InvoiceForm:
             except Exception:
                 pass
             try:
-                doc_posting.sync("sales", inv_id,
-                                 tenders={"cash": t_cash, "bank": t_bank})
+                # v7.9: the cash / bank accounts picked for Cash Rcvd and Card
+                _tsplit = self._save_money_rows(inv_id, t_cash, t_bank, total)
+                doc_posting.sync("sales", inv_id, tenders=_tsplit)
             except Exception as e:
                 doc_posting.last_warning = str(e)[:200]
             _tx.commit()          # everything above is kept together (or the except undoes it)
@@ -3260,6 +3305,23 @@ class InvoiceForm:
         if hasattr(self, "lbill_var"):
             self.lbill_var.set(txt or "L.Bill: —")
         return txt
+
+    def _money_accounts_picked(self):
+        from modules import account_defaults as ad
+        cash = (getattr(self, "_cash_accts", {}) or {}).get(self.cash_acct_var.get()) if hasattr(self, "cash_acct_var") else None
+        bank = (getattr(self, "_bank_accts", {}) or {}).get(self.bank_acct_var.get()) if hasattr(self, "bank_acct_var") else None
+        return cash or ad.cash(), bank or ad.bank()
+
+    def _save_money_rows(self, inv_id, t_cash, t_bank, total):
+        """Cash Rcvd / Card → payment rows with their accounts (kept, so an
+        edit or a re-confirm posts the same) → the split for posting."""
+        from modules import tenders as _td
+        cash_acc, bank_acc = self._money_accounts_picked()
+        rows = _td.clean([("cash", t_cash, ""), ("bank", t_bank, "")], total)
+        for x in rows:
+            x["account_id"] = cash_acc if x["method"] == "cash" else bank_acc
+        _td.save_lines("sales", inv_id, rows)
+        return _td.for_posting(rows)
 
     def _save_pos(self, inv_id):
         """v7.0 India: keep the bill's place of supply (posting reads it)."""

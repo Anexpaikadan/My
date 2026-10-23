@@ -258,7 +258,17 @@ def apply_return(kind, return_id):
         return 0.0
     if str(h.get("return_status") or "confirmed").lower() != "confirmed":
         return 0.0
-    if (str(h.get("payment_method") or "").strip().lower() or r["default"]) in _REFUND:
+    on_acc = _f(h.get("total_amount"))
+    try:                                   # v7.9: refunded in part (payment area rows)
+        from modules import tenders as _td
+        rows = _td.lines_for(kind, return_id)
+    except Exception:
+        rows = []
+    if rows:
+        on_acc = round(on_acc - sum(_f(x.get("amount")) for x in rows if x.get("method") != "on_account"), 2)
+        if on_acc <= 0.005:
+            return 0.0
+    elif (str(h.get("payment_method") or "").strip().lower() or r["default"]) in _REFUND:
         return 0.0
     ref = str(h.get(r["ref"]) or "").strip()
     if not ref:
@@ -274,7 +284,7 @@ def apply_return(kind, return_id):
     bill = db.fetchone(sql + f" ORDER BY {s['id']} DESC", tuple(params))
     if not bill:
         return 0.0
-    amt = round(min(_f(h.get("total_amount")), _f(bill["t"]) - _f(bill["p"])), 2)
+    amt = round(min(on_acc, _f(bill["t"]) - _f(bill["p"])), 2)
     if amt <= 0.005:
         return 0.0
     _bump(r["bill"], bill["id"], amt)
