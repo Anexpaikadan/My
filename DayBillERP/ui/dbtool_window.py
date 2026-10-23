@@ -253,6 +253,7 @@ class DbToolApp:
         self._btn(acts, "➡ Use as TO (DayBill)", self._use_to, primary=True)
         self._btn(acts, "🆕 New DayBill database…", self._new_db)
         self._btn(acts, "📂 Open a SQLite file (e.g. Aronium)…", self._open_file)
+        self._btn(acts, "📗 Open Excel / CSV export…", self._open_sheet)
         tk.Label(p, text="Pick FROM and TO in the boxes at the top, or double-click a database here. "
                  "Tip: restore the other program's .bak under a NEW name first (DayBill login ▸ "
                  "Database Settings ▸ ♻ Restore), then pick it as FROM.", font=("Segoe UI", 8),
@@ -414,6 +415,19 @@ class DbToolApp:
         except Exception as e:
             messagebox.showerror("Open", str(e)[:300], parent=self.root)
 
+    def _open_sheet(self):
+        """v7.2: the old program's Excel workbook or CSV file(s) as FROM —
+        each sheet / file is a table (first row = column names)."""
+        p = filedialog.askopenfilename(parent=self.root, title="Excel workbook or CSV export of the old program",
+                                       filetypes=[("Excel / CSV", "*.xlsx *.xlsm *.csv *.txt"),
+                                                  ("All files", "*.*")])
+        if not p:
+            return
+        try:
+            self._set_source(CV.open_file(p), os.path.basename(p))
+        except Exception as e:
+            messagebox.showerror("Open", str(e)[:300], parent=self.root)
+
     def _use_to(self, name=None, quiet=False):
         name = name or self._sel_db()
         if not name:
@@ -444,7 +458,33 @@ class DbToolApp:
         if db.is_daybill() is False:
             messagebox.showwarning("TO", "'%s' is not a DayBill database." % name, parent=self.root)
             return False
+        self._country_rules()
         return True
+
+    def _country_rules(self):
+        """v7.2: the TO company's country decides VAT / GST, currency and
+        tax-number checks of the conversion."""
+        try:
+            from modules import country as K
+            K.invalidate()
+            c = K.code()
+            p_ = K.profile(c)
+            rates = CV.tax_rates(c)
+            self.opt_vat_values = ["%s  %g%%" % (k, r) if r else "%s  %s" % (k, {"Z": "zero-rated", "E": "exempt",
+                                                                                "O": "out of scope", "G0": "nil"}
+                                                                           .get(k, "0%"))
+                                   for k, r in rates.items()]
+            self.country_txt = "TO company: %s · %s %g%% · %s · %s" % (
+                p_.get("name", c), K.tax_name(c), K.std_rate(c), p_.get("currency", ""), K.tax_no_label(c))
+        except Exception:
+            self.opt_vat_values = ["S  15%", "Z  zero-rated", "E  exempt"]
+            self.country_txt = ""
+        try:
+            self.opt_vat_cb["values"] = self.opt_vat_values
+            self.opt_vat.set(self.opt_vat_values[0])
+            self.country_var.set(self.country_txt)
+        except Exception:
+            pass
 
     def _new_db(self):
         name = simpledialog.askstring("New DayBill database", "Name of the new database (letters, "
@@ -700,6 +740,9 @@ class DbToolApp:
         self.found_var = tk.StringVar(value="Pick FROM and TO on page 1, then read it.")
         tk.Label(p, textvariable=self.found_var, font=("Segoe UI", 9, "bold"), bg=C["content_bg"],
                  fg=C["text_primary"], anchor="w").pack(fill="x", padx=14)
+        self.country_var = tk.StringVar(value=getattr(self, "country_txt", ""))
+        tk.Label(p, textvariable=self.country_var, font=("Segoe UI", 8, "bold"), bg=C["content_bg"],
+                 fg=C["primary"], anchor="w").pack(fill="x", padx=14)
         panes = ttk.Panedwindow(p, orient="vertical")
         panes.pack(fill="both", expand=True, padx=8, pady=(2, 0))
         mid = tk.Frame(panes, bg=C["content_bg"])
@@ -752,9 +795,10 @@ class DbToolApp:
             tk.Checkbutton(right, text=txt, variable=var, bg=C["card_bg"]).pack(anchor="w", padx=8)
         r1 = tk.Frame(right, bg=C["card_bg"]); r1.pack(fill="x", padx=10, pady=(4, 0))
         tk.Label(r1, text="VAT if none", bg=C["card_bg"]).pack(side="left")
-        self.opt_vat = tk.StringVar(value="S  15%")
-        ttk.Combobox(r1, textvariable=self.opt_vat, state="readonly", width=13,
-                     values=["S  15%", "Z  zero-rated", "E  exempt"]).pack(side="left", padx=4)
+        vals = getattr(self, "opt_vat_values", None) or ["S  15%", "Z  zero-rated", "E  exempt"]
+        self.opt_vat = tk.StringVar(value=vals[0])
+        self.opt_vat_cb = ttk.Combobox(r1, textvariable=self.opt_vat, state="readonly", width=16, values=vals)
+        self.opt_vat_cb.pack(side="left", padx=4)
         r2 = tk.Frame(right, bg=C["card_bg"]); r2.pack(fill="x", padx=10, pady=(4, 0))
         tk.Label(r2, text="Opening date", bg=C["card_bg"]).pack(side="left")
         self.opt_date = tk.StringVar(value="")
@@ -773,6 +817,7 @@ class DbToolApp:
         self.btn_convert = self._btn(top, "⬇ Convert into DayBill", self._convert, primary=True, side="right")
         self._btn(top, "💾 Save map", self._save_map, side="right")
         self._btn(top, "✔ Check", self._check, side="right")
+        self._btn(top, "🧾 Verify after convert", self._verify, side="right")
         self._btn(top, "👁 Preview", self._preview, side="right")
         acts = tk.Frame(low, bg=C["content_bg"]); acts.pack(fill="x", pady=(2, 0))
         self._btn(acts, "Export the problems (CSV)…", self._export_issues, side="right")
@@ -1028,13 +1073,18 @@ class DbToolApp:
             self._db_audit(tgt, who, "convert", "database", tgt, line)
             self.last_result = res
             errs = res.get("errors") or []
+            try:                                   # v7.2: DayBill compared with the old data
+                vrows = [("verify", w, "old %s" % o_, "DayBill %s" % d_, "✔" if ok_ else "⚠ different")
+                         for w, o_, d_, ok_ in CV.verify(p, opts)]
+            except Exception:
+                vrows = []
             self._show_rows(("Result", "", "", "", "Details"),
                             [("products", "new %d" % res["inserted"], "updated %d" % res["updated"], "", ""),
                              ("barcodes", res["barcodes"], "", "", ""),
                              ("customers", res["customers"], "", "", ""),
                              ("suppliers", res["suppliers"], "", "", ""),
                              ("equity", "%.2f" % (res.get("equity") or 0), "", "", "Opening Balance Equity")]
-                            + [("error", "", "", "", e) for e in errs])
+                            + [("error", "", "", "", e) for e in errs] + vrows)
             self.sum_var.set("✅ Converted into '%s'. Opening Balance Equity now %.2f — when all openings are in, "
                              "press 'Close opening balances to capital'. Log: %s" % (
                                  self.tgt_name, res.get("equity") or 0, res.get("log")))
@@ -1046,6 +1096,26 @@ class DbToolApp:
                 save_db_config(conf)
         self.say("⏳ Converting … (the screen comes back when it is done)")
         self._bg(work, done)
+
+    def _verify(self, quiet=False):
+        """v7.2: compare DayBill with the old data — counts, stock value,
+        opening balances (read only)."""
+        if not self.plan or not self.tgt_name:
+            if not quiet:
+                messagebox.showinfo("Verify", "Convert first (or press ✔ Check, then Verify).", parent=self.root)
+            return None
+        try:
+            rows = CV.verify(self.plan, self._options())
+        except Exception as e:
+            self.say("❌ Verify: %s" % str(e)[:200], ok=False)
+            return None
+        self._show_rows(("Check", "Old program", "DayBill", "", "Result"),
+                        [(w, o, d, "", "✔ matches" if ok else "⚠ different — look at the problems list")
+                         for w, o, d, ok in rows])
+        bad = sum(1 for r in rows if not r[3])
+        self.sum_var.set("🧾 Verify: %s" % ("everything matches ✔" if not bad else
+                                           "%d line(s) differ — see the table" % bad))
+        return rows
 
     def _close_equity(self):
         if not self.tgt_name:

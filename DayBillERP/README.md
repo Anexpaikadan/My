@@ -1,7 +1,33 @@
-# DayBill ERP  v7.1.0
+# DayBill ERP  v7.2.0
 
 Billing, POS, inventory, accounts and HR for shops in 🇸🇦 Saudi Arabia, 🇦🇪 the UAE and 🇮🇳 India.
 **VAT / GST by country · ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
+
+## 📱 v7.2 — PDT: purchase orders, barcode labels, offer posters · Database Tool
+
+- **📝 Purchase Order on the PDT.** Pick the supplier, scan items (cost shown
+  and editable), or press **⚠ Low stock** to add everything at or under its
+  reorder level (items bought from that supplier first). Save makes an open
+  Purchase Order in DayBill (no stock, no journal) and offers **💬 WhatsApp**
+  to send it to the supplier. **📋 Orders** lists the latest orders.
+- **🔖 Barcode Labels on the PDT.** Scan the shelf, set how many labels, pick
+  the label design: DayBill prints them on the PC's label printer (or keeps the
+  PDF in Mobile ▸ Inbox ▸ 🖨 Print PDF). Products without a barcode get one.
+  The phone can open the PDF too.
+- **🎨 Offer Poster on the PDT.** Scan the products, choose % off, new price,
+  amount off, buy X get Y or price only, headline (English / Arabic), dates,
+  size (A4, A5, A4 landscape, square post) and design: DayBill draws a
+  printable poster PDF with old and new prices, can **start the offer in POS**
+  at the same time, and gives the ChatGPT / Gemini prompt as well. Offers ▸
+  Poster prompt has the same **🖨 Printable poster (PDF)** button.
+- Users get the new modules in Mobile ▸ Users (PO / Labels / Poster).
+- **Database Tool ▸ Convert** follows the TO company's country: VAT 15 %
+  (Saudi), 5 % (UAE) or the GST slabs (India 5 / 12 / 18 / 28 / 3 / nil), prices
+  before tax get each product's own rate, its currency, VAT No. / TRN / GSTIN
+  checks, GST state from the GSTIN or a State / Emirate column, HSN codes.
+  New: **📗 Open Excel / CSV export** as FROM (each sheet / file a table) and
+  **🧾 Verify** — DayBill compared with the old data (counts, stock value,
+  opening balances), also shown right after converting.
 
 ## 💸 v7.1 — multi-line vouchers (cash and bank in one window)
 

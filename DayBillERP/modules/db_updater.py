@@ -10,7 +10,7 @@ import re
 try:                                    # one version for the whole app (config/version.py)
     from config.version import VERSION as APP_VERSION
 except Exception:
-    APP_VERSION = "7.1.0"
+    APP_VERSION = "7.2.0"
 
 # Ordered list of database patches shipped with the app.
 # (filename relative to project root, human description, version)
@@ -35,6 +35,12 @@ PATCHES = [
 
 # What changed in each version (shown in the Updates panel)
 CHANGELOG = [
+    ("7.2.0", ["📱 PDT: 📝 Purchase Order (scan, ⚠ low stock fill, WhatsApp to the supplier), 🔖 Barcode "
+               "Labels (printed on the PC's label printer) and 🎨 Offer Poster (printable poster PDF, offer "
+               "started in POS).",
+               "Offers ▸ 🖨 Printable poster (PDF).",
+               "Database Tool ▸ Convert follows the company's country (VAT / GST, currency, VAT No. / TRN / "
+               "GSTIN, GST state, HSN), reads Excel / CSV exports and verifies the result."]),
     ("7.1.0", ["💸 Multi-line vouchers: Receipt, Payment, Contra and Journal in one window — every line "
                "picks its own cash or bank account; saved as separate CR + BR / CP + BP vouchers or one.",
                "Party balance while typing, cheque no. / date, input VAT on payment lines, amount in words.",

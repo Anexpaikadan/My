@@ -120,11 +120,10 @@ class MultiVoucherForm:
                 "SELECT COL_LENGTH('accounts','is_group')") is not None else "0"
             rows = db.fetchall(
                 "SELECT account_id, account_code, account_name_en FROM accounts a "
-                "WHERE ISNULL(is_active,1)=1 AND %s=0 AND NOT EXISTS (SELECT 1 FROM accounts c "
-                "WHERE c.parent_account_id=a.account_id AND ISNULL(c.is_active,1)=1) "
-                "ORDER BY account_code" % grp) or []
+                "WHERE ISNULL(is_active,1)=1 AND %s=0 ORDER BY account_code" % grp) or []
         except Exception:
             rows = []
+        party_acc -= set(m["account_id"] for m in self.money)    # Cash Customer → cash account
         self.accounts = [r for r in rows if r["account_id"] not in party_acc]
         self.acct_label = {}                    # account_id → label
         self.choice = {}                        # label → target

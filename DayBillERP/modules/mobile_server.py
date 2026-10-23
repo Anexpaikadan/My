@@ -5,7 +5,7 @@
 # shop Wi-Fi open  http://<this PC's IP>:8090  in Chrome (or the
 # DayBill Android app) and get the DayBill Mobile app:
 #   Goods In · Goods Out · Stock Count · Stock Adjust · Product Info ·
-#   Price Check · Van Sales
+#   Price Check · Van Sales · Purchase Order · Barcode Labels · Offer Poster
 # Every request is answered by modules/mobile_api.py. All database work
 # runs on DayBill's own (main) thread, one request at a time, so the
 # desktop and the phones never trip over each other.
@@ -24,7 +24,7 @@ DEFAULT_PORT = 8090
 try:
     from config.version import VERSION
 except Exception:
-    VERSION = "7.1.0"
+    VERSION = "7.2.0"
 
 
 def local_ips():
@@ -98,7 +98,7 @@ def handle(method, path, query, body, token):
                          "shop": c.get("company_name_en") or "", "shop_ar": c.get("company_name_ar") or ""}
         if path == "/api/login" and method == "POST":
             return 200, M.login(body.get("username"), body.get("password"), body.get("device", ""))
-        user = M.user_for(token)
+        user = M.user_for(token or q.get("t", ""))     # a PDF link carries ?t=<token>
         if path == "/api/me":
             return 200, {"user": user["name"], "modules": user["modules"]}
         if path == "/api/logout":
@@ -111,10 +111,21 @@ def handle(method, path, query, body, token):
             return 200, {"items": M.search(user, q.get("q", ""))}
         if path == "/api/product":
             return 200, M.product_card(int(q.get("id") or 0), int(q["unit_id"]) if q.get("unit_id") else None,
-                                       show_cost="goods_in" in user["modules"])
+                                       show_cost=bool({"goods_in", "po"} & set(user["modules"])))
         if path == "/api/suppliers":
-            M.need(user, "goods_in")
+            M.need(user, "po" if "po" in user["modules"] and "goods_in" not in user["modules"] else "goods_in")
             return 200, {"items": M.suppliers(q.get("q", ""))}
+        if path == "/api/po_suggest":            # v7.2: low stock → purchase order
+            return 200, {"items": M.po_suggest(user, int(q["supplier_id"]) if q.get("supplier_id") else None)}
+        if path == "/api/po_list":
+            return 200, {"items": M.po_list(user)}
+        if path == "/api/label_designs":
+            return 200, {"items": M.label_designs(user)}
+        if path == "/api/poster_options":
+            return 200, M.poster_options(user)
+        if path == "/api/file":                  # the label / poster PDF of a job
+            data, name = M.doc_pdf(user, int(q.get("doc") or 0))
+            return 200, {"_bytes": data, "_ctype": "application/pdf", "_name": name}
         if path == "/api/submit" and method == "POST":
             return 200, M.submit(user, body.get("doc") or body, source="wifi",
                                  device=body.get("device", ""))
@@ -196,6 +207,9 @@ class _Handler(BaseHTTPRequestHandler):
                     lambda: handle(method, u.path, parse_qs(u.query), body, tok))
             except TimeoutError as e:
                 status, out = 503, {"error": str(e)}
+            if isinstance(out, dict) and "_bytes" in out:
+                return self._send(status, out["_bytes"], out.get("_ctype") or "application/octet-stream",
+                                  {"Content-Disposition": 'inline; filename="%s"' % out.get("_name", "file")})
             return self._send(status, out)
         # static app files
         rel = u.path.lstrip("/") or "index.html"

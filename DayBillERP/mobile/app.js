@@ -1,7 +1,8 @@
 /* ==========================================================
    DayBill Mobile — one app, the modules your user may use:
    Goods In · Goods Out · Stock Count · Stock Adjust ·
-   Product Info · Price Check · Van Sales
+   Product Info · Price Check · Van Sales ·
+   Purchase Order · Barcode Labels · Offer Poster (v7.2)
    Shop Wi-Fi: talks to DayBill on the shop PC (/api).
    Van: talks to your Hostinger relay (van_api.php) and works with
    no signal — bills wait on the phone and go when online.
@@ -69,7 +70,17 @@ const WORDS = {
     "Cash customer": "عميل نقدي", "Today": "اليوم", "Unit": "الوحدة", "Barcode": "الباركود",
     "Today's list": "قائمة جرد اليوم", "to count today": "صنف للجرد اليوم", "left": "متبقي",
     "last counted": "آخر جرد", "never counted": "لم يُجرد", "Nothing to count today": "لا يوجد جرد اليوم",
-    "The owner approves the count in DayBill before stock changes.": "يعتمد المالك الجرد في DayBill قبل تغيير المخزون."
+    "The owner approves the count in DayBill before stock changes.": "يعتمد المالك الجرد في DayBill قبل تغيير المخزون.",
+    "Deliver in (days)": "التوريد خلال (أيام)", "Low stock": "مخزون منخفض", "Orders": "الطلبات",
+    "Label design": "تصميم الملصق", "Print now on the shop label printer": "اطبع الآن على طابعة الملصقات",
+    "Each scan adds one label. Tap the number to type how many.": "كل مسح يضيف ملصقاً. اضغط الرقم لكتابة العدد.",
+    "Headline (empty = automatic)": "العنوان (فارغ = تلقائي)", "From": "من", "To": "إلى", "Size": "المقاس",
+    "Design": "التصميم", "Start this offer in POS and sales too": "فعّل العرض في نقطة البيع والمبيعات أيضاً",
+    "Print now on the shop printer": "اطبع الآن على طابعة المحل", "Save purchase order": "حفظ أمر الشراء",
+    "Print labels": "طباعة الملصقات", "Make poster": "إنشاء الملصق", "Open PDF": "فتح PDF",
+    "Send to supplier on WhatsApp": "إرسال للمورد عبر واتساب", "Choose the supplier first": "اختر المورد أولاً",
+    "Scan the first item": "امسح أول صنف", "labels": "ملصق", "cost": "التكلفة", "reorder at": "حد الطلب",
+    "Add all": "إضافة الكل", "order": "اطلب", "Copy AI poster prompt (ChatGPT / Gemini)": "نسخ وصف الملصق للذكاء الاصطناعي"
   }
 };
 const L = () => LS.get("lang", "en");
@@ -282,6 +293,7 @@ function openModule(k) {
   if (k === "info") return infoScreen(false);
   if (k === "price") return infoScreen(true);
   if (k === "van") return vanHome();
+  if (JOBS[k]) return jobScreen(k);
   return scanList(k);
 }
 
@@ -465,6 +477,199 @@ function infoScreen(priceOnly) {
   };
   scanEl.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); const v = scanEl.value.trim(); if (v) current.onScan(v); } };
   setTimeout(() => scanEl.focus(), 50);
+}
+
+/* ==========================================================
+   v7.2 — Purchase Order · Barcode Labels · Offer Poster
+   Scan items on the PDT; DayBill on the PC saves the order,
+   prints the labels on the label printer or draws the poster.
+   ========================================================== */
+const JOBS = {
+  po: { title: "Purchase Order", ar: "أمر شراء", btn: "Save purchase order" },
+  labels: { title: "Barcode Labels", ar: "طباعة الباركود", btn: "Print labels" },
+  poster: { title: "Offer Poster", ar: "ملصق العروض", btn: "Make poster" }
+};
+const pdfUrl = docId => `${CFG.api}/file?doc=${encodeURIComponent(docId)}&t=${encodeURIComponent(S.token)}`;
+const today = (d = 0) => { const x = new Date(Date.now() + d * 864e5); return x.toISOString().slice(0, 10); };
+function jobScreen(k) {
+  if (RELAY) return toast("This works on the shop Wi-Fi only", true);
+  const cfg = JOBS[k];
+  const fresh = () => ({ lines: [], header: k === "po" ? { expected_days: 7 } : k === "labels" ? { print: true } :
+    { offer_type: "percent", value: 10, start: today(), end: today(7), size: "a4", theme: "sale", create_offer: true, print: false } });
+  let D = LS.get("draft_" + k, null) || fresh();
+  const save = () => LS.set("draft_" + k, D);
+  const H = D.header;
+  const hdr = {
+    po: `<div class="card"><label>${t("Supplier")}</label>
+      <button id="sup" style="width:100%;text-align:start">${esc(H.supplier_name || "Choose supplier…")}</button>
+      <div class="row"><div><label>${t("Deliver in (days)")}</label><input id="days" inputmode="numeric" value="${esc(H.expected_days ?? 7)}"></div>
+        <div><label>${t("Note")}</label><input id="note" value="${esc(H.note || "")}"></div></div>
+      <div class="row" style="margin-top:8px"><button id="low">⚠ ${t("Low stock")}</button><button id="mine">📋 ${t("Orders")}</button></div></div>`,
+    labels: `<div class="card"><label>${t("Label design")}</label><select id="tpl"><option value="">…</option></select>
+      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="prn" style="width:auto;min-height:0" ${H.print ? "checked" : ""}>
+        ${t("Print now on the shop label printer")}</label>
+      <div class="muted">${t("Each scan adds one label. Tap the number to type how many.")}</div></div>`,
+    poster: `<div class="card"><div class="seg" id="otype">${[["percent", "% off"], ["price", "New price"], ["amount", "− Amount"], ["buy_get", "Buy X get Y"], ["none", "Price only"]]
+        .map(([v, n]) => `<button data-o="${v}" class="${H.offer_type === v ? "on" : ""}">${t(n)}</button>`).join("")}</div>
+      <div class="row" id="vals"></div>
+      <label>${t("Headline (empty = automatic)")}</label><input id="head" value="${esc(H.headline || "")}" placeholder="e.g. WEEKEND SALE">
+      <input id="head_ar" dir="rtl" style="margin-top:6px" value="${esc(H.headline_ar || "")}" placeholder="العنوان بالعربي (اختياري)">
+      <div class="row"><div><label>${t("From")}</label><input type="date" id="st" value="${esc(H.start)}"></div>
+        <div><label>${t("To")}</label><input type="date" id="en" value="${esc(H.end)}"></div></div>
+      <div class="row"><div><label>${t("Size")}</label><select id="size"></select></div><div><label>${t("Design")}</label><select id="theme"></select></div></div>
+      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="mko" style="width:auto;min-height:0" ${H.create_offer ? "checked" : ""}>
+        ${t("Start this offer in POS and sales too")}</label>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:4px"><input type="checkbox" id="prn" style="width:auto;min-height:0" ${H.print ? "checked" : ""}>
+        ${t("Print now on the shop printer")}</label></div>`
+  }[k];
+  shell(L() === "ar" ? cfg.ar : t(cfg.title), `<div class="wrap">
+    <div class="scan"><input id="scan" placeholder="${t("Scan or type barcode / name")}" autocomplete="off" enterkeyhint="go">
+      ${canCamera() ? `<button id="cam">📷</button>` : ""}</div>
+    <div id="hit"></div>${hdr}<ul class="lines" id="lines"></ul><div class="spacer"></div></div>
+    <div class="bottom"><div class="tot" id="tot"></div><button class="danger" id="clr">${t("Clear")}</button>
+      <button class="primary" id="send">${t(cfg.btn)}</button></div>`);
+  const scanEl = $("#scan");
+  const focus = () => setTimeout(() => { if (document.activeElement?.tagName !== "INPUT" || document.activeElement === scanEl) scanEl.focus(); }, 30);
+  if ($("#cam")) $("#cam").onclick = camera;
+  const bind = (id, key, num) => { const el = $("#" + id); if (el) el.oninput = el.onchange = () => { H[key] = el.type === "checkbox" ? el.checked : (num ? parseFloat(el.value) || 0 : el.value); save(); if (k === "poster") paint(); }; };
+  if (k === "po") {
+    $("#sup").onclick = () => pickSupplier(s => { H.supplier_id = s.supplier_id; H.supplier_name = s.supplier_name_en; save(); $("#sup").textContent = s.supplier_name_en; });
+    bind("days", "expected_days", true); bind("note", "note");
+    $("#low").onclick = async () => {
+      let r; try { r = await api("po_suggest", { params: H.supplier_id ? { supplier_id: H.supplier_id } : {} }); } catch (e) { return toast(e.message, true); }
+      if (!r.items.length) return toast(t("Nothing is below its reorder level"));
+      const p = sheet(`<div class="muted" style="margin-bottom:6px">${t("Low stock")} — ${t("tap to add, or add all")}</div>
+        <button class="primary" id="all" style="width:100%;margin-bottom:8px">＋ ${t("Add all")} (${r.items.length})</button>` +
+        r.items.map((it, i) => `<div class="item" data-i="${i}"><div class="grow"><b>${it.from_supplier ? "★ " : ""}${esc(it.name)}</b>
+          <div class="muted">${t("Stock")} ${nq(it.stock)} / ${t("reorder at")} ${nq(it.reorder_level)} · ${t("order")} ${nq(it.qty)}</div></div></div>`).join(""));
+      const add = it => { if (!D.lines.find(l => l.product_id === it.product_id))
+        D.lines.push({ key: it.product_id + "-0", product_id: it.product_id, name: it.name, unit_id: null, unit: "", factor: 1, qty: it.qty, cost: it.cost, units: [] }); };
+      $("#all", p).onclick = () => { r.items.forEach(add); save(); p.remove(); paint(); };
+      $$(".item", p).forEach(el => el.onclick = () => { add(r.items[+el.dataset.i]); save(); el.style.opacity = .4; paint(); });
+    };
+    $("#mine").onclick = async () => {
+      let r; try { r = await api("po_list"); } catch (e) { return toast(e.message, true); }
+      sheet(r.items.map(o => `<div class="item"><div class="grow"><b>${esc(o.po_number)}</b><div class="muted">${esc(String(o.po_date || "").slice(0, 10))} · ${esc(o.supplier_name_en)}</div></div>
+        <div class="right"><b>${n2(o.total_amount)}</b><br><span class="badge ${o.status === "open" ? "amber" : "green"}">${esc(o.status)}</span></div></div>`).join("") || `<div class="empty">—</div>`);
+    };
+  }
+  if (k === "labels") {
+    api("label_designs").then(r => {
+      const sel = $("#tpl"); if (!sel) return;
+      sel.innerHTML = r.items.map(x => `<option value="${x.id}">${esc(x.name)} · ${esc(x.size)}${x.default ? " ★" : ""}</option>`).join("") || `<option value="">(no design — make one in DayBill)</option>`;
+      if (!H.template_id || !r.items.find(x => String(x.id) === String(H.template_id))) H.template_id = (r.items.find(x => x.default) || r.items[0] || {}).id || "";
+      sel.value = H.template_id; save();
+      sel.onchange = () => { H.template_id = sel.value; save(); };
+    }).catch(e => toast(e.message, true));
+    bind("prn", "print");
+  }
+  if (k === "poster") {
+    const vals = () => {
+      const o = H.offer_type;
+      $("#vals").innerHTML = o === "percent" || o === "amount" ? `<div><label>${o === "percent" ? "% " + t("off") : t("Amount off")}</label><input id="val" inputmode="decimal" value="${esc(H.value ?? "")}"></div>`
+        : o === "buy_get" ? `<div><label>${t("Buy")}</label><input id="buy" inputmode="numeric" value="${esc(H.buy_qty ?? 2)}"></div><div><label>${t("Get free")}</label><input id="get" inputmode="numeric" value="${esc(H.get_qty ?? 1)}"></div>`
+        : o === "price" ? `<div class="muted" style="margin-top:8px">${t("Tap a product's price to type its offer price.")}</div>` : "";
+      bind("val", "value", true); bind("buy", "buy_qty", true); bind("get", "get_qty", true);
+    };
+    $$("#otype button").forEach(b => b.onclick = () => { H.offer_type = b.dataset.o; if (H.offer_type === "buy_get") { H.buy_qty = H.buy_qty || 2; H.get_qty = H.get_qty || 1; }
+      save(); $$("#otype button").forEach(x => x.classList.toggle("on", x === b)); vals(); paint(); });
+    vals();
+    ["head:headline", "head_ar:headline_ar", "st:start", "en:end", "mko:create_offer", "prn:print"].forEach(p => { const [id, key] = p.split(":"); bind(id, key); });
+    api("poster_options").then(r => {
+      $("#size").innerHTML = r.sizes.map(x => `<option value="${x.key}">${esc(x.name)}</option>`).join("");
+      $("#theme").innerHTML = r.themes.map(x => `<option value="${x.key}">${esc(x.name)}</option>`).join("");
+      $("#size").value = H.size || "a4"; $("#theme").value = H.theme || "sale";
+      bind("size", "size"); bind("theme", "theme");
+    }).catch(e => toast(e.message, true));
+  }
+  const newPrice = l => {
+    const o = H.offer_type, p = +l.price || 0;
+    if (o === "percent") return Math.max(0, p * (1 - (+H.value || 0) / 100));
+    if (o === "amount") return Math.max(0, p - (+H.value || 0));
+    if (o === "price") return l.new_price != null ? +l.new_price : null;
+    return null;
+  };
+  const paint = flashKey => {
+    const ul = $("#lines");
+    if (!D.lines.length) ul.innerHTML = `<div class="empty">📦 ${t("Scan the first item")}</div>`;
+    else ul.innerHTML = D.lines.map((l, i) => {
+      const np = k === "poster" ? newPrice(l) : null;
+      return `<li class="ln ${l.key === flashKey ? "flash" : ""}">
+      <div class="info"><div class="nm">${esc(l.name)}</div>
+        ${l.unit ? `<span class="unit" data-u="${i}">${esc(l.unit)}${l.factor !== 1 ? " ×" + nq(l.factor) : ""}${(l.units || []).length > 1 ? " ▾" : ""}</span>` : ""}
+        ${k === "po" ? ` <span class="muted" data-c="${i}">${t("cost")} ${n2(l.cost)} ✎ = <b>${n2(l.qty * (l.cost || 0))}</b></span>` : ""}
+        ${k === "poster" ? ` <span class="muted" data-p="${i}">${np != null && np < l.price ? `<s>${n2(l.price)}</s> → <b style="color:var(--red)">${n2(np)}</b>` : n2(l.price)}${H.offer_type === "price" ? " ✎" : ""}</span>` : ""}
+        ${k === "labels" ? ` <span class="muted">${esc(l.barcode || t("no barcode yet — made on print"))}</span>` : ""}</div>
+      ${k === "poster" ? `<button class="danger" data-x="${i}" style="min-height:42px;width:42px;padding:0">✕</button>` :
+        `<div class="qty"><button data-d="-1" data-i="${i}">−</button><input data-q="${i}" inputmode="decimal" value="${nq(l.qty)}">
+        <button data-d="1" data-i="${i}">+</button></div>`}</li>`; }).join("");
+    if (k === "po") $("#tot").innerHTML = `${D.lines.length} ${t("Items")}<small>${esc(S.settings?.currency || "")} ${n2(D.lines.reduce((a, l) => a + l.qty * (l.cost || 0), 0))} + ${t("VAT")}</small>`;
+    else if (k === "labels") $("#tot").innerHTML = `${D.lines.reduce((a, l) => a + (+l.qty || 0), 0)} ${t("labels")}<small>${D.lines.length} ${t("Items")}</small>`;
+    else $("#tot").innerHTML = `${D.lines.length} ${t("Items")}<small>${D.lines.length > 12 ? t("12 show on the poster") : ""}</small>`;
+    $$("button[data-d]", ul).forEach(b => b.onclick = () => { const l = D.lines[+b.dataset.i]; l.qty = Math.max(0, l.qty + (+b.dataset.d)); if (!l.qty) D.lines.splice(+b.dataset.i, 1); save(); paint(); focus(); });
+    $$("button[data-x]", ul).forEach(b => b.onclick = () => { D.lines.splice(+b.dataset.x, 1); save(); paint(); focus(); });
+    $$("input[data-q]", ul).forEach(inp => { inp.onchange = () => { const l = D.lines[+inp.dataset.q]; l.qty = Math.max(0, parseFloat(inp.value) || 0); if (!l.qty) D.lines.splice(+inp.dataset.q, 1); save(); paint(); focus(); };
+      inp.onkeydown = e => { if (e.key === "Enter") inp.blur(); }; });
+    $$("[data-u]", ul).forEach(s => s.onclick = () => { const l = D.lines[+s.dataset.u]; if (!l.units || l.units.length < 2) return;
+      const j = (l.units.findIndex(u => u.unit_id === l.unit_id) + 1) % l.units.length; const u = l.units[j];
+      Object.assign(l, { unit_id: u.unit_id, unit: u.unit, factor: u.factor, key: l.product_id + "-" + u.unit_id, price: u.price_vat, barcode: u.barcode });
+      if (u.cost != null) l.cost = u.cost; save(); paint(); });
+    $$("[data-c]", ul).forEach(s => s.onclick = () => { const l = D.lines[+s.dataset.c]; const v = prompt(t("Cost per") + " " + (l.unit || "unit"), n2(l.cost)); if (v != null) { l.cost = parseFloat(v) || 0; save(); paint(); } });
+    $$("[data-p]", ul).forEach(s => s.onclick = () => { if (H.offer_type !== "price") return; const l = D.lines[+s.dataset.p];
+      const v = prompt(t("Offer price for") + " " + l.name, l.new_price != null ? n2(l.new_price) : n2(l.price)); if (v != null) { l.new_price = parseFloat(v) || 0; save(); paint(); } });
+  };
+  current.onScan = async code => {
+    scanEl.value = "";
+    let c;
+    try { c = await lookup(code); }
+    catch (e) {
+      try { const r = await api("search", { params: { q: code } }); if (r.items.length) return pickProduct(r.items, it => current.onScan(it.code)); } catch (x) {}
+      $("#hit").innerHTML = `<div class="card miss">✖ ${esc(e.message)}</div>`; beep(220, .3); return;
+    }
+    const u = c.units.find(x => x.unit_id === c.scanned_unit_id) || c.units[0] || { unit: "PCs", factor: 1 };
+    const key = c.product_id + "-" + u.unit_id;
+    let l = D.lines.find(x => x.key === key);
+    if (l && k !== "poster") l.qty += 1;
+    else if (!l) { l = { key, product_id: c.product_id, name: c.name, unit_id: u.unit_id, unit: u.unit, factor: u.factor, qty: 1,
+      cost: u.cost != null ? u.cost : null, price: u.normal_price_vat || u.price_vat, barcode: u.barcode,
+      units: c.units.map(x => ({ unit_id: x.unit_id, unit: x.unit, factor: x.factor, cost: x.cost, price_vat: x.normal_price_vat || x.price_vat, barcode: x.barcode })) };
+      D.lines.unshift(l); }
+    save();
+    $("#hit").innerHTML = `<div class="card hit"><div class="nm">${esc(c.name)}</div><div class="muted">${esc(u.unit)} · ${t("Stock")} ${esc(c.stock_text)}${k === "po" && c.reorder_level ? " · " + t("reorder at") + " " + nq(c.reorder_level) : ""}</div></div>`;
+    beep(); paint(key);
+  };
+  scanEl.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); const v = scanEl.value.trim(); if (v) current.onScan(v); } };
+  $("#clr").onclick = () => { if (D.lines.length && !confirm("Clear the whole list?")) return; D.lines = []; save(); paint(); focus(); };
+  $("#send").onclick = async () => {
+    if (!D.lines.length) return toast("The list is empty", true);
+    if (k === "po" && !H.supplier_id) return toast(t("Choose the supplier first"), true);
+    if (k === "poster" && H.offer_type === "price" && D.lines.some(l => l.new_price == null)) return toast(t("Type the offer price of every product (tap the price)"), true);
+    $("#send").disabled = true;
+    const doc = { uid: device() + "-" + k + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6), type: k, title: cfg.title,
+      header: H, lines: D.lines.map(l => ({ product_id: l.product_id, unit_id: l.unit_id, unit: l.unit, factor: l.factor, qty: l.qty,
+        copies: l.qty, cost: l.cost, new_price: l.new_price })) };
+    let res;
+    try { res = await api("submit", { body: { doc, device: device() }, timeout: 60000 }); }
+    catch (e) { $("#send").disabled = false; return toast(e.message, true, 5000); }
+    $("#send").disabled = false;
+    addSent({ uid: doc.uid, type: k, title: cfg.title, status: res.status, result: res.result, at: Date.now() });
+    if (res.status === "error") return toast(res.result, true, 5000);
+    beep(1500, .12);
+    const keepHead = k === "po" ? { expected_days: H.expected_days } : k === "labels" ? { print: H.print, template_id: H.template_id } :
+      { offer_type: H.offer_type, value: H.value, start: H.start, end: H.end, size: H.size, theme: H.theme, create_offer: H.create_offer, print: H.print };
+    D = { lines: [], header: keepHead }; save();
+    const p = sheet(`<div class="card hit"><div class="nm">✔ ${esc(res.result || "Done")}</div></div>
+      ${res.file ? `<a href="${pdfUrl(res.doc_id)}" target="_blank" rel="noopener"><button class="primary" style="width:100%;margin-bottom:8px">📄 ${t("Open PDF")}</button></a>` : ""}
+      ${res.whatsapp_text ? `<button class="green" id="wa" style="width:100%;margin-bottom:8px">💬 ${t("Send to supplier on WhatsApp")}</button>` : ""}
+      ${res.prompt ? `<button id="cp" style="width:100%;margin-bottom:8px">🎨 ${t("Copy AI poster prompt (ChatGPT / Gemini)")}</button>` : ""}`);
+    if ($("#wa", p)) $("#wa", p).onclick = () => { const ph = String(res.supplier_phone || "").replace(/\D/g, "").replace(/^0/, "966");
+      window.open(`https://wa.me/${ph}?text=${encodeURIComponent(res.whatsapp_text)}`, "_blank"); };
+    if ($("#cp", p)) $("#cp", p).onclick = async () => { try { await navigator.clipboard.writeText(res.prompt); toast(t("Copied — paste it in ChatGPT or Gemini")); }
+      catch (e) { prompt("Copy:", res.prompt); } };
+    const obs = new MutationObserver(() => { if (!document.body.contains(p)) { obs.disconnect(); jobScreen(k); } });
+    obs.observe(document.body, { childList: true });
+  };
+  paint(); focus();
 }
 
 /* ---------- history ---------- */

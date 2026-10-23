@@ -2,6 +2,27 @@
 
 Newest first. The short guide is in the main README.md.
 
+## 📱 v7.2.0 — PDT purchase orders, labels and posters · smarter Convert
+
+- **PDT ▸ 📝 Purchase Order:** supplier, scanned items with cost, ⚠ Low stock
+  fill, saved as an open Purchase Order; WhatsApp text for the supplier; my
+  orders list.
+- **PDT ▸ 🔖 Barcode Labels:** label design, copies per item; printed on the
+  PC's label printer or kept for Mobile ▸ Inbox ▸ 🖨 Print PDF; barcodes made
+  for products without one; the PDF opens on the phone.
+- **PDT ▸ 🎨 Offer Poster:** % off / new price / amount off / buy X get Y /
+  price only, dates, 4 sizes, 5 designs; printable poster PDF (modules/poster_pdf)
+  with old and new prices; optional offer started in POS; AI prompt too.
+- **Offers ▸ 🖨 Printable poster (PDF)** on the desktop.
+- **Mobile Center:** new module columns, Inbox ▸ 🖨 Print PDF, Purchase Orders
+  open from the Inbox, settings for label / poster auto printing.
+- **Database Tool ▸ Convert:** country rules (VAT / GST rates, currency, tax
+  number checks, GST state, HSN), Excel / CSV exports as a source, Verify after
+  converting.
+- Fix (v7.1 window): the Cash Customer / Cash Supplier booked straight to the
+  cash account no longer hides Cash from the journal and voucher lists.
+- Fix: a label line with 0 copies prints nothing (it printed one).
+
 ## 💸 v7.1.0 — multi-line Cash / Bank vouchers and Journal
 
 - **One voucher window, many lines:** Receipt, Payment, Contra (cash ↔ bank)

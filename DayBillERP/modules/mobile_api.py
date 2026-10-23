@@ -20,6 +20,10 @@
 #   Stock Count  → counted qty becomes the stock (difference posted)
 #   Stock Adjust → + / − stock + journal
 #   Van Sale     → a confirmed sales invoice (channel VAN) + stock + journal
+#   Purchase Order → a saved (open) purchase order — no stock, no journal  (v7.2)
+#   Barcode Labels → a label PDF in the shop's label design, printed on the
+#                    PC's label printer (or waiting in the Inbox to print)
+#   Offer Poster   → a printable poster PDF (+ the offer itself when asked)
 # Every document has the device's own id (doc_uid): sending it twice never
 # books it twice.
 # ============================================================
@@ -40,6 +44,9 @@ MODULES = [
     ("info", "Product Info", "معلومات الصنف", "🔎"),
     ("price", "Price Check", "فحص السعر", "🏷"),
     ("van", "Van Sales", "مبيعات السيارة", "🚚"),
+    ("po", "Purchase Order", "أمر شراء", "📝"),            # v7.2
+    ("labels", "Barcode Labels", "طباعة الباركود", "🔖"),
+    ("poster", "Offer Poster", "ملصق العروض", "🎨"),
 ]
 MODULE_KEYS = [m[0] for m in MODULES]
 OUT_REASONS = ["Damaged", "Expired", "Own use", "Transfer out", "Sample / gift", "Other"]
@@ -359,7 +366,7 @@ def resolve(user, code):
         raise MobileError("No product for “%s”." % str(code).strip())
     uid = hit["unit_id"] or (hit.get("unit") or {}).get("unit_id")
     card = product_card(hit["product_id"], uid,
-                        show_cost=bool(set(user["modules"]) & {"goods_in"}))
+                        show_cost=bool(set(user["modules"]) & {"goods_in", "po"}))
     card["scanned_unit_id"] = uid
     card["scan_qty"] = _f(hit.get("quantity"), 1)
     card["via"] = hit.get("via")
@@ -429,7 +436,9 @@ def _base_qty(ln):
 
 # ── documents from devices ───────────────────────────────────
 DOC_TITLES = {"goods_in": "Goods In", "goods_out": "Goods Out", "count": "Stock Count",
-              "adjust": "Stock Adjust", "van_sale": "Van Sale"}
+              "adjust": "Stock Adjust", "van_sale": "Van Sale", "po": "Purchase Order",
+              "labels": "Barcode Labels", "poster": "Offer Poster"}
+FILE_DOCS = ("labels", "poster")              # documents that make a PDF
 
 
 def submit(user, doc, source="wifi", device=""):
@@ -471,6 +480,13 @@ def submit(user, doc, source="wifi", device=""):
         title += " · " + str(head.get("supplier_name"))
     elif dtype == "van_sale":
         title += " · %s · %.2f" % (head.get("customer_name") or "Cash", _f(head.get("total")))
+    elif dtype == "po" and head.get("supplier_name"):
+        title += " · " + str(head.get("supplier_name"))
+    elif dtype == "labels":
+        title += " · %d label(s)" % sum(max(0, int(_f(l["copies"] if l.get("copies") is not None
+                                                        else l.get("qty"), 1))) for l in lines)
+    elif dtype == "poster" and head.get("headline"):
+        title += " · " + str(head.get("headline"))[:60]
     db.execute("INSERT INTO mobile_docs (doc_uid, doc_type, source, user_id, device, status, title, "
                "header_json, lines_json) VALUES (?,?,?,?,?,?,?,?,?)",
                (uid, dtype, source, user["user_id"], str(device or "")[:120], "pending",
@@ -491,13 +507,16 @@ def apply_doc(doc_id, by_user=None):
     if not d:
         raise MobileError("Document not found.")
     if d["status"] == "applied":
-        return clean({"doc_id": doc_id, "status": "applied", "result": d.get("result"),
-                      "ref_table": d.get("ref_table"), "ref_id": d.get("ref_id")})
+        out = {"doc_id": doc_id, "status": "applied", "result": d.get("result"),
+               "ref_table": d.get("ref_table"), "ref_id": d.get("ref_id")}
+        if d["doc_type"] in FILE_DOCS and os.path.isfile(doc_file(doc_id, d["doc_type"])):
+            out["file"] = os.path.basename(doc_file(doc_id, d["doc_type"]))
+        return clean(out)
     head = json.loads(d.get("header_json") or "{}")
     lines = json.loads(d.get("lines_json") or "[]")
     t = d["doc_type"]
     note_who = "%s (%s)" % (DOC_TITLES[t], d.get("device") or "mobile")
-    ref_table, ref_id = None, None
+    ref_table, ref_id, extra = None, None, {}
     try:
         # the document and its "applied" mark are ONE transaction (v5.27):
         # a failure keeps nothing, so a re-send can never book it twice
@@ -527,6 +546,15 @@ def apply_doc(doc_id, by_user=None):
             elif t == "van_sale":
                 ref_table = "sales_invoices"
                 ref_id, msg = _van_sale(head, lines, d)
+            elif t == "po":
+                ref_table = "purchase_orders"
+                ref_id, msg, extra = _purchase_order(head, lines, d)
+            elif t == "labels":
+                ref_table = "file"
+                msg, extra = _labels(head, lines, d)
+            elif t == "poster":
+                ref_table = "offers"
+                ref_id, msg, extra = _poster(head, lines, d)
             else:
                 raise MobileError("Unknown document type.")
             db.execute("UPDATE mobile_docs SET status='applied', result=?, ref_table=?, ref_id=?, "
@@ -537,8 +565,12 @@ def apply_doc(doc_id, by_user=None):
             audit.log("add", "mobile", doc_id, "%s — %s" % (d.get("title"), msg))
         except Exception:
             pass
-        return {"doc_id": doc_id, "status": "applied", "result": msg,
-                "ref_table": ref_table, "ref_id": ref_id}
+        out = {"doc_id": doc_id, "status": "applied", "result": msg,
+               "ref_table": ref_table, "ref_id": ref_id}
+        if t in FILE_DOCS:
+            out["file"] = os.path.basename(doc_file(doc_id, t))
+        out.update(extra or {})
+        return clean(out)
     except MobileError as e:
         db.execute("UPDATE mobile_docs SET status='error', result=? WHERE doc_id=?",
                    (str(e)[:400], doc_id))
@@ -815,3 +847,290 @@ def van_catalog(van_user_id=None):
         c["balance"] = bal.get(c["customer_id"], 0.0)
     return clean({"version": datetime.now().strftime("%Y%m%d%H%M%S"), "products": prods,
                   "customers": custs, "company": company(), "settings": app_settings()})
+
+
+# ══════════════════════════════════════════════════════════════
+# v7.2 — Purchase Order · Barcode Labels · Offer Poster from the PDT
+# ══════════════════════════════════════════════════════════════
+def prints_dir():
+    """Where the PDF of a label / poster job is kept (Inbox ▸ Print)."""
+    try:
+        from config.paths import DATA_DIR
+        base = DATA_DIR
+    except Exception:
+        base = os.path.join(os.path.dirname(__file__), "..")
+    d = os.path.join(base, "mobile_prints")
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+def doc_file(doc_id, kind):
+    return os.path.join(prints_dir(), "%s_%d.pdf" % (kind, int(doc_id)))
+
+
+def _unit_row(pid, unit_id):
+    """The label row (prices, barcode …) of one product unit."""
+    from modules import barcode_resolver as BR
+    rows = BR.label_rows(pid) or []
+    r = next((x for x in rows if unit_id and x.get("unit_id") == unit_id), None)
+    if r is None:
+        d = next((u for u in BR.units_of(pid) if u.get("is_default")), None)
+        r = next((x for x in rows if d and x.get("unit_id") == d.get("unit_id")), None) or \
+            (rows[0] if rows else None)
+    return r
+
+
+# ── Purchase Order ────────────────────────────────────────────
+def po_suggest(user, supplier_id=None, limit=60):
+    """Low-stock products (stock ≤ reorder level) — those bought from this
+    supplier first — with a suggested order quantity and the last cost."""
+    need(user, "po")
+    rows = _all("SELECT TOP 300 p.product_id, p.product_code, p.product_name_en, p.product_name_ar, "
+                "ISNULL(p.stock_quantity,0) AS stock, ISNULL(p.reorder_level,0) AS reorder_level, "
+                "ISNULL(p.purchase_price,0) AS cost FROM products p WHERE ISNULL(p.is_active,1)=1 "
+                "AND ISNULL(p.reorder_level,0) > 0 AND ISNULL(p.stock_quantity,0) <= p.reorder_level "
+                "ORDER BY (ISNULL(p.stock_quantity,0) - p.reorder_level), p.product_name_en")
+    mine = set()
+    if supplier_id:
+        mine = set(r["product_id"] for r in _all(
+            "SELECT DISTINCT l.product_id FROM purchase_invoice_lines l JOIN purchase_invoices pi "
+            "ON pi.purchase_id=l.purchase_id WHERE pi.supplier_id=?", (supplier_id,)))
+    out = []
+    for r in rows:
+        rl, st = _f(r["reorder_level"]), _f(r["stock"])
+        qty = max(1.0, round(rl * 2 - st))
+        out.append({"product_id": r["product_id"], "code": r["product_code"], "name": r["product_name_en"],
+                    "name_ar": r.get("product_name_ar") or "", "stock": st, "reorder_level": rl,
+                    "qty": qty, "cost": round(_f(r["cost"]), 2), "from_supplier": r["product_id"] in mine})
+    out.sort(key=lambda x: (not x["from_supplier"],))
+    return clean(out[:int(limit)])
+
+
+def po_list(user, limit=20):
+    need(user, "po")
+    return clean(_all("SELECT TOP %d po_id, po_number, po_date, supplier_name_en, total_amount, status "
+                      "FROM purchase_orders ORDER BY po_id DESC" % int(limit)))
+
+
+def _purchase_order(head, lines, d):
+    from modules import supplier_orders as SO
+    sid = head.get("supplier_id")
+    if not sid or not _one("SELECT supplier_id FROM suppliers WHERE supplier_id=?", (sid,)):
+        raise MobileError("Choose the supplier for the purchase order.")
+    items = []
+    for ln in lines:
+        p = _product_or_fail(ln)
+        qty = _f(ln.get("qty"))
+        cost = _f(ln.get("cost"))
+        if not (0 < qty < 1e6 and 0 <= cost < 1e7):
+            raise MobileError("Bad quantity or cost for %s." % p.get("product_code"))
+        u = _one("SELECT unit_name_en, conversion_factor, purchase_price FROM product_units "
+                 "WHERE unit_id=?", (ln.get("unit_id"),)) if ln.get("unit_id") else None
+        if not cost:
+            cost = _f((u or {}).get("purchase_price")) or \
+                _f(p.get("purchase_price")) * (_f((u or {}).get("conversion_factor"), 1) or 1)
+        items.append({"product_id": p["product_id"], "code": p.get("product_code"),
+                      "name": p.get("product_name_en"), "name_ar": p.get("product_name_ar") or "",
+                      "qty": qty, "unit": (u or {}).get("unit_name_en") or ln.get("unit") or
+                      p.get("unit_of_measure_en") or "PCs", "unit_cost": cost})
+    if not items:
+        raise MobileError("No valid items.")
+    try:
+        days = max(0, min(365, int(_f(head.get("expected_days"), 7))))
+    except (TypeError, ValueError):
+        days = 7
+    note = "From %s (PDT)%s" % (d.get("device") or "mobile",
+                                (" — " + str(head.get("note"))[:300]) if head.get("note") else "")
+    try:
+        po_id, num, total = SO.create_po(sid, items, expected_days=days, note=note)
+    except ValueError as e:
+        raise MobileError(str(e))
+    db.execute("UPDATE purchase_orders SET created_by=? WHERE po_id=?", (d.get("user_id"), po_id))
+    sup = _one("SELECT supplier_name_en, phone FROM suppliers WHERE supplier_id=?", (sid,)) or {}
+    cur = _currency()
+    wa = ["*Purchase Order %s*" % num, str((company() or {}).get("company_name_en") or ""), ""]
+    for i, it in enumerate(items, 1):
+        wa.append("%d. %s — %g %s" % (i, it["name"], it["qty"], it["unit"]))
+    wa += ["", "Please deliver within %d day(s). Thank you." % days]
+    msg = "Purchase Order %s saved — %d item(s), %s %.2f. Office: Purchases ▸ Purchase Orders." % (
+        num, len(items), cur, total)
+    return po_id, msg, {"po_number": num, "total": round(total, 2),
+                        "supplier_phone": str(sup.get("phone") or ""), "whatsapp_text": "\n".join(wa)}
+
+
+# ── Barcode Labels ────────────────────────────────────────────
+def label_designs(user):
+    need(user, "labels")
+    from modules import barcode_designer as bd
+    try:
+        bd.ensure_ready_designs()
+    except Exception:
+        pass
+    out = []
+    for t in bd.list_templates() or []:
+        out.append({"id": t.get("template_id"), "name": t.get("template_name"),
+                    "size": "%gx%g mm" % (_f(t.get("label_width_mm"), 50), _f(t.get("label_height_mm"), 25)),
+                    "default": bool(t.get("is_default"))})
+    return clean(out)
+
+
+def _labels(head, lines, d):
+    from modules import barcode_designer as bd
+    from modules import barcode_resolver as BR
+    tid = head.get("template_id")
+    t = bd.get_template(tid) if tid else None
+    if not t:
+        t = next((x for x in (bd.list_templates() or []) if x.get("is_default")), None) or \
+            next(iter(bd.list_templates() or []), None)
+        t = bd.get_template(t["template_id"]) if t else None
+    if not t:
+        raise MobileError("No label design yet — make one in DayBill (Label Designer).")
+    pids = sorted({int(ln["product_id"]) for ln in lines})
+    if head.get("make_barcodes", True):
+        try:
+            BR.ensure_barcodes(pids)          # products without a barcode get one now
+        except Exception:
+            pass
+    shop = (company() or {}).get("company_name_en") or ""
+    items, n = [], 0
+    for ln in lines:
+        _product_or_fail(ln)
+        r = _unit_row(int(ln["product_id"]), ln.get("unit_id"))
+        if not r or not r.get("barcode_value"):
+            continue
+        copies = max(0, min(500, int(_f(ln["copies"] if ln.get("copies") is not None else ln.get("qty"), 1))))
+        if not copies:
+            continue
+        it = dict(r, copies=copies, company_name=shop)
+        items.append(it)
+        n += copies
+    if not items:
+        raise MobileError("Nothing to print — the products have no barcode.")
+    path = doc_file(d["doc_id"], "labels")
+    bd.render_labels_pdf(t, items, path)
+    printed = _print_file(path, "labels", head.get("print", True) and cfg.flag("mobile_labels_autoprint", True))
+    msg = "%d label(s) · %s — %s" % (n, t.get("template_name") or "label",
+                                     printed or "PDF ready: DayBill ▸ Mobile ▸ Inbox ▸ Print")
+    return msg, {"labels": n, "printed": bool(printed)}
+
+
+def _print_file(path, printer_key, wanted):
+    """Print the PDF on the PC's printer for that kind. '' when not printed."""
+    if not wanted:
+        return ""
+    try:
+        from modules import printer_service as ps
+        printer = ps.printer_for(printer_key)
+        if ps.print_pdf(path, printer, copies=1, silent=True):
+            return "sent to %s" % (printer or "the printer")
+    except Exception:
+        pass
+    return ""
+
+
+# ── Offer Poster ──────────────────────────────────────────────
+POSTER_TYPES = ("percent", "price", "amount", "buy_get", "none")
+
+
+def poster_options(user):
+    need(user, "poster")
+    from modules import poster_pdf as PP
+    return {"sizes": [{"key": k, "name": v[0]} for k, v in PP.SIZES.items()],
+            "themes": [{"key": k, "name": v[0]} for k, v in PP.THEMES.items()],
+            "types": [{"key": "percent", "name": "% off"}, {"key": "price", "name": "New price"},
+                      {"key": "amount", "name": "Amount off"}, {"key": "buy_get", "name": "Buy X get Y"},
+                      {"key": "none", "name": "Price only (no offer)"}]}
+
+
+def _poster(head, lines, d):
+    from modules import poster_pdf as PP
+    from modules import offer_poster as OP
+    from datetime import timedelta
+    typ = str(head.get("offer_type") or "percent")
+    if typ not in POSTER_TYPES:
+        raise MobileError("Unknown offer type.")
+    val = _f(head.get("value"))
+    if typ == "percent" and not (0 < val < 100):
+        raise MobileError("Percent off must be between 1 and 99.")
+    if typ == "amount" and val <= 0:
+        raise MobileError("Enter the amount off.")
+    buy, get = int(_f(head.get("buy_qty"), 0)), int(_f(head.get("get_qty"), 0))
+    if typ == "buy_get" and (buy < 1 or get < 1):
+        raise MobileError("Buy X get Y: enter both numbers.")
+    start = str(head.get("start") or date.today().isoformat())[:10]
+    end = str(head.get("end") or (date.today() + timedelta(days=7)).isoformat())[:10]
+    try:
+        if datetime.strptime(end, "%Y-%m-%d") < datetime.strptime(start, "%Y-%m-%d"):
+            raise MobileError("The offer ends before it starts.")
+    except ValueError:
+        raise MobileError("Bad offer dates.")
+    rows, offer_items = [], []
+    for ln in lines:
+        p = _product_or_fail(ln)
+        r = _unit_row(p["product_id"], ln.get("unit_id")) or {}
+        old = _f(r.get("price_vat") or r.get("unit_price"))
+        new = None
+        if typ == "percent":
+            new = round(old * (1 - val / 100.0), 2)
+        elif typ == "amount":
+            new = round(max(0.0, old - val), 2)
+        elif typ == "price":
+            new = round(_f(ln.get("new_price")), 2) or None
+            if new is None:
+                raise MobileError("Enter the new price for %s." % p.get("product_name_en"))
+        rows.append({"product_id": p["product_id"], "name": p.get("product_name_en") or "",
+                     "name_ar": p.get("product_name_ar") or "", "old": old, "new": new,
+                     "unit": r.get("unit_name") or ""})
+        offer_items.append({"product_id": p["product_id"], "unit_name": r.get("unit_name") or None,
+                            "offer_price": new if typ == "price" else None,
+                            "product_name_en": p.get("product_name_en"),
+                            "product_name_ar": p.get("product_name_ar"), "normal_price": old})
+    if not rows:
+        raise MobileError("Scan the products on offer.")
+    offer = {"offer_name": str(head.get("headline") or "")[:100] or "Offer from the PDT",
+             "offer_type": typ if typ != "none" else "price", "offer_value": val,
+             "buy_qty": buy, "get_qty": get, "start_at": start + " 00:00:00", "end_at": end + " 23:59:59"}
+    oid = None
+    if head.get("create_offer") and typ != "none":
+        from modules import offers as O
+        if not O.tables_ready():
+            raise MobileError("The Offers tables are not installed yet (run the update).")
+        oid = O.save(dict(offer, for_pos=1, for_sales=1, is_active=1,
+                          notes="From %s (PDT)" % (d.get("device") or "mobile")),
+                     [{k: it[k] for k in ("product_id", "unit_name", "offer_price")} for it in offer_items],
+                     user=d.get("user_id"))
+    h_en, h_ar = OP.headline(offer) if typ != "none" else ("OUR PRICES", "أسعارنا")
+    span, _x = OP.when_lines(offer)
+    comp = company()
+    badge = {"percent": "-%g%%" % val, "amount": "-%s" % ("%g" % val),
+             "buy_get": "%d + %d FREE" % (buy, get)}.get(typ, "")
+    data = {"headline": str(head.get("headline") or "").strip() or h_en,
+            "headline_ar": str(head.get("headline_ar") or "").strip() or h_ar,
+            "sub": str(head.get("sub") or "").strip(),
+            "when": "" if typ == "none" else span,
+            "shop": comp.get("company_name_en") or "", "shop_ar": comp.get("company_name_ar") or "",
+            "footer": PP.footer(comp), "size": head.get("size") or "a4", "theme": head.get("theme") or "sale",
+            "items": [{"name": r["name"], "name_ar": r["name_ar"], "old": r["old"], "new": r["new"],
+                       "badge": badge} for r in rows]}
+    path = doc_file(d["doc_id"], "poster")
+    PP.render(path, data)
+    printed = _print_file(path, "a4", bool(head.get("print")) and cfg.flag("mobile_poster_autoprint", True))
+    prompt = OP.build_prompt(offer, offer_items, comp) if typ != "none" else ""
+    msg = "Poster ready (%d product(s))%s%s." % (
+        len(rows), " · offer started in POS" if oid else "",
+        (" · " + printed) if printed else " — DayBill ▸ Mobile ▸ Inbox ▸ Print")
+    return oid, msg, {"offer_id": oid, "prompt": prompt, "printed": bool(printed)}
+
+
+def doc_pdf(user, doc_id):
+    """(bytes, file name) of a label / poster job the user sent."""
+    d = _one("SELECT doc_id, doc_type, user_id, status FROM mobile_docs WHERE doc_id=?", (int(doc_id),))
+    if not d or d["doc_type"] not in FILE_DOCS:
+        raise MobileError("No such print.")
+    if d["user_id"] != user["user_id"] and d["doc_type"] not in user["modules"]:
+        raise MobileError("This print belongs to another user.")
+    path = doc_file(d["doc_id"], d["doc_type"])
+    if not os.path.isfile(path):
+        raise MobileError("The PDF is not ready (the document is %s)." % d["status"])
+    with open(path, "rb") as f:
+        return f.read(), os.path.basename(path)

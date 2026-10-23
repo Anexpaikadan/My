@@ -158,6 +158,10 @@ class MobileCenterView:
                        "(untick = stock changes at once)", "mobile_approve_stock")
         self._check(o, "Goods In: confirm the purchase at once (untick = draft, office checks prices)",
                     "mobile_goods_in_confirm")
+        self._check(o, "Barcode Labels from the PDT: print at once on the label printer "
+                       "(untick = wait in the Inbox ▸ 🖨 Print PDF)", "mobile_labels_autoprint", default=True)
+        self._check(o, "Offer Poster: allowed to print at once when the PDT ticks 'Print now'",
+                    "mobile_poster_autoprint", default=True)
         pr = tk.Frame(o, bg=C["card_bg"]); pr.pack(anchor="w", pady=(4, 0))
         tk.Label(pr, text="Port", bg=C["card_bg"], font=("Segoe UI", 9)).pack(side="left")
         self.port_v = tk.StringVar(value=str(cfg.get("mobile_port", 8090) or 8090))
@@ -286,7 +290,8 @@ class MobileCenterView:
         self.u_tree = ttk.Treeview(left, columns=cols, show="headings", height=14)
         heads = {"user": ("User", 100), "name": ("Name", 140), "van": ("Van code", 80)}
         short = {"goods_in": "In", "goods_out": "Out", "count": "Count", "adjust": "Adjust",
-                 "info": "Info", "price": "Price", "van": "Van"}
+                 "info": "Info", "price": "Price", "van": "Van", "po": "PO", "labels": "Labels",
+                 "poster": "Poster"}
         for k in M.MODULE_KEYS:
             heads[k] = (short[k], 58)
         cols = ["user", "name"] + M.MODULE_KEYS + ["vancode"]
@@ -393,6 +398,7 @@ class MobileCenterView:
         self._btn(bar, "🔄 Refresh", self._load_inbox).pack(side="right")
         self._btn(bar, "✖ Reject", self._reject, danger=True).pack(side="right", padx=4)
         self._btn(bar, "📂 Open in DayBill", self._open_doc).pack(side="right", padx=4)
+        self._btn(bar, "🖨 Print PDF", self._print_doc).pack(side="right", padx=4)
         self._btn(bar, "✔ Approve", self._approve, primary=True).pack(side="right", padx=4)
         pw = tk.PanedWindow(self.t_inbox, orient="vertical", bg=C["content_bg"], sashwidth=6)
         pw.pack(fill="both", expand=True, padx=6, pady=(0, 6))
@@ -459,6 +465,8 @@ class MobileCenterView:
 
     # the right needed to approve / reject each kind of document
     _DOC_RIGHT = {"goods_in": ("purchase", "add"), "van_sale": ("sales", "add"),
+                  "po": ("purchase", "add"), "labels": ("products", "print"),
+                  "poster": ("products", "edit"),
                   "goods_out": ("stock_adjustment", "approve"),
                   "adjust": ("stock_adjustment", "approve"),
                   "count": ("stock_adjustment", "approve")}
@@ -509,10 +517,31 @@ class MobileCenterView:
             elif d.get("ref_table") == "sales_invoices" and d.get("ref_id"):
                 from ui.invoices import InvoiceForm
                 InvoiceForm(self.frame, invoice_id=d["ref_id"])
+            elif d.get("doc_type") in M.FILE_DOCS and os.path.isfile(M.doc_file(d["doc_id"], d["doc_type"])):
+                from modules import printer_service as ps
+                ps.open_file(M.doc_file(d["doc_id"], d["doc_type"]))
+            elif d.get("ref_table") == "purchase_orders" and d.get("ref_id"):
+                from ui.quotes import DocForm
+                DocForm(self.frame, kind="purchase_order", doc_id=d["ref_id"])
             else:
                 self._show_lines()
         except Exception as e:
             messagebox.showerror("Open", str(e)[:200])
+
+    def _print_doc(self):
+        """v7.2: print the label / poster PDF a PDT sent."""
+        d = self._sel_doc()
+        if not d or d.get("doc_type") not in M.FILE_DOCS:
+            messagebox.showinfo("Print", "Pick a Barcode Labels or Offer Poster line.", parent=self.frame)
+            return
+        path = M.doc_file(d["doc_id"], d["doc_type"])
+        if not os.path.isfile(path):
+            messagebox.showinfo("Print", "This job has no PDF yet (status: %s)." % d.get("status"),
+                                parent=self.frame)
+            return
+        from ui import print_menu
+        print_menu.send_pdf(self.frame, path, M.DOC_TITLES.get(d["doc_type"], "PDF"),
+                            "labels" if d["doc_type"] == "labels" else "a4")
 
     # ── Van over the internet ──────────────────────────────────
     def _build_van(self):

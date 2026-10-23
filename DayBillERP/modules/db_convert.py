@@ -2,8 +2,9 @@
 # DayBill ERP - Database Tool: bring another program's data into DayBill
 # (v6.1)
 # ------------------------------------------------------------
-# Reads ANOTHER program's database (SQL Server, or a SQLite file such
-# as Aronium POS) — never writes to it — and brings into a DayBill
+# Reads ANOTHER program's database (SQL Server, a SQLite file such as
+# Aronium POS, or v7.2: an Excel workbook / CSV export — each sheet or
+# file is a table) — never writes to it — and brings into a DayBill
 # database:
 #     categories, products (code, barcode, names AR/EN, unit, sell price,
 #     cost, VAT), extra barcodes, customers, suppliers,
@@ -18,6 +19,11 @@
 #   plan = prepare(src, m, options)   # read + check (nothing written)
 #   plan.preview("products"), plan.issues, plan.counts()
 #   result = apply(plan, options, progress)   # writes into DayBill (db)
+#
+# v7.2: follows the DayBill company's country — VAT 15 % (Saudi), 5 %
+# (UAE) or the GST slabs (India), its currency, VAT No. / TRN / GSTIN
+# checks, GST state from the GSTIN, HSN codes — and verify(plan) compares
+# DayBill with the old data after converting.
 #
 # The writing goes through DayBill's own code: products_import (same as
 # the Excel import) and opening_balances (stock card + journals against
@@ -48,6 +54,7 @@ FIELDS = {
         ("qty", "Stock on hand"),
         ("reorder", "Reorder level"),
         ("inactive", "Inactive (1 = not used)"),
+        ("hsn", "HSN / SAC code (India)"),
     ],
     "barcodes": [
         ("item", "Product (old ID or code) *"),
@@ -62,6 +69,7 @@ FIELDS = {
         ("vat_no", "VAT number"),
         ("address", "Address"),
         ("city", "City"),
+        ("state", "State / emirate / region"),
         ("credit_limit", "Credit limit"),
         ("balance", "Balance (they owe us)"),
     ],
@@ -74,6 +82,7 @@ FIELDS = {
         ("vat_no", "VAT number"),
         ("address", "Address"),
         ("city", "City"),
+        ("state", "State / emirate / region"),
         ("balance", "Balance (we owe them)"),
     ],
 }
@@ -131,7 +140,8 @@ FIELD_SYNONYMS = {
              "avgcost", "lastcost", "lastpurprc", "unitcost", "pprice", "purprice",
              "تكلفه", "التكلفه", "سعر التكلفه", "سعر الشراء", "سعر شراء"],
     "vat": ["vat", "tax", "taxid", "taxrate", "vatrate", "vatpercent", "taxpercent", "taxcode",
-            "vatcode", "vatgroup", "vatgourpsa", "vatgroupsa", "taxable", "ضريبه", "الضريبه",
+            "vatcode", "vatgroup", "vatgourpsa", "vatgroupsa", "taxable", "gst", "gst%", "gstrate",
+            "gstpercent", "gstslab", "igst", "igstrate", "ضريبه", "الضريبه",
             "نسبه الضريبه", "القيمه المضافه"],
     "qty": ["qty", "quantity", "onhand", "stock", "stockqty", "balance", "qtyonhand", "currentstock",
             "instock", "available", "qtybalance", "كميه", "الكميه", "الرصيد", "المخزون",
@@ -148,9 +158,13 @@ FIELD_SYNONYMS = {
     "email": ["email", "emailaddress", "mail", "e_mail", "بريد", "البريد", "البريد الالكتروني"],
     "vat_no": ["vatno", "vatnumber", "taxnumber", "taxno", "trn", "vatregno", "vatreg",
                "vatregistrationno", "licttradnum", "lictradnum", "taxid", "taxregistration",
+               "gstin", "gstinno", "gstno", "gstnumber", "gstregno", "uin", "trnno", "trnnumber",
                "الرقم الضريبي", "رقم ضريبي", "رقم التسجيل الضريبي"],
     "address": ["address", "address1", "addr", "street", "streetaddress", "عنوان", "العنوان"],
     "city": ["city", "town", "مدينه", "المدينه"],
+    "state": ["state", "statecode", "statename", "province", "region", "emirate", "county",
+              "منطقه", "المنطقه", "الاماره", "اماره"],
+    "hsn": ["hsn", "hsncode", "hsnsac", "sac", "saccode", "hsn_sac", "tariff", "tariffcode"],
     "credit_limit": ["creditlimit", "creditline", "maxcredit", "limit", "حد الائتمان",
                      "الحد الائتماني"],
     "balance": ["balance", "accountbalance", "currentbalance", "openingbalance", "bal", "due",
@@ -283,9 +297,48 @@ def clean_barcode(v):
     return s[:50], ""
 
 
-def clean_vat_no(v):
+def _country():
+    """The DayBill company's country (SA when it can't be read)."""
+    try:
+        from modules import country as K
+        return K.code()
+    except Exception:
+        return "SA"
+
+
+def tax_rates(c=None):
+    """{code: rate} of the country's active tax categories."""
+    try:
+        from modules import country as K
+        cats = K.categories(c or _country())
+    except Exception:
+        cats = [("S", "", "", 15.0, "std", 1), ("Z", "", "", 0.0, "zero", 1),
+                ("E", "", "", 0.0, "exempt", 1), ("O", "", "", 0.0, "oos", 1)]
+    return {k: float(r) for k, _n, _a, r, _kind, _on in cats}
+
+
+def clean_vat_no(v, c=None):
+    """The party's tax number in the country's form, '' when it is not one
+    (Saudi VAT No. 15 digits 3…3 · UAE TRN 15 digits 100… · India GSTIN)."""
+    c = (c or _country()).upper()
+    if c == "IN":
+        g = re.sub(r"[\s\-]", "", str(v or "")).upper()
+        try:
+            from modules import country as K
+            return g if g and K.valid_tax_no(g, "IN")[0] else ""
+        except Exception:
+            return g if re.match(r"^\d{2}[A-Z0-9]{13}$", g) else ""
     d = re.sub(r"\D", "", str(v or ""))
+    if c == "AE":
+        return d if re.match(r"^100\d{12}$", d) else ""
     return d if re.match(r"^3\d{13}3$", d) else ""
+
+
+def tax_no_rule(c=None):
+    c = (c or _country()).upper()
+    return {"AE": "TRN must be 15 digits starting with 100",
+            "IN": "GSTIN must be 15 characters with a valid state code and check letter"}.get(
+        c, "VAT number must be 15 digits starting and ending with 3")
 
 
 def clean_phone(v):
@@ -293,34 +346,47 @@ def clean_phone(v):
     return s[:20]
 
 
-def vat_code(v):
-    """Old program's VAT value → (DayBill code S/Z/E/O, warning)."""
+def vat_code(v, c=None):
+    """Old program's VAT value → (DayBill tax category code, warning).
+    Rates follow the company's country: 15 % Saudi, 5 % UAE, GST slabs India."""
     if v is None or str(v).strip() == "":
         return None, ""
+    c = (c or _country()).upper()
+    rates = tax_rates(c)
+    std = rates.get("S", 15.0)
     s = str(v).strip().lower()
-    if s in ("s", "standard", "std", "vat", "yes", "y", "true", "taxable", "خاضع", "اساسي"):
+    if s in ("s", "standard", "std", "vat", "gst", "yes", "y", "true", "taxable", "خاضع", "اساسي"):
         return "S", ""
-    if s in ("z", "zero", "zero rated", "zero-rated", "صفر", "صفريه"):
+    if s in ("z", "zero", "zero rated", "zero-rated", "export", "صفر", "صفريه"):
         return "Z", ""
     if s in ("e", "exempt", "exempted", "معفى", "معفي", "معفاه"):
         return "E", ""
-    if s in ("o", "out", "out of scope", "غير خاضع"):
+    if s in ("o", "out", "out of scope", "non-gst", "nongst", "غير خاضع"):
         return "O", ""
+    if c == "IN" and s in ("nil", "nil rated", "nil-rated"):
+        return ("G0" if "G0" in rates else "Z"), ""
     if s in ("n", "no", "false", "none", "non-taxable", "nontaxable"):
         return "Z", "marked 'not taxable' — set to zero-rated, please check"
+    up = str(v).strip().upper()
+    if up in rates:                                  # the category code itself (G5, G18 …)
+        return up, ""
     d = to_dec(v)
     if d is None:
-        return "S", "VAT value '%s' not understood — set to 15%%" % str(v)[:20]
+        return "S", "VAT value '%s' not understood — set to %g%%" % (str(v)[:20], std)
     if d < 1 and d > 0:
         d = d * 100
     d = d.quantize(Decimal("0.01"))
-    if d == 15:
-        return "S", ""
     if d == 0:
-        return "Z", ""
-    if d == 5:
+        return ("G0" if c == "IN" and "G0" in rates else "Z"), ""
+    if abs(float(d) - std) < 0.005:
+        return "S", ""
+    same = [k for k, r in rates.items() if r and abs(r - float(d)) < 0.005]
+    if same:                                         # India 5 / 12 / 28 % …
+        return same[0], ""
+    if c == "SA" and d == 5:
         return "S", "old 5% VAT — set to 15%"
-    return "S", "VAT %s%% is not a Saudi rate — set to 15%%" % d
+    name = {"SA": "Saudi", "AE": "UAE", "IN": "GST"}.get(c, c)
+    return "S", "VAT %s%% is not a %s rate — set to %g%%" % (d, name, std)
 
 
 def truthy(v):
@@ -438,6 +504,118 @@ class MssqlSource:
             self.cn.close()
         except Exception:
             pass
+
+
+class _TableFile:
+    """Base for an Excel workbook / CSV files read into memory (read only):
+    each sheet / file is a table, its first non-empty row the column names."""
+    kind = "file"
+
+    def __init__(self, name):
+        self.name = name
+        self._data = {}            # table → (columns, rows as lists)
+
+    def _add(self, table, rows):
+        rows = [list(r) for r in rows if r is not None and any(v not in (None, "") for v in r)]
+        if not rows:
+            return
+        head, body = rows[0], rows[1:]
+        cols, seen = [], set()
+        for i, h in enumerate(head):
+            c = text(h, 120) or ("Column %d" % (i + 1))
+            base, n = c, 2
+            while c.lower() in seen:
+                c = "%s (%d)" % (base, n)
+                n += 1
+            seen.add(c.lower())
+            cols.append(c)
+        width = len(cols)
+        body = [(r + [None] * width)[:width] for r in body]
+        name, n = table, 2
+        while name in self._data:
+            name = "%s (%d)" % (table, n)
+            n += 1
+        self._data[name] = (cols, body)
+
+    def tables(self):
+        return [(t, len(rows)) for t, (_c, rows) in sorted(self._data.items())]
+
+    def columns(self, table):
+        cols, rows = self._data[table]
+        out = []
+        for i, c in enumerate(cols):
+            vals = [r[i] for r in rows[:200] if r[i] not in (None, "")]
+            num = vals and all(isinstance(v, (int, float, Decimal)) and not isinstance(v, bool)
+                               or to_dec(v) is not None for v in vals)
+            ints = num and all(to_dec(v) == to_dec(v).to_integral_value() for v in vals)
+            out.append((c, ("int" if ints else "float") if num else "nvarchar"))
+        return out
+
+    def rows(self, table, cols, where=None, limit=None):
+        allc, rows = self._data[table]
+        idx = [allc.index(c) for c in cols]
+        wi = allc.index(where[0]) if where else None
+        n = 0
+        for r in rows:
+            if wi is not None and str(r[wi]) != str(where[1]):
+                continue
+            yield {c: r[i] for c, i in zip(cols, idx)}
+            n += 1
+            if limit and n >= limit:
+                break
+
+    def close(self):
+        self._data = {}
+
+
+class ExcelSource(_TableFile):
+    """An Excel workbook (.xlsx / .xlsm) exported by the old program."""
+    kind = "excel"
+
+    def __init__(self, path):
+        super().__init__(os.path.basename(path))
+        import openpyxl
+        wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+        try:
+            for ws in wb.worksheets:
+                self._add(ws.title, ws.iter_rows(values_only=True))
+        finally:
+            wb.close()
+
+
+class CsvSource(_TableFile):
+    """One CSV file, or every CSV file in a folder (one table each).
+    UTF-8 (with or without BOM) or Arabic Windows (cp1256); , ; or tab."""
+    kind = "csv"
+
+    def __init__(self, path):
+        import csv
+        super().__init__(os.path.basename(os.path.normpath(path)))
+        files = ([os.path.join(path, f) for f in sorted(os.listdir(path)) if f.lower().endswith((".csv", ".txt"))]
+                 if os.path.isdir(path) else [path])
+        for f in files:
+            raw = open(f, "rb").read()
+            for enc in ("utf-8-sig", "cp1256", "latin-1"):
+                try:
+                    txt = raw.decode(enc)
+                    break
+                except UnicodeDecodeError:
+                    continue
+            try:
+                dialect = csv.Sniffer().sniff(txt[:4096], delimiters=",;\t|")
+            except csv.Error:
+                dialect = csv.excel
+            self._add(os.path.splitext(os.path.basename(f))[0], csv.reader(txt.splitlines(), dialect))
+
+
+def open_file(path):
+    """A SQLite database, an Excel workbook or CSV file(s) → a source."""
+    low = str(path).lower()
+    if os.path.isdir(path) or low.endswith((".csv", ".txt")):
+        return CsvSource(path)
+    if low.endswith((".xlsx", ".xlsm")):
+        return ExcelSource(path)
+    return SqliteSource(path)
 
 
 def open_sqlite(path):
@@ -1061,6 +1239,9 @@ def prepare(src, mapping, options=None):
     plan = Plan()
     plan.source = getattr(src, "name", "")
     from modules.product_lookup import norm_code
+    ctry = _country()
+    rates = tax_rates(ctry)
+    plan.country = ctry
 
     # products
     seen_code, seen_bc, by_key = {}, {}, {}
@@ -1105,14 +1286,16 @@ def prepare(src, mapping, options=None):
             if w:
                 plan.add("warning", "products", code, "VAT_UNKNOWN", w)
             vc = vc or o["default_vat"]
+            if vc not in rates:
+                vc = "S"
             price = to_dec(r.get("price"))
             cost = to_dec(r.get("cost"))
             if price is None or price < 0:
                 if "price" in mapping["products"]["fields"]:
                     plan.add("warning", "products", code, "PRICE_MISSING", "no sell price — 0.00")
                 price = Decimal(0)
-            if not o["prices_include_vat"] and vc == "S":
-                price = price * Decimal("1.15")
+            if not o["prices_include_vat"] and rates.get(vc):      # the country's rate (15 / 5 / 18 …)
+                price = price * (Decimal(1) + Decimal(str(rates[vc])) / Decimal(100))
             if cost is None or cost < 0:
                 cost = Decimal(0)
             qty = to_dec(r.get("qty"), Decimal(0)) or Decimal(0)
@@ -1127,6 +1310,7 @@ def prepare(src, mapping, options=None):
                 "price": money(price), "cost": cost.quantize(Decimal("0.0001"), ROUND_HALF_UP),
                 "vat": vc, "qty": qty.quantize(Decimal("0.0001"), ROUND_HALF_UP),
                 "reorder": to_dec(r.get("reorder"), Decimal(0)) or Decimal(0),
+                "hsn": re.sub(r"\s", "", text(r.get("hsn"), 20)),
                 "active": not truthy(r.get("inactive"))})
             if r.get("key") not in (None, ""):
                 k = r.get("key")
@@ -1182,16 +1366,29 @@ def prepare(src, mapping, options=None):
                 code = (code[:17] + "-2")
             seen.add(code.upper())
             vat_raw = text(r.get("vat_no"))
-            vno = clean_vat_no(vat_raw)
+            vno = clean_vat_no(vat_raw, ctry)
             if vat_raw and not vno:
                 plan.add("warning", ent, code, "VAT_NO_INVALID",
-                         "VAT number '%s' is not 15 digits starting and ending with 3 — left empty" % vat_raw[:20])
+                         "tax number '%s': %s — left empty" % (vat_raw[:20], tax_no_rule(ctry)))
+            state = ""
+            if r.get("state") not in (None, ""):
+                try:
+                    from modules import country as K
+                    state = K.state_code_of(text(r.get("state"), 60))
+                    if state not in {k for k, _n in K.states(ctry)}:
+                        plan.add("warning", ent, code, "STATE_UNKNOWN",
+                                 "state / region '%s' not known — left empty" % text(r.get("state"), 40))
+                        state = ""
+                except Exception:
+                    state = ""
+            if not state and ctry == "IN" and vno:
+                state = vno[:2]                      # the GSTIN starts with the GST state code
             bal = money(r.get("balance")) if o["import_balances"] else Decimal("0.00")
             plan.records[ent].append({
                 "code": code, "name_en": en, "name_ar": ar, "phone": clean_phone(r.get("phone")),
                 "email": text(r.get("email"), 100), "vat_no": vno, "address": text(r.get("address"), 500),
                 "city": text(r.get("city"), 100), "credit_limit": money(r.get("credit_limit")),
-                "balance": bal})
+                "state": state, "balance": bal})
     # suppliers kept as minus amounts in the old program (what we owe = credit)
     sup = [r for r in plan.records["suppliers"] if r["balance"]]
     if sup and sum(1 for r in sup if r["balance"] < 0) >= 0.7 * len(sup):
@@ -1283,12 +1480,17 @@ def apply(plan, options=None, progress=None, operator=""):
     # products — the same code as the Excel import (upsert by code,
     # opening stock through the stock card and the books)
     prods = plan.records["products"]
+    try:
+        from modules import country as K
+        currency = K.currency_code()
+    except Exception:
+        currency = "SAR"
     rows = []
     for r in prods:
         rows.append({
             "product_code": r["code"], "product_name_en": r["name_en"], "product_name_ar": r["name_ar"],
             "product_type": "product", "unit_price": float(r["price"]),
-            "purchase_price": float(r["cost"]), "currency": "SAR",
+            "purchase_price": float(r["cost"]), "currency": currency,
             "unit_of_measure_en": r["unit"], "unit_of_measure_ar": r["unit"],
             "vat_code": r["vat"], "category_name": r["category"], "barcode": r["barcode"] or None,
             "track_inventory": 1,
@@ -1304,6 +1506,11 @@ def apply(plan, options=None, progress=None, operator=""):
         res["errors"] += errs
     if o["import_stock"]:
         res["stock_lines"] = sum(1 for r in prods if r["qty"] > 0)
+    hsn = [(r["hsn"], r["code"]) for r in prods if r.get("hsn")]
+    if hsn and _has_col(db, "products", "hsn_code"):          # v7.2: India HSN / SAC
+        for h, code in hsn:
+            db.execute("UPDATE products SET hsn_code=? WHERE product_code=?", (h, code))
+        res["hsn"] = len(hsn)
 
     # extra barcodes (on the product's base unit)
     if plan.records["barcodes"]:
@@ -1349,6 +1556,8 @@ def apply(plan, options=None, progress=None, operator=""):
                 if ent == "customers":
                     vals["credit_limit"] = float(r["credit_limit"])
                     vals["customer_type"] = "B2B" if r["vat_no"] else "B2C"
+                if r.get("state") and _has_col(db, tbl, "state_code"):
+                    vals["state_code"] = r["state"]
                 if pid:
                     db.execute("UPDATE %s SET %s, updated_at=GETDATE() WHERE %s_id=?"
                                % (tbl, ", ".join("%s=?" % k for k in vals), col),
@@ -1370,6 +1579,57 @@ def apply(plan, options=None, progress=None, operator=""):
     res["log"] = write_log(plan, res, o, operator)
     say("Done.")
     return res
+
+
+def _has_col(db, table, col):
+    try:
+        return db.execute_scalar("SELECT COL_LENGTH(?, ?)", (table, col)) is not None
+    except Exception:
+        return False
+
+
+# ── after converting: does DayBill hold what the old program had? ──
+def verify(plan, options=None):
+    """[(what, old program, DayBill, ok)] — counts and money compared
+    after apply(). Read only."""
+    from config.database import db
+    o = dict(DEFAULT_OPTIONS)
+    o.update(options or {})
+    from modules.product_lookup import norm_code
+    out = []
+    c = plan.counts()
+    codes = [r["code"] for r in plan.records["products"]]
+    have = {norm_code(r["product_code"]): r for r in (db.fetchall(
+        "SELECT product_code, ISNULL(stock_quantity,0) AS q, ISNULL(purchase_price,0) AS cost "
+        "FROM products") or [])}
+    found = sum(1 for k in codes if norm_code(k) in have)
+    out.append(("Products", len(codes), found, found == len(codes)))
+    old_stock = sum(float(r["qty"]) * float(r["cost"]) for r in plan.records["products"])
+    new_stock = sum(float(have[norm_code(k)]["q"]) * float(have[norm_code(k)]["cost"])
+                    for k in codes if norm_code(k) in have)
+    if o["import_stock"]:
+        out.append(("Stock value (qty × cost)", round(old_stock, 2), round(new_stock, 2),
+                    abs(old_stock - new_stock) < 0.05 or not old_stock))
+    try:
+        nb = db.execute_scalar("SELECT COUNT(*) FROM product_unit_barcodes") or 0
+    except Exception:
+        nb = 0
+    out.append(("Extra barcodes", c["barcodes"], int(nb), int(nb) >= c["barcodes"]))
+    for ent, tbl, col, key in (("customers", "customers", "customer", "receivable"),
+                               ("suppliers", "suppliers", "supplier", "payable")):
+        want = {r["code"].upper() for r in plan.records[ent]}
+        try:
+            rows = db.fetchall("SELECT %s_code AS c, ISNULL(opening_balance,0) AS ob FROM %s" % (col, tbl)) or []
+        except Exception:
+            rows = db.fetchall("SELECT %s_code AS c, 0 AS ob FROM %s" % (col, tbl)) or []
+        got = {str(r["c"]).upper(): float(r["ob"] or 0) for r in rows}
+        n = sum(1 for k in want if k in got)
+        out.append((ENTITY_TITLES[ent], len(want), n, n == len(want)))
+        total = round(sum(got[k] for k in want if k in got), 2)
+        if o["import_balances"]:
+            out.append(("%s opening balances" % ENTITY_TITLES[ent][:-1], float(c[key]), total,
+                        abs(total - float(c[key])) < 0.05))
+    return out
 
 
 def write_log(plan, res, options, operator=""):

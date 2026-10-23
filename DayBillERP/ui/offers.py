@@ -1113,6 +1113,17 @@ class PosterPromptDialog(tk.Toplevel):
         tk.Button(btns, text="📋  Copy prompt", font=("Segoe UI", 10, "bold"), bg="#7C3AED",
                   fg="white", relief="flat", padx=14, pady=6, cursor="hand2",
                   command=self._copy).pack(side="right", padx=6)
+        # v7.2: a printable poster made right here (no internet)
+        tk.Button(btns, text="🖨  Printable poster (PDF)", font=("Segoe UI", 10, "bold"), bg="#DC2626",
+                  fg="white", relief="flat", padx=12, pady=6, cursor="hand2",
+                  command=self._pdf).pack(side="left")
+        from modules import poster_pdf as _PP
+        self.pp_size = tk.StringVar(value=_PP.SIZES["a4"][0])
+        self.pp_theme = tk.StringVar(value=_PP.THEMES["sale"][0])
+        ttk.Combobox(btns, textvariable=self.pp_size, state="readonly", width=24,
+                     values=[v[0] for v in _PP.SIZES.values()]).pack(side="left", padx=(6, 4))
+        ttk.Combobox(btns, textvariable=self.pp_theme, state="readonly", width=26,
+                     values=[v[0] for v in _PP.THEMES.values()]).pack(side="left")
 
         tw = tk.Frame(self, bg=C["card_bg"], highlightbackground=C["border"], highlightthickness=1)
         tw.pack(fill="both", expand=True, padx=14, pady=(0, 2))
@@ -1147,6 +1158,27 @@ class PosterPromptDialog(tk.Toplevel):
             self.msg.set("✅ ChatGPT opened with the prompt (also copied — Ctrl+V if empty)")
         except Exception:
             pass
+
+    def _pdf(self, open_it=True):
+        """🖨 The poster as a PDF in the chosen size and design (opens it)."""
+        import tempfile
+        from modules import poster_pdf as PP
+        size = next((k for k, v in PP.SIZES.items() if v[0] == self.pp_size.get()), "a4")
+        theme = next((k for k, v in PP.THEMES.items() if v[0] == self.pp_theme.get()), "sale")
+        path = os.path.join(tempfile.gettempdir(), "daybill_poster_%s.pdf" % (self.offer.get("offer_id") or "new"))
+        try:
+            PP.render(path, PP.data_from_offer(self.offer, self.items, size, theme, self.company))
+        except Exception as e:
+            messagebox.showerror("Poster", str(e)[:300], parent=self)
+            return None
+        self.msg.set("✅ Poster saved: %s" % path)
+        if open_it:
+            try:
+                from modules import printer_service as ps
+                ps.open_file(path)
+            except Exception:
+                pass
+        return path
 
     def _gemini(self):
         self._copy()

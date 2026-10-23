@@ -135,9 +135,15 @@ def target_account(target):
     return pid
 
 
-def party_of_account(account_id):
-    """('customer', id, name) / ('supplier', …) for a party ledger, else None."""
+def party_of_account(account_id, money_ids=None):
+    """('customer', id, name) / ('supplier', …) for a party ledger, else None.
+    A cash / bank account is never a party (the Cash Customer and Cash
+    Supplier may be booked straight to the cash account)."""
     if not account_id:
+        return None
+    if money_ids is None:
+        money_ids = set(m["account_id"] for m in money_accounts())
+    if account_id in money_ids:
         return None
     for kind, t, nm in (("customer", "customers", "customer_name_en"),
                         ("supplier", "suppliers", "supplier_name_en")):
@@ -461,8 +467,8 @@ def kind_of(journal_id):
             "transfer": "contra"}.get(src, "journal")
 
 
-def _target_for(account_id, names):
-    p = party_of_account(account_id)
+def _target_for(account_id, names, money_ids=None):
+    p = party_of_account(account_id, money_ids)
     if p:
         return (p[0], p[1]), p[2]
     a = names.get(account_id) or {}
@@ -481,6 +487,7 @@ def load(journal_id, kind=None):
                        "LEFT JOIN accounts a ON a.account_id=jl.account_id "
                        "WHERE jl.journal_id=? ORDER BY jl.line_number", (journal_id,)) or []
     names = {r["account_id"]: r for r in rows}
+    money_ids = set(m["account_id"] for m in money_accounts())
     d = h.get("entry_date")
     out = {"kind": kind, "number": h.get("journal_number") or "",
            "date": d.strftime("%Y-%m-%d") if hasattr(d, "strftime") else str(d or "")[:10],
@@ -488,12 +495,11 @@ def load(journal_id, kind=None):
            "lines": []}
     if kind == "journal":
         for r in rows:
-            tgt, lab = _target_for(r["account_id"], names)
+            tgt, lab = _target_for(r["account_id"], names, money_ids)
             out["lines"].append({"target": tgt, "account_id": r["account_id"], "label": lab,
                                  "debit": f2(r["debit"]), "credit": f2(r["credit"]),
                                  "description": r.get("description") or ""})
         return out
-    money_ids = set(m["account_id"] for m in money_accounts())
     tax_ids = set(a for a in [ad.tax_receivable()] if a)
     try:
         for h_ in ("cgst", "sgst", "igst", "utgst"):
@@ -508,7 +514,7 @@ def load(journal_id, kind=None):
         crs = [r for r in rows if f2(r["credit"])]
         for i, r in enumerate(drs):
             m = crs[i] if i < len(crs) else (crs[-1] if crs else None)
-            tgt, lab = _target_for(r["account_id"], names)
+            tgt, lab = _target_for(r["account_id"], names, money_ids)
             ln = {"target": tgt, "account_id": r["account_id"], "label": lab,
                   "amount": f2(r["debit"]), "vat": 0.0, "money": m and m["account_id"],
                   "description": r.get("description") or ""}
@@ -531,7 +537,7 @@ def load(journal_id, kind=None):
         if kind == "payment" and acc in tax_ids and entries and f2(r["debit"]):
             entries[-1]["vat"] = round(f2(entries[-1].get("vat")) + f2(r["debit"]), 2)
             continue
-        tgt, lab = _target_for(acc, names)
+        tgt, lab = _target_for(acc, names, money_ids)
         amt = f2(r["credit"]) if kind == "receipt" else f2(r["debit"])
         if not amt:                               # a reverse line: keep it negative-free
             amt = f2(r["debit"]) if kind == "receipt" else f2(r["credit"])
