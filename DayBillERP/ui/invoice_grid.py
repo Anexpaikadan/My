@@ -216,6 +216,19 @@ class InvoiceGrid(tk.Frame):
         self.last_var = tk.StringVar(value=self._last_doc_text(self._last_kind))
         tk.Label(hint, textvariable=self.last_var, font=("Segoe UI", 8, "bold"),
                  bg=C["card_bg"], fg=C.get("primary", "#2563EB")).pack(side="right")
+        # v7.5: a small "find a line" box — jumps to the line with that code / name
+        # (Enter = next match); a long bill no longer needs scrolling
+        self.find_line_var = tk.StringVar()
+        fe = tk.Entry(hint, textvariable=self.find_line_var, width=14, font=("Segoe UI", 8),
+                      relief="solid", bd=1)
+        fe.pack(side="right", padx=(0, 10))
+        tk.Label(hint, text="🔍 line", font=("Segoe UI", 8), bg=C["card_bg"],
+                 fg=C["text_secondary"]).pack(side="right")
+        fe.bind("<KeyRelease>", lambda e: self.find_line(next_=False)
+                if e.keysym not in ("Return", "KP_Enter") else None)
+        fe.bind("<Return>", lambda e: (self.find_line(next_=True), "break")[1])
+        fe.bind("<KP_Enter>", lambda e: (self.find_line(next_=True), "break")[1])
+        self._find_entry = fe
         tk.Label(hint,
             text="Barcode + Enter loads the product.  Type in Product to search.  "
                  "SPACE cycles the unit.  HOLD Ctrl = purchase price + box qty.  "
@@ -511,6 +524,24 @@ class InvoiceGrid(tk.Frame):
             "count": len(real),
         }
 
+    def find_line(self, text=None, next_=False):
+        """Select the (next) line whose code / name / barcode has the text.
+        → its index, or None."""
+        q = str(self.find_line_var.get() if text is None else text).strip().lower()
+        if not q:
+            return None
+        hits = [i for i, ln in enumerate(self.lines) if ln.get("product_id") and q in (
+            "%s %s %s %s" % (ln.get("product_code") or "", ln.get("product_name_en") or "",
+                             ln.get("product_name_ar") or "", ln.get("barcode") or "")).lower()]
+        if not hits:
+            return None
+        cur = self._iid_idx(self.tree.focus()) if next_ else None
+        i = next((h for h in hits if cur is not None and h > cur), hits[0])
+        iid = str(i)
+        if self.tree.exists(iid):
+            self.tree.selection_set(iid); self.tree.focus(iid); self.tree.see(iid)
+        return i
+
     def data_lines(self):
         return [l for l in self.lines if l.get("product_id")]
 
@@ -717,6 +748,12 @@ class InvoiceGrid(tk.Frame):
 
     def _barcode_enter(self, idx, var):
         code = var.get().strip()
+        cb = getattr(self, "on_customer_code", None)
+        if cb and code.upper().startswith("DBCUST:"):    # v7.5: a loyalty card picks the customer
+            var.set("")
+            self._close_editor()
+            cb(code)
+            return
         p, matched_unit = self._resolve_barcode(code)
         scale_hit = None
         if not p and code:

@@ -35,6 +35,21 @@ CONF = {
         "statuses": ["open", "sent", "accepted", "cancelled"],
         "pdf": "quotation",
     },
+    "sales_order": {                                       # v7.5
+        "title": "Sales Order", "plural": "Sales Orders", "icon": "🧾",
+        "prefix": "SO", "table": "sales_orders", "lines": "sales_order_lines",
+        "id": "so_id", "number": "so_number", "date": "so_date",
+        "date2": "delivery_date", "date2_label": "Delivery Date", "days2": 3,
+        "party": "customer", "party_label": "Customer",
+        "party_id": "customer_id", "party_name": "customer_name_en",
+        "party_name_ar": "customer_name_ar", "party_vat": "customer_vat_no",
+        "perm": "quotation", "grid_doc": "sales",
+        "tax_key": "sales_price_tax_mode", "tax_default": "inclusive",
+        "convert": "Sales Invoice", "done": "converted",
+        "conv_col": "converted_invoice_id",
+        "statuses": ["open", "confirmed", "partial", "cancelled"],
+        "pdf": "sales_order",
+    },
     "purchase_order": {
         "title": "Purchase Order", "plural": "Purchase Orders", "icon": "📋",
         "prefix": "PO", "table": "purchase_orders", "lines": "purchase_order_lines",
@@ -47,13 +62,13 @@ CONF = {
         "tax_key": "purchase_cost_tax_mode", "tax_default": "exclusive",
         "convert": "Purchase Invoice", "done": "received",
         "conv_col": "converted_purchase_id",
-        "statuses": ["open", "sent", "cancelled"],
+        "statuses": ["open", "sent", "partial", "cancelled"],
         "pdf": "purchase_order",
     },
 }
 
 STATUS_ICON = {"open": "📝", "sent": "📤", "accepted": "👍", "converted": "✅",
-               "received": "📦", "cancelled": "❌"}
+               "received": "📦", "cancelled": "❌", "confirmed": "👍", "partial": "◐"}
 
 
 def _f(v):
@@ -453,6 +468,7 @@ class DocForm:
         k = self.k
         if not _allowed(self.kind, "edit" if self.doc_id else "add"):
             return False
+        _was_new = not self.doc_id
         if str(self.btn_save.cget("state")) == "disabled":
             return False
         self._on_change()
@@ -493,6 +509,13 @@ class DocForm:
                     (d1, d2, party["id"], party["name"], party.get("name_ar", ""),
                      party.get("vat", ""), self.v["ref"].get() or None, taxable, disc,
                      taxable, vat, total, status, self.v["notes"].get() or None, self.doc_id))
+                try:                 # v7.5: what was already delivered stays counted
+                    kept = {(r["product_id"], str(r["unit_of_measure_en"] or "").lower()): float(r["d"] or 0)
+                            for r in db.fetchall(f"SELECT product_id, unit_of_measure_en, SUM(delivered_qty) AS d "
+                                                 f"FROM {k['lines']} WHERE {k['id']}=? GROUP BY product_id, "
+                                                 f"unit_of_measure_en", (self.doc_id,)) or []}
+                except Exception:
+                    kept = {}
                 db.execute(f"DELETE FROM {k['lines']} WHERE {k['id']}=?", (self.doc_id,))
             else:
                 num = self.v["number"].get() or self._next_number()
@@ -530,6 +553,17 @@ class DocForm:
                      ln.get("line_amount", 0), ln.get("vat_category_id"),
                      ln.get("vat_category_code", "S"), ln.get("vat_rate", 15),
                      ln.get("vat_amount", 0), ln.get("line_total", 0)))
+            for (pid_, unit_), dq in (locals().get("kept") or {}).items():
+                if dq > 0:
+                    db.execute(f"UPDATE {k['lines']} SET delivered_qty=? WHERE line_id=(SELECT TOP 1 line_id "
+                               f"FROM {k['lines']} WHERE {k['id']}=? AND product_id=? AND "
+                               f"LOWER(ISNULL(unit_of_measure_en,''))=?)", (dq, self.doc_id, pid_, unit_))
+            if _was_new and self.kind == "sales_order":   # v7.5: warehouse / tailor slips
+                try:
+                    from modules import print_stations as _PS
+                    self.last_station_print = _PS.send("sales_order", self.doc_id)
+                except Exception:
+                    pass
             try:
                 from modules import audit
                 audit.log("save", self.kind, self.doc_id,
@@ -634,11 +668,14 @@ class DocForm:
         self._close()
 
 
-def open_conversion(parent, kind, doc_id, after=None):
-    """Open a new Sales / Purchase Invoice filled from the quotation /
-    PO. When that invoice is saved, the source is marked converted."""
+def open_conversion(parent, kind, doc_id, after=None, picked=None):
+    """Open a new Sales / Purchase Invoice filled from the quotation, sales
+    order or PO — only what is still left on it (v7.5: partial delivery).
+    When the invoice is saved, the delivered quantities are counted on the
+    order (partial / converted)."""
+    from modules import doc_links as DL
     k = CONF[kind]
-    h, lines = load_doc(kind, doc_id)
+    h, lines = DL.order_lines(kind, doc_id)
     if not h:
         return None
     st = (h.get("status") or "").lower()
@@ -646,62 +683,128 @@ def open_conversion(parent, kind, doc_id, after=None):
         messagebox.showinfo(k["title"], f"This {k['title'].lower()} is already {st}.",
                             parent=parent)
         return None
-    holder = {}
+    if picked is None:
+        picked = [dict(l, _pick=l["_left"]) for l in lines if l["_left"] > 0]
+    rows = DL.to_grid(picked)
+    if not rows:
+        messagebox.showinfo(k["title"], "Nothing is left to deliver on this %s." % k["title"].lower(),
+                            parent=parent)
+        return None
+    note = "From %s %s" % (k["title"].lower(), h[k["number"]])
 
-    def mark_done():
-        form = holder.get("form")
-        new_id = getattr(form, "invoice_id", None) or getattr(form, "purchase_id", None)
-        if not new_id:
-            return
-        try:
-            db.execute(f"UPDATE {k['table']} SET status=?, {k['conv_col']}=?, "
-                       f"updated_at=GETDATE() WHERE {k['id']}=?", (k["done"], new_id, doc_id))
-        except Exception:
-            pass
+    def done_cb():
         if after:
             try:
                 after()
             except Exception:
                 pass
 
-    if kind == "quotation":
+    if kind in ("quotation", "sales_order"):
         from modules import permissions as _pm
         if not _pm.allowed("sales", "add"):
             return None
         from ui.invoices import InvoiceForm
-        form = InvoiceForm(parent, on_save=mark_done)
-        holder["form"] = form
-        try:
-            cust = next((c for c in form._customers
-                         if c["customer_id"] == h.get("customer_id")), None)
-            if cust:
-                form.cust_combo.set(f"{cust['customer_code']} — {cust['customer_name_en']}")
-                form._on_customer_select()
-            form.line_grid.set_lines(lines)
-            form._lines = form.line_grid.data_lines()
-            note = f"From quotation {h['quote_number']}"
-            form.hdr_vars["notes_en"].set(
-                (h.get("notes_en") + " · " if h.get("notes_en") else "") + note)
-            form._update_totals()
-        except Exception:
-            pass
-        return form
-    from modules import permissions as _pm
-    if not _pm.allowed("purchase", "add"):
-        return None
-    from ui.purchases import PurchaseForm
-    form = PurchaseForm(parent, None, mark_done)
-    holder["form"] = form
+        form = InvoiceForm(parent, on_save=done_cb)
+        fill_sales_invoice(form, h, rows, note)
+    else:
+        from modules import permissions as _pm
+        if not _pm.allowed("purchase", "add"):
+            return None
+        from ui.purchases import PurchaseForm
+        form = PurchaseForm(parent, None, done_cb)
+        fill_purchase_invoice(form, h, rows, note)
+    DL.link(form, kind, doc_id, DL.taken_from(rows))
+    return form
+
+
+def fill_sales_invoice(form, h, rows, note="", add=False):
+    """Put an order's customer and lines on a Sales Invoice window."""
+    try:
+        cust = next((c for c in form._customers
+                     if c["customer_id"] == h.get("customer_id")), None)
+        if cust:
+            form.cust_combo.set(f"{cust['customer_code']} — {cust['customer_name_en']}")
+            form._on_customer_select()
+    except Exception:
+        pass
+    have = form.line_grid.data_lines() if add else []
+    form.line_grid.set_lines(list(have) + list(rows))
+    form._lines = form.line_grid.data_lines()
+    if note:
+        cur = form.hdr_vars["notes_en"].get()
+        form.hdr_vars["notes_en"].set((cur + " · " if cur else "") + note)
+    try:
+        form._update_totals()
+    except Exception:
+        pass
+
+
+def fill_purchase_invoice(form, h, rows, note="", add=False):
     try:
         s = next((x for x in form.suppliers if x["supplier_id"] == h.get("supplier_id")), None)
         if s:
             form.sup_cb.set(f"{s['supplier_code']} — {s['supplier_name_en']}")
-        form.grid.set_lines(lines)
+    except Exception:
+        pass
+    have = form.grid.data_lines() if add else []
+    form.grid.set_lines(list(have) + list(rows))
+    if h.get("reference") and not form.hdr["supinv"].get():
         form.hdr["supinv"].set(h.get("reference") or "")
+    if note:
+        cur = form.hdr["notes"].get()
+        form.hdr["notes"].set((cur + " · " if cur else "") + note)
+    try:
         form._on_change()
     except Exception:
         pass
-    return form
+
+
+def load_order_into(form, side):
+    """📥 Load order (Sales / Purchase Invoice): pick the quotation / sales
+    order / PO, pick its lines and quantities → they go on the invoice."""
+    from modules import doc_links as DL
+    from ui.doc_pick import DocPicker, LinePicker
+    kinds = list(DL.ORDERS_FOR[side])
+    kinds = [k for k in kinds if DL._has(DL.KINDS[k]["table"])]
+    party = None
+    try:
+        if side == "sales":
+            code = form.cust_var.get().split(" — ")[0]
+            c = next((x for x in form._customers if x["customer_code"] == code), None)
+            party = c["customer_id"] if c and str(code).upper() not in ("CASH", "WALKIN", "WALK-IN") else None
+        else:
+            code = form.sup_var.get().split(" — ")[0]
+            s_ = next((x for x in form.suppliers if x["supplier_code"] == code), None)
+            party = s_["supplier_id"] if s_ and str(code).upper() not in ("CASH", "S-CASH") else None
+    except Exception:
+        party = None
+    dp = DocPicker(form.win, kinds, party_id=party, title="Load an order into this invoice")
+    if not dp.result:
+        return None
+    kind, doc_id = dp.result
+    h, lines = DL.order_lines(kind, doc_id)
+    if not any(l["_left"] > 0 for l in lines):
+        messagebox.showinfo("Load order", "Nothing is left to deliver on this order.", parent=form.win)
+        return None
+    lp = LinePicker(form.win, lines, title="%s %s — pick the lines" % (DL.KINDS[kind]["title"],
+                                                                       h[DL.KINDS[kind]["number"]]),
+                    done_label="Delivered", sold_label="Ordered")
+    if not lp.result:
+        return None
+    return apply_order_pick(form, side, kind, h, lp.result)
+
+
+def apply_order_pick(form, side, kind, h, picked):
+    from modules import doc_links as DL
+    rows = DL.to_grid(picked)
+    grid = form.line_grid if side == "sales" else form.grid
+    add = bool(grid.data_lines()) and messagebox.askyesno(
+        "Load order", "Add the order's lines to the lines already on this invoice?\n(No = replace them)",
+        parent=form.win)
+    note = "From %s %s" % (DL.KINDS[kind]["title"].lower(), h[DL.KINDS[kind]["number"]])
+    (fill_sales_invoice if side == "sales" else fill_purchase_invoice)(form, h, rows, note, add=add)
+    DL.link(form, kind, h[DL.KINDS[kind]["id"]], DL.taken_from(rows))
+    return rows
 
 
 # ════════════════════════════════════════════════════════════
@@ -824,7 +927,7 @@ class _DocListView:
             self.count.set("⚠ " + str(e)[:80] + " — restart DayBill to install the tables.")
         self._inv_numbers = {}
         try:
-            if self.kind == "quotation":
+            if self.kind in ("quotation", "sales_order"):
                 ids = [r[k["conv_col"]] for r in self._rows if r.get(k["conv_col"])]
                 for i in ids:
                     n = db.execute_scalar("SELECT invoice_number FROM sales_invoices WHERE invoice_id=?", (i,))
@@ -948,6 +1051,10 @@ class _DocListView:
 
 class QuotationsView(_DocListView):
     kind = "quotation"
+
+
+class SalesOrdersView(_DocListView):
+    kind = "sales_order"
 
 
 class PurchaseOrdersView(_DocListView):

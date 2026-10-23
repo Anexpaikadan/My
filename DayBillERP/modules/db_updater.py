@@ -10,7 +10,7 @@ import re
 try:                                    # one version for the whole app (config/version.py)
     from config.version import VERSION as APP_VERSION
 except Exception:
-    APP_VERSION = "7.4.0"
+    APP_VERSION = "7.5.0"
 
 # Ordered list of database patches shipped with the app.
 # (filename relative to project root, human description, version)
@@ -35,6 +35,10 @@ PATCHES = [
 
 # What changed in each version (shown in the Updates panel)
 CHANGELOG = [
+    ("7.5.0", ["🧾 Returns: pick the bill and the items (all or some), never more than sold. Sales Orders; "
+               "Load Order into Sales / Purchase Invoice with partial delivery.",
+               "🍳 Print Stations: Kitchen 1 / Warehouse 1 / Tailor … each with printer and template.",
+               "💳 Customer loyalty QR card · 📦 PDT Receive PO (draft or confirmed invoice) · Mobile Listen-on."]),
     ("7.4.0", ["📱 QR sign-in for every user / employee: sent on WhatsApp, opens the phone app signed in, "
                "or scanned at the desktop login. Staff card PDF, validity, turn off.",
                "HR ▸ Employee: link or make the employee's DayBill user and send their QR."]),

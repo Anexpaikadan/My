@@ -27,14 +27,14 @@ TITLES = {
     "purchase_return": "PURCHASE RETURN", "payment_voucher": "PAYMENT VOUCHER",
     "receipt_voucher": "RECEIPT VOUCHER", "journal_voucher": "JOURNAL VOUCHER",
     "contra_voucher": "CONTRA VOUCHER",
-    "quotation": "QUOTATION", "purchase_order": "PURCHASE ORDER",
+    "quotation": "QUOTATION", "purchase_order": "PURCHASE ORDER", "sales_order": "SALES ORDER",
 }
 ACCENTS = {
     "purchase_invoice": "#1D4ED8", "sales_return": "#B91C1C",
     "purchase_return": "#B45309", "payment_voucher": "#B91C1C",
     "receipt_voucher": "#0F766E", "journal_voucher": "#475569",
     "contra_voucher": "#475569",
-    "quotation": "#0F766E", "purchase_order": "#1D4ED8",
+    "quotation": "#0F766E", "purchase_order": "#1D4ED8", "sales_order": "#7C3AED",
 }
 
 

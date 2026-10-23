@@ -923,6 +923,7 @@ class InvoiceForm:
             ("\U0001f4e6 Prod Summary",lambda: self._nav("reports")),
             ("\U0001f465 Party Summary",lambda: self._nav("reports")),
             ("\U0001f50d Search",      self._focus_product),
+            ("\U0001f4e5 Load Order",  self._load_order),          # v7.5: quotation / sales order
         ]
         for txt, cmd in tools:
             tk.Button(tb, text=txt, font=("Segoe UI", 8, "bold"),
@@ -1060,6 +1061,19 @@ class InvoiceForm:
         self.in_search_var = tk.BooleanVar(value=True)
         check(r2, "In Search", self.in_search_var, fg=C["accent_dark"])
         small_btn(r2, "⤓", self._goto_last_row, padl=4)     # Goto Last Row
+        # v7.5: print stations — pick the tailor / picker / kitchen this sale goes to
+        self.station_var = tk.StringVar(value="Auto")
+        self._station_ids = {}
+        try:
+            from modules import print_stations as _PS
+            _sts = _PS.stations(doc_kind="sales")
+        except Exception:
+            _sts = []
+        if _sts:
+            self._station_ids = {"%s" % st["name"]: st["station_id"] for st in _sts}
+            lbl(r2, "Send to")
+            ttk.Combobox(r2, textvariable=self.station_var, state="readonly", width=16, font=F8,
+                         values=["Auto"] + list(self._station_ids)).pack(side="left")
         self.win.bind("<Control-End>", lambda e: self._goto_last_row())
 
     def _build_line_items(self, C):
@@ -1094,6 +1108,7 @@ class InvoiceForm:
                                     tax_mode=cfg.get("sales_price_tax_mode", "inclusive"),
                                     doc_type="sales", use_offers=True)
             self.line_grid.pack(fill="both", expand=True, padx=8, pady=(4, 0))
+            self.line_grid.on_customer_code = self._loyalty_card     # v7.5: scan the QR card
             if not self.view_only:       # v7.0: Textiles size / colour grid (Ctrl+G)
                 try:
                     from ui import textiles as _tx
@@ -1257,6 +1272,31 @@ class InvoiceForm:
             self.cust_combo.event_generate("<Down>")
         except Exception:
             pass
+
+    def _loyalty_card(self, code):
+        """A customer's loyalty QR card scanned into the barcode box."""
+        try:
+            from modules import loyalty_qr as LQ
+            c = LQ.customer_for(code)
+        except Exception:
+            c = None
+        if not c:
+            messagebox.showwarning("Loyalty card", "This card is not valid (a newer card was made?).",
+                                   parent=self.win)
+            return False
+        cust = next((x for x in self._customers if x["customer_id"] == c["customer_id"]), None)
+        if cust:
+            self.cust_combo.set(f"{cust['customer_code']} — {cust['customer_name_en']}")
+            self._on_customer_select()
+        return bool(cust)
+
+    def _load_order(self):
+        """📥 Load a quotation / sales order: pick it, pick its lines and
+        quantities (what is still left) → they go on this invoice."""
+        if getattr(self, "view_only", False):
+            return None
+        from ui.quotes import load_order_into
+        return load_order_into(self, "sales")
 
     def _focus_product(self):
         try:
@@ -3094,6 +3134,20 @@ class InvoiceForm:
                     self._save_and_print(fmt="default", already_saved=True)
             except Exception:
                 pass
+            try:                         # v7.5: an order loaded into this invoice → delivered
+                from modules import doc_links as _DL
+                _DL.after_save(self, inv_id)
+            except Exception:
+                pass
+            if not _was_id:              # v7.5: the items go to their print stations
+                try:
+                    from modules import print_stations as _PS
+                    _res = _PS.send("sales", inv_id,
+                                    assigned=self._station_ids.get(self.station_var.get()))
+                    if _res:
+                        self.last_station_print = _res
+                except Exception:
+                    pass
             if self.on_save:
                 self.on_save()
             if keep_open:

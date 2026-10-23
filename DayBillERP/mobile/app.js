@@ -80,7 +80,12 @@ const WORDS = {
     "Print labels": "طباعة الملصقات", "Make poster": "إنشاء الملصق", "Open PDF": "فتح PDF",
     "Send to supplier on WhatsApp": "إرسال للمورد عبر واتساب", "Choose the supplier first": "اختر المورد أولاً",
     "Scan the first item": "امسح أول صنف", "labels": "ملصق", "cost": "التكلفة", "reorder at": "حد الطلب",
-    "Add all": "إضافة الكل", "Sign in with my QR": "الدخول برمز QR الخاص بي", "Signed in as": "تم الدخول باسم",
+    "Add all": "إضافة الكل", "Receive PO": "استلام أمر شراء", "Search order no. / supplier": "ابحث برقم الأمر / المورد",
+    "No open purchase orders": "لا توجد أوامر شراء مفتوحة", "Draft purchase": "مسودة شراء",
+    "Confirmed invoice (stock in)": "فاتورة مؤكدة (إدخال المخزون)", "Close the order even if items are missing": "أغلق الأمر حتى لو نقصت أصناف",
+    "Everything came": "وصل كل شيء", "Other order": "أمر آخر", "Save receiving": "حفظ الاستلام", "came": "وصل",
+    "How many came?": "كم وصل؟", "not on the order": "ليس في الأمر", "more than ordered": "أكثر من المطلوب",
+    "Tell the supplier what is missing": "أبلغ المورد بالنواقص", "Nothing received — scan what came": "لم يُستلم شيء — امسح ما وصل", "Sign in with my QR": "الدخول برمز QR الخاص بي", "Signed in as": "تم الدخول باسم",
     "This is not a DayBill sign-in QR": "هذا ليس رمز دخول DayBill", "Save new prices": "حفظ الأسعار الجديدة", "Print new shelf labels": "طباعة ملصقات الرف الجديدة",
     "Allow below cost": "السماح بأقل من التكلفة", "tap to type": "اضغط للكتابة", "margin": "الهامش", "new prices": "أسعار جديدة",
     "New shelf price (with VAT) for": "سعر الرف الجديد (شامل الضريبة) لـ",
@@ -314,6 +319,7 @@ function openModule(k) {
   if (k === "info") return infoScreen(false);
   if (k === "price") return infoScreen(true);
   if (k === "van") return vanHome();
+  if (k === "receive_po") return receivePo();
   if (JOBS[k]) return jobScreen(k);
   return scanList(k);
 }
@@ -714,6 +720,106 @@ function jobScreen(k) {
     obs.observe(document.body, { childList: true });
   };
   paint(); focus();
+}
+
+/* ==========================================================
+   v7.5 — Receive against a Purchase Order: pick the order, scan
+   what came (ordered / received / short / extra), save it as a
+   DRAFT or CONFIRMED purchase invoice; WhatsApp what is missing.
+   ========================================================== */
+async function receivePo() {
+  if (RELAY) return toast("This works on the shop Wi-Fi only", true);
+  const D0 = LS.get("draft_receive_po", null);
+  if (D0 && D0.po) return receiveScreen(D0);
+  shell(L() === "ar" ? "استلام أمر شراء" : t("Receive PO"), `<div class="wrap">
+    <input id="pq" placeholder="${t("Search order no. / supplier")}"><div id="pl" style="margin-top:8px"><div class="empty">…</div></div></div>`);
+  const load = async () => {
+    let r; try { r = await api("po_open", { params: { q: $("#pq").value } }); } catch (e) { return toast(e.message, true); }
+    $("#pl").innerHTML = r.items.map((o, i) => `<div class="item" data-i="${i}"><div class="grow"><b>${esc(o.po_number)}</b>
+      <div class="muted">${esc(o.supplier_name_en || "")} · ${esc(String(o.po_date || "").slice(0, 10))}</div></div>
+      <span class="badge ${o.status === "partial" ? "amber" : ""}">${esc(o.status)}</span></div>`).join("") || `<div class="empty">${t("No open purchase orders")}</div>`;
+    $$("#pl .item").forEach(el => el.onclick = () => openPo(r.items[+el.dataset.i].po_id));
+  };
+  $("#pq").oninput = () => { clearTimeout(load.t); load.t = setTimeout(load, 250); };
+  load();
+}
+async function openPo(id) {
+  let r; try { r = await api("po_detail", { params: { id } }); } catch (e) { return toast(e.message, true); }
+  const D = { po: r.po, can_confirm: r.can_confirm, header: { confirm: false, close_po: false, supplier_invoice: "" },
+    lines: r.lines.map(l => ({ ...l, got: 0 })), extra: [] };
+  LS.set("draft_receive_po", D); receiveScreen(D);
+}
+function receiveScreen(D) {
+  const save = () => LS.set("draft_receive_po", D);
+  shell(D.po.po_number, `<div class="wrap">
+    <div class="scan"><input id="scan" placeholder="${t("Scan or type barcode / name")}" autocomplete="off" enterkeyhint="go">
+      ${canCamera() ? `<button id="cam">📷</button>` : ""}</div>
+    <div id="hit"></div>
+    <div class="card"><div class="muted">${esc(D.po.supplier_name_en || "")} · ${esc(String(D.po.po_date || "").slice(0, 10))}</div>
+      <label>${t("Supplier invoice no.")}</label><input id="si" value="${esc(D.header.supplier_invoice || "")}">
+      ${D.can_confirm ? `<div class="seg" style="margin-top:8px"><button data-c="0" class="${D.header.confirm ? "" : "on"}">📝 ${t("Draft purchase")}</button>
+        <button data-c="1" class="green ${D.header.confirm ? "on" : ""}">✅ ${t("Confirmed invoice (stock in)")}</button></div>` : `<div class="muted">${t("Saved as a draft purchase — the office confirms it.")}</div>`}
+      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="cl" style="width:auto;min-height:0" ${D.header.close_po ? "checked" : ""}>
+        ${t("Close the order even if items are missing")}</label>
+      <div class="row" style="margin-top:8px"><button id="all">✓ ${t("Everything came")}</button><button id="other">↺ ${t("Other order")}</button></div></div>
+    <ul class="lines" id="lines"></ul><div class="spacer"></div></div>
+    <div class="bottom"><div class="tot" id="tot"></div><button class="primary" id="send">${t("Save receiving")}</button></div>`);
+  const scanEl = $("#scan");
+  if ($("#cam")) $("#cam").onclick = camera;
+  $("#back").onclick = () => { home(); };
+  $("#si").oninput = e => { D.header.supplier_invoice = e.target.value; save(); };
+  $$(".seg button[data-c]").forEach(b => b.onclick = () => { D.header.confirm = b.dataset.c === "1"; save(); receiveScreen(D); });
+  $("#cl").onchange = e => { D.header.close_po = e.target.checked; save(); };
+  $("#all").onclick = () => { D.lines.forEach(l => l.got = l.left_base); save(); paint(); };
+  $("#other").onclick = () => { if (!confirm(t("Leave this order? What you scanned is cleared."))) return; LS.del("draft_receive_po"); receivePo(); };
+  const st = l => { const g = l.got, o = l.left_base; if (o <= 0) return ["extra", "★"]; if (g <= 0) return ["missing", "✖"];
+    if (Math.abs(g - o) < 1e-6) return ["ok", "✔"]; return g < o ? ["short", "⚠"] : ["over", "➕"]; };
+  const paint = flashId => {
+    const all = D.lines.concat(D.extra);
+    $("#lines").innerHTML = all.map((l, i) => { const [s, ic] = st(l); const f = l.factor || 1;
+      return `<li class="ln ${l.product_id === flashId ? "flash" : ""}" data-i="${i}"><span class="sign ${s === "ok" ? "plus" : s === "missing" || s === "short" ? "minus" : ""}">${ic}</span>
+        <div class="info"><div class="nm">${esc(l.name)}</div><span class="muted">${t("came")} <b>${nq(l.got / f)}</b> / ${nq(l.left_base / f)} ${esc(l.unit || "")}</span></div>
+        <button data-e="${i}" style="min-height:42px">✎</button></li>`; }).join("");
+    $$("button[data-e]").forEach(b => b.onclick = () => { const l = all[+b.dataset.e]; const f = l.factor || 1;
+      const v = prompt(t("How many came?") + " (" + (l.unit || "") + ")", nq(l.got / f)); if (v != null) { l.got = Math.max(0, (parseFloat(v) || 0) * f); save(); paint(); } });
+    const n = { ok: 0, short: 0, missing: 0, over: 0, extra: 0 }; all.forEach(l => n[st(l)[0]]++);
+    $("#tot").innerHTML = `✔ ${n.ok} · ⚠ ${n.short} · ✖ ${n.missing}<small>➕ ${n.over} · ★ ${n.extra}</small>`;
+  };
+  current.onScan = async code => {
+    scanEl.value = "";
+    let c; try { c = await lookup(code); } catch (e) { $("#hit").innerHTML = `<div class="card miss">✖ ${esc(e.message)}</div>`; beep(220, .3); return; }
+    const u = c.units.find(x => x.unit_id === c.scanned_unit_id) || c.units[0] || { factor: 1, unit: "PCs" };
+    const add = (u.factor || 1) * (c.via === "scale" ? (c.scan_qty || 1) : 1);
+    let l = D.lines.find(x => x.product_id === c.product_id) || D.extra.find(x => x.product_id === c.product_id);
+    if (!l) { l = { product_id: c.product_id, name: c.name, unit: "PCs", factor: 1, left_base: 0, got: 0 }; D.extra.push(l); }
+    l.got += add; save();
+    const [s] = st(l);
+    $("#hit").innerHTML = `<div class="card ${s === "extra" || s === "over" ? "miss" : "hit"}"><div class="nm">${esc(c.name)}</div>
+      <div class="muted">+${nq(add)} pcs · ${s === "extra" ? t("not on the order") : s === "over" ? t("more than ordered") : ""}</div></div>`;
+    beep(s === "extra" || s === "over" ? 600 : 1200); paint(c.product_id);
+  };
+  scanEl.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); const v = scanEl.value.trim(); if (v) current.onScan(v); } };
+  $("#send").onclick = async () => {
+    const all = D.lines.concat(D.extra).filter(l => l.got > 0);
+    if (!all.length) return toast(t("Nothing received — scan what came"), true);
+    $("#send").disabled = true;
+    const doc = { uid: device() + "-rcv-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6), type: "receive_po",
+      title: "Receive " + D.po.po_number, header: { ...D.header, po_id: D.po.po_id, po_number: D.po.po_number },
+      lines: all.map(l => ({ product_id: l.product_id, unit_id: null, factor: 1, qty: l.got })) };
+    let res; try { res = await api("submit", { body: { doc, device: device() }, timeout: 60000 }); }
+    catch (e) { $("#send").disabled = false; return toast(e.message, true, 5000); }
+    $("#send").disabled = false;
+    addSent({ uid: doc.uid, type: "receive_po", title: doc.title, status: res.status, result: res.result, at: Date.now() });
+    if (res.status === "error") return toast(res.result, true, 5000);
+    LS.del("draft_receive_po"); beep(1500, .12);
+    const p = sheet(`<div class="card hit"><div class="nm">✔ ${esc(res.result || "Done")}</div></div>
+      ${res.missing_text ? `<button class="green" id="wa" style="width:100%;margin-bottom:8px">💬 ${t("Tell the supplier what is missing")}</button>` : ""}`);
+    if ($("#wa", p)) $("#wa", p).onclick = () => { const ph = String(res.supplier_phone || "").replace(/\D/g, "").replace(/^0/, "966");
+      window.open(`https://wa.me/${ph}?text=${encodeURIComponent(res.missing_text)}`, "_blank"); };
+    const obs = new MutationObserver(() => { if (!document.body.contains(p)) { obs.disconnect(); receivePo(); } });
+    obs.observe(document.body, { childList: true });
+  };
+  paint(); setTimeout(() => scanEl.focus(), 50);
 }
 
 /* ---------- history ---------- */

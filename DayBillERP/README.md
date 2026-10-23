@@ -1,7 +1,40 @@
-# DayBill ERP  v7.4.0
+# DayBill ERP  v7.5.0
 
 Billing, POS, inventory, accounts and HR for shops in 🇸🇦 Saudi Arabia, 🇦🇪 the UAE and 🇮🇳 India.
 **VAT / GST by country · ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
+
+## 🧾 v7.5 — returns & orders, print stations, loyalty card, PDT receiving
+
+- **Returns from a bill.** Sales / Purchase Return ▸ **📂 Load bill**: type the
+  bill number or pick it from a searchable list (number or party), then pick
+  the items — ✓ all or some, change quantities, 🔍 find an item. A return can
+  never take back more than was sold minus earlier returns (checked on Save).
+- **Orders into invoices.** New **Sales Order** (Sales ▸ Sales Orders).
+  Sales Invoice ▸ **📥 Load Order** (quotation / sales order) and Purchase
+  Invoice ▸ **📥 Load purchase order**: pick the order and its lines, change
+  quantities or edit, then save. Partial delivery is counted on the order
+  (◐ partial, the rest stays to load later; *Make invoice* from the order loads
+  only what is left).
+- **🔍 line** box on every transaction grid: jumps to the line with that code /
+  name (Enter = next match).
+- **🍳 Print Stations** (System ▸ Print Stations): ＋ Kitchen, ＋ Warehouse,
+  ＋ Tailor, ＋ Other — Kitchen 1, Kitchen 2, Warehouse 1, Tailor Ahmed … each
+  with its own printer, template (80 / 58 mm roll, A5, A4), copies and what it
+  prints for (Sales Invoice, POS bill, Sales Order). Categories (or single
+  products) go to a station; a station with no categories takes the rest. The
+  Sales Invoice has **Send to** (e.g. the tailor) — every item goes there.
+  Test print, print a sale again, recent prints. Restaurant TABLE orders keep
+  their kitchen tickets (Restaurant ▸ Setup ▸ Kitchen stations: printer,
+  58 / 80 mm, copies, categories).
+- **💳 Customer loyalty QR card** (Customers ▸ Loyalty QR card): send it on
+  WhatsApp or print it; scanning it at the POS or Sales Invoice picks the
+  customer (price list + points). Optional: WhatsApp the points after each bill
+  (Cloud API).
+- **📦 PDT ▸ Receive PO**: pick an open purchase order, scan what came
+  (✔ ok · ⚠ short · ✖ missing · ➕ more · ★ not on the order), save as a
+  **draft purchase** or a **confirmed purchase invoice** (stock in), close the
+  order if items will not come, WhatsApp the supplier what is missing.
+- **Mobile ▸ Listen on**: all networks, only the shop Wi-Fi address, or this PC.
 
 ## 📱 v7.4 — QR sign-in for every user and employee (sent on WhatsApp)
 

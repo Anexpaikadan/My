@@ -257,7 +257,7 @@ class MainWindow:
             # Accounts
             "accounting": "reports", "hr": "master",
             "vouchers": "reports", "ledger": "reports",
-            "audit_log": "admin", "print_settings": "admin", "day_close": "reports", "setup": "dashboard", "integrations": "admin", "expenses": "reports", "aging": "reports", "printer_mgmt": "admin", "account_defaults": "admin", "opening": "admin", "fin_reports": "reports", "cust_statement": "reports", "supp_statement": "reports", "report_center": "reports", "insights": "reports", "branches": "admin", "quotations": "always", "purchase_orders": "master", "price_labels": "master", "offers": "master", "label_print": "master", "mobile": "master",
+            "audit_log": "admin", "print_settings": "admin", "day_close": "reports", "setup": "dashboard", "integrations": "admin", "expenses": "reports", "aging": "reports", "printer_mgmt": "admin", "account_defaults": "admin", "opening": "admin", "fin_reports": "reports", "cust_statement": "reports", "supp_statement": "reports", "report_center": "reports", "insights": "reports", "branches": "admin", "quotations": "always", "sales_orders": "always", "purchase_orders": "master", "print_stations": "admin", "price_labels": "master", "offers": "master", "label_print": "master", "mobile": "master",
             # v6.0
             "price_lists": "master", "stock_transfers": "master", "expiry": "master",
             "stock_count": "master", "price_updates": "master", "consumption": "master",
@@ -291,6 +291,7 @@ class MainWindow:
         "insights": ("reports", "view"),
         "branches": ("company_settings", "settings"),
         "quotations": ("quotation", "view"), "purchase_orders": ("purchase_order", "view"),
+        "sales_orders": ("quotation", "view"), "print_stations": ("company_settings", "settings"),
         "price_labels": ("products", "print"),
         "label_print": ("products", "print"),
         "mobile": ("inventory", "view"),
@@ -549,6 +550,7 @@ class MainWindow:
         m_sys.add_separator()
         additem(m_sys, "Print & Invoice", "print_settings")
         additem(m_sys, "Printer Management", "printer_mgmt")
+        additem(m_sys, "Print Stations (kitchens, warehouses, tailors)", "print_stations")
         additem(m_sys, "Invoice Designer", "report_designer")
         m_sys.add_separator()
         m_lbl = tk.Menu(m_sys, tearoff=0)
@@ -680,6 +682,7 @@ class MainWindow:
 
         m_inv_t = tk.Menu(m_inv, tearoff=0)
         additem(m_inv_t, "Sales Quotation", "quotations")
+        additem(m_inv_t, "Sales Order", "sales_orders")
         additem(m_inv_t, "Offers & Promotions", "offers")
         additem(m_inv_t, "Sales", "sales")
         additem(m_inv_t, "POS (cashier)", "pos", "F3")
@@ -923,12 +926,12 @@ class MainWindow:
                 if _pm.allowed("suppliers", "add"):
                     from ui.suppliers import SupplierForm
                     SupplierForm(parent, on_save=self._refresh_active)
-            elif key in ("quotations", "purchase_orders"):
-                mod = "quotation" if key == "quotations" else "purchase_order"
+            elif key in ("quotations", "purchase_orders", "sales_orders"):
+                mod = "purchase_order" if key == "purchase_orders" else "quotation"
                 if _pm.allowed(mod, "add"):
                     from ui.quotes import DocForm
-                    DocForm(parent, "quotation" if key == "quotations" else "purchase_order",
-                            on_save=self._refresh_active)
+                    DocForm(parent, {"quotations": "quotation", "sales_orders": "sales_order"}.get(
+                        key, "purchase_order"), on_save=self._refresh_active)
             else:
                 from ui import shortcuts as _sc
                 _sc.show(self.root, "Everywhere")
@@ -1073,6 +1076,7 @@ class MainWindow:
                 ("pos",        "🛍", "nav.pos"),
                 ("sales",      "🧾", "nav.sales"),
                 ("quotations", "📝", "Quotations"),
+                ("sales_orders", "🧾", "Sales Orders"),
                 ("offers",     "🏷", "Offers & Promotions"),
                 ("sales_return", "↩", "nav.sales_return"),
                 ("debit_notes", "➕", "Debit Notes"),
@@ -1131,6 +1135,7 @@ class MainWindow:
                 ("audit_log",  "📜", "Audit Log"),
                 ("print_settings", "🖨", "Print & Invoice"),
                 ("printer_mgmt", "🖨", "Printer Management"),
+                ("print_stations", "🍳", "Print Stations"),
                 ("integrations", "🔌", "Integrations"),
                 ("setup",      "✅", "Setup Checklist"),
                 ("settings",   "⚙️", "nav.settings"),
@@ -2667,6 +2672,8 @@ class MainWindow:
             "insights": "Smart Insights",
             "branches": "Branches & Counters",
             "quotations": "Quotations",
+            "sales_orders": "Sales Orders",
+            "print_stations": "Print Stations (kitchens, warehouses, tailors)",
             "offers": "Offers & Promotions",
             "price_labels": "Price Change Labels",
             "label_print": "Print Barcode Labels",
@@ -2828,6 +2835,14 @@ class MainWindow:
             elif module_key == "quotations":
                 from ui.quotes import QuotationsView
                 QuotationsView(self.content)
+
+            elif module_key == "sales_orders":
+                from ui.quotes import SalesOrdersView
+                SalesOrdersView(self.content)
+
+            elif module_key == "print_stations":
+                from ui.print_stations import PrintStationsView
+                PrintStationsView(self.content)
 
             elif module_key == "offers":
                 from ui.offers import OffersView

@@ -24,7 +24,7 @@ DEFAULT_PORT = 8090
 try:
     from config.version import VERSION
 except Exception:
-    VERSION = "7.4.0"
+    VERSION = "7.5.0"
 
 
 def local_ips():
@@ -113,7 +113,7 @@ def handle(method, path, query, body, token):
             return 200, {"items": M.search(user, q.get("q", ""))}
         if path == "/api/product":
             return 200, M.product_card(int(q.get("id") or 0), int(q["unit_id"]) if q.get("unit_id") else None,
-                                       show_cost=bool({"goods_in", "po", "price_change"} & set(user["modules"])))
+                                       show_cost=bool({"goods_in", "po", "price_change", "receive_po"} & set(user["modules"])))
         if path == "/api/suppliers":
             M.need(user, "po" if "po" in user["modules"] and "goods_in" not in user["modules"] else "goods_in")
             return 200, {"items": M.suppliers(q.get("q", ""))}
@@ -121,6 +121,10 @@ def handle(method, path, query, body, token):
             return 200, {"items": M.po_suggest(user, int(q["supplier_id"]) if q.get("supplier_id") else None)}
         if path == "/api/po_list":
             return 200, {"items": M.po_list(user)}
+        if path == "/api/po_open":               # v7.5: receive against a PO
+            return 200, {"items": M.po_open(user, q.get("q", ""))}
+        if path == "/api/po_detail":
+            return 200, M.po_detail(user, int(q.get("id") or 0))
         if path == "/api/label_designs":
             if "price_change" in user["modules"] and "labels" not in user["modules"]:
                 return 200, {"items": M.label_designs(dict(user, modules=user["modules"] + ["labels"]))}
@@ -235,6 +239,22 @@ class _Handler(BaseHTTPRequestHandler):
         self._send(200, data, ctype)
 
 
+def bind_address():
+    """v7.5: which network the phone server listens on (Mobile ▸ Wi-Fi ▸
+    Listen on): '0.0.0.0' every network (default), one address of this PC
+    (the shop Wi-Fi only), or 127.0.0.1 (this PC only)."""
+    try:
+        from config import settings as cfg
+        v = str(cfg.get("mobile_bind", "") or "").strip()
+    except Exception:
+        v = ""
+    if not v or v.lower() in ("all", "any", "0.0.0.0"):
+        return "0.0.0.0"
+    if v == "127.0.0.1" or v.lower() == "localhost":
+        return "127.0.0.1"
+    return v if v in local_ips() else "0.0.0.0"     # the PC's address changed → every network
+
+
 class MobileServer:
     """start() / stop(); one per DayBill window."""
 
@@ -254,8 +274,9 @@ class MobileServer:
         if self.httpd:
             return True
         handler = type("H", (_Handler,), {"runner": self.runner})
+        self.host = bind_address()
         try:
-            self.httpd = ThreadingHTTPServer(("0.0.0.0", self.port), handler)
+            self.httpd = ThreadingHTTPServer((self.host, self.port), handler)
         except OSError as e:
             self.error = ("Port %d is busy (another program uses it). Change Settings ▸ "
                           "Mobile ▸ Port." % self.port) if "in use" in str(e).lower() or \
@@ -279,6 +300,9 @@ class MobileServer:
         self.httpd = None
 
     def urls(self):
+        host = getattr(self, "host", None) or bind_address()
+        if host not in ("0.0.0.0", ""):
+            return ["http://%s:%d" % (host, self.port)]
         return ["http://%s:%d" % (ip, self.port) for ip in local_ips()]
 
 

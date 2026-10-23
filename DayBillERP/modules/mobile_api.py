@@ -50,6 +50,7 @@ MODULES = [
     ("labels", "Barcode Labels", "طباعة الباركود", "🔖"),
     ("poster", "Offer Poster", "ملصق العروض", "🎨"),
     ("price_change", "Price Change", "تغيير السعر", "💲"),  # v7.3
+    ("receive_po", "Receive PO", "استلام أمر شراء", "📦"),   # v7.5
 ]
 MODULE_KEYS = [m[0] for m in MODULES]
 OUT_REASONS = ["Damaged", "Expired", "Own use", "Transfer out", "Sample / gift", "Other"]
@@ -396,7 +397,7 @@ def resolve(user, code):
         raise MobileError("No product for “%s”." % str(code).strip())
     uid = hit["unit_id"] or (hit.get("unit") or {}).get("unit_id")
     card = product_card(hit["product_id"], uid,
-                        show_cost=bool(set(user["modules"]) & {"goods_in", "po", "price_change"}))
+                        show_cost=bool(set(user["modules"]) & {"goods_in", "po", "price_change", "receive_po"}))
     card["scanned_unit_id"] = uid
     card["scan_qty"] = _f(hit.get("quantity"), 1)
     card["via"] = hit.get("via")
@@ -467,7 +468,8 @@ def _base_qty(ln):
 # ── documents from devices ───────────────────────────────────
 DOC_TITLES = {"goods_in": "Goods In", "goods_out": "Goods Out", "count": "Stock Count",
               "adjust": "Stock Adjust", "van_sale": "Van Sale", "po": "Purchase Order",
-              "labels": "Barcode Labels", "poster": "Offer Poster", "price_change": "Price Change"}
+              "labels": "Barcode Labels", "poster": "Offer Poster", "price_change": "Price Change",
+              "receive_po": "Receive PO"}
 FILE_DOCS = ("labels", "poster", "price_change")    # documents that (can) make a PDF
 
 
@@ -517,6 +519,8 @@ def submit(user, doc, source="wifi", device=""):
                                                         else l.get("qty"), 1))) for l in lines)
     elif dtype == "poster" and head.get("headline"):
         title += " · " + str(head.get("headline"))[:60]
+    elif dtype == "receive_po" and head.get("po_number"):
+        title += " · %s" % head.get("po_number")
     elif dtype == "price_change":
         title += " · %d item(s)%s" % (len(lines), (" · " + str(head.get("reason"))[:40]) if head.get("reason") else "")
     db.execute("INSERT INTO mobile_docs (doc_uid, doc_type, source, user_id, device, status, title, "
@@ -592,6 +596,9 @@ def apply_doc(doc_id, by_user=None):
             elif t == "price_change":
                 ref_table = "products"
                 msg, extra = _price_change(head, lines, d)
+            elif t == "receive_po":
+                ref_table = "purchase_invoices"
+                ref_id, msg, extra = _receive_po(head, lines, d)
             else:
                 raise MobileError("Unknown document type.")
             db.execute("UPDATE mobile_docs SET status='applied', result=?, ref_table=?, ref_id=?, "
@@ -1248,3 +1255,117 @@ def _price_change(head, lines, d):
     if notes:
         msg += " Note: " + "; ".join(notes[:3])
     return msg, extra
+
+
+# ── Receive against a Purchase Order (v7.5) ───────────────────
+def po_open(user, text=""):
+    """Open / partly received purchase orders to receive on the PDT."""
+    need(user, "receive_po")
+    like = "%" + str(text or "") + "%"
+    return clean(_all("SELECT TOP 40 po_id, po_number, po_date, expected_date, supplier_id, supplier_name_en, "
+                      "total_amount, status FROM purchase_orders WHERE ISNULL(status,'open') IN "
+                      "('open','sent','partial') AND (po_number LIKE ? OR supplier_name_en LIKE ?) "
+                      "ORDER BY po_id DESC", (like, like)))
+
+
+def po_detail(user, po_id):
+    """The order's lines (what is still to come) for the receiving screen."""
+    need(user, "receive_po")
+    from modules import supplier_orders as SO
+    h = _one("SELECT po_id, po_number, po_date, supplier_name_en, status FROM purchase_orders WHERE po_id=?",
+             (int(po_id),))
+    if not h:
+        raise MobileError("Purchase order not found.")
+    rows = _all("SELECT line_id, product_id, ISNULL(delivered_qty,0) AS d, quantity FROM purchase_order_lines "
+                "WHERE po_id=? ORDER BY line_number", (int(po_id),))
+    dl = {r["line_id"]: _f(r["d"]) for r in rows}
+    out = []
+    for l, r in zip(SO.po_lines(int(po_id)), rows):
+        left = max(0.0, _f(r["quantity"]) - dl.get(r["line_id"], 0.0))
+        out.append({"line_id": r["line_id"], "product_id": l["product_id"], "code": l["code"], "name": l["name"],
+                    "name_ar": l["name_ar"], "unit": l["unit"], "factor": l["factor"], "ordered": l["qty"],
+                    "delivered": dl.get(r["line_id"], 0.0), "left": left, "left_base": left * (l["factor"] or 1),
+                    "price": l["price"]})
+    return clean({"po": h, "lines": out,
+                  "can_confirm": cfg.flag("mobile_receive_can_confirm", True)})
+
+
+def _receive_po(head, lines, d):
+    """What came for a purchase order → a purchase invoice (draft, or
+    confirmed when the PDT asked and Settings allow) at the order's
+    prices; the order counts what was delivered (partial / received)."""
+    from modules import supplier_orders as SO
+    from modules.doc_numbering import next_number
+    from modules.doc_math import doc_totals
+    po_id = int(head.get("po_id") or 0)
+    try:
+        rec = SO.Receiving(po_id)
+    except ValueError as e:
+        raise MobileError(str(e))
+    if str(rec.head.get("status") or "").lower() in ("received", "cancelled"):
+        raise MobileError("Purchase order %s is already %s." % (rec.head.get("po_number"), rec.head.get("status")))
+    for ln in lines:
+        _product_or_fail(ln)
+        base = _base_qty(ln)
+        if base < 0 or base > 1e7:
+            raise MobileError("Bad quantity.")
+        pid = int(ln["product_id"])
+        rec.got[pid] = rec.got.get(pid, 0.0) + base
+        if not any(l["product_id"] == pid for l in rec.lines) and pid not in rec.extra:
+            p = _one("SELECT product_code, product_name_en, product_name_ar, purchase_price FROM products "
+                     "WHERE product_id=?", (pid,)) or {}
+            rec.extra[pid] = {"name": p.get("product_name_en") or "", "code": p.get("product_code") or "",
+                              "name_ar": p.get("product_name_ar") or "", "cost": _f(p.get("purchase_price"))}
+    rows = rec.invoice_lines()
+    if not rows:
+        raise MobileError("Nothing received — scan what came.")
+    s = _one("SELECT * FROM suppliers WHERE supplier_id=?", (rec.head.get("supplier_id"),)) or {}
+    confirm = bool(head.get("confirm")) and cfg.flag("mobile_receive_can_confirm", True)
+    T = doc_totals(rows, False, net="line_amount", vat="vat_amount", total="line_total", rate="vat_rate")
+    pnum = next_number("purchase_invoices", "invoice_number", str(cfg.get("purchase_prefix") or "PI").strip() or "PI")
+    note = "%s · received on %s (PDT)" % (rec.note(), d.get("device") or "mobile")
+    db.execute("INSERT INTO purchase_invoices (invoice_number, supplier_invoice_no, invoice_date, supplier_id, "
+               "supplier_name_en, supplier_name_ar, supplier_vat_no, payment_method, subtotal_amount, taxable_amount, "
+               "vat_amount, total_amount, invoice_status, payment_status, paid_amount, notes_en, created_by) "
+               "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+               (pnum, str(head.get("supplier_invoice") or "")[:50] or None, date.today().strftime("%Y-%m-%d"),
+                rec.head.get("supplier_id"), s.get("supplier_name_en") or rec.head.get("supplier_name_en"),
+                s.get("supplier_name_ar") or "", s.get("vat_registration_no") or "", "credit",
+                T["taxable"], T["taxable"], T["vat"], T["total"], "confirmed" if confirm else "draft", "unpaid", 0,
+                note[:500], d.get("user_id")))
+    pur_id = _one("SELECT purchase_id FROM purchase_invoices WHERE invoice_number=?", (pnum,))["purchase_id"]
+    for i, r in enumerate(rows, 1):
+        db.execute("INSERT INTO purchase_invoice_lines (purchase_id, line_number, product_id, product_code, "
+                   "product_name_en, quantity, unit_of_measure_en, unit_price, line_amount, vat_category_id, "
+                   "vat_rate, vat_amount, line_total) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                   (pur_id, i, r["product_id"], r["product_code"], r["product_name_en"], r["quantity"],
+                    r["unit_of_measure_en"], r["unit_price"], r["line_amount"], r["vat_category_id"],
+                    r["vat_rate"], r["vat_amount"], r["line_total"]))
+    if confirm:
+        _posted_or_fail("purchase", pur_id)
+    # the order: delivered per line (order units), then partial / received
+    from modules import doc_links as DL
+    got = dict(rec.got)
+    taken = []
+    for r in _all("SELECT l.line_id, l.product_id, l.quantity, ISNULL(l.delivered_qty,0) AS d, "
+                  "(SELECT TOP 1 ISNULL(conversion_factor,1) FROM product_units u WHERE u.product_id=l.product_id "
+                  "AND u.unit_name_en=l.unit_of_measure_en) AS f FROM purchase_order_lines l WHERE l.po_id=? "
+                  "ORDER BY l.line_number", (po_id,)):
+        f = _f(r["f"]) or 1.0
+        left_base = max(0.0, (_f(r["quantity"]) - _f(r["d"])) * f)
+        use = min(left_base, got.get(r["product_id"], 0.0))
+        if use > 0:
+            taken.append({"line_id": r["line_id"], "qty": round(use / f, 4)})
+            got[r["product_id"]] -= use
+    status = DL.record_delivery("purchase_order", po_id, taken, pur_id)
+    if head.get("close_po") and status != "received":
+        db.execute("UPDATE purchase_orders SET status='received' WHERE po_id=?", (po_id,))
+        status = "received"
+    sm = rec.summary()
+    msg = "Purchase %s %s from %s — %d line(s). Order %s: %s." % (
+        pnum, "CONFIRMED (stock in)" if confirm else "saved as DRAFT", rec.head.get("po_number"), len(rows),
+        rec.head.get("po_number"), "complete" if status == "received" else "partly received")
+    sup = _one("SELECT phone FROM suppliers WHERE supplier_id=?", (rec.head.get("supplier_id"),)) or {}
+    return pur_id, msg, {"purchase_number": pnum, "po_status": status, "confirmed": confirm,
+                         "missing_text": rec.missing_text(), "supplier_phone": str(sup.get("phone") or ""),
+                         "summary": sm}

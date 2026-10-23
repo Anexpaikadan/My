@@ -509,6 +509,8 @@ class PurchaseForm:
                                            for s in self.suppliers],
                                    state="readonly", font=("Segoe UI", 10))
         self.sup_cb.pack(fill="x", ipady=6, pady=(2, 0))
+        tk.Button(supc, text="📥 Load purchase order", font=("Segoe UI", 8), relief="flat",
+                  bg=C["content_bg"], cursor="hand2", command=self._load_order).pack(anchor="w", pady=(2, 0))
 
         # Warehouse
         whc = cell(1, 1, "Warehouse")
@@ -524,6 +526,12 @@ class PurchaseForm:
         self.hdr["notes"] = tk.StringVar()
         tk.Entry(nc, textvariable=self.hdr["notes"], font=("Segoe UI", 10),
                  relief="solid", bd=1).pack(fill="x", ipady=6, pady=(2, 0))
+
+    def _load_order(self):
+        """📥 Load a purchase order: pick it, pick its lines and quantities
+        (what is still left) → they go on this purchase invoice."""
+        from ui.quotes import load_order_into
+        return load_order_into(self, "purchase")
 
     def _build_grid(self, C):
         # v6.9: no title line above the grid — more rows for the items
@@ -891,6 +899,11 @@ class PurchaseForm:
                 messagebox.showinfo("Saved", f"Purchase {self.hdr['number'].get()} saved "
                                     f"as DRAFT.\nStock and accounts update when you "
                                     f"confirm it (Save & Confirm or ✅ Confirm).")
+            try:                         # v7.5: a purchase order loaded here → received
+                from modules import doc_links as _DL
+                _DL.after_save(self, pid)
+            except Exception:
+                pass
             if self.on_save:
                 try:
                     self.on_save()

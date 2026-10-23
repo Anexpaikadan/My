@@ -2,6 +2,20 @@
 
 Newest first. The short guide is in the main README.md.
 
+## 🧾 v7.5.0 — returns & orders, print stations, loyalty card, PDT receiving
+
+- Returns: pick the bill (search), pick items / all, quantities limited to
+  sold − returned (modules/doc_links, ui/doc_pick).
+- Sales Order document; Load Order into Sales / Purchase Invoice; partial
+  delivery counted (delivered_qty); re-saving an order keeps it.
+- 🔍 find-a-line box on the item grid.
+- Print stations (kitchens, warehouses, tailors) with printer, template, copies,
+  category / product routing, Send to on the invoice, reprint, log.
+- Customer loyalty QR card (POS / invoice scan, WhatsApp, card PDF, points
+  message after a sale).
+- PDT Receive PO → draft or confirmed purchase invoice, PO partial / received.
+- Mobile server Listen-on setting.
+
 ## 📱 v7.4.0 — QR sign-in for users and employees
 
 - Personal QR sign-in per user (modules/qr_login, table user_qr_keys): phone app

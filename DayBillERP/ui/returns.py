@@ -215,7 +215,7 @@ class ReturnForm:
                  relief="solid", bd=1, state=state).pack(
                      side="left", fill="x", expand=True, ipady=6)
         if not self.view_only:
-            tk.Button(rline, text="Load", font=("Segoe UI", 8, "bold"),
+            tk.Button(rline, text="📂 Load bill", font=("Segoe UI", 8, "bold"),
                       bg=C["primary"], fg="white", relief="flat", padx=8,
                       cursor="hand2", command=self._load_original).pack(
                           side="left", padx=(4, 0))
@@ -359,50 +359,70 @@ class ReturnForm:
             return f"{self.cfg['prefix']}-{ym}-000001"
 
     # ── load original source invoice/purchase ─────────────────
+    def _party_id(self):
+        code = (self.party_var.get() or "").split(" — ")[0]
+        p = next((x for x in self._parties if x["code"] == code), None)
+        if not p or str(p.get("code", "")).upper() in ("CASH", "WALKIN", "CASH-001", "WALK-IN"):
+            return None
+        return p["id"]
+
     def _load_original(self):
+        """v7.5: pick the bill (type its number, or search by number / party),
+        then pick the items to return — all or some, with quantities that
+        never go above what was sold minus what came back before."""
+        from modules import doc_links as DL
+        from ui.doc_pick import DocPicker, LinePicker
+        kind = DL.RETURN_SRC[self.mode]
+        k = DL.KINDS[kind]
         ref = self.hdr["ref"].get().strip()
-        if not ref:
-            messagebox.showinfo("Reference", "Type the original number first.")
-            return
-        try:
-            src = db.fetchone(
-                f"SELECT * FROM {self.cfg['src_table']} WHERE invoice_number=?", (ref,))
-            if not src:
-                messagebox.showinfo("Not found", f"No record '{ref}'.")
+        src_id = None
+        if ref:
+            row = db.fetchone("SELECT %s AS id FROM %s WHERE invoice_number=?" % (k["id"], k["table"]), (ref,))
+            src_id = row["id"] if row else None
+        if not src_id:
+            dp = DocPicker(self.win, [kind], party_id=self._party_id(), search=ref,
+                           title="Load the %s to return from" % k["title"].lower())
+            if not dp.result:
                 return
-            sid = self.cfg.get("src_id", "invoice_id")
-            lines = db.fetchall(
-                f"SELECT * FROM {self.cfg['src_lines']} WHERE {sid}=? "
-                f"ORDER BY line_number", (src[sid],))
-            self.grid.set_lines([dict(l) for l in lines])
-            self._on_change()
-            # set party
-            pid = src.get(self.cfg["party_id"])
-            if pid:
-                p = next((x for x in self._parties if x["id"] == pid), None)
-                if p:
-                    self.party_combo.set(f"{p['code']} — {p['name']}")
-            # v6.9.1: a bill that is still open → the return goes on the
-            # party's account (and settles that bill); a paid bill →
-            # money back the way it was paid
-            how = ""
-            try:
-                left = float(src.get("total_amount") or 0) - float(src.get("paid_amount") or 0)
-                if str(src.get("payment_status") or "").lower() == "paid":
-                    left = 0.0
-                paid_by = str(src.get("payment_method") or "").lower()
-                pick = ("credit" if left > 0.005 else
-                        paid_by if paid_by in ("cash", "card", "bank_transfer") else "cash")
-                self.hdr["payment"].set(pick)
-                how = ("\nPayment Type: credit — the bill still has %.2f open, the return "
-                       "comes off it." % left) if pick == "credit" else ""
-            except Exception:
-                pass
-            messagebox.showinfo("Loaded",
-                                f"Imported {len(lines)} line(s). Edit quantities to "
-                                f"do a partial return.{how}")
-        except Exception as e:
-            messagebox.showerror("Load Error", str(e))
+            src_id = dp.result[1]
+        h, lines = DL.return_lines(self.mode, src_id, exclude_return_id=self.return_id)
+        if not h:
+            messagebox.showinfo("Not found", "The bill was not found.", parent=self.win)
+            return
+        if not any(l["_left"] > 0 for l in lines):
+            messagebox.showinfo("Return", "Everything on %s was already returned." % h["invoice_number"],
+                                parent=self.win)
+            return
+        lp = LinePicker(self.win, lines, title="Return from %s — pick the items" % h["invoice_number"])
+        if lp.result:
+            self._apply_return_pick(h, lp.result)
+
+    def _apply_return_pick(self, src, picked):
+        """Put the picked items (with their quantities) on the return."""
+        from modules import doc_links as DL
+        self.hdr["ref"].set(src.get("invoice_number") or "")
+        self.grid.set_lines(DL.to_grid(picked))
+        self._on_change()
+        pid = src.get(self.cfg["party_id"])
+        if pid:
+            p = next((x for x in self._parties if x["id"] == pid), None)
+            if p:
+                self.party_combo.set(f"{p['code']} — {p['name']}")
+        # v6.9.1: a bill that is still open → the return goes on the
+        # party's account (and settles that bill); a paid bill →
+        # money back the way it was paid
+        try:
+            left = float(src.get("total_amount") or 0) - float(src.get("paid_amount") or 0)
+            if str(src.get("payment_status") or "").lower() == "paid":
+                left = 0.0
+            paid_by = str(src.get("payment_method") or "").lower()
+            pick = ("credit" if left > 0.005 else
+                    paid_by if paid_by in ("cash", "card", "bank_transfer") else "cash")
+            self.hdr["payment"].set(pick)
+        except Exception:
+            pass
+        self.status.set("Loaded %d item(s) from %s — change a quantity in the grid if needed."
+                        % (len(picked), src.get("invoice_number")))
 
     # ── navigation / find ─────────────────────────────────────
     def _toggle_find(self):
@@ -525,6 +545,15 @@ class ReturnForm:
             return
         if not self.party_var.get() or "—" not in self.party_var.get():
             self.status.set("⚠️  Select a " + self.cfg["party"] + ".")
+            return
+        try:                    # v7.5: never more back than was sold (minus earlier returns)
+            from modules import doc_links as _DL
+            probs = _DL.check_return(self.mode, self.hdr["ref"].get().strip(), self._lines, self.return_id)
+        except Exception:
+            probs = []
+        if probs:
+            self.status.set("⚠️  " + probs[0])
+            messagebox.showwarning("Return", "\n".join(probs[:8]), parent=self.win)
             return
         rdate = self.hdr["date"].get().strip()
         from modules.date_utils import validate_invoice_date

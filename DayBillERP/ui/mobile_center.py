@@ -162,9 +162,25 @@ class MobileCenterView:
                        "(untick = wait in the Inbox ▸ 🖨 Print PDF)", "mobile_labels_autoprint", default=True)
         self._check(o, "Offer Poster: allowed to print at once when the PDT ticks 'Print now'",
                     "mobile_poster_autoprint", default=True)
+        self._check(o, "Receive PO: the PDT may confirm the purchase invoice at once (untick = always draft)",
+                    "mobile_receive_can_confirm", default=True)
         self._check(o, "Price Change from the PDT waits for approval in the Inbox "
                        "(untick = new prices at once)", "mobile_price_needs_approval")
         pr = tk.Frame(o, bg=C["card_bg"]); pr.pack(anchor="w", pady=(4, 0))
+        # v7.5: which network the phone server listens on
+        from modules import mobile_server as _MS
+        self._bind_opts = {"All networks of this PC": "", "This PC only (testing)": "127.0.0.1"}
+        for ip in _MS.local_ips():
+            if ip != "127.0.0.1":
+                self._bind_opts["Only %s (shop Wi-Fi)" % ip] = ip
+        cur = str(cfg.get("mobile_bind", "") or "")
+        self.bind_v = tk.StringVar(value=next((k for k, v in self._bind_opts.items() if v == cur),
+                                              "All networks of this PC"))
+        tk.Label(pr, text="Listen on", bg=C["card_bg"], font=("Segoe UI", 9)).pack(side="left")
+        bcb = ttk.Combobox(pr, textvariable=self.bind_v, state="readonly", width=28,
+                           values=list(self._bind_opts))
+        bcb.pack(side="left", padx=(6, 14))
+        bcb.bind("<<ComboboxSelected>>", lambda e: self._save_bind())
         tk.Label(pr, text="Port", bg=C["card_bg"], font=("Segoe UI", 9)).pack(side="left")
         self.port_v = tk.StringVar(value=str(cfg.get("mobile_port", 8090) or 8090))
         pe = tk.Entry(pr, textvariable=self.port_v, width=7, relief="solid", bd=1); pe.pack(side="left", padx=6)
@@ -191,6 +207,20 @@ class MobileCenterView:
         self.dev_tree.pack(fill="x")
         self._btn(dv, "Sign this device out", self._kick).pack(anchor="w", pady=(6, 0))
         self._paint_server()
+
+    def _save_bind(self):
+        if not self._can_set():
+            return
+        cfg.set("mobile_bind", self._bind_opts.get(self.bind_v.get(), ""))
+        cfg.save_settings()
+        try:
+            from modules import mobile_server as _MS
+            srv = _MS.get_server()
+            if srv.running:                   # listen on the new network now
+                srv.stop(); srv.start()
+            self._paint_server()
+        except Exception:
+            pass
 
     def _save_port(self):
         try:
@@ -293,7 +323,7 @@ class MobileCenterView:
         heads = {"user": ("User", 100), "name": ("Name", 140), "van": ("Van code", 80)}
         short = {"goods_in": "In", "goods_out": "Out", "count": "Count", "adjust": "Adjust",
                  "info": "Info", "price": "Price", "van": "Van", "po": "PO", "labels": "Labels",
-                 "poster": "Poster", "price_change": "Price±"}
+                 "poster": "Poster", "price_change": "Price±", "receive_po": "Rcv PO"}
         for k in M.MODULE_KEYS:
             heads[k] = (short[k], 58)
         cols = ["user", "name"] + M.MODULE_KEYS + ["vancode"]
@@ -468,7 +498,7 @@ class MobileCenterView:
     # the right needed to approve / reject each kind of document
     _DOC_RIGHT = {"goods_in": ("purchase", "add"), "van_sale": ("sales", "add"),
                   "po": ("purchase", "add"), "labels": ("products", "print"),
-                  "poster": ("products", "edit"), "price_change": ("products", "edit"),
+                  "poster": ("products", "edit"), "price_change": ("products", "edit"), "receive_po": ("purchase", "add"),
                   "goods_out": ("stock_adjustment", "approve"),
                   "adjust": ("stock_adjustment", "approve"),
                   "count": ("stock_adjustment", "approve")}

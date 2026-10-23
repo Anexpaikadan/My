@@ -219,6 +219,7 @@ SECTIONS = [
         F("cust_mandatory_vat", "Mandatory VAT Number", "check"),
         F("loyalty_enabled", "⭐ Loyalty points (customers earn on every bill, spend as a discount)", "check"),
         F("loyalty_sar_per_point", "Loyalty · spend this many SAR to earn 1 point", "number"),
+        F("loyalty_wa_after_sale", "Loyalty · WhatsApp the points to card holders after each bill (Cloud API)", "check"),
         F("loyalty_point_value", "Loyalty · 1 point is worth (SAR) when spent", "number"),
         F("loyalty_min_redeem", "Loyalty · fewest points spent at once", "number"),
     ]},

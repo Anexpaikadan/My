@@ -1159,6 +1159,8 @@ class POSWindow:
         txt = txt.strip()
         if not txt:
             return True
+        if txt.upper().startswith("DBCUST:"):         # v7.5: a customer's loyalty QR card
+            return self._loyalty_card(txt)
         if txt.startswith("-") and len(txt) > 1:       # '-' typed before the scan
             self._set_minus(True)
             txt = txt[1:]
@@ -1503,6 +1505,29 @@ class POSWindow:
             pass
         if not quiet:
             self.status_var.set("Customer: " + label + _extra)
+
+    def _loyalty_card(self, code):
+        """The customer of a scanned loyalty card → this bill's customer."""
+        try:
+            from modules import loyalty_qr as LQ
+            c = LQ.customer_for(code)
+        except Exception:
+            c = None
+        if not c:
+            self.status_var.set("This loyalty card is not valid (a newer card was made?).")
+            return False
+        cust = next((x for x in getattr(self, "_customers", []) if x.get("customer_id") == c["customer_id"]),
+                    dict(c))
+        self._set_customer(cust, quiet=True)
+        pts = ""
+        try:
+            from modules import loyalty as L
+            if L.enabled():
+                pts = "  ·  ⭐ %d points" % int(L.balance(c["customer_id"]))
+        except Exception:
+            pass
+        self.status_var.set("💳 Customer: %s%s" % (c.get("customer_name_en") or "", pts))
+        return True
 
     def _reset_customer(self):
         self.cust_search_var.set("")
@@ -2636,6 +2661,17 @@ class POSWindow:
             invoice_id, invoice_number = self._write_invoice(
                 self.cart, _h, invoice_id=self._loaded_invoice_id)
             self._pending_offline = None      # saved on the server
+            if not self._loaded_invoice_id:   # v7.5: kitchen / warehouse slips
+                try:
+                    from modules import print_stations as _PS
+                    self.last_station_print = _PS.send("pos", invoice_id)
+                except Exception:
+                    pass
+                try:                          # v7.5: points on WhatsApp (when switched on)
+                    from modules import loyalty_qr as _LQ
+                    _LQ.after_sale(invoice_id)
+                except Exception:
+                    pass
             from modules import doc_posting
             if doc_posting.last_warning:
                 self.status_var.set("Saved — accounts: " + doc_posting.last_warning[:80])

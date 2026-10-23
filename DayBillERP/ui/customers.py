@@ -255,6 +255,12 @@ class CustomersView:
                   highlightbackground=C["border"], highlightthickness=1,
                   command=self._points).pack(side="left", padx=(0, 6))
 
+        tk.Button(bar, text="💳  Loyalty QR card",            # v7.5
+                  font=("Segoe UI", 9), bg=C["card_bg"], fg=C["text_primary"],
+                  relief="flat", padx=12, pady=6, cursor="hand2",
+                  highlightbackground=C["border"], highlightthickness=1,
+                  command=self._loyalty_card).pack(side="left", padx=(0, 6))
+
         tk.Button(bar, text=f"🗑  {t('customer.delete')}",
                   font=("Segoe UI", 9), bg="#FEF2F2", fg=C["danger"],
                   relief="flat", padx=12, pady=6, cursor="hand2",
@@ -422,6 +428,16 @@ class CustomersView:
         from ui.loyalty_view import LoyaltyDialog
         LoyaltyDialog(self.frame, cid)
 
+    def _loyalty_card(self):
+        """💳 the customer's QR card: make, send on WhatsApp, print (v7.5)."""
+        cid = self._get_selected_id()
+        if not cid:
+            messagebox.showinfo("Select", "Select a customer first.")
+            return None
+        if not perm.allowed("customers", "edit", parent=self.frame):
+            return None
+        return LoyaltyCardDialog(self.frame, cid)
+
     @perm.guard("customers", "delete")
     def _delete_customer(self):
         cid = self._get_selected_id()
@@ -504,6 +520,92 @@ class CustomersView:
 # ─────────────────────────────────────────────────────────────
 # CUSTOMER FORM (Add / Edit / View)
 # ─────────────────────────────────────────────────────────────
+class LoyaltyCardDialog:
+    """💳 Loyalty QR card: the QR picture, 🔄 new card, 💬 WhatsApp, 🖨 card PDF."""
+
+    def __init__(self, parent, customer_id):
+        import os, tempfile
+        from modules import loyalty_qr as LQ
+        self.LQ, self.cid, self.code = LQ, int(customer_id), None
+        C = cfg.theme()
+        c = db.fetchone("SELECT * FROM customers WHERE customer_id=?", (self.cid,)) or {}
+        self.win = tk.Toplevel(parent)
+        self.win.title("💳 Loyalty card — %s" % (c.get("customer_name_en") or ""))
+        self.win.configure(bg=C["content_bg"]); self.win.geometry("560x420")
+        self._no_close_confirm = True
+        try:
+            self.win.transient(parent.winfo_toplevel())
+        except Exception:
+            pass
+        self.win.bind("<Escape>", lambda e: self.win.destroy())
+        tk.Label(self.win, text="💳  %s  (%s)" % (c.get("customer_name_en") or "", c.get("customer_code") or ""),
+                 font=("Segoe UI", 12, "bold"), bg=C["content_bg"], fg=C["text_primary"]).pack(anchor="w", padx=14,
+                                                                                               pady=(12, 2))
+        tk.Label(self.win, text="Scanning the card at the POS / Sales Invoice picks this customer (price list and "
+                                "loyalty points come with them). A new card stops the old one.",
+                 font=("Segoe UI", 9), bg=C["content_bg"], fg=C["text_secondary"], wraplength=520,
+                 justify="left").pack(anchor="w", padx=14)
+        body = tk.Frame(self.win, bg=C["content_bg"]); body.pack(fill="both", expand=True, padx=14, pady=8)
+        self.qr_lbl = tk.Label(body, text=("Card made — press 🔄 to print / send a new one" if LQ.has_card(self.cid)
+                                           else "No card yet — press 🔄 New card"),
+                               bg="white", width=30, height=12, wraplength=200)
+        self.qr_lbl.pack(side="left")
+        r = tk.Frame(body, bg=C["content_bg"]); r.pack(side="left", fill="both", expand=True, padx=12)
+        tk.Label(r, text="Mobile (WhatsApp)", bg=C["content_bg"], font=("Segoe UI", 9, "bold")).pack(anchor="w")
+        self.phone = tk.StringVar(value=c.get("mobile") or c.get("phone") or "")
+        tk.Entry(r, textvariable=self.phone, relief="solid", bd=1, font=("Segoe UI", 11)).pack(fill="x")
+        for txt, cmd in (("🔄 New card", self.new), ("💬 Send on WhatsApp", self.send), ("🖨 Card PDF", self.pdf)):
+            tk.Button(r, text=txt, relief="flat", bg=C["primary"] if txt.startswith("🔄") else C["card_bg"],
+                      fg="white" if txt.startswith("🔄") else C["text_primary"], padx=10, pady=5, cursor="hand2",
+                      command=cmd).pack(fill="x", pady=(8, 0))
+        self.msg = tk.StringVar()
+        tk.Label(self.win, textvariable=self.msg, bg=C["content_bg"], fg="#047857", wraplength=520,
+                 justify="left", font=("Segoe UI", 9, "bold")).pack(fill="x", padx=14, pady=(0, 10))
+        self._os, self._tmp = os, tempfile
+
+    def new(self, quiet=False):
+        if self.LQ.has_card(self.cid) and not quiet and not messagebox.askyesno(
+                "Loyalty card", "Make a new card? The old card stops working.", parent=self.win):
+            return None
+        try:
+            self.code = self.LQ.make(self.cid)
+        except ValueError as e:
+            messagebox.showwarning("Loyalty card", str(e), parent=self.win)
+            return None
+        path = self._os.path.join(self._tmp.gettempdir(), "daybill_card_%d.png" % self.cid)
+        self.LQ.png(self.code, path, box=6)
+        try:
+            self._img = tk.PhotoImage(file=path)
+            self.qr_lbl.config(image=self._img, text="", width=0, height=0)
+        except Exception:
+            self.qr_lbl.config(text=self.code)
+        self.msg.set("✅ New card made — send it or print it now.")
+        return self.code
+
+    def _need(self):
+        return self.code or self.new(quiet=not self.LQ.has_card(self.cid)) if not self.code else self.code
+
+    def send(self):
+        code = self._need()
+        if not code:
+            return
+        ok, how = self.LQ.send_whatsapp(self.cid, code, self.phone.get().strip())
+        self.msg.set(("✅ " if ok else "❌ ") + how)
+
+    def pdf(self):
+        code = self._need()
+        if not code:
+            return None
+        p = self.LQ.card_pdf(self.cid, code)
+        self.msg.set("✅ Card: %s" % p)
+        try:
+            from modules import printer_service as ps
+            ps.open_file(p)
+        except Exception:
+            pass
+        return p
+
+
 class CustomerForm:
     def __init__(self, parent, customer_id=None, on_save=None, view_only=False):
         self.parent      = parent
