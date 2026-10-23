@@ -892,7 +892,7 @@ class PurchaseForm:
                 try:
                     from modules import party_info as _PI
                     from ui.pay_panel import ok_for_party
-                    why = ok_for_party(_PI.is_cash("supplier", s["supplier_id"]), total, pp.paid(), "supplier")
+                    why = ok_for_party(_PI.has_no_account("supplier", s["supplier_id"]), total, pp.paid(), "supplier")
                 except Exception:
                     why = ""
                 if why:

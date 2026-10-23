@@ -11,6 +11,7 @@
 # bill is shown for it.
 #
 #   is_cash(kind, party_id)          the walk-in party?
+#   has_no_account(kind, party_id)   strict: CASH party / booked to cash
 #   balance(kind, party_id)          Dr − Cr of the party's ledger
 #   last_bill(kind, party_id, exclude_id=None)  {id, number, date, total}
 #   counter_last_bill(exclude_id=None)          {id, number, date, total}
@@ -62,6 +63,27 @@ def is_cash(kind, party_id):
         r = {}
     c, n = str(r.get("code") or "").upper(), str(r.get("name") or "").lower()
     if c in ("CASH", "WALKIN", "WALK-IN") or n.startswith("cash ") or "walk-in" in n or "walk in" in n:
+        return True
+    acc = _account(kind, party_id)
+    try:
+        from modules import account_defaults as ad
+        return bool(acc) and acc == ad.cash()
+    except Exception:
+        return False
+
+
+def has_no_account(kind, party_id):
+    """Strict test for a save guard: no party, the built-in CASH party, or a
+    party booked to the cash account. A customer only NAMED "walk-in" with
+    a ledger of its own may still buy on credit."""
+    if not party_id:
+        return True
+    tbl, code = ("customers", "customer_code") if kind == "customer" else ("suppliers", "supplier_code")
+    try:
+        r = db.fetchone("SELECT %s AS code FROM %s WHERE %s_id=?" % (code, tbl, kind), (int(party_id),)) or {}
+    except Exception:
+        r = {}
+    if str(r.get("code") or "").upper() == "CASH":
         return True
     acc = _account(kind, party_id)
     try:

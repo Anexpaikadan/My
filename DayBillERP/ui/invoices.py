@@ -3021,7 +3021,7 @@ class InvoiceForm:
             try:
                 from modules import party_info as _PI
                 from ui.pay_panel import ok_for_party
-                _why = ok_for_party(_PI.is_cash("customer", cust.get("customer_id")), total, paid_amt)
+                _why = ok_for_party(_PI.has_no_account("customer", cust.get("customer_id")), total, paid_amt)
             except Exception:
                 _why = ""
             if _why:
