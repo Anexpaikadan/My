@@ -3,7 +3,7 @@
 # (sidebar, About, Updates). tools/version_info.txt (the .exe file
 # properties) carries the same number.
 # ============================================================
-VERSION = "7.8.0"
+VERSION = "7.9.0"
 APP_NAME = "DayBill ERP"
 SUBTITLE = "Billing & Inventory Management"     # Settings ▸ System ▸ Sub name
 TAGLINE = "Simple • Fast • Reliable"

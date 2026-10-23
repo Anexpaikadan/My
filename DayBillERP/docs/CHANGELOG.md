@@ -2,6 +2,36 @@
 
 Newest first. The short guide is in the main README.md.
 
+## 🧾 v7.9.0 — transaction header, payment area, grid design, Invoice Designer options
+
+- Sales, Sales Return, Purchase and Purchase Return: the header is rebuilt
+  as titled blocks (ui/doc_header) with a balance card — the party's
+  ledger balance in big figures (red = owes, green = in credit), their last
+  bill and this counter's last bill; the Cash Customer shows "No account".
+- Payment area (ui/pay_panel) on Purchase, Sales Return and Purchase
+  Return: up to four rows of [cash / bank account][amount], every cash and
+  bank account of the chart in the list, "Pay all" / "All on account", and
+  the line "Total · Paid · On account / Change". The Sales window's Cash /
+  Card boxes each got their account. Split rows are kept in
+  payment_tenders and posted per account; the unpaid part goes to the
+  party ledger (posting.post_purchase others, post_sales_return /
+  post_purchase_return paid). A walk-in party must pay in full.
+- ▦ Grid design (ui/table_columns): per table font, size, bold, row
+  height, row / alternate / header colours, grid-line colour, header text,
+  width, alignment, show / hide, order and read only; "font for every
+  table"; Receipts / Payments lists and reports have it too.
+- Invoice Designer (modules/design_options, patch zzz_v790_designer):
+  document list with codes; ★ Default / Design 2 / Design 3 per document
+  (report_templates.design_slot) and Print ▾ ▸ Print design 2 / 3; page
+  settings in report_templates.page_json — lines per page, minimum lines
+  (blank rows), row gap, Custom paper W × H, pre-printed paper, ask the
+  printer every time, graphics or text (dot-matrix) printing; sections —
+  a field can print on every page (page header / footer) or only on page 1
+  / the last page, with guides on the canvas; field settings — format
+  (amount, no-decimal amount, qty, date, long date, UPPER / lower / Title,
+  amount in words), text after the value, max length, hide when empty /
+  zero, italic, underline, box, colour, lock position.
+
 ## 👤 v7.8.0 — party balance & last bill, customer typed on the bill, read-only columns
 
 - Sales window (L.Bill line under the grid), POS (customer strip), Purchase

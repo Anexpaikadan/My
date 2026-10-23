@@ -1,7 +1,30 @@
-# DayBill ERP  v7.8.0
+# DayBill ERP  v7.9.0
 
 Billing, POS, inventory, accounts and HR for shops in 🇸🇦 Saudi Arabia, 🇦🇪 the UAE and 🇮🇳 India.
 **VAT / GST by country · ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
+
+## 🧾 v7.9 — new transaction header, payment area, grid design, designer options
+
+- **Transaction header:** Sales, Sales Return, Purchase and Purchase Return
+  show the bill in titled blocks (Bill · Customer · Contact · Details) with
+  a balance card on the right: the party's balance, last bill and this
+  counter's last bill.
+- **Payment area in every transaction:** pick any cash or bank account
+  (Main cash, Petty cash, each bank …), more than one if needed. Pay part
+  of the bill and the rest stays on the party's account —
+  *Total 200 · Paid 100 · On account 100*. The Cash Customer / Cash
+  Supplier must pay in full.
+- **▦ Grid design** (right-click any table heading): font, row height,
+  colours, header text, width, alignment, show / hide and read only — for
+  every table, Receipts / Payments and reports included.
+- **Invoice Designer:** a document list with codes (SI · Sales Invoice,
+  PI, SR, PR …); **Prints as** ★ Default / Design 2 / Design 3 (Print ▾ ▸
+  Print design 2 / 3); page settings (lines per page, minimum lines, row
+  gap, custom paper size, pre-printed letterhead, ask the printer every
+  time, graphics or dot-matrix); sections (invoice header on page 1, page
+  header / footer on every page, invoice footer on the last page); field
+  formats (amount, qty, date, UPPER, in words), hide when empty / zero,
+  italic, underline, box, colour, max length, lock position.
 
 ## 👤 v7.8 — party balance, customer typed on the bill, read-only columns
 

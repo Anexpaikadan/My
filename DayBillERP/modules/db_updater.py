@@ -10,7 +10,7 @@ import re
 try:                                    # one version for the whole app (config/version.py)
     from config.version import VERSION as APP_VERSION
 except Exception:
-    APP_VERSION = "7.8.0"
+    APP_VERSION = "7.9.0"
 
 # Ordered list of database patches shipped with the app.
 # (filename relative to project root, human description, version)
@@ -35,6 +35,15 @@ PATCHES = [
 
 # What changed in each version (shown in the Updates panel)
 CHANGELOG = [
+    ("7.9.0", ["🧾 Sales, Sales Return, Purchase, Purchase Return: a new header in titled blocks with the "
+               "party's balance card (balance, last bill, this counter's last bill).",
+               "💳 Payment area in every transaction: pick any cash or bank account (more than one), pay part — "
+               "the rest stays on the party's account (Total 200 · Paid 100 · On account 100).",
+               "▦ Grid design (right-click any table heading): font, row height, colours, header text, width, "
+               "alignment, show / hide, read only — every table, Receipts / Payments and reports too.",
+               "🧩 Invoice Designer: document list with codes (SI, PI, SR …), Prints as ★ Default / Design 2 / "
+               "Design 3, page settings (lines per page, minimum lines, row gap, custom paper, pre-printed, "
+               "ask the printer, dot-matrix), sections (page / invoice header & footer) and field formats."]),
     ("7.8.0", ["👤 Sales window, POS, Purchase, vouchers: picking a customer / supplier shows the ledger "
                "balance, his last bill and the last bill of this counter.",
                "✍ A customer not in the list: type Name, VAT / GST No., Mobile, Address on the bill — printed on "
