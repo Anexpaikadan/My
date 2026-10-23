@@ -110,10 +110,10 @@ class UsersView:
                         highlightbackground=C["border"], highlightthickness=1)
         wrap.pack(fill="both", expand=True, padx=24, pady=18)
 
-        cols = ("id", "username", "name", "role", "lang", "status")
+        cols = ("id", "username", "name", "role", "lang", "status", "qr")
         heads = {"id": ("ID", 50), "username": ("Username", 140),
                  "name": ("Full Name", 220), "role": ("Role", 140),
-                 "lang": ("Lang", 60), "status": ("Status", 90)}
+                 "lang": ("Lang", 60), "status": ("Status", 90), "qr": ("📱 QR", 110)}
         style = ttk.Style()
         try:
             style.theme_use("clam")
@@ -128,7 +128,7 @@ class UsersView:
             txt, w = heads[c]
             self.tree.heading(c, text=txt)
             self.tree.column(c, width=w,
-                             anchor="center" if c in ("id", "lang", "status") else "w")
+                             anchor="center" if c in ("id", "lang", "status", "qr") else "w")
         self.tree.pack(fill="both", expand=True, padx=4, pady=4)
         self.tree.bind("<Double-1>", lambda e: self._edit())
 
@@ -146,6 +146,14 @@ class UsersView:
                   bg=C["card_bg"], fg=C["danger"], relief="flat", padx=12, pady=6,
                   cursor="hand2", highlightbackground=C["border"],
                   highlightthickness=1, command=self._toggle_active).pack(side="left")
+        # v7.4: personal QR sign-in (phone app + desktop scanner), sent on WhatsApp
+        tk.Button(btns, text="📱 QR sign-in…", font=("Segoe UI", 9, "bold"), bg=C["primary"],
+                  fg="white", relief="flat", padx=12, pady=6, cursor="hand2",
+                  command=self._qr).pack(side="left", padx=(8, 0))
+        tk.Button(btns, text="📱 QR for all users…", font=("Segoe UI", 9), bg=C["card_bg"],
+                  fg=C["text_primary"], relief="flat", padx=12, pady=6, cursor="hand2",
+                  highlightbackground=C["border"], highlightthickness=1,
+                  command=self._qr_all).pack(side="left", padx=(8, 0))
 
     def _load(self):
         try:
@@ -161,14 +169,55 @@ class UsersView:
                 "u.is_active, r.role_name_en "
                 "FROM users u LEFT JOIN roles r ON u.role_id=r.role_id "
                 "ORDER BY u.user_id") or []
+            try:
+                from modules import qr_login as _Q
+                qrs = _Q.statuses()
+            except Exception:
+                qrs = {}
             for r in rows:
+                q = qrs.get(r["user_id"])
+                qtxt = "—" if not q else ("✅ on" if q["working"] else ("⌛ expired" if q["expired"] else "⛔ off"))
                 self.tree.insert("", "end", iid=str(r["user_id"]), values=(
                     r["user_id"], r["username"], r.get("full_name_en", ""),
                     r.get("role_name_en", "—"),
                     (r.get("preferred_language") or "en").upper(),
-                    "Active" if r.get("is_active", 1) else "Inactive"))
+                    "Active" if r.get("is_active", 1) else "Inactive", qtxt))
         except Exception as e:
             messagebox.showerror("Error", str(e))
+
+    def _qr(self):
+        """📱 QR sign-in for the selected user."""
+        if not _allowed("edit", self.frame):
+            return
+        uid = self._sel_id()
+        if not uid:
+            messagebox.showinfo("Select", "Select a user first."); return
+        from ui.qr_login_dialog import QrLoginDialog
+        return QrLoginDialog(self.frame, uid, on_change=self._load)
+
+    def _qr_all(self):
+        """A new QR for every active user: staff cards in one folder, and
+        WhatsApp (Cloud API) to everyone with a mobile number."""
+        if not _allowed("edit", self.frame):
+            return
+        ids = [r["user_id"] for r in (db.fetchall("SELECT user_id FROM users WHERE is_active=1") or [])]
+        if not ids or not messagebox.askyesno(
+                "QR for all users", "Make a NEW QR sign-in for all %d active users?\n\nEveryone's old QR "
+                "stops working. Staff cards are saved in one folder; with the WhatsApp Cloud API each "
+                "person with a mobile number gets theirs." % len(ids), parent=self.frame):
+            return
+        from ui.qr_login_dialog import qr_for_all
+        from modules import qr_login as _Q
+        made, sent, cards = qr_for_all(self.frame, ids)
+        self._load()
+        messagebox.showinfo("QR for all users", "%d QR made · %d sent on WhatsApp · cards in:\n%s"
+                            % (made, sent, _Q.out_dir()), parent=self.frame)
+        try:
+            from modules import printer_service as ps
+            ps.open_file(_Q.out_dir())
+        except Exception:
+            pass
+        return made, sent, cards
 
     def _sel_id(self):
         sel = self.tree.selection()

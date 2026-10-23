@@ -230,6 +230,33 @@ def login(username, password, device=""):
             "company": company(), "settings": app_settings()}
 
 
+def login_qr(code, device=""):
+    """v7.4: sign in with the user's personal QR (Users ▸ 📱 QR sign-in)."""
+    from modules import qr_login as Q
+    try:
+        u = Q.user_for(code, "mobile")
+    except Q.QrError as e:
+        raise MobileError(str(e))
+    acc = access(u["user_id"])
+    if not acc["active"] or not acc["modules"]:
+        raise MobileError("This user has no mobile access. In DayBill: Inventory ▸ Mobile & Van ▸ "
+                          "Users — tick the modules for %s." % u["username"])
+    tok = secrets.token_hex(24)
+    db.execute("INSERT INTO mobile_tokens (token, user_id, device) VALUES (?,?,?)",
+               (tok, u["user_id"], (str(device or "") + " (QR)")[:120]))
+    try:
+        db.execute("UPDATE mobile_tokens SET pw_sig=? WHERE token=?",
+                   (_pw_sig(u.get("password_hash")), tok))
+    except Exception:
+        pass
+    return {"token": tok, "user": u["full_name_en"] or u["username"],
+            "device_no": next_device_no(u["user_id"], acc), "user_id": u["user_id"],
+            "modules": acc["modules"], "van_code": acc["van_code"],
+            "module_list": [{"key": k, "en": en, "ar": ar, "icon": ic}
+                            for k, en, ar, ic in MODULES if k in acc["modules"]],
+            "company": company(), "settings": app_settings(), "username": u["username"]}
+
+
 def next_device_no(user_id, acc=None):
     """Every sign-in gets its own number, so two phones of the same van
     never print the same bill number (VAN1-2-00005)."""

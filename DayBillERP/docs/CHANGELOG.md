@@ -2,6 +2,16 @@
 
 Newest first. The short guide is in the main README.md.
 
+## 📱 v7.4.0 — QR sign-in for users and employees
+
+- Personal QR sign-in per user (modules/qr_login, table user_qr_keys): phone app
+  (link / camera / PDT scan) and desktop login (scanner), validity, phone /
+  desktop choice, turn off, login history, lock after wrong codes.
+- Sent on WhatsApp (link, or staff card PDF with the Cloud API); printable
+  staff card; QR for all users.
+- HR employees: linked DayBill user (employees.user_id), make a user for an
+  employee, QR from the employee form.
+
 ## 💲 v7.3.0 — PDT Price Change
 
 - PDT module **Price Change**: scan, type the new shelf price (with VAT), live

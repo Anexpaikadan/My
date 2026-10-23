@@ -80,7 +80,8 @@ const WORDS = {
     "Print labels": "طباعة الملصقات", "Make poster": "إنشاء الملصق", "Open PDF": "فتح PDF",
     "Send to supplier on WhatsApp": "إرسال للمورد عبر واتساب", "Choose the supplier first": "اختر المورد أولاً",
     "Scan the first item": "امسح أول صنف", "labels": "ملصق", "cost": "التكلفة", "reorder at": "حد الطلب",
-    "Add all": "إضافة الكل", "Save new prices": "حفظ الأسعار الجديدة", "Print new shelf labels": "طباعة ملصقات الرف الجديدة",
+    "Add all": "إضافة الكل", "Sign in with my QR": "الدخول برمز QR الخاص بي", "Signed in as": "تم الدخول باسم",
+    "This is not a DayBill sign-in QR": "هذا ليس رمز دخول DayBill", "Save new prices": "حفظ الأسعار الجديدة", "Print new shelf labels": "طباعة ملصقات الرف الجديدة",
     "Allow below cost": "السماح بأقل من التكلفة", "tap to type": "اضغط للكتابة", "margin": "الهامش", "new prices": "أسعار جديدة",
     "New shelf price (with VAT) for": "سعر الرف الجديد (شامل الضريبة) لـ",
     "Type the new price of every item (tap the price)": "اكتب السعر الجديد لكل صنف (اضغط على السعر)",
@@ -252,12 +253,16 @@ async function login() {
       <label>${t("Device name")}</label><input id="d" value="${esc(device())}">
       <div class="spacer"></div>
       <button class="primary" id="go" style="width:100%">${t("Sign in")}</button>
+      ${RELAY ? "" : `<button id="qrin" style="width:100%;margin-top:8px">📷 ${t("Sign in with my QR")}</button>`}
       <div class="spacer"></div>
       <div class="row"><button class="ghost" id="lang">${L() === "ar" ? "English" : "العربية"}</button></div>
     </div></div>`;
   $("#lang").onclick = () => { LS.set("lang", L() === "ar" ? "en" : "ar"); login(); };
+  current.onScan = code => qrLogin(code);              // PDT scan button / camera at the sign-in
+  if ($("#qrin")) $("#qrin").onclick = camera;
   const go = async () => {
     const u = $("#u").value.trim(), p = $("#p").value;
+    if (!RELAY && isQr(u)) { $("#u").value = ""; return qrLogin(u); }
     LS.set("device", $("#d").value.trim() || device()); LS.set("last_user", u);
     $("#go").disabled = true;
     try {
@@ -268,6 +273,18 @@ async function login() {
     } catch (e) { toast(e.message, true); $("#go").disabled = false; }
   };
   $("#go").onclick = go; $("#p").onkeydown = e => { if (e.key === "Enter") go(); };
+}
+/* v7.4: personal QR sign-in (Users ▸ 📱 QR sign-in in DayBill) */
+const isQr = s => /(?:#|[?&])k=[A-Za-z0-9_\-]{20,}|^DBQR:/.test(String(s || ""));
+async function qrLogin(code) {
+  if (!isQr(code)) return toast(t("This is not a DayBill sign-in QR"), true);
+  try {
+    const r = await api("login_qr", { body: { code: String(code), device: device() } });
+    S = r; LS.set("session", S); LS.set("last_user", r.username || "");
+    beep(1500, .1); toast("✔ " + t("Signed in as") + " " + r.user);
+    if (S.modules.length === 1) openModule(S.modules[0]); else home();
+    flush();
+  } catch (e) { toast(e.message, true, 5000); if (!S) login(); }
 }
 function logout(silent) {
   if (!silent && queue().length && !confirm("Documents are still waiting to send. Sign out anyway? (they stay on this phone)")) return;
@@ -975,6 +992,8 @@ window.addEventListener("load", () => {
   if ("serviceWorker" in navigator && window.isSecureContext) navigator.serviceWorker.register("sw.js").catch(() => {});
 });
 window.DayBillApp = { home, login, flush, syncVan, state: () => S };
-if (S && S.token) { if (S.modules.length === 1) openModule(S.modules[0]); else home(); flush(); }
+const qrHash = !RELAY && isQr(location.hash) ? location.href : "";
+if (qrHash) { window.history.replaceState(null, "", location.pathname); S = null; LS.del("session"); qrLogin(qrHash); }
+else if (S && S.token) { if (S.modules.length === 1) openModule(S.modules[0]); else home(); flush(); }
 else login();
 })();

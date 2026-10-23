@@ -24,7 +24,7 @@ DEFAULT_PORT = 8090
 try:
     from config.version import VERSION
 except Exception:
-    VERSION = "7.3.0"
+    VERSION = "7.4.0"
 
 
 def local_ips():
@@ -98,6 +98,8 @@ def handle(method, path, query, body, token):
                          "shop": c.get("company_name_en") or "", "shop_ar": c.get("company_name_ar") or ""}
         if path == "/api/login" and method == "POST":
             return 200, M.login(body.get("username"), body.get("password"), body.get("device", ""))
+        if path == "/api/login_qr" and method == "POST":      # v7.4: personal QR
+            return 200, M.login_qr(body.get("code"), body.get("device", ""))
         user = M.user_for(token or q.get("t", ""))     # a PDF link carries ?t=<token>
         if path == "/api/me":
             return 200, {"user": user["name"], "modules": user["modules"]}

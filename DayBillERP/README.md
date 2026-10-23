@@ -1,7 +1,29 @@
-# DayBill ERP  v7.3.0
+# DayBill ERP  v7.4.0
 
 Billing, POS, inventory, accounts and HR for shops in 🇸🇦 Saudi Arabia, 🇦🇪 the UAE and 🇮🇳 India.
 **VAT / GST by country · ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
+
+## 📱 v7.4 — QR sign-in for every user and employee (sent on WhatsApp)
+
+- **Users ▸ 📱 QR sign-in…** makes a personal QR for the selected user:
+  **💬 Send on WhatsApp** (the link; with the WhatsApp Cloud API the staff
+  card PDF goes too), **🖨 Staff card (PDF)** to print, **📋 Copy link**,
+  **⛔ Turn off**. Choose how long it is valid (never, 7 / 30 / 90 days, 1 year)
+  and where it works (phone app, desktop sign-in or both).
+- **The person opens it:** tapping the WhatsApp link (or scanning the QR with
+  the phone camera) on the shop Wi-Fi opens DayBill Mobile **signed in as
+  them**, with their modules. At the desktop login they scan the QR card with
+  the barcode scanner — signed in, no password typing. The phone app's sign-in
+  screen also has **📷 Sign in with my QR**.
+- **Each employee:** HR ▸ Employee ▸ *Sign-in* — pick the employee's DayBill
+  user or **➕ Make a user for this employee** (user name = employee code), then
+  **📱 QR sign-in…**. The employee's mobile number is used for WhatsApp.
+- **📱 QR for all users…** makes everyone a new QR and saves all staff cards in
+  one folder (and sends them with the WhatsApp Cloud API).
+- Safe: only a hash of the key is kept; a new QR stops the old one at once;
+  expired / turned-off QRs and switched-off users are refused; 5 wrong codes
+  lock QR sign-in for 5 minutes; every QR sign-in is in the login history.
+  The Users list shows each user's QR state.
 
 ## 💲 v7.3 — PDT Price Change
 

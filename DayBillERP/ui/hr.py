@@ -956,6 +956,39 @@ class EmployeeForm:
             for k in ("probation_days", "join_date"):
                 self.fields[k].trace_add("write", lambda *a: self._prob_hint())
 
+        # v7.4: the DayBill user this employee signs in with + their QR sign-in
+        self.v74 = PR._has("employees", "user_id")
+        self.user_link_var = tk.StringVar(value="— None —")
+        self._user_choices = {}
+        if self.v74:
+            head("— Sign-in (DayBill user · 📱 QR on WhatsApp) —")
+            try:
+                taken = {r["user_id"] for r in (db.fetchall(
+                    "SELECT user_id FROM employees WHERE user_id IS NOT NULL AND employee_id<>?",
+                    (self.employee_id or 0,)) or [])}
+                us = db.fetchall("SELECT user_id, username, full_name_en FROM users WHERE is_active=1 "
+                                 "ORDER BY username") or []
+            except Exception:
+                taken, us = set(), []
+            for u_ in us:
+                if u_["user_id"] not in taken:
+                    self._user_choices["%s · %s" % (u_["username"], u_.get("full_name_en") or "")] = u_["user_id"]
+            self.user_cb = combo("DayBill user", self.user_link_var, ["— None —"] + list(self._user_choices), 0)
+            if self.employee_id:
+                try:
+                    cur_uid = db.execute_scalar("SELECT user_id FROM employees WHERE employee_id=?",
+                                                (self.employee_id,))
+                except Exception:
+                    cur_uid = None
+                lab_ = next((k for k, v in self._user_choices.items() if v == cur_uid), None)
+                if lab_:
+                    self.user_link_var.set(lab_)
+            bc = tk.Frame(body, bg=C["content_bg"]); bc.grid(row=row[0], column=1, columnspan=2, sticky="w", padx=6)
+            tk.Button(bc, text="➕ Make a user for this employee", font=("Segoe UI", 9), relief="flat",
+                      bg=C["card_bg"], cursor="hand2", command=self._make_user).pack(side="left", pady=(16, 0))
+            tk.Button(bc, text="📱 QR sign-in…", font=("Segoe UI", 9, "bold"), relief="flat", bg=C["primary"],
+                      fg="white", cursor="hand2", command=self._qr_login).pack(side="left", padx=6, pady=(16, 0))
+
         head("— Salary (SAR / month) —")
         fld("Basic Salary", "basic_salary", 0, req=True)
         fld("Housing Allowance", "housing_allowance", 1)
@@ -1124,6 +1157,8 @@ class EmployeeForm:
         }
         if not self.employee_id:
             data["is_active"] = 1
+        if getattr(self, "v74", False):
+            data["user_id"] = self._user_choices.get(self.user_link_var.get())
         if self.v66:
             data.update({"phone": F["phone"].get().strip() or None, "email": F["email"].get().strip() or None,
                          "gender": {"Male": "M", "Female": "F"}.get(self.gender_var.get()),
@@ -1183,6 +1218,39 @@ class EmployeeForm:
             self.on_save()
         self.win.destroy()
         return True
+
+    # ── v7.4: sign-in user + QR ───────────────────────────────
+    def _make_user(self):
+        """A DayBill user for this employee (they sign in with the QR)."""
+        if not self.employee_id:
+            messagebox.showinfo("DayBill user", "Save the employee first.", parent=self.win)
+            return None
+        if not perm.allowed("users", "add", parent=self.win):
+            return None
+        from modules import qr_login as Q
+        try:
+            uid = Q.create_user_for_employee(self.employee_id)
+        except Exception as e:
+            messagebox.showerror("DayBill user", str(e)[:200], parent=self.win)
+            return None
+        u = db.fetchone("SELECT username, full_name_en FROM users WHERE user_id=?", (uid,)) or {}
+        lab = "%s · %s" % (u.get("username"), u.get("full_name_en") or "")
+        self._user_choices[lab] = uid
+        self.user_cb["values"] = ["— None —"] + list(self._user_choices)
+        self.user_link_var.set(lab)
+        self.status_var.set("✅ User '%s' made and linked — press 📱 QR sign-in to send the QR." % u.get("username"))
+        return uid
+
+    def _qr_login(self):
+        uid = self._user_choices.get(self.user_link_var.get())
+        if not uid:
+            messagebox.showinfo("QR sign-in", "Pick the DayBill user (or ➕ make one) first.", parent=self.win)
+            return None
+        if self.employee_id:
+            from modules import qr_login as Q
+            Q.link_employee(self.employee_id, uid)
+        from ui.qr_login_dialog import QrLoginDialog
+        return QrLoginDialog(self.win, uid)
 
     def _center(self, w, h):
         self.win.update_idletasks()

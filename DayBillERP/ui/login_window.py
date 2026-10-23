@@ -478,10 +478,18 @@ class LoginWindow:
         raw_pw = self.password_var.get()
         password = raw_pw.strip()
 
-        if not username or not raw_pw:
+        try:                         # v7.4: a staff QR card scanned into the user name box
+            from modules import qr_login as _QR
+            qr = _QR.looks_like_qr(username)
+        except Exception:
+            _QR, qr = None, False
+        if qr:
+            self.username_var.set("")
+            raw_pw = password = ""
+        elif not username or not raw_pw:
             self.error_var.set(t("login.error_empty"))
             return
-        wait = self._locked_for(username)
+        wait = 0 if qr else self._locked_for(username)
         if wait:
             self.error_var.set(f"Too many wrong passwords. Try again in {wait} seconds.")
             return
@@ -525,10 +533,21 @@ class LoginWindow:
             if db.is_daybill() is False:          # v6.0.1: another program's database
                 self._not_daybill()
                 return
-            user = db.fetchone("SELECT * FROM users WHERE username = ?", (username,))
+            if qr:
+                try:
+                    user = _QR.user_for(username, "desktop")
+                except _QR.QrError as e:
+                    self._fail(str(e))
+                    return
+                username = user["username"]
+                ok = True
+            else:
+                user = db.fetchone("SELECT * FROM users WHERE username = ?", (username,))
 
             # first run: account still has the setup-script placeholder
-            if user and user.get("is_active", 1) and \
+            if qr:
+                pass
+            elif user and user.get("is_active", 1) and \
                     self._needs_first_password(user.get("password_hash")):
                 user = self._set_first_password(user)
                 if not user:
@@ -572,8 +591,8 @@ class LoginWindow:
                            "to tick rights for it in Users & Rights.")
                 return
 
-            # Settings ▸ Users & Security ▸ Password Expiry
-            if not self._password_still_valid(user):
+            # Settings ▸ Users & Security ▸ Password Expiry (a QR card has its own expiry)
+            if not qr and not self._password_still_valid(user):
                 return
             db.execute("UPDATE users SET last_login = GETDATE() WHERE user_id = ?",
                        (user["user_id"],))
@@ -585,15 +604,17 @@ class LoginWindow:
                     _perm.upgrade_hash(user["user_id"], _ok_pw)
             except Exception:
                 pass
-            try:
-                _perm.log_login(user["user_id"], username, True)
-            except Exception:
-                pass
+            if not qr:                      # the QR sign-in was logged by qr_login
+                try:
+                    _perm.log_login(user["user_id"], username, True)
+                except Exception:
+                    pass
             self._fails.pop(username.lower(), None)
             # Remember me = remember the USERNAME (never the password)
             try:
-                cfg.set("remember_username", username if self.remember_var.get() else "")
-                cfg.save_settings()
+                if not qr:
+                    cfg.set("remember_username", username if self.remember_var.get() else "")
+                    cfg.save_settings()
             except Exception:
                 pass
             load_language(user.get("preferred_language", "en") or "en")
