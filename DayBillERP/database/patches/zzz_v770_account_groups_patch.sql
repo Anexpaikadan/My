@@ -15,7 +15,6 @@
 -- it — a ledger you moved yourself stays where you put it. Safe to run
 -- again (Chart of Accounts ▸ Add default groups).
 -- ============================================================
-SET NOCOUNT ON;
 IF OBJECT_ID('accounts','U') IS NOT NULL AND COL_LENGTH('accounts','is_group') IS NOT NULL
 BEGIN
     DECLARE @g TABLE (ord INT, code NVARCHAR(20), en NVARCHAR(100), ar NVARCHAR(100),

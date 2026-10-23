@@ -1,6 +1,6 @@
 -- ============================================================
 -- DayBill ERP — FULL DATABASE INSTALLER  (clean new installation)
--- generated 2026-10-23 16:05  ·  ONE file = the whole database
+-- generated 2026-10-23 16:10  ·  ONE file = the whole database
 -- ------------------------------------------------------------
 -- WHAT IT MAKES
 --   • the DayBillERP database (Arabic collation) and EVERY table,
@@ -5880,7 +5880,6 @@ GO
 -- it — a ledger you moved yourself stays where you put it. Safe to run
 -- again (Chart of Accounts ▸ Add default groups).
 -- ============================================================
-SET NOCOUNT ON;
 IF OBJECT_ID('accounts','U') IS NOT NULL AND COL_LENGTH('accounts','is_group') IS NOT NULL
 BEGIN
     DECLARE @g TABLE (ord INT, code NVARCHAR(20), en NVARCHAR(100), ar NVARCHAR(100),
@@ -5992,4 +5991,5 @@ PRINT N'  users             : ' + CAST(@u AS NVARCHAR(10)) + N'  (admin — set 
 PRINT N'  products          : ' + CAST(@p AS NVARCHAR(10));
 PRINT N'Next: open DayBill ▸ sign in as admin ▸ Settings ▸ Company.';
 PRINT N'------------------------------------------------------------';
+SET NOCOUNT OFF;        -- the connection that ran this keeps counting rows (rowcount checks need it)
 GO

@@ -105,6 +105,7 @@ PRINT N'  users             : ' + CAST(@u AS NVARCHAR(10)) + N'  (admin — set 
 PRINT N'  products          : ' + CAST(@p AS NVARCHAR(10));
 PRINT N'Next: open DayBill ▸ sign in as admin ▸ Settings ▸ Company.';
 PRINT N'------------------------------------------------------------';
+SET NOCOUNT OFF;        -- the connection that ran this keeps counting rows (rowcount checks need it)
 GO
 """)
     with open(OUT, "w", encoding="utf-8") as f:
