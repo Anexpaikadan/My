@@ -355,9 +355,9 @@ def edit_txn(parent, txn, on_change=None):
     elif key == "consumption":
         from ui.consumption import ConsumptionForm
         f = ConsumptionForm(parent, entry_id=did, on_save=on_change)
-    elif key == "journal":
-        from ui.accounting import JournalForm
-        f = JournalForm(parent, on_save=on_change, journal_id=txn.get("journal_id"))
+    elif key == "journal":          # v7.1: CR / BR / CP / BP / CT / JV in their own window
+        from ui.multi_voucher import open_voucher
+        f = open_voucher(parent, txn.get("journal_id"), on_change)
     _watch(getattr(f, "win", None), on_change)
     return f
 

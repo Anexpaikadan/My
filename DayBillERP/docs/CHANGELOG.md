@@ -2,6 +2,24 @@
 
 Newest first. The short guide is in the main README.md.
 
+## 💸 v7.1.0 — multi-line Cash / Bank vouchers and Journal
+
+- **One voucher window, many lines:** Receipt, Payment, Contra (cash ↔ bank)
+  and Journal. Every receipt / payment line has its own cash or bank account,
+  so cash and bank are mixed in one window.
+- **Separate CR + BR / CP + BP** vouchers on save (each numbered in its own
+  series) or one voucher; the numbers it will take show before saving.
+- Customers, suppliers and ledgers in one type-ahead tree; party balance before
+  → after the voucher; cheque no. / date on bank lines; input VAT on payment
+  lines (Indian GST splits into CGST / SGST input); Cash / Bank / Total and
+  amount in words.
+- **Journal:** party lines, live difference, suggested balancing amount,
+  ⚖ Balance (Ctrl+B), line narration.
+- **Templates** kept in the company database and **Copy last voucher**.
+- Editing a CR / BR / CP / BP / CT / JV opens it in the same window; changing a
+  bank line to cash turns a BR into a CR with a CR number.
+- New ⭐ favourite / menu items: Bank Payment, Bank Receipt, Contra.
+
 ## 🌍 v7.0.0 — countries, business modules, account groups
 
 - **Countries.** Each company is Saudi Arabia, the UAE or India (kept in its own

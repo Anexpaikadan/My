@@ -10,7 +10,7 @@ import re
 try:                                    # one version for the whole app (config/version.py)
     from config.version import VERSION as APP_VERSION
 except Exception:
-    APP_VERSION = "7.0.0"
+    APP_VERSION = "7.1.0"
 
 # Ordered list of database patches shipped with the app.
 # (filename relative to project root, human description, version)
@@ -35,6 +35,11 @@ PATCHES = [
 
 # What changed in each version (shown in the Updates panel)
 CHANGELOG = [
+    ("7.1.0", ["💸 Multi-line vouchers: Receipt, Payment, Contra and Journal in one window — every line "
+               "picks its own cash or bank account; saved as separate CR + BR / CP + BP vouchers or one.",
+               "Party balance while typing, cheque no. / date, input VAT on payment lines, amount in words.",
+               "Journal: customer / supplier lines, live difference, ⚖ Balance (Ctrl+B).",
+               "Voucher templates (monthly rent …) and Copy last voucher."]),
     ("7.0.0", ["🌍 Countries: a company is Saudi Arabia (VAT 15 %, ZATCA), UAE (VAT 5 %, TRN, VAT 201) or "
                "India (GST: CGST + SGST in the state, IGST between states, GSTIN, HSN, GSTR-1 / GSTR-3B). "
                "Currency symbol, tax words, bills, returns and reports follow the country.",

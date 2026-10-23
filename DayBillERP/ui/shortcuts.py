@@ -55,6 +55,13 @@ TXN = [
 ]
 
 WINDOWS = [
+    ("Vouchers (Receipt · Payment · Contra · Journal)", [
+        ("Enter", "Next field / add the line"), ("Insert", "Add the line"),
+        ("F2", "Party / account box"), ("Double-click / F2 on a line", "Change the line"),
+        ("Delete", "Remove the line"), ("Ctrl+D", "Duplicate the line"),
+        ("Alt+↑ / Alt+↓", "Move the line"), ("Ctrl+B", "⚖ Balance the journal"),
+        ("Ctrl+S", "Save"), ("Esc", "Cancel changing a line / close"),
+    ]),
     ("Sales Invoice", [
         ("F2", "Find a product"), ("F3", "Find a customer"), ("F4", "Barcode box"),
         ("F5", "Recalculate totals"), ("F6", "Bill discount"), ("F7", "Tax details"),

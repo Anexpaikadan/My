@@ -3,10 +3,9 @@
 # (Converted from BillPOS PHP: vouchers.php + voucher_form.php)
 # ------------------------------------------------------------
 # List of journal vouchers with expandable Dr/Cr lines, date/type
-# filter, and a New Voucher dialog with three modes:
-#   Receipt (in)  - from customer (clears due) or other income
-#   Payment (out) - to supplier (clears due) or expense
-#   Journal       - simple Dr X / Cr Y
+# filter. New / Edit open the multi-line voucher window (v7.1,
+# ui/multi_voucher.py): Receipt · Payment · Contra · Journal, many lines,
+# cash and bank mixed in one window.
 # Posts through modules/posting.py so account selection follows the
 # Default Accounts map (cash/bank etc.).
 # ============================================================
@@ -172,8 +171,8 @@ class VouchersView:
             return
         if tc._locked(txn, self.frame, "Edit Voucher"):      # closed / other year
             return
-        from ui.accounting import JournalForm
-        JournalForm(self.frame, on_save=self._load, journal_id=jid)
+        from ui.multi_voucher import open_voucher
+        open_voucher(self.frame, jid, self._load)
 
     @perm.guard("journal", "delete")
     def _delete_selected(self):
@@ -357,7 +356,8 @@ class VouchersView:
         if not any(perm.can(m, "add") for m in ("receipt", "payment", "journal")):
             perm.allowed("journal", "add", parent=self.frame)
             return
-        VoucherForm(self.frame, on_saved=self._load)
+        from ui.multi_voucher import MultiVoucherForm
+        MultiVoucherForm(self.frame, on_saved=self._load)
 
     @perm.guard("journal", "print")
     def _print_selected(self):
@@ -443,355 +443,11 @@ class VouchersView:
 # ============================================================
 # New Voucher dialog (Receipt / Payment / Journal)
 # ============================================================
-class VoucherForm:
-    """vtype 'receipt' | 'payment' | 'journal' and mode 'cash' | 'bank' pre-set
-    the voucher (v6.9.3: ⭐ Cash Receipt (CR) / Cash Payment (CP) favourites)."""
-
-    TITLES = {("receipt", "cash"): "Cash Receipt (CR)", ("receipt", "bank"): "Bank Receipt (BR)",
-              ("payment", "cash"): "Cash Payment (CP)", ("payment", "bank"): "Bank Payment (BP)",
-              ("journal", "cash"): "Journal Voucher (JV)", ("journal", "bank"): "Journal Voucher (JV)"}
-
-    def __init__(self, parent, on_saved=None, vtype=None, mode=None):
-        C = cfg.theme()
-        self.C = C
-        self.on_saved = on_saved
-        self.win = tk.Toplevel(parent)
-        self.win.bind("<Escape>", lambda e: self.win.destroy())
-        self.win.title(self.TITLES.get((vtype, mode or "cash"), "New Voucher") if vtype
-                       else "New Voucher")
-        self.win.configure(bg=C["card_bg"])
-        self.win.geometry("480x560")
-        self.win.transient(parent.winfo_toplevel())
-        self.win.grab_set()
-        self._load_data()
-        self._build(C)
-        if vtype in ("receipt", "payment", "journal"):
-            self.vtype.set(vtype)
-            # a preset voucher (⭐ favourite) keeps its type: the right was
-            # checked for THAT type only
-            for rb in self._type_radios:
-                rb.config(state="disabled")
-        if mode in ("cash", "bank"):
-            self.mode_var.set(mode)
-        self._vtype_ui()
-        self._clean = self._snapshot()
-
-    # ── unsaved work (the generic close guard calls this) ─────
-    def _snapshot(self):
-        return tuple(v.get() for v in (
-            self.date_var, self.amount_var, self.cust_var, self.income_var,
-            self.sup_var, self.expense_var, self.jv_dr, self.jv_cr, self.narr_var))
-
-    def _is_dirty(self) -> bool:
-        """True when something was typed / picked and not saved yet."""
-        try:
-            return self._snapshot() != self._clean
-        except Exception:
-            return False
-
-    def _load_data(self):
-        try:
-            self.customers = db.fetchall(
-                "SELECT customer_id, customer_name_en FROM customers "
-                "WHERE is_active=1 ORDER BY customer_name_en") or []
-        except Exception:
-            self.customers = []
-        try:
-            self.suppliers = db.fetchall(
-                "SELECT supplier_id, supplier_name_en FROM suppliers "
-                "WHERE is_active=1 ORDER BY supplier_name_en") or []
-        except Exception:
-            self.suppliers = []
-
-        def accts(types):
-            try:
-                marks = ",".join("?" * len(types))
-                return db.fetchall(
-                    "SELECT account_id, account_code, account_name_en FROM accounts "
-                    f"WHERE is_active=1 AND account_type IN ({marks}) "
-                    "ORDER BY account_code", tuple(types)) or []
-            except Exception:
-                return []
-        self.income_accts = accts(["revenue"])
-        self.expense_accts = accts(["expense"])
-        self.all_accts = accts(["asset", "liability", "equity", "revenue", "expense"])
-
-    # ── UI ────────────────────────────────────────────────────
-    def _build(self, C):
-        head = tk.Frame(self.win, bg=C["primary"])
-        head.pack(fill="x")
-        tk.Label(head, text="New Voucher", font=("Segoe UI", 13, "bold"),
-                 bg=C["primary"], fg="white").pack(side="left", padx=14, pady=8)
-
-        body = tk.Frame(self.win, bg=C["card_bg"])
-        body.pack(fill="both", expand=True, padx=16, pady=10)
-
-        # type selector
-        self.vtype = tk.StringVar(value="receipt")
-        self._type_radios = []
-        tr = tk.Frame(body, bg=C["card_bg"]); tr.pack(fill="x", pady=(0, 8))
-        for val, lbl in [("receipt", "Receipt (in)"), ("payment", "Payment (out)"),
-                         ("journal", "Journal")]:
-            rb = tk.Radiobutton(tr, text=lbl, value=val, variable=self.vtype,
-                                font=("Segoe UI", 9, "bold"), bg=C["card_bg"],
-                                fg=C["text_primary"], activebackground=C["card_bg"],
-                                selectcolor="white", command=self._vtype_ui)
-            rb.pack(side="left", padx=(0, 10))
-            self._type_radios.append(rb)
-
-        # date + amount
-        row = tk.Frame(body, bg=C["card_bg"]); row.pack(fill="x", pady=4)
-        tk.Label(row, text="Date", font=("Segoe UI", 9), bg=C["card_bg"],
-                 fg=C["text_secondary"]).pack(side="left")
-        self.date_var = tk.StringVar(value=date.today().strftime("%Y-%m-%d"))
-        tk.Entry(row, textvariable=self.date_var, width=12, font=("Segoe UI", 10),
-                 relief="solid", bd=1).pack(side="left", padx=(6, 16))
-        tk.Label(row, text="Amount *", font=("Segoe UI", 9), bg=C["card_bg"],
-                 fg=C["text_secondary"]).pack(side="left")
-        self.amount_var = tk.StringVar()
-        tk.Entry(row, textvariable=self.amount_var, width=12, font=("Segoe UI", 11, "bold"),
-                 relief="solid", bd=1, justify="right").pack(side="left", padx=(6, 0))
-
-        # cash/bank mode
-        self.mode_frame = tk.Frame(body, bg=C["card_bg"])
-        self.mode_frame.pack(fill="x", pady=4)
-        tk.Label(self.mode_frame, text="Cash / Bank", font=("Segoe UI", 9),
-                 bg=C["card_bg"], fg=C["text_secondary"]).pack(side="left")
-        self.mode_var = tk.StringVar(value="cash")
-        ttk.Combobox(self.mode_frame, textvariable=self.mode_var,
-                     values=["cash", "bank"], width=10,
-                     state="readonly").pack(side="left", padx=(6, 0))
-
-        # ── receipt section ──
-        self.sec_receipt = tk.Frame(body, bg=C["card_bg"])
-        rfrom = tk.Frame(self.sec_receipt, bg=C["card_bg"]); rfrom.pack(fill="x", pady=4)
-        tk.Label(rfrom, text="Received from", font=("Segoe UI", 9), bg=C["card_bg"],
-                 fg=C["text_secondary"]).pack(side="left")
-        self.receipt_from = tk.StringVar(value="customer")
-        ttk.Combobox(rfrom, textvariable=self.receipt_from, width=24, state="readonly",
-                     values=["customer", "other income"]).pack(side="left", padx=(6, 0))
-        self.receipt_from.trace("w", lambda *a: self._vtype_ui())
-
-        self.r_cust_frame = tk.Frame(self.sec_receipt, bg=C["card_bg"])
-        tk.Label(self.r_cust_frame, text="Customer", font=("Segoe UI", 9),
-                 bg=C["card_bg"], fg=C["text_secondary"]).pack(anchor="w")
-        self.cust_var = tk.StringVar()
-        _typeable(ttk.Combobox(self.r_cust_frame, textvariable=self.cust_var,
-                     values=[c["customer_name_en"] for c in self.customers],
-                     state="readonly"), self.cust_var, tree=False).pack(fill="x")
-
-        self.r_inc_frame = tk.Frame(self.sec_receipt, bg=C["card_bg"])
-        tk.Label(self.r_inc_frame, text="Income account", font=("Segoe UI", 9),
-                 bg=C["card_bg"], fg=C["text_secondary"]).pack(anchor="w")
-        self.income_var = tk.StringVar()
-        _typeable(ttk.Combobox(self.r_inc_frame, textvariable=self.income_var,
-                     values=[f"{a['account_code']} · {a['account_name_en']}"
-                             for a in self.income_accts],
-                     state="readonly"), self.income_var, tree=True).pack(fill="x")
-
-        # ── payment section ──
-        self.sec_payment = tk.Frame(body, bg=C["card_bg"])
-        pto = tk.Frame(self.sec_payment, bg=C["card_bg"]); pto.pack(fill="x", pady=4)
-        tk.Label(pto, text="Paid to", font=("Segoe UI", 9), bg=C["card_bg"],
-                 fg=C["text_secondary"]).pack(side="left")
-        self.payment_to = tk.StringVar(value="supplier")
-        ttk.Combobox(pto, textvariable=self.payment_to, width=24, state="readonly",
-                     values=["supplier", "expense"]).pack(side="left", padx=(6, 0))
-        self.payment_to.trace("w", lambda *a: self._vtype_ui())
-
-        self.p_sup_frame = tk.Frame(self.sec_payment, bg=C["card_bg"])
-        tk.Label(self.p_sup_frame, text="Supplier", font=("Segoe UI", 9),
-                 bg=C["card_bg"], fg=C["text_secondary"]).pack(anchor="w")
-        self.sup_var = tk.StringVar()
-        _typeable(ttk.Combobox(self.p_sup_frame, textvariable=self.sup_var,
-                     values=[s["supplier_name_en"] for s in self.suppliers],
-                     state="readonly"), self.sup_var, tree=False).pack(fill="x")
-
-        self.p_exp_frame = tk.Frame(self.sec_payment, bg=C["card_bg"])
-        tk.Label(self.p_exp_frame, text="Expense account", font=("Segoe UI", 9),
-                 bg=C["card_bg"], fg=C["text_secondary"]).pack(anchor="w")
-        self.expense_var = tk.StringVar()
-        exp_vals = [f"{a['account_code']} · {a['account_name_en']}"
-                    for a in self.expense_accts]
-        _typeable(ttk.Combobox(self.p_exp_frame, textvariable=self.expense_var,
-                     values=exp_vals, state="readonly"), self.expense_var, tree=True).pack(fill="x")
-        if exp_vals:
-            self.expense_var.set(exp_vals[-1])     # Misc expense default
-
-        # ── journal section ──
-        self.sec_journal = tk.Frame(body, bg=C["card_bg"])
-        all_vals = [f"{a['account_code']} · {a['account_name_en']}"
-                    for a in self.all_accts]
-        jr = tk.Frame(self.sec_journal, bg=C["card_bg"]); jr.pack(fill="x", pady=4)
-        left = tk.Frame(jr, bg=C["card_bg"]); left.pack(side="left", fill="x",
-                                                        expand=True, padx=(0, 6))
-        tk.Label(left, text="Debit account", font=("Segoe UI", 9), bg=C["card_bg"],
-                 fg=C["text_secondary"]).pack(anchor="w")
-        self.jv_dr = tk.StringVar()
-        _typeable(ttk.Combobox(left, textvariable=self.jv_dr, values=all_vals,
-                     state="readonly"), self.jv_dr, tree=True).pack(fill="x")
-        right = tk.Frame(jr, bg=C["card_bg"]); right.pack(side="left", fill="x", expand=True)
-        tk.Label(right, text="Credit account", font=("Segoe UI", 9), bg=C["card_bg"],
-                 fg=C["text_secondary"]).pack(anchor="w")
-        self.jv_cr = tk.StringVar()
-        _typeable(ttk.Combobox(right, textvariable=self.jv_cr, values=all_vals,
-                     state="readonly"), self.jv_cr, tree=True).pack(fill="x")
-
-        # narration + buttons
-        self._narr_label = tk.Label(body, text="Narration", font=("Segoe UI", 9),
-                                    bg=C["card_bg"], fg=C["text_secondary"])
-        self._narr_label.pack(anchor="w", pady=(8, 0))
-        self.narr_var = tk.StringVar()
-        tk.Entry(body, textvariable=self.narr_var, font=("Segoe UI", 10),
-                 relief="solid", bd=1).pack(fill="x")
-
-        btns = tk.Frame(self.win, bg=C["card_bg"])
-        btns.pack(fill="x", padx=16, pady=12)
-        tk.Button(btns, text="Cancel", font=("Segoe UI", 10), bg="#EEF1F6",
-                  relief="flat", padx=16, pady=6, cursor="hand2",
-                  command=self.win.destroy).pack(side="left", expand=True,
-                                                 fill="x", padx=(0, 4))
-        tk.Button(btns, text="✓  Save voucher", font=("Segoe UI", 10, "bold"),
-                  bg=C["accent"], fg="white", relief="flat", padx=16, pady=6,
-                  cursor="hand2", command=self._save).pack(side="left", expand=True,
-                                                           fill="x", padx=(4, 0))
-
-    def _vtype_ui(self):
-        """Show only the section for the chosen voucher type (mirrors the
-        PHP vtypeUI() toggling)."""
-        t = self.vtype.get()
-        for f in (self.sec_receipt, self.sec_payment, self.sec_journal):
-            f.pack_forget()
-        for f in (self.r_cust_frame, self.r_inc_frame,
-                  self.p_sup_frame, self.p_exp_frame):
-            f.pack_forget()
-        if t == "journal":
-            self.mode_frame.pack_forget()
-            self.sec_journal.pack(fill="x", pady=4, before=self._narr_label)
-        else:
-            if not self.mode_frame.winfo_ismapped():
-                self.mode_frame.pack(fill="x", pady=4, before=self._narr_label)
-            if t == "receipt":
-                self.sec_receipt.pack(fill="x", pady=4, before=self._narr_label)
-                if self.receipt_from.get() == "customer":
-                    self.r_cust_frame.pack(fill="x", pady=4)
-                else:
-                    self.r_inc_frame.pack(fill="x", pady=4)
-            else:
-                self.sec_payment.pack(fill="x", pady=4, before=self._narr_label)
-                if self.payment_to.get() == "supplier":
-                    self.p_sup_frame.pack(fill="x", pady=4)
-                else:
-                    self.p_exp_frame.pack(fill="x", pady=4)
-
-    # ── save (ported posting rules) ───────────────────────────
-    # voucher type → the user right that may post it
-    _RIGHT = {"receipt": "receipt", "payment": "payment", "journal": "journal"}
-
-    def _save(self):
-        t = self.vtype.get()
-        # the right follows the TYPE being posted, not the button that opened it
-        if not perm.allowed(self._RIGHT.get(t, "journal"), "add", parent=self.win):
-            return
-        try:
-            amount = round(float((self.amount_var.get() or "0").replace(",", "")), 2)
-        except Exception:
-            amount = 0
-        if amount <= 0:
-            messagebox.showwarning("Voucher", "Enter an amount.", parent=self.win)
-            return
-        vdate = self.date_var.get() or date.today().strftime("%Y-%m-%d")
-        try:            # closed year / outside the login year → say why
-            from modules import financial_year as fy
-            msg = fy.guard_active(str(vdate)[:10])
-        except Exception:
-            msg = ""
-        if msg:
-            messagebox.showwarning("Voucher", msg, parent=self.win)
-            return
-        narr = self.narr_var.get().strip()
-        method = self.mode_var.get()
-        jid = None
-        try:
-            if t == "receipt":
-                if self.receipt_from.get() == "customer":
-                    name = self.cust_var.get()
-                    cid = next((c["customer_id"] for c in self.customers
-                                if c["customer_name_en"] == name), None)
-                    if not cid:
-                        messagebox.showwarning("Voucher", "Select a customer.",
-                                               parent=self.win)
-                        return
-                    posting.ensure_party_account("customer", cid)
-                    jid = posting.post_receipt(None, vdate, cid, amount,
-                                               method=method,
-                                               reference=narr or f"Received from {name}")
-                else:
-                    code = (self.income_var.get() or "").split(" · ")[0]
-                    if not code:
-                        messagebox.showwarning("Voucher", "Pick an income account.",
-                                               parent=self.win)
-                        return
-                    debit = ad.bank() if method == "bank" else ad.cash()
-                    jid = posting.post_journal(
-                        vdate, narr or "Other receipt",
-                        [(debit, amount, 0, "Money received"),
-                         (ad._id_from_code(code), 0, amount, "Other income")],
-                        "receipt", None, reference=narr)
-            elif t == "payment":
-                if self.payment_to.get() == "supplier":
-                    name = self.sup_var.get()
-                    sid = next((s["supplier_id"] for s in self.suppliers
-                                if s["supplier_name_en"] == name), None)
-                    if not sid:
-                        messagebox.showwarning("Voucher", "Select a supplier.",
-                                               parent=self.win)
-                        return
-                    posting.ensure_party_account("supplier", sid)
-                    jid = posting.post_payment(None, vdate, sid, amount,
-                                               method=method,
-                                               reference=narr or f"Paid to {name}")
-                else:
-                    code = (self.expense_var.get() or "").split(" · ")[0]
-                    if not code:
-                        messagebox.showwarning("Voucher", "Pick an expense account.",
-                                               parent=self.win)
-                        return
-                    jid = posting.post_expense(None, vdate,
-                                               ad._id_from_code(code), amount,
-                                               vat=0, method=method,
-                                               reference=narr,
-                                               description=narr or "Expense payment")
-            else:  # journal
-                dr = (self.jv_dr.get() or "").split(" · ")[0]
-                cr = (self.jv_cr.get() or "").split(" · ")[0]
-                if not dr or not cr or dr == cr:
-                    messagebox.showwarning("Voucher",
-                                           "Pick two different accounts.",
-                                           parent=self.win)
-                    return
-                jid = posting.post_adjustment(
-                    vdate, [(dr, amount, 0, narr or "Journal Dr"),
-                            (cr, 0, amount, narr or "Journal Cr")],
-                    description=narr or "Journal voucher")
-            if jid:
-                num = db.execute_scalar("SELECT journal_number FROM journal_entries "
-                                        "WHERE journal_id=?", (jid,)) or ""
-                messagebox.showinfo("Voucher", "Voucher %s saved." % num, parent=self.win)
-                if self.on_saved:
-                    self.on_saved()
-                # v6.9.3: stays open for the next voucher of the same kind
-                from ui import after_save
-                parent, vt, md = self.win.master, t, method
-                after_save.finish(self, num,
-                                  new=lambda: VoucherForm(parent, self.on_saved, vtype=vt,
-                                                          mode=md if md in ("cash", "bank")
-                                                          else None))
-            else:
-                messagebox.showerror(
-                    "Voucher",
-                    "Could not save. Check that the accounting tables exist "
-                    "(run the accounting patches) and accounts resolve.",
-                    parent=self.win)
-        except Exception as e:
-            messagebox.showerror("Voucher", str(e)[:300], parent=self.win)
+def VoucherForm(parent, on_saved=None, vtype=None, mode=None):
+    """v7.1: the voucher window is multi-line (ui/multi_voucher.py) —
+    vtype 'receipt' | 'payment' | 'contra' | 'journal' and mode 'cash' |
+    'bank' pre-set it (⭐ Cash Receipt (CR) / Cash Payment (CP) favourites)."""
+    from ui.multi_voucher import MultiVoucherForm, JournalForm
+    if vtype == "journal":
+        return JournalForm(parent, on_save=on_saved)
+    return MultiVoucherForm(parent, on_saved=on_saved, kind=vtype, mode=mode)

@@ -1,7 +1,29 @@
-# DayBill ERP  v7.0.0
+# DayBill ERP  v7.1.0
 
 Billing, POS, inventory, accounts and HR for shops in 🇸🇦 Saudi Arabia, 🇦🇪 the UAE and 🇮🇳 India.
 **VAT / GST by country · ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
+
+## 💸 v7.1 — multi-line vouchers (cash and bank in one window)
+
+- **Receipt · Payment · Contra · Journal** in one window (Accounts ▸
+  Vouchers ▸ New, ⭐ Cash / Bank Receipt, Cash / Bank Payment, Contra, F6 / F7).
+  Add as many lines as you need; **each line picks its own cash or bank
+  account**, so one window takes cash from one customer and a cheque from
+  another.
+- Saved as **separate CR + BR (CP + BP)** vouchers, each with its own number,
+  or tick off *Separate* for one voucher. The next numbers show before you save.
+- Type a name, code or account: customers, suppliers and the chart of accounts
+  drop down as a tree. The **party balance** shows while you type, before →
+  after this voucher.
+- Bank lines take **cheque no. / date**; payment lines take **input VAT**
+  (+VAT fills the standard rate). Live Cash / Bank / Total and amount in words.
+- **Journal:** Debit / Credit lines with customers and suppliers too, the open
+  difference is suggested on the next line, **⚖ Balance** (Ctrl+B) puts it on
+  the selected line.
+- **Templates** (monthly rent, salaries …) and **↺ Copy last**. Keys: Enter
+  next field / add line, double-click change a line, Delete remove, Ctrl+D
+  duplicate, Alt+↑/↓ move, Ctrl+S save. Edit from the Vouchers list opens the
+  same window with the voucher's lines.
 
 ## 🌍 v7.0 — countries and business modules
 

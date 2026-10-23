@@ -603,6 +603,12 @@ class MainWindow:
         additem(m_acc_t, "Vouchers (journal entries)", "vouchers", "Ctrl+J")
         m_acc_t.add_command(label="New Journal Voucher (JV)", accelerator="Ctrl+Shift+J",
                             command=lambda: self._run_favourite("journal_new"))
+        m_acc_t.add_command(label="New Bank Payment (BP)",       # v7.1 multi-line vouchers
+                            command=lambda: self._run_favourite("bank_payment"))
+        m_acc_t.add_command(label="New Bank Receipt (BR)",
+                            command=lambda: self._run_favourite("bank_receipt"))
+        m_acc_t.add_command(label="New Contra (cash ↔ bank) (CT)",
+                            command=lambda: self._run_favourite("contra_new"))
         additem(m_acc_t, "Debit Note (sales)", "debit_notes")
         additem(m_acc_t, "Credit Note (sales return)", "sales_return")
         additem(m_acc_t, "Closing Balance (financial reports)", "fin_reports")
@@ -1297,6 +1303,7 @@ class MainWindow:
         "bank_payment": ("🏦", "Bank Payment (BP)", ("payment", "add")),
         "bank_receipt": ("🏦", "Bank Receipt (BR)", ("receipt", "add")),
         "journal_new": ("🧾", "Journal Voucher (JV)", ("journal", "add")),
+        "contra_new": ("⇄", "Contra Voucher (CT)", ("journal", "add")),
         "add_product": ("➕", "Add Product", ("products", "add")),
         "new_sale": ("🧾", "New Sales Invoice", ("sales", "add")),
         "new_purchase": ("🛒", "New Purchase", ("purchase", "add")),
@@ -1391,11 +1398,12 @@ class MainWindow:
             return
         parent = getattr(self, "content", None) or self.root
         try:
-            if key in ("cash_payment", "cash_receipt", "bank_payment", "bank_receipt", "journal_new"):
+            if key in ("cash_payment", "cash_receipt", "bank_payment", "bank_receipt", "journal_new",
+                       "contra_new"):
                 from ui.vouchers import VoucherForm
                 vt = {"cash_payment": ("payment", "cash"), "cash_receipt": ("receipt", "cash"),
                       "bank_payment": ("payment", "bank"), "bank_receipt": ("receipt", "bank"),
-                      "journal_new": ("journal", "cash")}[key]
+                      "journal_new": ("journal", "cash"), "contra_new": ("contra", "cash")}[key]
                 VoucherForm(parent, on_saved=self._refresh_active, vtype=vt[0], mode=vt[1])
             elif key == "add_product":
                 from ui.products import ProductForm
