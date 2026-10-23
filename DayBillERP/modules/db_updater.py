@@ -10,7 +10,7 @@ import re
 try:                                    # one version for the whole app (config/version.py)
     from config.version import VERSION as APP_VERSION
 except Exception:
-    APP_VERSION = "7.2.0"
+    APP_VERSION = "7.3.0"
 
 # Ordered list of database patches shipped with the app.
 # (filename relative to project root, human description, version)
@@ -35,6 +35,8 @@ PATCHES = [
 
 # What changed in each version (shown in the Updates panel)
 CHANGELOG = [
+    ("7.3.0", ["💲 PDT Price Change: scan, type the new shelf price, see the margin, print new labels; "
+               "below-cost guard, audit log and optional owner approval."]),
     ("7.2.0", ["📱 PDT: 📝 Purchase Order (scan, ⚠ low stock fill, WhatsApp to the supplier), 🔖 Barcode "
                "Labels (printed on the PC's label printer) and 🎨 Offer Poster (printable poster PDF, offer "
                "started in POS).",

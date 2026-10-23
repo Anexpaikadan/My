@@ -24,6 +24,8 @@
 #   Barcode Labels → a label PDF in the shop's label design, printed on the
 #                    PC's label printer (or waiting in the Inbox to print)
 #   Offer Poster   → a printable poster PDF (+ the offer itself when asked)
+#   Price Change   → new shelf prices (logged, never below cost unless
+#                    allowed) + new labels printed  (v7.3)
 # Every document has the device's own id (doc_uid): sending it twice never
 # books it twice.
 # ============================================================
@@ -47,6 +49,7 @@ MODULES = [
     ("po", "Purchase Order", "أمر شراء", "📝"),            # v7.2
     ("labels", "Barcode Labels", "طباعة الباركود", "🔖"),
     ("poster", "Offer Poster", "ملصق العروض", "🎨"),
+    ("price_change", "Price Change", "تغيير السعر", "💲"),  # v7.3
 ]
 MODULE_KEYS = [m[0] for m in MODULES]
 OUT_REASONS = ["Damaged", "Expired", "Own use", "Transfer out", "Sample / gift", "Other"]
@@ -293,7 +296,7 @@ def app_settings():
     return {"price_incl_vat": _price_incl(), "vat_enabled": cfg.flag("vat_enabled", True),
             "currency": _currency(),
             "approve_stock": cfg.flag("mobile_approve_stock", False),
-            "out_reasons": OUT_REASONS,
+            "out_reasons": OUT_REASONS, "price_reasons": PRICE_REASONS,
             "receipt_footer": cfg.get("receipt_footer", "") or "Thank you!"}
 
 
@@ -366,7 +369,7 @@ def resolve(user, code):
         raise MobileError("No product for “%s”." % str(code).strip())
     uid = hit["unit_id"] or (hit.get("unit") or {}).get("unit_id")
     card = product_card(hit["product_id"], uid,
-                        show_cost=bool(set(user["modules"]) & {"goods_in", "po"}))
+                        show_cost=bool(set(user["modules"]) & {"goods_in", "po", "price_change"}))
     card["scanned_unit_id"] = uid
     card["scan_qty"] = _f(hit.get("quantity"), 1)
     card["via"] = hit.get("via")
@@ -437,8 +440,8 @@ def _base_qty(ln):
 # ── documents from devices ───────────────────────────────────
 DOC_TITLES = {"goods_in": "Goods In", "goods_out": "Goods Out", "count": "Stock Count",
               "adjust": "Stock Adjust", "van_sale": "Van Sale", "po": "Purchase Order",
-              "labels": "Barcode Labels", "poster": "Offer Poster"}
-FILE_DOCS = ("labels", "poster")              # documents that make a PDF
+              "labels": "Barcode Labels", "poster": "Offer Poster", "price_change": "Price Change"}
+FILE_DOCS = ("labels", "poster", "price_change")    # documents that (can) make a PDF
 
 
 def submit(user, doc, source="wifi", device=""):
@@ -487,6 +490,8 @@ def submit(user, doc, source="wifi", device=""):
                                                         else l.get("qty"), 1))) for l in lines)
     elif dtype == "poster" and head.get("headline"):
         title += " · " + str(head.get("headline"))[:60]
+    elif dtype == "price_change":
+        title += " · %d item(s)%s" % (len(lines), (" · " + str(head.get("reason"))[:40]) if head.get("reason") else "")
     db.execute("INSERT INTO mobile_docs (doc_uid, doc_type, source, user_id, device, status, title, "
                "header_json, lines_json) VALUES (?,?,?,?,?,?,?,?,?)",
                (uid, dtype, source, user["user_id"], str(device or "")[:120], "pending",
@@ -496,6 +501,8 @@ def submit(user, doc, source="wifi", device=""):
     approve = cfg.flag("mobile_approve_stock", False) and dtype in ("goods_out", "count", "adjust")
     if dtype == "count" and cfg.flag("count_needs_approval", True):     # v6.4: owner approves counts
         approve = True
+    if dtype == "price_change" and cfg.flag("mobile_price_needs_approval", False):
+        approve = True                         # v7.3: the owner approves new prices
     if approve:
         return {"doc_id": did, "status": "pending",
                 "result": "Sent — waiting for approval in DayBill."}
@@ -555,6 +562,9 @@ def apply_doc(doc_id, by_user=None):
             elif t == "poster":
                 ref_table = "offers"
                 ref_id, msg, extra = _poster(head, lines, d)
+            elif t == "price_change":
+                ref_table = "products"
+                msg, extra = _price_change(head, lines, d)
             else:
                 raise MobileError("Unknown document type.")
             db.execute("UPDATE mobile_docs SET status='applied', result=?, ref_table=?, ref_id=?, "
@@ -567,7 +577,7 @@ def apply_doc(doc_id, by_user=None):
             pass
         out = {"doc_id": doc_id, "status": "applied", "result": msg,
                "ref_table": ref_table, "ref_id": ref_id}
-        if t in FILE_DOCS:
+        if t in FILE_DOCS and os.path.isfile(doc_file(doc_id, t)):
             out["file"] = os.path.basename(doc_file(doc_id, t))
         out.update(extra or {})
         return clean(out)
@@ -974,7 +984,7 @@ def label_designs(user):
     return clean(out)
 
 
-def _labels(head, lines, d):
+def _labels(head, lines, d, kind="labels"):
     from modules import barcode_designer as bd
     from modules import barcode_resolver as BR
     tid = head.get("template_id")
@@ -1006,7 +1016,7 @@ def _labels(head, lines, d):
         n += copies
     if not items:
         raise MobileError("Nothing to print — the products have no barcode.")
-    path = doc_file(d["doc_id"], "labels")
+    path = doc_file(d["doc_id"], kind)
     bd.render_labels_pdf(t, items, path)
     printed = _print_file(path, "labels", head.get("print", True) and cfg.flag("mobile_labels_autoprint", True))
     msg = "%d label(s) · %s — %s" % (n, t.get("template_name") or "label",
@@ -1134,3 +1144,80 @@ def doc_pdf(user, doc_id):
         raise MobileError("The PDF is not ready (the document is %s)." % d["status"])
     with open(path, "rb") as f:
         return f.read(), os.path.basename(path)
+
+
+# ── Price Change (v7.3) ───────────────────────────────────────
+PRICE_REASONS = ["Supplier price changed", "Competitor price", "Slow moving", "Price mistake",
+                 "Promotion ended", "Other"]
+
+
+def _price_change(head, lines, d):
+    """New shelf prices (with VAT, as the shelf shows them) for product
+    units. Below cost is refused unless the PDT ticked 'allow'. Every
+    change is in the audit log (old → new, reason, device)."""
+    from modules import barcode_resolver as BR
+    incl = _price_incl()
+    reason = str(head.get("reason") or "").strip()[:80] or "Price change (PDT)"
+    allow_low = bool(head.get("allow_below_cost"))
+    done, low, notes = [], [], []
+    for ln in lines:
+        p = _product_or_fail(ln)
+        new_vat = round(_f(ln.get("new_price")), 2)
+        if not (0 < new_vat < 1e7):
+            raise MobileError("Type the new price for %s." % p.get("product_name_en"))
+        rows = BR.label_rows(p["product_id"]) or []
+        r = next((x for x in rows if ln.get("unit_id") and x.get("unit_id") == ln.get("unit_id")), None) \
+            or (rows[0] if rows else None)
+        if not r:
+            raise MobileError("No unit found for %s." % p.get("product_name_en"))
+        rate = _f(r.get("vat_rate"))
+        stored = new_vat if incl else round(new_vat / (1 + rate / 100.0), 2)
+        net = new_vat / (1 + rate / 100.0) if rate else new_vat
+        fac = _f(r.get("factor"), 1) or 1
+        uc = _one("SELECT purchase_price FROM product_units WHERE unit_id=?", (r.get("unit_id"),)) \
+            if r.get("unit_id") else None
+        cost = _f((uc or {}).get("purchase_price")) or _f(p.get("purchase_price")) * fac
+        name = "%s (%s)" % (p.get("product_name_en"), r.get("unit_name") or "")
+        if cost and net < cost - 0.005 and not allow_low:
+            low.append("%s: %.2f is below cost %.2f" % (name, net, cost))
+            continue
+        old_vat = _f(r.get("price_vat"))
+        sent_old = _f(ln.get("old_price"))
+        if sent_old and abs(sent_old - old_vat) > 0.005:
+            notes.append("%s was changed to %.2f meanwhile" % (name, old_vat))
+        if abs(old_vat - new_vat) < 0.005:
+            continue
+        if r.get("unit_id"):
+            db.execute("UPDATE product_units SET selling_price=? WHERE unit_id=?", (stored, r["unit_id"]))
+        if abs(fac - 1) < 1e-9:                     # the piece: the product's own price too
+            db.execute("UPDATE products SET unit_price=? WHERE product_id=?", (stored, p["product_id"]))
+        try:
+            from modules import audit
+            audit.log("price_change", "products", p["product_id"],
+                      "%s: %.2f → %.2f (with %s) · %s · %s" % (name, old_vat, new_vat, "VAT", reason,
+                                                            d.get("device") or "PDT"))
+        except Exception:
+            pass
+        done.append(dict(ln, product_id=p["product_id"], unit_id=r.get("unit_id"),
+                         copies=ln.get("copies") if ln.get("copies") is not None else 1))
+    if low:
+        raise MobileError("Below cost — nothing saved:\n" + "\n".join(low[:8]) +
+                          "\nTick 'Allow below cost' to save anyway.")
+    try:
+        from modules import offers as O
+        O.invalidate()
+    except Exception:
+        pass
+    extra = {"changed": len(done)}
+    msg = "%d price(s) changed (%s)." % (len(done), reason)
+    if done and head.get("print_labels", True):
+        try:
+            lm, le = _labels({"template_id": head.get("template_id"), "print": head.get("print", True)},
+                             [x for x in done if int(_f(x.get("copies"), 1)) > 0], d, kind="price_change")
+            msg += " New labels: " + lm.split(" — ", 1)[-1]
+            extra.update(labels=le.get("labels", 0), printed=le.get("printed"))
+        except MobileError as e:
+            msg += " Labels: %s" % e
+    if notes:
+        msg += " Note: " + "; ".join(notes[:3])
+    return msg, extra

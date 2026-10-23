@@ -2,7 +2,7 @@
    DayBill Mobile — one app, the modules your user may use:
    Goods In · Goods Out · Stock Count · Stock Adjust ·
    Product Info · Price Check · Van Sales ·
-   Purchase Order · Barcode Labels · Offer Poster (v7.2)
+   Purchase Order · Barcode Labels · Offer Poster (v7.2) · Price Change (v7.3)
    Shop Wi-Fi: talks to DayBill on the shop PC (/api).
    Van: talks to your Hostinger relay (van_api.php) and works with
    no signal — bills wait on the phone and go when online.
@@ -80,7 +80,11 @@ const WORDS = {
     "Print labels": "طباعة الملصقات", "Make poster": "إنشاء الملصق", "Open PDF": "فتح PDF",
     "Send to supplier on WhatsApp": "إرسال للمورد عبر واتساب", "Choose the supplier first": "اختر المورد أولاً",
     "Scan the first item": "امسح أول صنف", "labels": "ملصق", "cost": "التكلفة", "reorder at": "حد الطلب",
-    "Add all": "إضافة الكل", "order": "اطلب", "Copy AI poster prompt (ChatGPT / Gemini)": "نسخ وصف الملصق للذكاء الاصطناعي"
+    "Add all": "إضافة الكل", "Save new prices": "حفظ الأسعار الجديدة", "Print new shelf labels": "طباعة ملصقات الرف الجديدة",
+    "Allow below cost": "السماح بأقل من التكلفة", "tap to type": "اضغط للكتابة", "margin": "الهامش", "new prices": "أسعار جديدة",
+    "New shelf price (with VAT) for": "سعر الرف الجديد (شامل الضريبة) لـ",
+    "Type the new price of every item (tap the price)": "اكتب السعر الجديد لكل صنف (اضغط على السعر)",
+    "Scan an item, then tap its price to type the new shelf price (with VAT). The number is how many labels.": "امسح الصنف ثم اضغط السعر لكتابة سعر الرف الجديد (شامل الضريبة). الرقم = عدد الملصقات.", "order": "اطلب", "Copy AI poster prompt (ChatGPT / Gemini)": "نسخ وصف الملصق للذكاء الاصطناعي"
   }
 };
 const L = () => LS.get("lang", "en");
@@ -487,7 +491,8 @@ function infoScreen(priceOnly) {
 const JOBS = {
   po: { title: "Purchase Order", ar: "أمر شراء", btn: "Save purchase order" },
   labels: { title: "Barcode Labels", ar: "طباعة الباركود", btn: "Print labels" },
-  poster: { title: "Offer Poster", ar: "ملصق العروض", btn: "Make poster" }
+  poster: { title: "Offer Poster", ar: "ملصق العروض", btn: "Make poster" },
+  price_change: { title: "Price Change", ar: "تغيير السعر", btn: "Save new prices" }
 };
 const pdfUrl = docId => `${CFG.api}/file?doc=${encodeURIComponent(docId)}&t=${encodeURIComponent(S.token)}`;
 const today = (d = 0) => { const x = new Date(Date.now() + d * 864e5); return x.toISOString().slice(0, 10); };
@@ -495,6 +500,7 @@ function jobScreen(k) {
   if (RELAY) return toast("This works on the shop Wi-Fi only", true);
   const cfg = JOBS[k];
   const fresh = () => ({ lines: [], header: k === "po" ? { expected_days: 7 } : k === "labels" ? { print: true } :
+    k === "price_change" ? { reason: (S.settings?.price_reasons || ["Other"])[0], print_labels: true, print: true, allow_below_cost: false } :
     { offer_type: "percent", value: 10, start: today(), end: today(7), size: "a4", theme: "sale", create_offer: true, print: false } });
   let D = LS.get("draft_" + k, null) || fresh();
   const save = () => LS.set("draft_" + k, D);
@@ -520,7 +526,15 @@ function jobScreen(k) {
       <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="mko" style="width:auto;min-height:0" ${H.create_offer ? "checked" : ""}>
         ${t("Start this offer in POS and sales too")}</label>
       <label style="display:flex;gap:8px;align-items:center;margin-top:4px"><input type="checkbox" id="prn" style="width:auto;min-height:0" ${H.print ? "checked" : ""}>
-        ${t("Print now on the shop printer")}</label></div>`
+        ${t("Print now on the shop printer")}</label></div>`,
+    price_change: `<div class="card"><label>${t("Reason")}</label><select id="why">${(S.settings?.price_reasons || ["Other"]).map(r =>
+        `<option ${H.reason === r ? "selected" : ""}>${esc(r)}</option>`).join("")}</select>
+      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="pl" style="width:auto;min-height:0" ${H.print_labels ? "checked" : ""}>
+        ${t("Print new shelf labels")}</label>
+      <select id="tpl" style="margin-top:4px"><option value="">…</option></select>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:4px"><input type="checkbox" id="low" style="width:auto;min-height:0" ${H.allow_below_cost ? "checked" : ""}>
+        ${t("Allow below cost")}</label>
+      <div class="muted">${t("Scan an item, then tap its price to type the new shelf price (with VAT). The number is how many labels.")}</div></div>`
   }[k];
   shell(L() === "ar" ? cfg.ar : t(cfg.title), `<div class="wrap">
     <div class="scan"><input id="scan" placeholder="${t("Scan or type barcode / name")}" autocomplete="off" enterkeyhint="go">
@@ -553,7 +567,11 @@ function jobScreen(k) {
         <div class="right"><b>${n2(o.total_amount)}</b><br><span class="badge ${o.status === "open" ? "amber" : "green"}">${esc(o.status)}</span></div></div>`).join("") || `<div class="empty">—</div>`);
     };
   }
-  if (k === "labels") {
+  if (k === "price_change") {
+    $("#why").onchange = () => { H.reason = $("#why").value; save(); };
+    bind("pl", "print_labels"); bind("low", "allow_below_cost");
+  }
+  if (k === "labels" || k === "price_change") {
     api("label_designs").then(r => {
       const sel = $("#tpl"); if (!sel) return;
       sel.innerHTML = r.items.map(x => `<option value="${x.id}">${esc(x.name)} · ${esc(x.size)}${x.default ? " ★" : ""}</option>`).join("") || `<option value="">(no design — make one in DayBill)</option>`;
@@ -561,7 +579,7 @@ function jobScreen(k) {
       sel.value = H.template_id; save();
       sel.onchange = () => { H.template_id = sel.value; save(); };
     }).catch(e => toast(e.message, true));
-    bind("prn", "print");
+    if (k === "labels") bind("prn", "print");
   }
   if (k === "poster") {
     const vals = () => {
@@ -599,12 +617,14 @@ function jobScreen(k) {
         ${l.unit ? `<span class="unit" data-u="${i}">${esc(l.unit)}${l.factor !== 1 ? " ×" + nq(l.factor) : ""}${(l.units || []).length > 1 ? " ▾" : ""}</span>` : ""}
         ${k === "po" ? ` <span class="muted" data-c="${i}">${t("cost")} ${n2(l.cost)} ✎ = <b>${n2(l.qty * (l.cost || 0))}</b></span>` : ""}
         ${k === "poster" ? ` <span class="muted" data-p="${i}">${np != null && np < l.price ? `<s>${n2(l.price)}</s> → <b style="color:var(--red)">${n2(np)}</b>` : n2(l.price)}${H.offer_type === "price" ? " ✎" : ""}</span>` : ""}
-        ${k === "labels" ? ` <span class="muted">${esc(l.barcode || t("no barcode yet — made on print"))}</span>` : ""}</div>
+        ${k === "labels" ? ` <span class="muted">${esc(l.barcode || t("no barcode yet — made on print"))}</span>` : ""}
+        ${k === "price_change" ? ` <span class="muted" data-np="${i}">${n2(l.price)} → <b style="color:${l.new_price != null ? (l.cost && l.new_price / (1 + (l.vat || 0) / 100) < l.cost ? "var(--red)" : "var(--green)") : "var(--muted)"}">${l.new_price != null ? n2(l.new_price) : t("tap to type")}</b> ✎${l.cost ? ` · ${t("cost")} ${n2(l.cost)}${l.new_price != null ? ` · ${t("margin")} ${Math.round((1 - l.cost / (l.new_price / (1 + (l.vat || 0) / 100))) * 100)}%` : ""}` : ""}</span>` : ""}</div>
       ${k === "poster" ? `<button class="danger" data-x="${i}" style="min-height:42px;width:42px;padding:0">✕</button>` :
         `<div class="qty"><button data-d="-1" data-i="${i}">−</button><input data-q="${i}" inputmode="decimal" value="${nq(l.qty)}">
         <button data-d="1" data-i="${i}">+</button></div>`}</li>`; }).join("");
     if (k === "po") $("#tot").innerHTML = `${D.lines.length} ${t("Items")}<small>${esc(S.settings?.currency || "")} ${n2(D.lines.reduce((a, l) => a + l.qty * (l.cost || 0), 0))} + ${t("VAT")}</small>`;
     else if (k === "labels") $("#tot").innerHTML = `${D.lines.reduce((a, l) => a + (+l.qty || 0), 0)} ${t("labels")}<small>${D.lines.length} ${t("Items")}</small>`;
+    else if (k === "price_change") $("#tot").innerHTML = `${D.lines.filter(l => l.new_price != null).length} / ${D.lines.length} ${t("new prices")}<small>${D.lines.reduce((a, l) => a + (+l.qty || 0), 0)} ${t("labels")}</small>`;
     else $("#tot").innerHTML = `${D.lines.length} ${t("Items")}<small>${D.lines.length > 12 ? t("12 show on the poster") : ""}</small>`;
     $$("button[data-d]", ul).forEach(b => b.onclick = () => { const l = D.lines[+b.dataset.i]; l.qty = Math.max(0, l.qty + (+b.dataset.d)); if (!l.qty) D.lines.splice(+b.dataset.i, 1); save(); paint(); focus(); });
     $$("button[data-x]", ul).forEach(b => b.onclick = () => { D.lines.splice(+b.dataset.x, 1); save(); paint(); focus(); });
@@ -615,6 +635,9 @@ function jobScreen(k) {
       Object.assign(l, { unit_id: u.unit_id, unit: u.unit, factor: u.factor, key: l.product_id + "-" + u.unit_id, price: u.price_vat, barcode: u.barcode });
       if (u.cost != null) l.cost = u.cost; save(); paint(); });
     $$("[data-c]", ul).forEach(s => s.onclick = () => { const l = D.lines[+s.dataset.c]; const v = prompt(t("Cost per") + " " + (l.unit || "unit"), n2(l.cost)); if (v != null) { l.cost = parseFloat(v) || 0; save(); paint(); } });
+    $$("[data-np]", ul).forEach(s => s.onclick = () => { const l = D.lines[+s.dataset.np];
+      const v = prompt(t("New shelf price (with VAT) for") + " " + l.name + " · " + (l.unit || ""), l.new_price != null ? n2(l.new_price) : n2(l.price));
+      if (v != null && v !== "") { l.new_price = Math.round((parseFloat(v) || 0) * 100) / 100; save(); paint(); } });
     $$("[data-p]", ul).forEach(s => s.onclick = () => { if (H.offer_type !== "price") return; const l = D.lines[+s.dataset.p];
       const v = prompt(t("Offer price for") + " " + l.name, l.new_price != null ? n2(l.new_price) : n2(l.price)); if (v != null) { l.new_price = parseFloat(v) || 0; save(); paint(); } });
   };
@@ -629,14 +652,16 @@ function jobScreen(k) {
     const u = c.units.find(x => x.unit_id === c.scanned_unit_id) || c.units[0] || { unit: "PCs", factor: 1 };
     const key = c.product_id + "-" + u.unit_id;
     let l = D.lines.find(x => x.key === key);
-    if (l && k !== "poster") l.qty += 1;
+    if (l && k === "price_change") { /* already in the list: just show it */ }
+    else if (l && k !== "poster") l.qty += 1;
     else if (!l) { l = { key, product_id: c.product_id, name: c.name, unit_id: u.unit_id, unit: u.unit, factor: u.factor, qty: 1,
-      cost: u.cost != null ? u.cost : null, price: u.normal_price_vat || u.price_vat, barcode: u.barcode,
+      cost: u.cost != null ? u.cost : null, price: u.normal_price_vat || u.price_vat, barcode: u.barcode, vat: c.vat_rate,
       units: c.units.map(x => ({ unit_id: x.unit_id, unit: x.unit, factor: x.factor, cost: x.cost, price_vat: x.normal_price_vat || x.price_vat, barcode: x.barcode })) };
       D.lines.unshift(l); }
     save();
     $("#hit").innerHTML = `<div class="card hit"><div class="nm">${esc(c.name)}</div><div class="muted">${esc(u.unit)} · ${t("Stock")} ${esc(c.stock_text)}${k === "po" && c.reorder_level ? " · " + t("reorder at") + " " + nq(c.reorder_level) : ""}</div></div>`;
     beep(); paint(key);
+    if (k === "price_change" && l.new_price == null) setTimeout(() => { const el = $(`[data-np="${D.lines.indexOf(l)}"]`); if (el) el.click(); }, 80);
   };
   scanEl.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); const v = scanEl.value.trim(); if (v) current.onScan(v); } };
   $("#clr").onclick = () => { if (D.lines.length && !confirm("Clear the whole list?")) return; D.lines = []; save(); paint(); focus(); };
@@ -644,10 +669,11 @@ function jobScreen(k) {
     if (!D.lines.length) return toast("The list is empty", true);
     if (k === "po" && !H.supplier_id) return toast(t("Choose the supplier first"), true);
     if (k === "poster" && H.offer_type === "price" && D.lines.some(l => l.new_price == null)) return toast(t("Type the offer price of every product (tap the price)"), true);
+    if (k === "price_change" && D.lines.some(l => l.new_price == null)) return toast(t("Type the new price of every item (tap the price)"), true);
     $("#send").disabled = true;
     const doc = { uid: device() + "-" + k + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6), type: k, title: cfg.title,
       header: H, lines: D.lines.map(l => ({ product_id: l.product_id, unit_id: l.unit_id, unit: l.unit, factor: l.factor, qty: l.qty,
-        copies: l.qty, cost: l.cost, new_price: l.new_price })) };
+        copies: l.qty, cost: l.cost, new_price: l.new_price, old_price: l.price })) };
     let res;
     try { res = await api("submit", { body: { doc, device: device() }, timeout: 60000 }); }
     catch (e) { $("#send").disabled = false; return toast(e.message, true, 5000); }
@@ -656,6 +682,7 @@ function jobScreen(k) {
     if (res.status === "error") return toast(res.result, true, 5000);
     beep(1500, .12);
     const keepHead = k === "po" ? { expected_days: H.expected_days } : k === "labels" ? { print: H.print, template_id: H.template_id } :
+      k === "price_change" ? { reason: H.reason, print_labels: H.print_labels, print: true, template_id: H.template_id, allow_below_cost: false } :
       { offer_type: H.offer_type, value: H.value, start: H.start, end: H.end, size: H.size, theme: H.theme, create_offer: H.create_offer, print: H.print };
     D = { lines: [], header: keepHead }; save();
     const p = sheet(`<div class="card hit"><div class="nm">✔ ${esc(res.result || "Done")}</div></div>

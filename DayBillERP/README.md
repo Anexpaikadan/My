@@ -1,7 +1,23 @@
-# DayBill ERP  v7.2.0
+# DayBill ERP  v7.3.0
 
 Billing, POS, inventory, accounts and HR for shops in 🇸🇦 Saudi Arabia, 🇦🇪 the UAE and 🇮🇳 India.
 **VAT / GST by country · ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
+
+## 💲 v7.3 — PDT Price Change
+
+- **💲 Price Change on the PDT.** Scan an item: the new-price box opens at
+  once. Type the shelf price (with VAT) — old → new, cost and margin show
+  while you type (red when below cost). Pick a reason, and the number on the
+  line is how many new shelf labels to print.
+- Save changes the price of that unit (a carton alone, or the piece and the
+  product), in the shop's price mode (with or without VAT). Below cost is
+  refused unless **Allow below cost** is ticked. Every change goes into the
+  audit log (old → new, reason, device), and a price someone changed in the
+  meantime is noted.
+- New labels print on the label printer (or wait in Mobile ▸ Inbox ▸ 🖨 Print
+  PDF); the phone can open the PDF.
+- Mobile ▸ Wi-Fi: *Price Change from the PDT waits for approval in the Inbox*
+  lets the owner approve new prices first. Give the module in Mobile ▸ Users.
 
 ## 📱 v7.2 — PDT: purchase orders, barcode labels, offer posters · Database Tool
 

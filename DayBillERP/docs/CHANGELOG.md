@@ -2,6 +2,13 @@
 
 Newest first. The short guide is in the main README.md.
 
+## 💲 v7.3.0 — PDT Price Change
+
+- PDT module **Price Change**: scan, type the new shelf price (with VAT), live
+  margin, reason, new labels printed; per unit; prices with or without VAT;
+  below-cost guard; audit log; "changed meanwhile" note; optional owner
+  approval in the Mobile Inbox.
+
 ## 📱 v7.2.0 — PDT purchase orders, labels and posters · smarter Convert
 
 - **PDT ▸ 📝 Purchase Order:** supplier, scanned items with cost, ⚠ Low stock

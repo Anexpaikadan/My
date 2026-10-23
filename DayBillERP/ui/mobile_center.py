@@ -162,6 +162,8 @@ class MobileCenterView:
                        "(untick = wait in the Inbox ▸ 🖨 Print PDF)", "mobile_labels_autoprint", default=True)
         self._check(o, "Offer Poster: allowed to print at once when the PDT ticks 'Print now'",
                     "mobile_poster_autoprint", default=True)
+        self._check(o, "Price Change from the PDT waits for approval in the Inbox "
+                       "(untick = new prices at once)", "mobile_price_needs_approval")
         pr = tk.Frame(o, bg=C["card_bg"]); pr.pack(anchor="w", pady=(4, 0))
         tk.Label(pr, text="Port", bg=C["card_bg"], font=("Segoe UI", 9)).pack(side="left")
         self.port_v = tk.StringVar(value=str(cfg.get("mobile_port", 8090) or 8090))
@@ -291,7 +293,7 @@ class MobileCenterView:
         heads = {"user": ("User", 100), "name": ("Name", 140), "van": ("Van code", 80)}
         short = {"goods_in": "In", "goods_out": "Out", "count": "Count", "adjust": "Adjust",
                  "info": "Info", "price": "Price", "van": "Van", "po": "PO", "labels": "Labels",
-                 "poster": "Poster"}
+                 "poster": "Poster", "price_change": "Price±"}
         for k in M.MODULE_KEYS:
             heads[k] = (short[k], 58)
         cols = ["user", "name"] + M.MODULE_KEYS + ["vancode"]
@@ -466,7 +468,7 @@ class MobileCenterView:
     # the right needed to approve / reject each kind of document
     _DOC_RIGHT = {"goods_in": ("purchase", "add"), "van_sale": ("sales", "add"),
                   "po": ("purchase", "add"), "labels": ("products", "print"),
-                  "poster": ("products", "edit"),
+                  "poster": ("products", "edit"), "price_change": ("products", "edit"),
                   "goods_out": ("stock_adjustment", "approve"),
                   "adjust": ("stock_adjustment", "approve"),
                   "count": ("stock_adjustment", "approve")}
@@ -532,7 +534,8 @@ class MobileCenterView:
         """v7.2: print the label / poster PDF a PDT sent."""
         d = self._sel_doc()
         if not d or d.get("doc_type") not in M.FILE_DOCS:
-            messagebox.showinfo("Print", "Pick a Barcode Labels or Offer Poster line.", parent=self.frame)
+            messagebox.showinfo("Print", "Pick a Barcode Labels, Offer Poster or Price Change line.",
+                                parent=self.frame)
             return
         path = M.doc_file(d["doc_id"], d["doc_type"])
         if not os.path.isfile(path):

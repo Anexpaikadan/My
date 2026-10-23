@@ -24,7 +24,7 @@ DEFAULT_PORT = 8090
 try:
     from config.version import VERSION
 except Exception:
-    VERSION = "7.2.0"
+    VERSION = "7.3.0"
 
 
 def local_ips():
@@ -111,7 +111,7 @@ def handle(method, path, query, body, token):
             return 200, {"items": M.search(user, q.get("q", ""))}
         if path == "/api/product":
             return 200, M.product_card(int(q.get("id") or 0), int(q["unit_id"]) if q.get("unit_id") else None,
-                                       show_cost=bool({"goods_in", "po"} & set(user["modules"])))
+                                       show_cost=bool({"goods_in", "po", "price_change"} & set(user["modules"])))
         if path == "/api/suppliers":
             M.need(user, "po" if "po" in user["modules"] and "goods_in" not in user["modules"] else "goods_in")
             return 200, {"items": M.suppliers(q.get("q", ""))}
@@ -120,6 +120,8 @@ def handle(method, path, query, body, token):
         if path == "/api/po_list":
             return 200, {"items": M.po_list(user)}
         if path == "/api/label_designs":
+            if "price_change" in user["modules"] and "labels" not in user["modules"]:
+                return 200, {"items": M.label_designs(dict(user, modules=user["modules"] + ["labels"]))}
             return 200, {"items": M.label_designs(user)}
         if path == "/api/poster_options":
             return 200, M.poster_options(user)
