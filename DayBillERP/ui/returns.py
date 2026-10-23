@@ -153,99 +153,99 @@ class ReturnForm:
         self.win.geometry(f"{w}x{h}+{x}+{max(0, y-20)}")
 
     def _build_header(self, C):
+        """v7.9: titled blocks (Return · Original bill · Customer / Supplier)
+        and the party's balance card — the same look as the Sales window."""
         state = "disabled" if self.view_only else "normal"
         self.hdr = {}
-        grid = tk.Frame(self.form_body, bg=C["card_bg"])
-        grid.pack(fill="x", padx=12, pady=(4, 5))          # v6.9: tighter
-        for i in range(4):
-            grid.columnconfigure(i, weight=1, uniform="h")
+        from ui.doc_header import DocHeader
+        F10 = ("Segoe UI", 10)
+        H = DocHeader(self.form_body, C, pady=(4, 4))
+        self._doc_header = H
 
-        def cell(r, c, label):
-            f = tk.Frame(grid, bg=C["card_bg"])
-            f.grid(row=r, column=c, sticky="ew", padx=(0, 10), pady=(0, 6))
-            tk.Label(f, text=label, font=("Segoe UI", 8), bg=C["card_bg"],
-                     fg=C["text_secondary"]).pack(anchor="w")
-            return f
+        def ent(var, width=10, st=None):
+            return lambda p: tk.Entry(p, textvariable=var, width=width, font=F10, relief="solid",
+                                      bd=1, state=st or state)
 
-        # Return number + nav + find
-        rc = cell(0, 0, "Return Number")
-        line = tk.Frame(rc, bg=C["card_bg"]); line.pack(fill="x", pady=(2, 0))
+        # ── Return: number (▲▼) · date · find
+        b1 = H.block("Return", weight=2, minwidth=210)
         self.hdr["number"] = tk.StringVar()
-        tk.Entry(line, textvariable=self.hdr["number"], font=("Segoe UI", 10),
-                 relief="solid", bd=1, state="disabled").pack(
-                     side="left", fill="x", expand=True, ipady=6)
-        if not self.view_only:
-            tk.Button(line, text="▲", font=("Segoe UI", 7), width=2,
-                      bg=C["content_bg"], relief="flat", cursor="hand2",
-                      command=self._nav_prev).pack(side="left", padx=(2, 0))
-            tk.Button(line, text="▼", font=("Segoe UI", 7), width=2,
-                      bg=C["content_bg"], relief="flat", cursor="hand2",
-                      command=self._nav_next).pack(side="left")
-            fl = tk.Frame(rc, bg=C["card_bg"]); fl.pack(fill="x", pady=(3, 0))
-            self.find_on = tk.BooleanVar(value=False)
-            tk.Checkbutton(fl, text="Find", variable=self.find_on,
-                           font=("Segoe UI", 8), bg=C["card_bg"],
-                           fg=C["text_secondary"], activebackground=C["card_bg"],
-                           command=self._toggle_find).pack(side="left")
-            self.find_var = tk.StringVar()
-            self.find_entry = tk.Entry(fl, textvariable=self.find_var,
-                                       font=("Segoe UI", 9), relief="solid", bd=1,
-                                       state="disabled")
-            self.find_entry.pack(side="left", padx=(4, 0), ipady=6, fill="x", expand=True)
-            self.find_entry.bind("<Return>", lambda e: self._find())
 
-        # Return date
-        dc = cell(0, 1, "Return Date *")
+        def nav_btns(p):
+            if self.view_only:
+                return None
+            f = tk.Frame(p, bg=C["card_bg"])
+            for t_, cmd_ in (("▲", self._nav_prev), ("▼", self._nav_next)):
+                tk.Button(f, text=t_, font=("Segoe UI", 7), width=2, padx=1, pady=0, bd=0,
+                          bg=C["content_bg"], relief="flat", cursor="hand2",
+                          command=cmd_).pack(side="left", padx=(1, 0))
+            return f
+        b1.row("No.", ent(self.hdr["number"], 10, "disabled"), extra=nav_btns)
         self.hdr["date"] = tk.StringVar()
-        de = tk.Entry(dc, textvariable=self.hdr["date"], font=("Segoe UI", 10),
-                      relief="solid", bd=1, state=state)
-        de.pack(fill="x", ipady=6, pady=(2, 0))
+        de = b1.row("Date", ent(self.hdr["date"], 11), required=True)
         if state == "normal":
             try:
                 from ui.datepicker import attach_datepicker
                 attach_datepicker(de, self.hdr["date"])
             except Exception:
                 pass
-
-        # Original reference + Load button
-        ref = cell(0, 2, self.cfg["ref_label"])
-        rline = tk.Frame(ref, bg=C["card_bg"]); rline.pack(fill="x", pady=(2, 0))
-        self.hdr["ref"] = tk.StringVar()
-        tk.Entry(rline, textvariable=self.hdr["ref"], font=("Segoe UI", 10),
-                 relief="solid", bd=1, state=state).pack(
-                     side="left", fill="x", expand=True, ipady=6)
         if not self.view_only:
-            tk.Button(rline, text="📂 Load bill", font=("Segoe UI", 8, "bold"),
-                      bg=C["primary"], fg="white", relief="flat", padx=8,
-                      cursor="hand2", command=self._load_original).pack(
-                          side="left", padx=(4, 0))
+            self.find_on = tk.BooleanVar(value=False)
+            self.find_var = tk.StringVar()
 
-        # Payment type
-        pc = cell(0, 3, "Payment Type")
+            def find_box(p):
+                self.find_entry = tk.Entry(p, textvariable=self.find_var, width=8, font=("Segoe UI", 9),
+                                           relief="solid", bd=1, state="disabled")
+                self.find_entry.bind("<Return>", lambda e: self._find())
+                return self.find_entry
+            b1.row("Find", find_box, extra=lambda p: tk.Checkbutton(
+                p, variable=self.find_on, command=self._toggle_find, bg=C["card_bg"],
+                activebackground=C["card_bg"], highlightthickness=0))
+
+        # ── Original bill: its number (+ 📂 load it with its items) · payment
+        b2 = H.block("Original bill", weight=3, minwidth=260)
+        self.hdr["ref"] = tk.StringVar()
+        b2.row(self.cfg["ref_label"].replace(" #", "").replace("Original ", "") + " #",
+               ent(self.hdr["ref"], 12),
+               extra=(None if self.view_only else lambda p: tk.Button(
+                   p, text="📂 Load bill", font=("Segoe UI", 8, "bold"), bg=C["primary"], fg="white",
+                   relief="flat", padx=8, cursor="hand2", command=self._load_original)))
         self.hdr["payment"] = tk.StringVar(value="cash")
-        ttk.Combobox(pc, textvariable=self.hdr["payment"],
-                     values=["cash", "credit", "card", "bank_transfer"],
-                     state="readonly" if state == "normal" else "disabled",
-                     font=("Segoe UI", 10)).pack(fill="x", ipady=6, pady=(2, 0))
+        b2.row("Refund as", lambda p: ttk.Combobox(
+            p, textvariable=self.hdr["payment"], values=["cash", "credit", "card", "bank_transfer"],
+            state="readonly" if state == "normal" else "disabled", font=F10, width=12))
 
-        # Party (customer/supplier)
-        party_label = "Customer *" if self.mode == "sales" else "Supplier *"
-        pcell = cell(1, 0, party_label)
+        # ── Customer / Supplier · notes
+        who = "Customer" if self.mode == "sales" else "Supplier"
+        b3 = H.block(who, weight=4, minwidth=300)
         self.party_var = tk.StringVar()
         opts = [f"{p['code']} — {p['name']}" for p in self._parties]
-        self.party_combo = ttk.Combobox(pcell, textvariable=self.party_var,
-                                         values=opts, state="readonly",
-                                         font=("Segoe UI", 10))
-        self.party_combo.pack(fill="x", ipady=6, pady=(2, 0))
 
-        # Notes (spans remaining)
-        ncell = tk.Frame(grid, bg=C["card_bg"])
-        ncell.grid(row=1, column=1, columnspan=3, sticky="ew", pady=(0, 6))
-        tk.Label(ncell, text="Notes", font=("Segoe UI", 8), bg=C["card_bg"],
-                 fg=C["text_secondary"]).pack(anchor="w")
+        def party_box(p):
+            self.party_combo = ttk.Combobox(p, textvariable=self.party_var, values=opts,
+                                            state="readonly", font=F10, width=24)
+            self.party_combo.bind("<<ComboboxSelected>>", lambda e: self._show_party_facts(), add="+")
+            return self.party_combo
+        b3.row(who, party_box, required=True)
         self.hdr["notes"] = tk.StringVar()
-        tk.Entry(ncell, textvariable=self.hdr["notes"], font=("Segoe UI", 10),
-                 relief="solid", bd=1, state=state).pack(fill="x", ipady=6, pady=(2, 0))
+        b3.row("Notes", ent(self.hdr["notes"], 18))
+        try:
+            self.party_var.trace_add("write", lambda *a: self.win.after_idle(self._show_party_facts))
+        except Exception:
+            pass
+
+        # ── the party's balance card
+        self._bal_card = H.balance_card()
+
+    def _show_party_facts(self):
+        """v7.9: balance + last bill of the customer / supplier."""
+        card = getattr(self, "_bal_card", None)
+        if card is None:
+            return ""
+        try:
+            pid = self._party_id()
+        except Exception:
+            pid = None
+        return card.show("customer" if self.mode == "sales" else "supplier", pid)
 
     def _build_grid(self, C):
         # v6.9: no title line above the grid — more rows for the items

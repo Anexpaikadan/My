@@ -931,146 +931,140 @@ class InvoiceForm:
                       padx=6, pady=2, cursor="hand2", command=cmd).pack(side="left", padx=1)
         tk.Frame(fb, bg=C["border"], height=1).pack(fill="x")
 
-        # v6.9: TWO slim rows (was five) — the item grid gets the room
-        body = tk.Frame(fb, bg=C["card_bg"])
-        body.pack(fill="x", padx=8, pady=(3, 4))
-        r1 = tk.Frame(body, bg=C["card_bg"])
-        r1.pack(fill="x")
-        r2 = tk.Frame(body, bg=C["card_bg"])
-        r2.pack(fill="x", pady=(3, 0))
+        # v7.9: the header as titled blocks (Bill · Customer · Contact ·
+        # Details) with the customer's balance card on the right
+        from ui.doc_header import DocHeader
         F8, F10 = ("Segoe UI", 8), ("Segoe UI", 10)
+        H = DocHeader(fb, C, pady=(4, 2))
+        self._doc_header = H
 
-        def lbl(parent, text, padl=10, fg=None, bold=False):
-            tk.Label(parent, text=text, font=("Segoe UI", 8, "bold") if bold else F8,
-                     bg=C["card_bg"], fg=fg or C["text_secondary"]).pack(side="left", padx=(padl, 3))
+        def ent(var, width=10, st=None, bold=False):
+            return lambda p: tk.Entry(p, textvariable=var, width=width,
+                                      font=("Segoe UI", 10, "bold") if bold else F10,
+                                      relief="solid", bd=1, state=st or state)
 
-        def entry(parent, var, width, st=None, bold=False, expand=False):
-            e = tk.Entry(parent, textvariable=var, width=width,
-                         font=("Segoe UI", 10, "bold") if bold else F10,
-                         relief="solid", bd=1, state=st or state)
-            if expand:
-                e.pack(side="left", fill="x", expand=True)
-            else:
-                e.pack(side="left")
-            return e
+        def small(parent, text, cmd, primary=False):
+            return tk.Button(parent, text=text, font=("Segoe UI", 8, "bold" if primary else "normal"),
+                             bg=C["primary"] if primary else C["content_bg"],
+                             fg="white" if primary else C["text_primary"], relief="flat",
+                             padx=6, cursor="hand2", command=cmd)
 
-        def check(parent, text, var, fg=None, cmd=None, padl=8):
-            tk.Checkbutton(parent, text=text, variable=var, font=F8, bg=C["card_bg"],
-                           fg=fg or C["text_secondary"], activebackground=C["card_bg"],
-                           command=cmd).pack(side="left", padx=(padl, 0))
-
-        def small_btn(parent, text, cmd, primary=False, padl=3):
-            tk.Button(parent, text=text, font=("Segoe UI", 8, "bold" if primary else "normal"),
-                      bg=C["primary"] if primary else C["content_bg"],
-                      fg="white" if primary else C["text_primary"], relief="flat",
-                      padx=6, cursor="hand2", command=cmd).pack(side="left", padx=(padl, 0))
-
-        # ── row 1: number · find · date · customer · credit / draft · sales a/c
+        # ── Bill: number (▲▼ browse) · date · find · draft
         self.vr_prefix_var = tk.BooleanVar(value=False)      # kept for older callers
         self.draft_mode_var = tk.BooleanVar(value=False)
-        lbl(r1, "No.", padl=0, bold=True)
-        entry(r1, self.hdr_vars["invoice_number"], 9, st="disabled", bold=True)
-        # ▲▼ — browse previous / next invoice into this same window
-        tk.Button(r1, text="▲", font=("Segoe UI", 7), width=2, bg=C["content_bg"],
-                  relief="flat", cursor="hand2", command=self._nav_prev).pack(side="left", padx=(2, 0))
-        tk.Button(r1, text="▼", font=("Segoe UI", 7), width=2, bg=C["content_bg"],
-                  relief="flat", cursor="hand2", command=self._nav_next).pack(side="left")
         self.find_enabled = tk.BooleanVar(value=False)
-        check(r1, "Find", self.find_enabled, cmd=self._toggle_find, padl=6)
         self.find_var = tk.StringVar()
-        self.find_entry = tk.Entry(r1, textvariable=self.find_var, width=8,
-                                   font=("Segoe UI", 9), relief="solid", bd=1, state="disabled")
-        self.find_entry.pack(side="left", padx=(2, 0))
-        self.find_entry.bind("<Return>", lambda e: self._find_invoice())
-        lbl(r1, "Date")
-        de = entry(r1, self.hdr_vars["invoice_date"], 11)
+        b1 = H.block("Bill", weight=2, minwidth=200)
+
+        def nav_btns(p):
+            f = tk.Frame(p, bg=C["card_bg"])
+            for t_, cmd_ in (("▲", self._nav_prev), ("▼", self._nav_next)):
+                tk.Button(f, text=t_, font=("Segoe UI", 7), width=2, padx=1, pady=0, bd=0,
+                          bg=C["content_bg"], relief="flat", cursor="hand2",
+                          command=cmd_).pack(side="left", padx=(1, 0))
+            return f
+        b1.row("No.", ent(self.hdr_vars["invoice_number"], 9, st="disabled", bold=True), extra=nav_btns)
+        de = b1.row("Date", ent(self.hdr_vars["invoice_date"], 11))
         if state == "normal":
             try:
                 from ui.datepicker import attach_datepicker
                 attach_datepicker(de, self.hdr_vars["invoice_date"])
             except Exception:
                 pass
+
+        def find_box(p):
+            self.find_entry = tk.Entry(p, textvariable=self.find_var, width=8, font=("Segoe UI", 9),
+                                       relief="solid", bd=1, state="disabled")
+            self.find_entry.bind("<Return>", lambda e: self._find_invoice())
+            return self.find_entry
+        b1.row("Find", find_box, extra=lambda p: tk.Checkbutton(
+            p, variable=self.find_enabled, command=self._toggle_find, bg=C["card_bg"],
+            activebackground=C["card_bg"], highlightthickness=0))
+        b1.flags([("Draft", self.draft_mode_var, None, C["danger"])])
+
+        # ── Customer: list · name · tax no. (a customer not in the list prints what is typed)
         self.payment_var = tk.StringVar(value="cash")
         self.credit_acct_var = tk.BooleanVar(value=False)
         self.sales_acct_var = tk.BooleanVar(value=True)
         self.cust_var = tk.StringVar()
-        cust_opts = [f"{c['customer_code']} \u2014 {c['customer_name_en']}"
-                     for c in self._customers]
-        lbl(r1, "Customer")
-        self.cust_combo = ttk.Combobox(r1, textvariable=self.cust_var, values=cust_opts,
-                                       state="readonly", font=F10, width=24)
-        self.cust_combo.pack(side="left", fill="x", expand=True)
-        self.cust_combo.bind("<<ComboboxSelected>>", self._on_customer_select)
-        if not self.view_only:
-            small_btn(r1, "New", self._new_customer, primary=True, padl=4)
-            small_btn(r1, "W/Stock", lambda: self._nav("inventory"))
-            small_btn(r1, "More", lambda: self._nav("settings"))
-
-        def _credit_toggle():
-            self.payment_var.set("credit" if self.credit_acct_var.get() else "cash")
-        check(r1, "Credit", self.credit_acct_var, cmd=_credit_toggle)
-        check(r1, "Draft", self.draft_mode_var, fg=C["danger"], padl=4)
-        check(r1, "Sales A/c", self.sales_acct_var, padl=4)
-        self.sales_account_var = tk.StringVar(value="Sales Account")
-        ttk.Combobox(r1, textvariable=self.sales_account_var, values=["Sales Account"],
-                     font=("Segoe UI", 9), state="readonly", width=13).pack(side="left", padx=(2, 0))
-
-        # ── row 2: name · mobile · address · ref · M.Inv · salesman · warehouse
         self.cust_name_var = tk.StringVar()
         self.cust_addr_var = tk.StringVar()
         self.cust_mobile_var = tk.StringVar()
-        self.minv_var = tk.StringVar()
-        self.salesman_var = tk.StringVar()
-        self.warehouse_var = tk.StringVar(
-            value=self._warehouses[0] if self._warehouses else "Primary")
         self.cust_vat_var = tk.StringVar()
-        lbl(r2, "Name", padl=0)
-        entry(r2, self.cust_name_var, 16, expand=True)
-        # v7.8: a customer who is not in Customers — the name and tax number
-        # typed here go on the bill and are printed
+        cust_opts = [f"{c['customer_code']} \u2014 {c['customer_name_en']}"
+                     for c in self._customers]
+        b2 = H.block("Customer", weight=4, minwidth=300)
+
+        def cust_box(p):
+            self.cust_combo = ttk.Combobox(p, textvariable=self.cust_var, values=cust_opts,
+                                           state="readonly", font=F10, width=24)
+            self.cust_combo.bind("<<ComboboxSelected>>", self._on_customer_select)
+            return self.cust_combo
+
+        def cust_btns(p):
+            f = tk.Frame(p, bg=C["card_bg"])
+            if not self.view_only:
+                small(f, "＋", self._new_customer, primary=True).pack(side="left")
+            return f
+        b2.row("Customer", cust_box, extra=cust_btns, required=True)
+        b2.row("Name", ent(self.cust_name_var, 18))
         try:
             from modules import country as _ctry0
             _tax_lbl = _ctry0.tax_no_label()
         except Exception:
             _tax_lbl = "VAT No."
-        lbl(r2, _tax_lbl)
-        entry(r2, self.cust_vat_var, 14)
-        lbl(r2, "Mobile")
-        entry(r2, self.cust_mobile_var, 11)
-        lbl(r2, "Address")
-        entry(r2, self.cust_addr_var, 14, expand=True)
-        lbl(r2, "Ref No / Date")
-        entry(r2, self.hdr_vars["po_number"], 8)
-        de2 = tk.Entry(r2, textvariable=self.hdr_vars["due_date"], font=F10, relief="solid",
-                       bd=1, width=10, state=state)
-        de2.pack(side="left", padx=(3, 0))
-        lbl(r2, "M.Inv")
-        entry(r2, self.minv_var, 8)
-        lbl(r2, "SM")
-        ttk.Combobox(r2, textvariable=self.salesman_var, values=self._salesmen, font=F10,
-                     width=10, state="normal" if state == "normal" else "disabled").pack(side="left")
-        lbl(r2, "WH")
-        ttk.Combobox(r2, textvariable=self.warehouse_var, values=self._warehouses or ["Primary"],
-                     font=F10, width=12,
-                     state="readonly" if state == "normal" else "disabled").pack(side="left")
+        b2.row(_tax_lbl, ent(self.cust_vat_var, 16))
+
+        def _credit_toggle():
+            self.payment_var.set("credit" if self.credit_acct_var.get() else "cash")
+        self.sales_account_var = tk.StringVar(value="Sales Account")
+        b2.widget_row(lambda p: (
+            tk.Checkbutton(p, text="Credit", variable=self.credit_acct_var, command=_credit_toggle,
+                           font=("Segoe UI", 9), bg=C["card_bg"], fg=C["text_secondary"],
+                           activebackground=C["card_bg"], highlightthickness=0).pack(side="left"),
+            tk.Checkbutton(p, text="Sales A/c", variable=self.sales_acct_var, font=("Segoe UI", 9),
+                           bg=C["card_bg"], fg=C["text_secondary"], activebackground=C["card_bg"],
+                           highlightthickness=0).pack(side="left", padx=(8, 0)),
+            ttk.Combobox(p, textvariable=self.sales_account_var, values=["Sales Account"],
+                         font=("Segoe UI", 9), state="readonly", width=13).pack(side="left", padx=(4, 0))))
+
+        # ── Contact & reference
+        self.minv_var = tk.StringVar()
+        b3 = H.block("Contact & ref.", weight=2, minwidth=210)
+        b3.row("Mobile", ent(self.cust_mobile_var, 12))
+        b3.row("Address", ent(self.cust_addr_var, 12))
+        b3.row("Ref No.", ent(self.hdr_vars["po_number"], 8),
+               extra=lambda p: tk.Entry(p, textvariable=self.hdr_vars["due_date"], font=F10,
+                                        relief="solid", bd=1, width=10, state=state))
+        b3.row("M.Inv", ent(self.minv_var, 8))
+
+        # ── Details: store · salesman · place of supply · send to
+        self.salesman_var = tk.StringVar()
+        self.warehouse_var = tk.StringVar(
+            value=self._warehouses[0] if self._warehouses else "Primary")
+        b4 = H.block("Details", weight=2, minwidth=200)
+        b4.row("Store", lambda p: ttk.Combobox(
+            p, textvariable=self.warehouse_var, values=self._warehouses or ["Primary"], font=F10,
+            width=10, state="readonly" if state == "normal" else "disabled"))
+        b4.row("Salesman", lambda p: ttk.Combobox(
+            p, textvariable=self.salesman_var, values=self._salesmen, font=F10, width=10,
+            state="normal" if state == "normal" else "disabled"))
         # v7.0 India: place of supply → CGST + SGST (same state) or IGST
         self.pos_var = tk.StringVar()
         try:
             from modules import country as _ctry
             if _ctry.is_in():
-                lbl(r2, "Supply to", fg=C["primary"], bold=True)
-                self.pos_combo = ttk.Combobox(
-                    r2, textvariable=self.pos_var, font=F10, width=16,
-                    values=["%s - %s" % (k, n) for k, n in _ctry.states()],
-                    state="readonly" if state == "normal" else "disabled")
-                self.pos_combo.pack(side="left")
-                self.pos_combo.bind("<<ComboboxSelected>>", lambda e: self._update_totals())
+                def pos_box(p):
+                    self.pos_combo = ttk.Combobox(
+                        p, textvariable=self.pos_var, font=F10, width=16,
+                        values=["%s - %s" % (k, n) for k, n in _ctry.states()],
+                        state="readonly" if state == "normal" else "disabled")
+                    self.pos_combo.bind("<<ComboboxSelected>>", lambda e: self._update_totals())
+                    return self.pos_combo
+                b4.row("Supply to", pos_box)
                 self.pos_var.set(_ctry.state_label(_ctry.company_state()))
         except Exception:
             pass
-        self.in_search_var = tk.BooleanVar(value=True)
-        check(r2, "In Search", self.in_search_var, fg=C["accent_dark"])
-        small_btn(r2, "⤓", self._goto_last_row, padl=4)     # Goto Last Row
         # v7.5: print stations — pick the tailor / picker / kitchen this sale goes to
         self.station_var = tk.StringVar(value="Auto")
         self._station_ids = {}
@@ -1081,9 +1075,21 @@ class InvoiceForm:
             _sts = []
         if _sts:
             self._station_ids = {"%s" % st["name"]: st["station_id"] for st in _sts}
-            lbl(r2, "Send to")
-            ttk.Combobox(r2, textvariable=self.station_var, state="readonly", width=16, font=F8,
-                         values=["Auto"] + list(self._station_ids)).pack(side="left")
+            b4.row("Send to", lambda p: ttk.Combobox(p, textvariable=self.station_var, state="readonly",
+                                                    width=14, font=F8,
+                                                    values=["Auto"] + list(self._station_ids)))
+        self.in_search_var = tk.BooleanVar(value=True)
+        b4.widget_row(lambda p: (
+            tk.Checkbutton(p, text="In Search", variable=self.in_search_var, font=("Segoe UI", 9),
+                           bg=C["card_bg"], fg=C["accent_dark"], activebackground=C["card_bg"],
+                           highlightthickness=0).pack(side="left"),
+            small(p, "⤓ Last row", self._goto_last_row).pack(side="left", padx=(6, 0))))
+
+        # ── the customer's balance card (+ stock / more)
+        self._bal_card = H.balance_card()
+        if not self.view_only:
+            small(self._bal_card.tools, "W/Stock", lambda: self._nav("inventory")).pack(side="left")
+            small(self._bal_card.tools, "More", lambda: self._nav("settings")).pack(side="left", padx=(4, 0))
         self.win.bind("<Control-End>", lambda e: self._goto_last_row())
 
     def _build_line_items(self, C):
@@ -3242,13 +3248,17 @@ class InvoiceForm:
         """L.Bill / Bal under the grid: the customer's ledger balance and last
         bill, and the last bill of this counter."""
         cust = cust or getattr(self, "_selected_customer", None) or {}
-        try:
-            from modules import party_info as _PI
-            txt = _PI.text("customer", cust.get("customer_id"), exclude_id=self.invoice_id)
-        except Exception:
-            txt = "L.Bill: —"
+        card = getattr(self, "_bal_card", None)
+        if card is not None:                       # v7.9: the balance card in the header
+            txt = card.show("customer", cust.get("customer_id"), exclude_id=self.invoice_id)
+        else:
+            try:
+                from modules import party_info as _PI
+                txt = _PI.text("customer", cust.get("customer_id"), exclude_id=self.invoice_id)
+            except Exception:
+                txt = "L.Bill: —"
         if hasattr(self, "lbill_var"):
-            self.lbill_var.set(txt)
+            self.lbill_var.set(txt or "L.Bill: —")
         return txt
 
     def _save_pos(self, inv_id):

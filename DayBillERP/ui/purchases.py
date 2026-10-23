@@ -441,109 +441,90 @@ class PurchaseForm:
         self.items_area.pack(side="top", fill="both", expand=True)
 
     def _build_header(self, C):
+        """v7.9: titled blocks (Purchase · Supplier · Supplier bill) and the
+        supplier's balance card — the same look as the Sales window."""
         self.hdr = {}
-        grid = tk.Frame(self.form_body, bg=C["card_bg"])
-        grid.pack(fill="x", padx=12, pady=(4, 5))          # v6.9: tighter
-        for i in range(4):
-            grid.columnconfigure(i, weight=1, uniform="h")
+        from ui.doc_header import DocHeader
+        F10 = ("Segoe UI", 10)
+        H = DocHeader(self.form_body, C, pady=(4, 4))
+        self._doc_header = H
 
-        def cell(r, c, label):
-            f = tk.Frame(grid, bg=C["card_bg"])
-            f.grid(row=r, column=c, sticky="ew", padx=(0, 10), pady=(0, 6))
-            tk.Label(f, text=label, font=("Segoe UI", 8), bg=C["card_bg"],
-                     fg=C["text_secondary"]).pack(anchor="w")
-            return f
+        def ent(var, width=10, st="normal"):
+            return lambda p: tk.Entry(p, textvariable=var, width=width, font=F10, relief="solid",
+                                      bd=1, state=st)
 
-        # Purchase number + nav + find
-        pc = cell(0, 0, "Purchase Number")
-        line = tk.Frame(pc, bg=C["card_bg"]); line.pack(fill="x", pady=(2, 0))
+        # ── Purchase: number (▲▼) · date · find
+        b1 = H.block("Purchase", weight=2, minwidth=210)
         self.hdr["number"] = tk.StringVar()
-        tk.Entry(line, textvariable=self.hdr["number"], font=("Segoe UI", 10),
-                 relief="solid", bd=1, state="disabled").pack(
-                     side="left", fill="x", expand=True, ipady=6)
-        tk.Button(line, text="▲", font=("Segoe UI", 7), width=2, bg=C["content_bg"],
-                  relief="flat", cursor="hand2", command=self._nav_prev).pack(side="left", padx=(2, 0))
-        tk.Button(line, text="▼", font=("Segoe UI", 7), width=2, bg=C["content_bg"],
-                  relief="flat", cursor="hand2", command=self._nav_next).pack(side="left")
-        fl = tk.Frame(pc, bg=C["card_bg"]); fl.pack(fill="x", pady=(3, 0))
-        self.find_on = tk.BooleanVar(value=False)
-        tk.Checkbutton(fl, text="Find", variable=self.find_on, font=("Segoe UI", 8),
-                       bg=C["card_bg"], fg=C["text_secondary"],
-                       activebackground=C["card_bg"], command=self._toggle_find).pack(side="left")
-        self.find_var = tk.StringVar()
-        self.find_entry = tk.Entry(fl, textvariable=self.find_var, font=("Segoe UI", 9),
-                                   relief="solid", bd=1, state="disabled")
-        self.find_entry.pack(side="left", padx=(4, 0), ipady=6, fill="x", expand=True)
-        self.find_entry.bind("<Return>", lambda e: self._find())
 
-        # Date
-        dc = cell(0, 1, "Purchase Date *")
+        def nav_btns(p):
+            f = tk.Frame(p, bg=C["card_bg"])
+            for t_, cmd_ in (("▲", self._nav_prev), ("▼", self._nav_next)):
+                tk.Button(f, text=t_, font=("Segoe UI", 7), width=2, padx=1, pady=0, bd=0,
+                          bg=C["content_bg"], relief="flat", cursor="hand2",
+                          command=cmd_).pack(side="left", padx=(1, 0))
+            return f
+        b1.row("No.", ent(self.hdr["number"], 10, "disabled"), extra=nav_btns)
         self.hdr["date"] = tk.StringVar()
-        de = tk.Entry(dc, textvariable=self.hdr["date"], font=("Segoe UI", 10),
-                      relief="solid", bd=1)
-        de.pack(fill="x", ipady=6, pady=(2, 0))
+        de = b1.row("Date", ent(self.hdr["date"], 11), required=True)
         try:
             from ui.datepicker import attach_datepicker
             attach_datepicker(de, self.hdr["date"])
         except Exception:
             pass
+        self.find_on = tk.BooleanVar(value=False)
+        self.find_var = tk.StringVar()
 
-        # Supplier invoice #
-        sc = cell(0, 2, "Supplier Invoice #")
-        self.hdr["supinv"] = tk.StringVar()
-        tk.Entry(sc, textvariable=self.hdr["supinv"], font=("Segoe UI", 10),
-                 relief="solid", bd=1).pack(fill="x", ipady=6, pady=(2, 0))
+        def find_box(p):
+            self.find_entry = tk.Entry(p, textvariable=self.find_var, width=8, font=("Segoe UI", 9),
+                                       relief="solid", bd=1, state="disabled")
+            self.find_entry.bind("<Return>", lambda e: self._find())
+            return self.find_entry
+        b1.row("Find", find_box, extra=lambda p: tk.Checkbutton(
+            p, variable=self.find_on, command=self._toggle_find, bg=C["card_bg"],
+            activebackground=C["card_bg"], highlightthickness=0))
 
-        # Payment type
-        ptc = cell(0, 3, "Payment Method")
-        self.hdr["payment"] = tk.StringVar(value="cash")
-        ttk.Combobox(ptc, textvariable=self.hdr["payment"],
-                     values=cfg.payment_methods(["cash", "credit", "card", "bank_transfer", "cheque"]),
-                     state="readonly", font=("Segoe UI", 10)).pack(fill="x", ipady=6, pady=(2, 0))
-
-        # Supplier
-        supc = cell(1, 0, "Supplier *")
+        # ── Supplier: list (+ load PO) · name · tax no. (a supplier not in the list)
+        b2 = H.block("Supplier", weight=4, minwidth=300)
         self.sup_var = tk.StringVar()
-        self.sup_cb = ttk.Combobox(supc, textvariable=self.sup_var,
-                                   values=[f"{s['supplier_code']} — {s['supplier_name_en']}"
-                                           for s in self.suppliers],
-                                   state="readonly", font=("Segoe UI", 10))
-        self.sup_cb.pack(fill="x", ipady=6, pady=(2, 0))
-        tk.Button(supc, text="📥 Load purchase order", font=("Segoe UI", 8), relief="flat",
-                  bg=C["content_bg"], cursor="hand2", command=self._load_order).pack(anchor="w", pady=(2, 0))
-        # v7.8: a supplier who is not in the list — name / tax no. kept on the
-        # bill; and the supplier's balance + last bill
+
+        def sup_box(p):
+            self.sup_cb = ttk.Combobox(p, textvariable=self.sup_var,
+                                       values=[f"{s['supplier_code']} — {s['supplier_name_en']}"
+                                               for s in self.suppliers],
+                                       state="readonly", font=F10, width=24)
+            return self.sup_cb
+        b2.row("Supplier", sup_box, required=True, extra=lambda p: tk.Button(
+            p, text="📥 PO", font=("Segoe UI", 8), relief="flat", bg=C["content_bg"], cursor="hand2",
+            command=self._load_order))
         try:
             from modules import country as _ctry0
             _tax_lbl = _ctry0.tax_no_label()
         except Exception:
             _tax_lbl = "VAT No."
-        tr = tk.Frame(supc, bg=C["card_bg"]); tr.pack(fill="x", pady=(2, 0))
         self.sup_name_var, self.sup_vat_var = tk.StringVar(), tk.StringVar()
-        for _t, _v, _w in (("Name", self.sup_name_var, 14), (_tax_lbl, self.sup_vat_var, 13)):
-            tk.Label(tr, text=_t, font=("Segoe UI", 8), bg=C["card_bg"],
-                     fg=C["text_secondary"]).pack(side="left", padx=(0, 3))
-            tk.Entry(tr, textvariable=_v, width=_w, font=("Segoe UI", 9), relief="solid",
-                     bd=1).pack(side="left", padx=(0, 6))
-        self.sup_facts_var = tk.StringVar(value="")
-        tk.Label(supc, textvariable=self.sup_facts_var, font=("Segoe UI", 8, "bold"), bg=C["card_bg"],
-                 fg=C["primary"], anchor="w", justify="left", wraplength=420).pack(fill="x")
+        b2.row("Name", ent(self.sup_name_var, 18))
+        b2.row(_tax_lbl, ent(self.sup_vat_var, 16))
+        self.sup_facts_var = tk.StringVar(value="")          # older callers / tests
         self.sup_cb.bind("<<ComboboxSelected>>", lambda e: self._show_supplier_facts(), add="+")
 
-        # Warehouse
-        whc = cell(1, 1, "Warehouse")
+        # ── Supplier bill: their invoice no. · payment · store · notes
+        b3 = H.block("Supplier bill", weight=3, minwidth=250)
+        self.hdr["supinv"] = tk.StringVar()
+        b3.row("Their Inv #", ent(self.hdr["supinv"], 12))
+        self.hdr["payment"] = tk.StringVar(value="cash")
+        b3.row("Payment", lambda p: ttk.Combobox(
+            p, textvariable=self.hdr["payment"],
+            values=cfg.payment_methods(["cash", "credit", "card", "bank_transfer", "cheque"]),
+            state="readonly", font=F10, width=12))
         self.hdr["warehouse"] = tk.StringVar(value=self._warehouses[0])
-        ttk.Combobox(whc, textvariable=self.hdr["warehouse"], values=self._warehouses,
-                     font=("Segoe UI", 10)).pack(fill="x", ipady=6, pady=(2, 0))
-
-        # Notes (span 2)
-        nc = tk.Frame(grid, bg=C["card_bg"])
-        nc.grid(row=1, column=2, columnspan=2, sticky="ew", pady=(0, 6))
-        tk.Label(nc, text="Notes", font=("Segoe UI", 8), bg=C["card_bg"],
-                 fg=C["text_secondary"]).pack(anchor="w")
+        b3.row("Store", lambda p: ttk.Combobox(p, textvariable=self.hdr["warehouse"],
+                                               values=self._warehouses, font=F10, width=12))
         self.hdr["notes"] = tk.StringVar()
-        tk.Entry(nc, textvariable=self.hdr["notes"], font=("Segoe UI", 10),
-                 relief="solid", bd=1).pack(fill="x", ipady=6, pady=(2, 0))
+        b3.row("Notes", ent(self.hdr["notes"], 16))
+
+        # ── the supplier's balance card
+        self._bal_card = H.balance_card()
 
     # ── v7.8: supplier facts / typed supplier ─────────────────
     def _cur_supplier(self):
@@ -552,11 +533,15 @@ class PurchaseForm:
 
     def _show_supplier_facts(self):
         s = self._cur_supplier() or {}
-        try:
-            from modules import party_info as _PI
-            txt = _PI.text("supplier", s.get("supplier_id"), exclude_id=self.purchase_id) if s else ""
-        except Exception:
-            txt = ""
+        card = getattr(self, "_bal_card", None)
+        if card is not None and s:                 # v7.9: the balance card
+            txt = card.show("supplier", s.get("supplier_id"), exclude_id=self.purchase_id)
+        else:
+            try:
+                from modules import party_info as _PI
+                txt = _PI.text("supplier", s.get("supplier_id"), exclude_id=self.purchase_id) if s else ""
+            except Exception:
+                txt = ""
         if hasattr(self, "sup_facts_var"):
             self.sup_facts_var.set(txt)
         return txt
