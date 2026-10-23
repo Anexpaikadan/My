@@ -350,7 +350,7 @@ class InvoiceGrid(tk.Frame):
         uprice = (float(ln["line_amount"]) / qty) if qty else 0.0
         return (
             i + 1,
-            ln.get("barcode", ""),
+            self.shown_barcode(ln),
             ln.get("product_name_en", "") + (("   🏷 " + ln["offer_text"])
                                              if ln.get("offer_text") else ""),
             f"{float(ln['quantity']):g}",
@@ -524,6 +524,30 @@ class InvoiceGrid(tk.Frame):
             "count": len(real),
         }
 
+    # ── v7.7: the Bar Code column shows the 5-digit SYSTEM barcode ──────
+    # (short, the same on every label — easy to read out and to search).
+    # What was scanned is still kept on the line and saved as before.
+    # Settings ▸ Sales ▸ "Bar Code column shows": system / scanned.
+    def _sys_codes(self):
+        cache = getattr(self, "_sys_cache", None)
+        if cache is None or cache[0] is not self.products:
+            cache = (self.products, {p.get("product_id"): str(p.get("system_barcode") or "").strip()
+                                     for p in (self.products or [])})
+            self._sys_cache = cache
+        return cache[1]
+
+    def shown_barcode(self, ln):
+        own = str(ln.get("barcode") or "")
+        if not ln.get("product_id"):
+            return own
+        try:
+            mode = str(self.cfg.get("grid_barcode_show", "system") or "system") if self.cfg else "system"
+        except Exception:
+            mode = "system"
+        if mode == "scanned":
+            return own
+        return self._sys_codes().get(ln.get("product_id")) or own
+
     def find_line(self, text=None, next_=False):
         """Select the (next) line whose code / name / barcode has the text.
         → its index, or None."""
@@ -532,7 +556,8 @@ class InvoiceGrid(tk.Frame):
             return None
         hits = [i for i, ln in enumerate(self.lines) if ln.get("product_id") and q in (
             "%s %s %s %s" % (ln.get("product_code") or "", ln.get("product_name_en") or "",
-                             ln.get("product_name_ar") or "", ln.get("barcode") or "")).lower()]
+                             ln.get("product_name_ar") or "", ln.get("barcode") or "")
+            + " " + self.shown_barcode(ln)).lower()]
         if not hits:
             return None
         cur = self._iid_idx(self.tree.focus()) if next_ else None
@@ -682,7 +707,7 @@ class InvoiceGrid(tk.Frame):
             if not bbox:
                 return
         x, y, w, h = bbox
-        var = tk.StringVar(value=self.lines[idx].get("barcode", ""))
+        var = tk.StringVar(value=self.shown_barcode(self.lines[idx]))
         e = tk.Entry(self.tree, textvariable=var, font=("Segoe UI", 10),
                      relief="solid", bd=1, justify="center")
         e.place(x=x, y=y, width=max(w, 110), height=h)

@@ -272,7 +272,8 @@ DEFAULT_SETTINGS = {
     "window_width":     1280,
     "window_height":    780,
     "window_maximized": False,
-    "doc_window_maximized": False,  # v7.6: transaction windows open as a big normal window
+    "doc_window_maximized": False,
+    "grid_barcode_show": "system",  # v7.7: item grid / POS Bar Code column = 5-digit system barcode  # v7.6: transaction windows open as a big normal window
     "sidebar_width":    220,
     "date_format":      "dd/MM/yyyy",
     "decimal_places":   2,

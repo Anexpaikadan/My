@@ -18,6 +18,9 @@ Billing, POS, inventory, accounts and HR for shops in 🇸🇦 Saudi Arabia, �
   (Chart of Accounts ▸ ⊕ Add default groups).
 - **Product ▸ 🖨 Print at:** tick Warehouse 1 / Warehouse 2 / Kitchen 1 … and
   each item of a saved bill prints at its own station.
+- **POS** opens full size inside a normal window with a **—** minimize
+  button. The **Bar Code** column of every item grid and the POS bill shows
+  the short 5-digit system barcode.
 
 ## ✨ v7.6 — UI/UX pass
 

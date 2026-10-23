@@ -184,6 +184,20 @@ def next_code(parent_id, by=None):
     kids = sorted((by[c]["code"] for c in p["children"] if by[c]["code"].isdigit()), key=lambda x: (len(x), int(x)))
     step = _step(p["code"])
     prefix = p["code"].rstrip("0") or p["code"]
+    if step:
+        # v7.7: sub-groups like 5001 … 5005 do not set the numbering of a
+        # 5000 group's ledgers (5100, 5200 …) — only codes on its step do
+        kids = [k for k in kids if int(k) % step == 0]
+    elif kids and not kids[-1].startswith(prefix):
+        # a group whose own code has no zero left (1011 Cash-in-Hand) carries
+        # on the numbering of the ledgers filed under it (1100, 1150 → 1160)
+        last = kids[-1]
+        zeros = len(last) - len(last.rstrip("0"))
+        kstep = 10 ** zeros if zeros else 1
+        n = int(last) + kstep
+        while str(n).zfill(len(last)) in used:
+            n += kstep
+        return str(n).zfill(len(last))
     if kids:
         width = len(kids[-1])
         n = int(kids[-1]) + (step or 1)

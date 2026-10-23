@@ -23,6 +23,13 @@ Newest first. The short guide is in the main README.md.
 - Product form ▸ 🖨 Print at: tick the warehouses / kitchens a product prints
   at (more than one allowed); nothing ticked = its category's station or the
   station that takes the rest.
+- POS opens full size INSIDE a normal window (title bar stays) and has a
+  — minimize button on its bar; it has its own taskbar button, F3 brings
+  it back.
+- Item grids (sales, purchase, returns, orders) and the POS bill show the
+  5-digit system barcode in the Bar Code column — short, the same as on the
+  label, and searchable with 🔍 line. The scanned barcode is still saved.
+  Settings ▸ Sales ▸ "Bar Code column … shows" switches back.
 
 ## ✨ v7.6.0 — UI/UX pass (desktop + phone / PDT app)
 

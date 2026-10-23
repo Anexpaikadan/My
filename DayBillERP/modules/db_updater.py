@@ -41,7 +41,9 @@ CHANGELOG = [
                "🍽 POS picture menu for restaurant / café and tailor shops: big product pictures, bill beside them.",
                "📒 Chart of Accounts: the full set of default groups (Cash-in-Hand, Bank Accounts, Sundry Debtors / "
                "Creditors, Duties & Taxes, Direct / Indirect …) — ⊕ Add default groups.",
-               "🖨 Product ▸ Print at: tick Warehouse 1 / Warehouse 2 / Kitchen … — each item prints at its station."]),
+               "🖨 Product ▸ Print at: tick Warehouse 1 / Warehouse 2 / Kitchen … — each item prints at its station.",
+               "🖥 POS: full size inside a normal window with a — minimize button; the Bar Code column of every "
+               "item grid and the POS bill shows the 5-digit system barcode."]),
     ("7.6.0", ["✨ UI/UX pass: buttons with white text are always readable (4.5:1), brand-colour focus ring, "
                "no text under 9 pt in the new windows, Print Stations columns fit.",
                "📱 Phone / PDT app: dark mode, bigger tap targets, PDT keypad reaches every tile and list row, "

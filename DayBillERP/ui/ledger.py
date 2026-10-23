@@ -96,7 +96,8 @@ class LedgerView:
             from ui import search_drop as _SD
             from modules import account_tree as _AT
             _SD.attach(self.acct_combo, self.acct_var, lambda: _AT.items(value_fmt=self._label_tree),
-                       tree=True, on_pick=lambda it: self._load(), width=440)
+                       tree=True, on_pick=lambda it: self._load(), width=440,
+                       pick_groups=False)        # a group has no ledger of its own
         except Exception:
             self.acct_combo.bind("<KeyRelease>", self._filter_accounts)
 

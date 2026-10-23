@@ -82,13 +82,16 @@ class POSWindow:
         _sw, _sh = self.win.winfo_screenwidth(), self.win.winfo_screenheight()
         _geo = "%dx%d+%d+%d" % (min(1280, int(_sw * 0.9)), min(760, int(_sh * 0.85)),
                                 max(0, (_sw - min(1280, int(_sw * 0.9))) // 2), 10)
+        # v7.7: "full screen" = full size INSIDE a normal window (title bar with
+        # — □ ✕ stays), never a borderless screen you cannot get out of
         if cfg.flag("pos_fullscreen", True):
-            try:
-                self.win.state("zoomed")
-            except Exception:
-                self.win.geometry(_geo)
+            self._maximize_win(_geo)
         else:
             self.win.geometry(_geo)
+        try:                                   # its own taskbar button, so it can be minimized
+            self.win.wm_transient("")
+        except Exception:
+            pass
 
         self._load_data()
         self._build(C)
@@ -221,7 +224,7 @@ class POSWindow:
     NAVY, STRIP, BG, LINE = "#0B1F3A", "#132B4D", "#EEF1F6", "#D5DCE6"
     BLUE, MUTED, INK = "#1D4ED8", "#475569", "#0F172A"
     # (key, heading, width, anchor)
-    POS_COLS = [("no", "#", 44, "center"), ("code", "Code", 90, "w"),
+    POS_COLS = [("no", "#", 44, "center"), ("code", "Barcode", 90, "w"),
                 ("name", "Item", 260, "w"), ("name_ar", "الاسم العربي", 180, "e"),
                 ("qty", "Qty", 70, "center"), ("unit", "Unit", 80, "center"),
                 ("rate", "Rate", 90, "e"), ("vat", "VAT", 80, "e"),
@@ -489,6 +492,11 @@ class POSWindow:
 
         rightbox = tk.Frame(top, bg=HEAD)
         rb = tk.Frame(rightbox, bg=HEAD); rb.pack(pady=(6, 2))
+        # v7.7: — minimize the POS to the taskbar (the shop PC can do other work)
+        tk.Button(rb, text="—", font=("Segoe UI", 13, "bold"), width=3,
+                  bg="#34495E", fg="white", relief="flat",
+                  cursor="hand2", activebackground="#2C3E50",
+                  command=self._minimize).pack(side="left", padx=(0, 4), ipady=4)
         tk.Button(rb, text="⚙", font=("Segoe UI", 13, "bold"), width=3,
                   bg="#34495E", fg="white", relief="flat",
                   cursor="hand2", activebackground="#2C3E50",
@@ -764,6 +772,39 @@ class POSWindow:
         self._refresh_day_info()
         self._shift_label()
         self._shrink(self.win)
+
+    def _maximize_win(self, fallback_geo):
+        try:
+            self.win.state("zoomed")                 # Windows / macOS
+            return
+        except Exception:
+            pass
+        try:
+            self.win.attributes("-zoomed", True)     # Linux window managers
+            return
+        except Exception:
+            pass
+        self.win.geometry(fallback_geo)
+
+    def _minimize(self):
+        """— on the POS bar: down to the taskbar; a click on it brings the
+        POS back as it was (bill, customer and all)."""
+        try:
+            self._close_search_dd()
+            self._close_cust_dd()
+        except Exception:
+            pass
+        try:
+            self.win.wm_transient("")
+        except Exception:
+            pass
+        try:
+            self.win.iconify()
+        except Exception as e:
+            try:
+                self.status_var.set("Can't minimize here: %s" % str(e)[:80])
+            except Exception:
+                pass
 
     def _abtn(self, parent, txt, bg, cmd, r, c):
         b = tk.Button(parent, text=txt, font=("Segoe UI", 13, "bold"), bg=bg,
@@ -2188,6 +2229,19 @@ class POSWindow:
             ln["vat_amount"] = gross_line * rate / 100.0
             ln["line_total"] = gross_line + ln["vat_amount"]
 
+    def _cart_code(self, ln):
+        """v7.7: the Code column shows the 5-digit system barcode (short and
+        the same as on the shelf label); the product code when it has none.
+        Settings ▸ Sales ▸ 'Bar Code column shows: scanned' keeps the code."""
+        if str(cfg.get("grid_barcode_show", "system") or "system") == "scanned":
+            return ln.get("product_code", "")
+        m = getattr(self, "_sysbc", None)
+        if m is None or m[0] is not self.products:
+            m = (self.products, {p.get("product_id"): str(p.get("system_barcode") or "").strip()
+                                 for p in self.products})
+            self._sysbc = m
+        return m[1].get(ln.get("product_id")) or ln.get("product_code", "")
+
     def _render_cart(self, select_pid=None, select_unit=None, select_line=None):
         if getattr(self, "_rest", None) is not None:             # v7.0: dine-in service charge line
             self._rest.sync_service()
@@ -2198,7 +2252,7 @@ class POSWindow:
             ret = ln["quantity"] < 0
             tags = ("ret",) if ret else (("offer",) if ln.get("offer_text") else ())
             self.tree.insert("", "end", iid=iid, values=(
-                idx + 1, ln["product_code"],
+                idx + 1, self._cart_code(ln),
                 ("↩ RETURN  " if ret else "") + ln["product_name_en"]
                 + (("   🏷 " + ln["offer_text"]) if ln.get("offer_text") else "")
                 + (("   📝 " + ln["note"]) if ln.get("note") else ""),
