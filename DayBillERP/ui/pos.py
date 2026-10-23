@@ -46,6 +46,12 @@ def _set_price_incl(on):
     except Exception:
         pass
 
+# v7.6 picture menu colours (light card grid, 4.5:1 text)
+PIC_BG, PIC_CHIP, PIC_ON = "#F1F5F9", "#E2E8F0", "#1D4ED8"
+PIC_INK, PIC_MUTED, PIC_EDGE, PIC_PRICE = "#0F172A", "#475569", "#CBD5E1", "#15803D"
+PIC_TILE = (140, 164)                       # one picture tile (w, h) before it stretches
+
+
 class POSWindow:
     def __init__(self, parent=None):
         C = cfg.theme()
@@ -523,8 +529,19 @@ class POSWindow:
         left = tk.Frame(body, bg="white")
         left.pack(side="left", fill="both", expand=True, padx=(0, 8))
 
-        # Favorite / quick products touch panel (category tabs + stock colours)
-        self._build_favorites(left)
+        # v7.6: restaurant / tailor shops get the PICTURE MENU — big product
+        # pictures on the left, the bill on the right; other shops keep the
+        # favourites strip over the bill
+        self._picture = self._picture_layout()
+        if self._picture:
+            cart = tk.Frame(left, bg="white", width=int(self.win.winfo_screenwidth() * 0.29))
+            self._menu_frame = tk.Frame(left, bg=PIC_BG)
+            totals_parent = cart_parent = cart      # bill + totals in one column on the right
+            strip_parent = left                     # the +/− strip runs under both
+        else:
+            # Favorite / quick products touch panel (category tabs + stock colours)
+            self._build_favorites(left)
+            totals_parent = cart_parent = strip_parent = left
 
         style = ttk.Style()
         try:
@@ -545,7 +562,7 @@ class POSWindow:
                         background=ACCENT, foreground="white")
 
         cols = [k for k, *_ in self.POS_COLS]
-        self.tree = ttk.Treeview(left, columns=cols, show="headings",
+        self.tree = ttk.Treeview(cart_parent, columns=cols, show="headings",
                                  style="POS.Treeview", selectmode="browse")
         self.tree._no_zoom = True
         self.tree._own_columns = True          # POS has its own column setting
@@ -575,9 +592,14 @@ class POSWindow:
 
         # totals at the very bottom, the +/- strip above them, the bill grid
         # takes the space that is left (nothing is cut off on a 768 screen)
-        totals = tk.Frame(left, bg="#1B3A4B"); totals.pack(fill="x", side="bottom")
-        strip = tk.Frame(left, bg="#ECF0F1", height=52)
-        strip.pack(fill="x", side="bottom"); strip.pack_propagate(False)
+        totals = tk.Frame(totals_parent, bg="#1B3A4B"); totals.pack(fill="x", side="bottom")
+        strip = tk.Frame(strip_parent, bg="#ECF0F1", height=52)
+        strip.pack(fill="x", side="bottom")
+        strip.pack_propagate(False)
+        if self._picture:
+            cart.pack(side="right", fill="y"); cart.pack_propagate(False)
+            self._menu_frame.pack(side="left", fill="both", expand=True)
+            self._build_picture_menu(self._menu_frame)
         self.tree.pack(fill="both", expand=True, side="top")
         tk.Button(strip, text="+", font=("Segoe UI", 17, "bold"), width=5,
                   bg="#27AE60", fg="white", relief="flat", cursor="hand2",
@@ -613,7 +635,11 @@ class POSWindow:
         self.balance_var = tk.StringVar(value="0.00")
         self.change_var = tk.StringVar(value="0.00")
         TB = "#1B3A4B"
-        g = tk.Frame(totals, bg=TB); g.pack(side="left", fill="y", padx=(12, 6), pady=6)
+        g = tk.Frame(totals, bg=TB)
+        if self._picture:                      # narrow bill column: totals above the big TOTAL
+            g.pack(side="top", fill="x", padx=(12, 6), pady=(6, 0))
+        else:
+            g.pack(side="left", fill="y", padx=(12, 6), pady=6)
 
         def cell(r, c, lbl, var):
             tk.Label(g, text=lbl, font=("Segoe UI", 9), bg=TB, fg="#9FC3D6").grid(
@@ -645,8 +671,8 @@ class POSWindow:
                        activeforeground="#F1C40F", bd=0, highlightthickness=0,
                        cursor="hand2").grid(row=3, column=2, columnspan=2, sticky="w",
                                             padx=(18, 0))
-        big = tk.Frame(totals, bg="#0B2533"); big.pack(side="right", fill="both", expand=True,
-                                                       padx=(6, 8), pady=6)
+        big = tk.Frame(totals, bg="#0B2533")
+        big.pack(side="top" if self._picture else "right", fill="both", expand=True, padx=(6, 8), pady=6)
         self.total_cap_var = tk.StringVar(value="TOTAL (SAR)")
         tk.Label(big, textvariable=self.total_cap_var, font=("Segoe UI", 12, "bold"),
                  bg="#0B2533", fg="#9FC3D6").pack(anchor="ne", padx=12, pady=(6, 0))
@@ -913,6 +939,194 @@ class POSWindow:
                 try:
                     im = Image.open(path)
                     im.thumbnail((size, size))
+                    cache[pid] = ImageTk.PhotoImage(im, master=self.win)
+                except Exception:
+                    cache[pid] = None
+        return {p.get("product_id"): cache.get(p.get("product_id")) for p in products}
+
+    # -- v7.6 Picture menu (restaurant / tailor) ------------------
+    def _picture_layout(self):
+        """Settings ▸ POS ▸ Screen layout: auto = pictures when the company
+        is a restaurant / café or a tailor / textiles shop."""
+        mode = str(cfg.get("pos_layout", "auto") or "auto").lower()
+        if mode in ("picture", "pictures"):
+            return True
+        if mode == "classic":
+            return False
+        try:
+            from modules import business as _biz
+            return bool(_biz.enabled() & {"restaurant", "textiles"})
+        except Exception:
+            return False
+
+    def _build_picture_menu(self, parent):
+        cats = []
+        for p in self.products:
+            c = p.get("category_name", "Other") or "Other"
+            if c not in cats:
+                cats.append(c)
+        self._pic_cats = ["★ Favourites", "All"] + sorted(cats)
+        self._pic_cat = self._pic_cats[0] if self._favourite_products()[1] else "All"
+        self._pic_page = 0
+        tabs = tk.Frame(parent, bg=PIC_BG)
+        tabs.pack(fill="x", padx=8, pady=(8, 4))
+        self._pic_tab_btns = {}
+        # category chips wrap onto more rows instead of running off the screen
+        row = tk.Frame(tabs, bg=PIC_BG); row.pack(fill="x")
+        width_left, max_w = 0, max(360, int(self.win.winfo_screenwidth() * 0.40))
+        for c in self._pic_cats:
+            est = 14 + 9 * len(c)
+            if width_left + est > max_w:
+                row = tk.Frame(tabs, bg=PIC_BG); row.pack(fill="x", pady=(4, 0))
+                width_left = 0
+            width_left += est
+            b = tk.Button(row, text=c, font=("Segoe UI", 11, "bold"), relief="flat", bd=0,
+                          bg=PIC_CHIP, fg=PIC_INK, activebackground=PIC_ON, activeforeground="white",
+                          padx=14, pady=8, cursor="hand2",
+                          command=lambda cc=c: self._pic_show(cc, 0))
+            b.pack(side="left", padx=(0, 6))
+            self._pic_tab_btns[c] = b
+        self._pic_grid = tk.Frame(parent, bg=PIC_BG)
+        self._pic_grid.pack(fill="both", expand=True, padx=8, pady=4)
+        foot = tk.Frame(parent, bg=PIC_BG); foot.pack(fill="x", padx=8, pady=(0, 6))
+        self._pic_prev = tk.Button(foot, text="◀  Back", font=("Segoe UI", 11, "bold"), bg=PIC_CHIP,
+                                   fg=PIC_INK, relief="flat", padx=16, pady=8, cursor="hand2",
+                                   command=lambda: self._pic_show(self._pic_cat, self._pic_page - 1))
+        self._pic_prev.pack(side="left")
+        self._pic_info = tk.Label(foot, text="", font=("Segoe UI", 10), bg=PIC_BG, fg=PIC_MUTED)
+        self._pic_info.pack(side="left", expand=True)
+        self._pic_next = tk.Button(foot, text="More  ▶", font=("Segoe UI", 11, "bold"), bg=PIC_ON,
+                                   fg="white", relief="flat", padx=16, pady=8, cursor="hand2",
+                                   command=lambda: self._pic_show(self._pic_cat, self._pic_page + 1))
+        self._pic_next.pack(side="right")
+        self._pic_size = None
+        self._pic_grid.bind("<Configure>", self._pic_resized)
+        self.fav_area = self._pic_grid           # older code that touches the strip keeps working
+        self.win.after(60, lambda: self._pic_show(self._pic_cat, 0))
+
+    def _pic_resized(self, event):
+        size = (event.width // PIC_TILE[0], event.height // PIC_TILE[1])
+        if size != self._pic_size and event.width > 50:
+            self._pic_size = size
+            self.win.after_idle(lambda: self._pic_show(self._pic_cat, self._pic_page))
+
+    def _pic_items(self, cat):
+        if cat.startswith("★"):
+            return self._favourite_products()[0]
+        if cat == "All":
+            return list(self.products)
+        return [p for p in self.products if (p.get("category_name", "Other") or "Other") == cat]
+
+    def _pic_show(self, cat, page=0):
+        self._pic_cat = cat
+        for c, b in self._pic_tab_btns.items():
+            on = c == cat
+            b.configure(bg=PIC_ON if on else PIC_CHIP, fg="white" if on else PIC_INK)
+        grid = self._pic_grid
+        for w in grid.winfo_children():
+            w.destroy()
+        gw, gh = max(grid.winfo_width(), PIC_TILE[0]), max(grid.winfo_height(), PIC_TILE[1])
+        cols = max(2, gw // PIC_TILE[0])
+        rows = max(1, gh // PIC_TILE[1])
+        n = cols * rows
+        items = self._pic_items(cat)
+        pages = max(1, (len(items) + n - 1) // n)
+        page = max(0, min(page, pages - 1))
+        self._pic_page = page
+        shown = items[page * n:(page + 1) * n]
+        pics = self._pic_images(shown)
+        try:
+            from modules import country as _K
+            money = lambda v: _K.money(v, sym=True)
+        except Exception:
+            money = lambda v: f"{v:,.2f}"
+        for i, p in enumerate(shown):
+            self._pic_tile(grid, p, pics.get(p.get("product_id")), money).grid(
+                row=i // cols, column=i % cols, sticky="nsew", padx=5, pady=5)
+        for c in range(cols):
+            grid.columnconfigure(c, weight=1, uniform="pic")
+        for r in range(rows):
+            grid.rowconfigure(r, weight=1, uniform="picr")
+        if not shown:
+            tk.Label(grid, text="No products in %s yet.\nAdd products (with a picture) in Products." % cat,
+                     font=("Segoe UI", 12), bg=PIC_BG, fg=PIC_MUTED, justify="center").grid(
+                row=0, column=0, columnspan=cols, pady=40)
+        self._pic_info.configure(text="%d / %d   ·   %d items" % (page + 1, pages, len(items)))
+        self._pic_prev.configure(state="normal" if page > 0 else "disabled")
+        self._pic_next.configure(state="normal" if page < pages - 1 else "disabled")
+
+    def _pic_tile(self, parent, p, img, money):
+        name = p.get("product_name_en", "") or ""
+        price = float(p.get("unit_price", 0) or 0)
+        out = bool(p.get("track_inventory", True)) and float(p.get("stock_quantity", 0) or 0) <= 0 \
+            and not getattr(self, "_rest", None)
+        card = tk.Frame(parent, bg="#FFFFFF", highlightthickness=1, highlightbackground=PIC_EDGE,
+                        cursor="hand2")
+        pic = tk.Label(card, image=img, bg="#FFFFFF", cursor="hand2") if img else \
+            tk.Label(card, text=self._initials(name), font=("Segoe UI", 22, "bold"),
+                     bg=self._cat_colour(p), fg="white", cursor="hand2", width=4, height=2)
+        pic.pack(fill="both", expand=True, padx=6, pady=(6, 2))
+        nm = tk.Label(card, text=name, font=("Segoe UI", 10, "bold"), bg="#FFFFFF", fg=PIC_INK,
+                      wraplength=PIC_TILE[0] - 20, justify="center", cursor="hand2")
+        nm.pack(fill="x", padx=6)
+        pr = tk.Label(card, text=("Out of stock" if out else money(price)),
+                      font=("Segoe UI", 12, "bold"), bg="#FFFFFF",
+                      fg="#B91C1C" if out else PIC_PRICE, cursor="hand2")
+        pr.pack(pady=(0, 6))
+        for w in (card, pic, nm, pr):
+            w.bind("<Button-1>", lambda e, pp=p: self._pic_pick(pp, card))
+            w.bind("<Enter>", lambda e: card.configure(highlightbackground=PIC_ON, highlightthickness=2))
+            w.bind("<Leave>", lambda e: card.configure(highlightbackground=PIC_EDGE, highlightthickness=1))
+        return card
+
+    def _pic_pick(self, p, card):
+        try:                                   # a short flash: the tap was taken
+            card.configure(bg="#DCFCE7")
+            self.win.after(140, lambda: card.winfo_exists() and card.configure(bg="#FFFFFF"))
+        except Exception:
+            pass
+        self._fav_add(p)
+
+    @staticmethod
+    def _initials(name):
+        parts = [w for w in str(name or "?").split() if w[:1].isalnum()]
+        return ("".join(w[0] for w in parts[:2]) or str(name or "?")[:2]).upper()
+
+    def _cat_colour(self, p):
+        palette = ("#B45309", "#0F766E", "#1D4ED8", "#9D174D", "#4D7C0F", "#6D28D9", "#B91C1C", "#0E7490")
+        c = p.get("category_name", "Other") or "Other"
+        order = [x for x in getattr(self, "_pic_cats", []) if not x.startswith("★") and x != "All"]
+        i = order.index(c) if c in order else sum(map(ord, c))      # one colour per category
+        return palette[i % len(palette)]
+
+    def _pic_images(self, products):
+        """Main picture of each product (Products ▸ Images), sized for the tile."""
+        cache = self.__dict__.setdefault("_pic_img_cache", {})
+        want = [p.get("product_id") for p in products
+                if p.get("product_id") and p.get("product_id") not in cache]
+        if want:
+            try:
+                rows = db.fetchall(
+                    "SELECT product_id, image_path, is_default FROM product_images "
+                    "WHERE product_id IN (%s) ORDER BY is_default DESC, image_id"
+                    % ",".join("?" * len(want)), tuple(want)) or []
+            except Exception:
+                rows = []
+            paths = {}
+            for r in rows:
+                paths.setdefault(r["product_id"], r.get("image_path"))
+            try:
+                from PIL import Image, ImageTk
+            except Exception:
+                Image = None
+            for pid in want:
+                cache[pid] = None
+                path = paths.get(pid)
+                if not (Image and path and os.path.exists(str(path))):
+                    continue
+                try:
+                    im = Image.open(path).convert("RGB")
+                    im.thumbnail((PIC_TILE[0] - 24, PIC_TILE[1] - 80))
                     cache[pid] = ImageTk.PhotoImage(im, master=self.win)
                 except Exception:
                     cache[pid] = None
@@ -4269,8 +4483,17 @@ class POSSettingsDialog(tk.Toplevel):
             tk.Radiobutton(sz, text=txt, value=val, variable=self.size_var,
                            font=("Segoe UI", 11), bg="white", activebackground="white",
                            selectcolor="#EAF4FA", cursor="hand2").pack(side="left", padx=6)
-        tk.Label(card, text="(size changes when POS opens next time)", font=("Segoe UI", 8),
-                 bg="white", fg="#7F8C8D").pack(anchor="w", padx=16, pady=(0, 8))
+        lay = tk.Frame(card, bg="white"); lay.pack(fill="x", padx=16, pady=(4, 4))
+        tk.Label(lay, text="Screen layout", font=("Segoe UI", 11, "bold"), bg="white",
+                 fg="#1B3A4B").pack(side="left")
+        self.layout_var = tk.StringVar(value=str(cfg.get("pos_layout", "auto") or "auto").lower())
+        for val, txt in (("auto", "Auto"), ("classic", "Classic"), ("picture", "Picture menu")):
+            tk.Radiobutton(lay, text=txt, value=val, variable=self.layout_var,
+                           font=("Segoe UI", 11), bg="white", activebackground="white",
+                           selectcolor="#EAF4FA", cursor="hand2").pack(side="left", padx=6)
+        tk.Label(card, text="Auto = big product pictures for a restaurant / café or tailor shop.\n"
+                            "(size and layout change when POS opens next time)", font=("Segoe UI", 9),
+                 bg="white", fg="#5B6472", justify="left").pack(anchor="w", padx=16, pady=(0, 8))
 
         btns = tk.Frame(self, bg="#1B3A4B"); btns.pack(fill="x", padx=14, pady=(0, 14))
         tk.Button(btns, text="More Settings…", font=("Segoe UI", 10), bg="#34495E",
@@ -4299,6 +4522,7 @@ class POSSettingsDialog(tk.Toplevel):
             for key, v in self.vars.items():
                 cfg.set(key, bool(v.get()))
             cfg.set("pos_ui_size", self.size_var.get())
+            cfg.set("pos_layout", self.layout_var.get())
             cfg.save_settings()
             if "pos_price_incl_vat" in self.vars:
                 _set_price_incl(bool(self.vars["pos_price_incl_vat"].get()))

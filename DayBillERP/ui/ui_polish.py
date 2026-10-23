@@ -117,15 +117,18 @@ def _polish_widget(w, C):
     elif cls in ("Entry", "Spinbox"):
         _polish_field(w, C)
         _enter_advances(w)
+        _left_goes_back(w)
         _select_all_on_focus(w)
         if cls == "Entry":
             _date_field(w)
             _smart_width(w)
     elif cls in ("TEntry", "TSpinbox"):
         _enter_advances(w)
+        _left_goes_back(w)
         _select_all_on_focus(w)
     elif cls == "TCombobox":
         _enter_advances(w)
+        _left_goes_back(w)
     elif cls in ("Text", "Listbox"):
         _polish_field(w, C)          # focus ring only; Enter stays native
     elif cls == "Treeview":
@@ -320,6 +323,65 @@ def _enter_advances(w):
 
     w.bind("<Return>", advance)
     w.bind("<KP_Enter>", advance)
+
+
+_FIELD_CLASSES = ("Entry", "TEntry", "TCombobox", "Spinbox", "TSpinbox")
+
+
+def _in_txn(w):
+    """True inside a transaction window (it carries the connector bar)."""
+    m = w
+    while m is not None:
+        if getattr(m, "_txn_bar", None) is not None:
+            return True
+        m = getattr(m, "master", None)
+    return False
+
+
+def _left_goes_back(w):
+    """v7.6: in a transaction window ← at the start of a box goes back to
+    the box before it (the mirror of Enter = next box). Anywhere else, or
+    with the cursor inside the text, ← moves the cursor as usual."""
+    try:
+        if w.master is not None and w.master.winfo_class() == "Treeview":
+            return                         # grid cell editors walk cells themselves
+    except Exception:
+        return
+
+    def back(event, wd=w):
+        if event.state & 0x0005:           # Shift / Ctrl + ← keep their text meaning
+            return None
+        try:
+            if wd.selection_present():
+                if wd.index("sel.first") != 0:
+                    return None
+            elif wd.index("insert") != 0:
+                return None
+        except Exception:
+            return None
+        if not _in_txn(wd):
+            return None
+        try:
+            prev = wd.tk_focusPrev()
+            for _i in range(40):           # skip buttons / check boxes to the box before
+                if prev is None or prev is wd:
+                    return None
+                if prev.winfo_class() in _FIELD_CLASSES and str(prev.cget("state")) != "disabled" \
+                        and prev.winfo_ismapped():
+                    break
+                prev = prev.tk_focusPrev()
+            else:
+                return None
+            prev.focus_set()
+            try:
+                prev.select_range(0, "end")
+            except Exception:
+                pass
+            return "break"
+        except Exception:
+            return None
+
+    w.bind("<Left>", back, add="+")
 
 
 def _enter_invokes(w):
@@ -837,13 +899,29 @@ def _popup_cap(w):
         return int(mw * 0.86), int(mh * 0.91)
 
 
+def _doc_max_on():
+    """Settings ▸ System ▸ 'Open transaction windows maximized' (off by default)."""
+    try:
+        return cfg.flag("doc_window_maximized", False)
+    except Exception:
+        return False
+
+
+def _doc_cap(w):
+    """v7.6: transaction windows (sales, purchase, returns, orders) open
+    as a big NORMAL window — a margin of desktop shows round them and the
+    Windows maximize button still makes them full size."""
+    mw, mh = _max_client(w)
+    return int(mw * 0.94), int(mh * 0.94)
+
+
 def _limits(w, rw=0, rh=0):
     """How big a window may open: document windows (sales, purchase …)
     up to the whole desktop; every other pop-up up to the normal size —
     a bit more only when its fields really need it (never maximized)."""
     mw, mh = _max_client(w)
     if getattr(w, "_doc_window", False):
-        return mw, mh
+        return _doc_cap(w)
     cw, ch = _popup_cap(w)
     return (min(mw, max(cw, rw)), min(mh, max(ch, rh)))
 
@@ -923,17 +1001,20 @@ def _place_window(w, placed):
         size = _fit_size(w)
         ww, wh = size or (w.winfo_width(), w.winfo_height())
         if getattr(w, "_doc_window", False):
-            # sales / purchase / return / quotation: the item grid needs
-            # the room — on a small screen they open maximized
+            # sales / purchase / return / quotation: a big normal window
+            # (v7.6); full size only when the setting asks for it
             mw, mh = _max_client(w)
             try:
                 resizable = any(w.resizable())
             except Exception:
                 resizable = True
-            if resizable and (ww >= mw * 0.94 or wh >= mh * 0.97):
+            if _doc_max_on() and resizable:
                 w._daybill_max = True
                 _maximize(w)
                 return
+            mw, mh = _doc_cap(w)
+            if ww > mw or wh > mh:
+                placed = False             # shrunk to the normal size: centre it again
         else:
             # every other pop-up: a normal window (like the Product window)
             mw, mh = _limits(w, w.winfo_reqwidth(), w.winfo_reqheight())

@@ -89,6 +89,42 @@ class AccountingView:
         self._build_pl(self.t_pl, C)
         self._build_bs(self.t_bs, C)
 
+    def _add_default_groups(self):
+        """v7.7: Cash-in-Hand, Bank Accounts, Sundry Debtors / Creditors,
+        Duties & Taxes, Direct / Indirect Income and Expenses …"""
+        try:
+            from modules import permissions as _perm
+            if not _perm.can("accounts", "edit"):
+                messagebox.showwarning("Chart of Accounts", "Your user type can't change accounts.")
+                return
+        except Exception:
+            pass
+        if not messagebox.askyesno(
+                "Add default groups",
+                "Add the standard account groups?\n\n"
+                "Assets › Cash-in-Hand · Bank Accounts · Sundry Debtors · Stock-in-Hand · "
+                "Loans & Advances · Deposits · Investments\n"
+                "Liabilities › Sundry Creditors · Duties & Taxes · Provisions & Payroll · Loans\n"
+                "Equity › Capital Account · Reserves & Surplus\n"
+                "Revenue › Sales Accounts · Direct Income · Indirect Income\n"
+                "Expenses › Direct Expenses · Employee Costs · Administrative · "
+                "Selling & Distribution · Financial Charges\n\n"
+                "DayBill's own ledgers go into their group; ledgers you moved stay "
+                "where they are. Account codes do not change."):
+            return
+        try:
+            from modules import account_tree as _AT
+            n = _AT.add_default_groups()
+        except Exception as e:
+            messagebox.showerror("Add default groups", str(e)[:300])
+            return
+        self._load_coa()
+        try:
+            self._coa_open_all(True)
+        except Exception:
+            pass
+        messagebox.showinfo("Add default groups", "Done — %d groups in the chart of accounts." % n)
+
     # ── Chart of Accounts ─────────────────────────────────────
     def _build_coa(self, parent, C):
         """v7.0: the chart of accounts as a TREE — every ledger under its
@@ -124,6 +160,9 @@ class AccountingView:
             tk.Button(bar, text=txt, font=("Segoe UI", 9), bg=C["content_bg"], fg=C["primary"],
                       relief="flat", cursor="hand2", bd=0,
                       command=lambda o=opn: self._coa_open_all(o)).pack(side="left", padx=(0, 6))
+        tk.Button(bar, text="⊕ Add default groups", font=("Segoe UI", 9), bg=C["content_bg"],
+                  fg=C["primary"], relief="flat", cursor="hand2", bd=0,
+                  command=self._add_default_groups).pack(side="left", padx=(6, 6))
         card = tk.Frame(parent, bg=C["card_bg"],
                         highlightbackground=C["border"], highlightthickness=1)
         card.pack(fill="both", expand=True)

@@ -693,6 +693,7 @@ class InvoiceGrid(tk.Frame):
         e.bind("<Return>", lambda ev: self._barcode_enter(idx, var))
         e.bind("<KP_Enter>", lambda ev: self._barcode_enter(idx, var))
         e.bind("<Escape>", self._esc_editor)       # cancel the cell only
+        self._bind_arrows(e, idx, "barcode", var)
 
     def _resolve_barcode(self, code):
         """
@@ -833,6 +834,7 @@ class InvoiceGrid(tk.Frame):
         e.bind("<KP_Enter>", lambda ev: self._product_enter(idx, var))
         e.bind("<Down>", lambda ev: self._dropdown_focus())
         e.bind("<Escape>", self._esc_editor)       # cancel the cell only
+        self._bind_arrows(e, idx, "product", var)
         if prefill:
             # carried over from the barcode cell — show matches right away
             self.after(10, lambda: self._show_dropdown(
@@ -1281,12 +1283,128 @@ class InvoiceGrid(tk.Frame):
         e.bind("<Return>", lambda ev: self._number_enter(idx, key, var))
         e.bind("<KP_Enter>", lambda ev: self._number_enter(idx, key, var))
         e.bind("<Escape>", self._esc_editor)       # cancel the cell only
+        self._bind_arrows(e, idx, key, var)
         if key == "qty":
             # Smart Multi-Unit System: Space inside Quantity CYCLES the
             # unit (Piece → Box → Carton → …) in place — no dialog box.
             # The typed quantity is preserved and a small badge shows the
             # unit that just became active.
             e.bind("<space>", lambda ev: (self._cycle_unit_inline(idx), "break")[1])
+
+    # ── v7.6: arrow keys walk the cells (Excel-style) ──────────────
+    # ← at the start of a cell (or with the whole value selected) goes back
+    # one cell: Rate → Qty → Product → Bar Code → the Rate of the row above.
+    # → at the end of a Bar Code / Qty / Rate cell goes forward one cell.
+    # A number typed in Qty / Rate is kept when you leave with an arrow.
+    # ↑ / ↓ in Qty / Rate go to the same cell of the row above / below.
+    CELL_ORDER = ("barcode", "product", "qty", "rate")
+
+    def _cells(self):
+        return [k for k in self.CELL_ORDER if not self._hidden(k)]
+
+    def _open_cell(self, idx, key):
+        if key == "barcode":
+            self._edit_barcode(idx)
+        elif key == "product":
+            self._edit_product(idx)
+        else:
+            self._edit_number(idx, key)
+
+    def _neighbour(self, idx, key, step):
+        cells = self._cells()
+        if key not in cells:
+            return None
+        i = cells.index(key) + step
+        while True:
+            if i < 0:
+                idx, i = idx - 1, len(cells) - 1
+            elif i >= len(cells):
+                idx, i = idx + 1, 0
+            if idx < 0 or idx >= len(self.lines):
+                return None
+            k = cells[i]
+            # an empty row has no Qty / Rate yet: skip to its Product / Bar Code
+            if k in ("qty", "rate") and not self.lines[idx].get("product_id"):
+                i += step
+                continue
+            return idx, k
+
+    def _keep_number(self, idx, key, var):
+        """Leaving Qty / Rate with an arrow keeps what was typed (no flow)."""
+        if key not in ("qty", "rate") or idx >= len(self.lines):
+            return
+        ln = self.lines[idx]
+        if not ln.get("product_id"):
+            return
+        try:
+            val = float(var.get())
+        except ValueError:
+            val = _loose_number(var.get())
+        if key == "qty":
+            ln["quantity"] = val
+        elif abs(val - float(ln.get("unit_price") or 0)) > 1e-6:
+            if key == "rate" and self.cfg is not None and self.doc_type in ("sales", "sales_return", "pos"):
+                try:
+                    if not self.cfg.flag("allow_price_edit", True):
+                        return
+                except Exception:
+                    pass
+            ln["_price_typed"] = True
+            self._manual_price(ln)
+            ln["unit_price"] = val
+        self._recalc(ln)
+
+    def _go(self, idx, key, var, target):
+        if target is None:
+            self.bell()
+            return "break"
+        self._keep_number(idx, key, var)
+        self._close_editor(); self._refresh()
+        t_idx, t_key = target
+        self.after(10, lambda: self._open_cell(t_idx, t_key))
+        return "break"
+
+    def _bind_arrows(self, e, idx, key, var):
+        def at_start(ev):
+            w = ev.widget
+            try:
+                if w.selection_present():
+                    return w.index("sel.first") == 0
+                return w.index("insert") == 0
+            except Exception:
+                return False
+
+        def at_end(ev):
+            w = ev.widget
+            try:
+                if w.selection_present():
+                    return w.index("sel.last") >= len(var.get())
+                return w.index("insert") >= len(var.get())
+            except Exception:
+                return False
+
+        def left(ev):
+            if ev.state & 0x0001:                 # Shift+← selects text as usual
+                return None
+            if not at_start(ev):
+                return None
+            return self._go(idx, key, var, self._neighbour(idx, key, -1))
+
+        def right(ev):
+            if ev.state & 0x0001 or key == "product" or not at_end(ev):
+                return None                       # Product: Enter picks the item
+            return self._go(idx, key, var, self._neighbour(idx, key, +1))
+
+        def vert(ev, step):
+            j = idx + step
+            if j < 0 or j >= len(self.lines) or not self.lines[j].get("product_id"):
+                return self._go(idx, key, var, None)
+            return self._go(idx, key, var, (j, key))
+        e.bind("<Left>", left)
+        e.bind("<Right>", right)
+        if key in ("qty", "rate"):
+            e.bind("<Up>", lambda ev: vert(ev, -1))
+            e.bind("<Down>", lambda ev: vert(ev, +1))
 
     def _check_loss_warning(self, ln):
         """Settings ▸ Sales: 'Warn when selling below cost' — flags a

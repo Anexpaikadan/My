@@ -2,6 +2,28 @@
 
 Newest first. The short guide is in the main README.md.
 
+## 🍽 v7.7.0 — arrow keys, normal-size windows, POS picture menu, account groups, Print at
+
+- Item grid of Sales / Purchase / Returns / Quotations / Orders: ← at the start
+  of a cell goes back one cell (Rate → Qty → Product → Bar Code → the row
+  above), → at the end of Bar Code / Qty / Rate goes forward; ↑ ↓ move
+  Qty / Rate between rows; a number typed is kept. In every other box of a
+  transaction window ← at the start goes back to the box before
+  (ui/invoice_grid, ui/ui_polish).
+- Transaction windows open as a big normal window (94 % of the desktop,
+  centred); Settings ▸ System ▸ "Open … full size" brings the old way back.
+  The POS keeps its own full screen.
+- POS picture menu (Settings ▸ POS ▸ Screen layout: Auto / Classic / Picture):
+  automatic for restaurant / café and textiles / tailor companies — category
+  chips, big picture tiles (initials on a category colour when there is no
+  picture), pages, the bill and totals beside them.
+- Chart of Accounts: 29 default groups (patch zzz_v770_account_groups);
+  DayBill's own ledgers filed under them, ledgers you moved stay put, codes
+  unchanged; ⊕ Add default groups runs it again.
+- Product form ▸ 🖨 Print at: tick the warehouses / kitchens a product prints
+  at (more than one allowed); nothing ticked = its category's station or the
+  station that takes the rest.
+
 ## ✨ v7.6.0 — UI/UX pass (desktop + phone / PDT app)
 
 - Desktop: any button with white text on a light colour is darkened until it

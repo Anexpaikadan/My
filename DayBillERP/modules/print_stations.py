@@ -16,6 +16,7 @@
 #
 #   stations() · save_station(data) · delete_station(id)
 #   set_category(category_id, station_id|None) · set_product(...)
+#   set_product_stations(product_id, [station_id…])   (v7.7 product form ticks)
 #   route(lines, assigned=None) → {station_id: [lines]}
 #   send(doc_kind, doc_id, assigned=None, reprint=False) → [result]
 # ============================================================
@@ -143,6 +144,33 @@ def set_product(product_id, station_id):
                    (int(station_id), int(product_id)))
 
 
+def product_map_multi():
+    """v7.7: {product_id: [station_id, …]} — a product may print at more
+    than one station (Kitchen 1 and the Juice bar; Warehouse 1 and 2)."""
+    if not ready():
+        return {}
+    out = {}
+    for r in db.fetchall("SELECT product_id, station_id FROM print_station_map "
+                         "WHERE product_id IS NOT NULL ORDER BY map_id") or []:
+        out.setdefault(r["product_id"], []).append(r["station_id"])
+    return out
+
+
+def product_stations(product_id):
+    """The stations ticked on the product form (empty = by its category)."""
+    return product_map_multi().get(int(product_id), []) if product_id else []
+
+
+def set_product_stations(product_id, station_ids):
+    """Product form ▸ Print at: replace the ticked stations of a product."""
+    if not ready():
+        return
+    db.execute("DELETE FROM print_station_map WHERE product_id=?", (int(product_id),))
+    for sid in dict.fromkeys(int(x) for x in (station_ids or []) if x):
+        db.execute("INSERT INTO print_station_map (station_id, product_id) VALUES (?,?)",
+                   (sid, int(product_id)))
+
+
 def route(lines, doc_kind=None, assigned=None):
     """{station_id: [lines]}. assigned = a station picked on the document
     (tailor / picker): every item goes there."""
@@ -153,8 +181,8 @@ def route(lines, doc_kind=None, assigned=None):
     real = [l for l in lines if l.get("product_id") and _f(l.get("quantity")) > 0]
     if assigned:
         return {int(assigned): real} if int(assigned) in by else {}
-    pmap, cmap = product_map(), category_map()
-    mapped = set(pmap.values()) | set(cmap.values())
+    pmap, cmap = product_map_multi(), category_map()
+    mapped = {x for v in pmap.values() for x in v} | set(cmap.values())
     catch_all = [s["station_id"] for s in sts if s["station_id"] not in mapped and s["kind"] != "tailor"]
     cats = {}
     ids = sorted({int(l["product_id"]) for l in real})
@@ -165,8 +193,10 @@ def route(lines, doc_kind=None, assigned=None):
     out = {}
     for l in real:
         pid = int(l["product_id"])
-        sid = pmap.get(pid) or cmap.get(cats.get(pid))
-        targets = [sid] if sid in by else catch_all
+        own = [x for x in pmap.get(pid, []) if x in by]          # ticked on the product
+        if not own and cmap.get(cats.get(pid)) in by:              # else its category
+            own = [cmap.get(cats.get(pid))]
+        targets = own or catch_all
         for t in targets:
             out.setdefault(t, []).append(l)
     return out

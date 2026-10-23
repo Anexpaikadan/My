@@ -10,7 +10,7 @@ import re
 try:                                    # one version for the whole app (config/version.py)
     from config.version import VERSION as APP_VERSION
 except Exception:
-    APP_VERSION = "7.6.0"
+    APP_VERSION = "7.7.0"
 
 # Ordered list of database patches shipped with the app.
 # (filename relative to project root, human description, version)
@@ -35,6 +35,13 @@ PATCHES = [
 
 # What changed in each version (shown in the Updates panel)
 CHANGELOG = [
+    ("7.7.0", ["⌨ Sales / Purchase / Return / Order grids: ← → walk the cells (Rate → Qty → Product → Bar Code), "
+               "↑ ↓ in Qty / Rate; ← at the start of any box of a transaction window goes back one box.",
+               "🪟 Transaction windows open as a big normal window (not full size) — POS stays full screen.",
+               "🍽 POS picture menu for restaurant / café and tailor shops: big product pictures, bill beside them.",
+               "📒 Chart of Accounts: the full set of default groups (Cash-in-Hand, Bank Accounts, Sundry Debtors / "
+               "Creditors, Duties & Taxes, Direct / Indirect …) — ⊕ Add default groups.",
+               "🖨 Product ▸ Print at: tick Warehouse 1 / Warehouse 2 / Kitchen … — each item prints at its station."]),
     ("7.6.0", ["✨ UI/UX pass: buttons with white text are always readable (4.5:1), brand-colour focus ring, "
                "no text under 9 pt in the new windows, Print Stations columns fit.",
                "📱 Phone / PDT app: dark mode, bigger tap targets, PDT keypad reaches every tile and list row, "

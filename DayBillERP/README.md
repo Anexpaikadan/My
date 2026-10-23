@@ -1,7 +1,23 @@
-# DayBill ERP  v7.6.0
+# DayBill ERP  v7.7.0
 
 Billing, POS, inventory, accounts and HR for shops in 🇸🇦 Saudi Arabia, 🇦🇪 the UAE and 🇮🇳 India.
 **VAT / GST by country · ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
+
+## 🍽 v7.7 — arrow keys, normal-size windows, POS picture menu, account groups
+
+- **← → in the item grid.** ← at the start of a cell goes back (Rate → Qty →
+  Product → Bar Code), → goes forward, ↑ ↓ move Qty / Rate between rows. In
+  the other boxes of a transaction window ← goes back to the box before.
+- **Normal-size windows.** Sales, purchase, return and order windows open as
+  a big normal window, not full screen (Settings ▸ System to change). POS
+  stays full screen.
+- **POS picture menu** for restaurants / cafés and tailor shops: big product
+  pictures by category, the bill beside them (Settings ▸ POS ▸ Screen layout).
+- **Default account groups:** Cash-in-Hand, Bank Accounts, Sundry Debtors,
+  Sundry Creditors, Duties & Taxes, Direct / Indirect Income and Expenses …
+  (Chart of Accounts ▸ ⊕ Add default groups).
+- **Product ▸ 🖨 Print at:** tick Warehouse 1 / Warehouse 2 / Kitchen 1 … and
+  each item of a saved bill prints at its own station.
 
 ## ✨ v7.6 — UI/UX pass
 

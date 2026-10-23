@@ -272,6 +272,7 @@ DEFAULT_SETTINGS = {
     "window_width":     1280,
     "window_height":    780,
     "window_maximized": False,
+    "doc_window_maximized": False,  # v7.6: transaction windows open as a big normal window
     "sidebar_width":    220,
     "date_format":      "dd/MM/yyyy",
     "decimal_places":   2,
@@ -344,7 +345,7 @@ DEFAULT_SETTINGS = {
     "time_format": "24-hour", "fiscal_year_start": "01-01",
     "country_tax_profile": "Saudi Arabia VAT 15%",
     # POS look
-    "pos_touchscreen": False, "pos_show_images": False,
+    "pos_touchscreen": False, "pos_show_images": False, "pos_layout": "auto",
     # scale export / stock
     "plu_export_path": "", "plu_export_on_save": False,
     # security

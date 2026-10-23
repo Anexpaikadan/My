@@ -2697,12 +2697,61 @@ class ProductForm:
         fav_w.pack(anchor="w", pady=(6, 0))
         self._add_tooltip(fav_w, "Shows this product as a one-touch button\n"
                                  "on the POS ★ Favourites tab.")
+        self._build_print_at(st, C, section)
 
         # (the read-only "Units & Rates Summary" table was removed — the
         #  Units & Barcodes page shows and edits the same rows)
         self._units_summary_tv = None
 
 
+
+    # ── v7.7: 🖨 Print at — the kitchens / warehouses this product prints at ──
+    def _build_print_at(self, parent, C, section):
+        self._ps_vars = {}
+        try:
+            from modules import print_stations as _PS
+            sts = [x for x in _PS.stations(active_only=True) if x.get("kind") != "tailor"]
+        except Exception:
+            return
+        if not _PS.ready():
+            return
+        section("Print at", "🖨", target=parent)
+        box = tk.Frame(parent, bg=C["content_bg"])
+        box.pack(fill="x", padx=20, pady=(4, 12))
+        if not sts:
+            tk.Label(box, text="No kitchens / warehouses yet — create them in\nSystem ▸ Print Stations.",
+                     font=("Segoe UI", 9), bg=C["content_bg"], fg=C["text_secondary"],
+                     justify="left").pack(anchor="w")
+            return
+        icons = {k: i for k, _n, i in _PS.KINDS}
+        for x in sts:
+            v = tk.BooleanVar(value=False)
+            self._ps_vars[x["station_id"]] = v
+            tk.Checkbutton(box, text="%s  %s" % (icons.get(x.get("kind"), "🖨"), x["name"]), variable=v,
+                           font=("Segoe UI", 10), bg=C["content_bg"], fg=C["text_primary"],
+                           activebackground=C["content_bg"], selectcolor="white", anchor="w",
+                           cursor="hand2").pack(fill="x")
+        tk.Label(box, text="Nothing ticked = the station of its category\n(or the station that takes the rest).",
+                 font=("Segoe UI", 9), bg=C["content_bg"], fg=C["text_secondary"],
+                 justify="left").pack(anchor="w", pady=(4, 0))
+        if self.product_id:
+            try:
+                for sid in _PS.product_stations(self.product_id):
+                    if sid in self._ps_vars:
+                        self._ps_vars[sid].set(True)
+            except Exception:
+                pass
+
+    def _save_print_at(self):
+        vars_ = getattr(self, "_ps_vars", None)
+        if not vars_ or not self.product_id:
+            return
+        try:
+            from modules import print_stations as _PS
+            keep = [sid for sid in _PS.product_stations(self.product_id) if sid not in vars_]  # tailor etc.
+            _PS.set_product_stations(self.product_id, keep + [sid for sid, v in vars_.items() if v.get()])
+        except Exception as e:
+            print("[DayBill] print stations of the product not saved:", e)
 
     def _refresh_units_summary(self):
         """Repaint the Details-tab units/rates summary from saved data
@@ -4259,6 +4308,7 @@ class ProductForm:
             except Exception:
                 pass
             _tx.commit()
+            self._save_print_at()                # v7.7: 🖨 Print at (kitchens / warehouses)
             # Settings ▸ PLU Scale ▸ export the scale file automatically
             if data.get("is_weighed") and cfg.flag("plu_export_on_save", False):
                 try:

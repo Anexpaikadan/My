@@ -128,6 +128,10 @@ SECTIONS = [
         F("pos_fullscreen", "Full Screen POS", "check"),
         F("pos_show_favorites", "Show Favorite Products", "check"),
         F("pos_show_images", "Show Product Pictures On Favorite Buttons", "check"),
+        F("pos_layout", "Screen Layout", "choice",
+          [("auto", "Auto — picture menu for a restaurant / café or tailor shop"),
+           ("classic", "Classic — favourites strip over the bill"),
+           ("picture", "Picture menu — big product pictures, bill on the right")]),
         F("pos_auto_focus_barcode", "Auto Focus Barcode", "check"),
         F("pos_auto_print", "Auto Print Receipt", "check"),
         F("pos_print_format", "Receipt Format", "choice",
@@ -304,6 +308,7 @@ SECTIONS = [
         F("app_subtitle", "Sub name under “DayBill ERP” (sidebar) — empty = Billing & Inventory Management"),
         F("sidebar_collapsed", "Side menu folded to icons (☰ in the top bar opens / folds it)", "check"),
         F("win11_frame", "Windows 11 window frame (white title bar, round corners)", "check"),
+        F("doc_window_maximized", "Open Sales / Purchase / Return windows full size (off = a big normal window)", "check"),
         F("ui_compact", "Compact window headers + clear window edges and shadows (v6.7)", "check"),
         F("ui_form_style", "Tally-style entry boxes: example text, blue focus, red note under a wrong box (v6.8)", "check"),
         F("after_save_mode", "After saving an entry (Sales, Purchase, Returns, Receipt, Voucher, "

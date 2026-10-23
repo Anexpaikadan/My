@@ -205,3 +205,23 @@ def next_code(parent_id, by=None):
         if cand not in used:
             return cand
         i += 1
+
+
+# ── v7.7: the full set of default groups ─────────────────────
+DEFAULT_GROUPS_PATCH = "zzz_v770_account_groups_patch.sql"
+
+
+def add_default_groups():
+    """Add the standard groups (Cash-in-Hand, Bank Accounts, Sundry Debtors
+    / Creditors, Duties & Taxes, Direct / Indirect Income and Expenses …)
+    and file DayBill's own ledgers under them. Ledgers you moved yourself
+    stay put; codes never change. Returns how many groups there are now."""
+    import os
+    from modules import db_migrate
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                        "database", "patches", DEFAULT_GROUPS_PATCH)
+    db_migrate._run_file(path)
+    try:
+        return int(db.execute_scalar("SELECT COUNT(*) FROM accounts WHERE ISNULL(is_group,0)=1") or 0)
+    except Exception:
+        return 0
