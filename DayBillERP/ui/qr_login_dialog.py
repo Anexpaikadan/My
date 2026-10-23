@@ -77,20 +77,23 @@ class QrLoginDialog:
                                  fg=C["text_secondary"], anchor="w", justify="left", wraplength=400)
         self.mods_lbl.pack(fill="x", pady=(6, 0))
         self.mods_btn = tk.Button(left, text="Give basic phone modules (Product Info, Price Check, Stock Count)",
-                                  font=("Segoe UI", 8), relief="flat", bg=C["card_bg"], cursor="hand2",
+                                  font=("Segoe UI", 9), relief="flat", bg=C["card_bg"], cursor="hand2",
                                   command=self._give_modules)
         tk.Label(left, text="⚠ Anyone holding this QR can sign in as this user — treat it like a password. "
-                            "Making a new QR stops the old one at once.", font=("Segoe UI", 8),
+                            "Making a new QR stops the old one at once.", font=("Segoe UI", 9),
                  bg=C["content_bg"], fg=C["danger"], anchor="w", justify="left", wraplength=420).pack(fill="x",
                                                                                                       pady=(10, 0))
         self.msg_var = tk.StringVar()
-        tk.Label(self.win, textvariable=self.msg_var, font=("Segoe UI", 9, "bold"), bg=C["content_bg"],
-                 fg="#047857", anchor="w", wraplength=680, justify="left").pack(fill="x", padx=16)
+        msg_lbl = tk.Label(self.win, textvariable=self.msg_var, font=("Segoe UI", 9, "bold"), bg=C["content_bg"],
+                           fg="#047857", anchor="w", wraplength=680, justify="left")
+        msg_lbl.pack(fill="x", padx=16)
+        self.msg_var.trace_add("write", lambda *a: msg_lbl.config(          # v7.6: failures read red
+            fg=C["danger"] if self.msg_var.get().startswith(("❌", "⚠")) else "#047857"))
         btns = tk.Frame(self.win, bg=C["content_bg"]); btns.pack(fill="x", padx=14, pady=10)
 
         def b(text, cmd, bg=None, fg="white", side="left"):
             w = tk.Button(btns, text=text, font=("Segoe UI", 9, "bold"), bg=bg or C["card_bg"],
-                          fg=fg if bg else C["text_primary"], relief="flat", padx=10, pady=6, cursor="hand2",
+                          fg=fg if (bg or fg != "white") else C["text_primary"], relief="flat", padx=10, pady=6, cursor="hand2",
                           command=cmd)
             w.pack(side=side, padx=(0, 6))
             return w

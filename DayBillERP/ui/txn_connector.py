@@ -575,7 +575,7 @@ def _tip(widget, text):
             t = tk.Toplevel(widget)
             t.overrideredirect(True)
             t.attributes("-topmost", True)
-            tk.Label(t, text=text, font=("Segoe UI", 8), bg="#111827", fg="white",
+            tk.Label(t, text=text, font=("Segoe UI", 9), bg="#111827", fg="white",
                      padx=6, pady=2).pack()
             t.geometry("+%d+%d" % (widget.winfo_rootx(),
                                    widget.winfo_rooty() + widget.winfo_height() + 2))
@@ -621,7 +621,7 @@ class TxnBar:
         words = {"add": "add", "edit": "change", "delete": "delete", "view": "open"}
 
         def btn(text, cmd, ok, fg=None, need=None):
-            b = tk.Button(inner, text=text, font=("Segoe UI", 8 if in_band else 9, "bold"),
+            b = tk.Button(inner, text=text, font=("Segoe UI", 9, "bold"),
                           bg=C["card_bg"], fg=fg or C["text_primary"], relief="flat",
                           padx=8 if in_band else 10, pady=0 if in_band else 2,
                           cursor="hand2" if ok else "arrow",
@@ -659,7 +659,7 @@ class TxnBar:
             tk.Label(inner, text="  " + " ".join(
                          ("✔" if r[a] else "✖") + a.title()
                          for a in ("view", "add", "edit", "delete")),
-                     font=("Segoe UI", 8), bg=inner["bg"],
+                     font=("Segoe UI", 9), bg=inner["bg"],
                      fg=C["text_secondary"]).pack(side="left")
 
     def _bind_keys(self, r):
@@ -909,7 +909,7 @@ class ConnectorChooser:
         foot.pack(fill="x", padx=16, pady=10)
         tk.Label(foot, text="Rights are set in Users & Rights (module per type: Sales, "
                             "Purchase, Receipt, Payment, Accounts = expenses, Journal).",
-                 font=("Segoe UI", 8), bg=C["content_bg"],
+                 font=("Segoe UI", 9), bg=C["content_bg"],
                  fg=C["text_secondary"]).pack(side="left")
         tk.Button(foot, text="Cancel", font=("Segoe UI", 10), bg=C["card_bg"],
                   relief="flat", padx=14, pady=5, highlightthickness=1,

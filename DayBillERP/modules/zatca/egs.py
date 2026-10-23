@@ -23,7 +23,7 @@ from modules.zatca import phase2 as P
 try:                                       # the one app version (config/version.py)
     from config.version import VERSION as APP_VERSION
 except Exception:
-    APP_VERSION = "7.5.0"
+    APP_VERSION = "7.6.0"
 LOG = []                                  # recent events for the ZATCA screen
 
 

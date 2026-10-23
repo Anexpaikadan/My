@@ -289,7 +289,7 @@ class MultiVoucherForm:
 
         def cell(key, title, widget_fn, side_frame=top, **pack):
             f = tk.Frame(side_frame, bg=C["primary_light"])
-            tl = tk.Label(f, text=title, font=("Segoe UI", 8), bg=C["primary_light"],
+            tl = tk.Label(f, text=title, font=("Segoe UI", 9), bg=C["primary_light"],
                           fg=C["primary"])
             tl.pack(anchor="w")
             w = widget_fn(f)
@@ -334,14 +334,14 @@ class MultiVoucherForm:
             f, textvariable=self.lnarr_var, font=("Segoe UI", 10), relief="solid", bd=1),
             side_frame=bot, fill="x", expand=True)
         bf = tk.Frame(bot, bg=C["primary_light"]); bf.pack(side="left")
-        tk.Label(bf, text=" ", font=("Segoe UI", 8), bg=C["primary_light"]).pack()
+        tk.Label(bf, text=" ", font=("Segoe UI", 9), bg=C["primary_light"]).pack()
         self.add_btn = tk.Button(bf, text="＋ Add Line", font=("Segoe UI", 9, "bold"),
                                  bg=C["primary"], fg="white", relief="flat", padx=12, pady=3,
                                  cursor="hand2", command=self._add_line)
         self.add_btn.pack(side="left")
-        self.vat_btn = tk.Button(bf, text="+VAT", font=("Segoe UI", 8), relief="flat",
+        self.vat_btn = tk.Button(bf, text="+VAT", font=("Segoe UI", 9), relief="flat",
                                  bg=C["card_bg"], cursor="hand2", command=self._fill_vat)
-        self.bal_btn = tk.Button(bf, text="⚖ Balance", font=("Segoe UI", 8, "bold"), relief="flat",
+        self.bal_btn = tk.Button(bf, text="⚖ Balance", font=("Segoe UI", 9, "bold"), relief="flat",
                                  bg=C["card_bg"], cursor="hand2", command=self._balance)
         self.info_var = tk.StringVar()
         tk.Label(ed, textvariable=self.info_var, font=("Segoe UI", 9), bg=C["primary_light"],
@@ -397,7 +397,7 @@ class MultiVoucherForm:
         tk.Label(fl, textvariable=self.balance_var, font=("Segoe UI", 11, "bold"),
                  bg=C["card_bg"], fg=C["text_primary"], anchor="w").pack(fill="x")
         self.words_var = tk.StringVar()
-        tk.Label(fl, textvariable=self.words_var, font=("Segoe UI", 8, "italic"),
+        tk.Label(fl, textvariable=self.words_var, font=("Segoe UI", 9, "italic"),
                  bg=C["card_bg"], fg=C["text_secondary"], anchor="w").pack(fill="x")
         self.status_var = tk.StringVar()
         tk.Label(fl, textvariable=self.status_var, font=("Segoe UI", 9),

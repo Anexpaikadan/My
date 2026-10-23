@@ -154,7 +154,7 @@ class LinePicker:
         tk.Button(bot, text="✔ Load picked items", relief="flat", padx=14, bg=C["primary"], fg="white",
                   font=("Segoe UI", 9, "bold"), command=self.ok).pack(side="right", padx=6)
         tk.Label(self.win, text="Space = pick / unpick · double-click Qty or Enter = change it · "
-                                "quantities never go above what is left", font=("Segoe UI", 8),
+                                "quantities never go above what is left", font=("Segoe UI", 9),
                  bg=C["content_bg"], fg=C["text_secondary"]).pack(anchor="w", padx=12)
         self.paint()
         qe.focus_set()

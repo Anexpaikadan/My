@@ -90,7 +90,7 @@ const WORDS = {
     "Allow below cost": "السماح بأقل من التكلفة", "tap to type": "اضغط للكتابة", "margin": "الهامش", "new prices": "أسعار جديدة",
     "New shelf price (with VAT) for": "سعر الرف الجديد (شامل الضريبة) لـ",
     "Type the new price of every item (tap the price)": "اكتب السعر الجديد لكل صنف (اضغط على السعر)",
-    "Scan an item, then tap its price to type the new shelf price (with VAT). The number is how many labels.": "امسح الصنف ثم اضغط السعر لكتابة سعر الرف الجديد (شامل الضريبة). الرقم = عدد الملصقات.", "order": "اطلب", "Copy AI poster prompt (ChatGPT / Gemini)": "نسخ وصف الملصق للذكاء الاصطناعي"
+    "Scan an item, then tap its price to type the new shelf price (with VAT). The number is how many labels.": "امسح الصنف ثم اضغط السعر لكتابة سعر الرف الجديد (شامل الضريبة). الرقم = عدد الملصقات.", "order": "اطلب", "Less": "أقل", "Delete": "حذف", "More": "أكثر", "Scan with camera": "مسح بالكاميرا", "Edit": "تعديل", "Copy AI poster prompt (ChatGPT / Gemini)": "نسخ وصف الملصق للذكاء الاصطناعي"
   }
 };
 const L = () => LS.get("lang", "en");
@@ -111,10 +111,13 @@ const device = () => {
 };
 
 function toast(msg, err = false, ms = 2600) {
-  const el = $("#toast"); el.textContent = msg; el.className = "show" + (err ? " err" : "");
+  const el = $("#toast"); el.setAttribute("role", err ? "alert" : "status");
+  el.textContent = msg; el.className = "show" + (err ? " err" : "");
   clearTimeout(toast._t); toast._t = setTimeout(() => el.className = "", ms);
   if (err) beep(220, 0.25);
 }
+/* v7.6: a button that is working shows a spinner and cannot be pressed twice */
+function busy(el, on) { if (!el) return; el.disabled = !!on; if (on) el.setAttribute("aria-busy", "true"); else el.removeAttribute("aria-busy"); }
 let audio;
 function beep(f = 1200, d = 0.07) {
   try {
@@ -136,18 +139,27 @@ async function api(name, { params = null, body = null, timeout = 20000 } = {}) {
   // van relay: a fresh address every time, so no saved (cached) answer of the site can get in the way
   if (RELAY) url += (url.includes("?") ? "&" : "?") + "_=" + Date.now();
   const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), timeout);
+  busyBar(1);
   const opt = { method: body ? "POST" : "GET", headers: {}, signal: ctl.signal, cache: "no-store" };
   if (S && S.token) opt.headers.Authorization = "Bearer " + S.token;
   if (body) { opt.headers["Content-Type"] = "application/json"; opt.body = JSON.stringify(body); }
   let r;
   try { r = await fetch(url, opt); }
   catch (e) { const err = new Error(navigator.onLine === false ? "No signal / network" : "Can't reach DayBill — check Wi-Fi / server"); err.offline = true; throw err; }
-  finally { clearTimeout(tm); }
+  finally { clearTimeout(tm); busyBar(-1); }
   let j = {};
   try { j = await r.json(); } catch (e) {}
   if (r.status === 401 && name !== "login") { logout(true); throw new Error(j.error || "Please sign in again"); }
   if (!r.ok) throw new Error(j.error || ("Error " + r.status));
   return j;
+}
+
+/* v7.6: thin bar on the top edge while DayBill is answering (shown only after 250 ms, so quick answers do not flicker) */
+let busyN = 0, busyT = null;
+function busyBar(d) {
+  busyN = Math.max(0, busyN + d); const el = $("#busy"); if (!el) return;
+  clearTimeout(busyT);
+  if (busyN) busyT = setTimeout(() => el.classList.add("on"), 250); else el.classList.remove("on");
 }
 
 /* ---------- send queue: nothing is lost when the network drops ---------- */
@@ -185,6 +197,7 @@ async function flush() {
 function paintQueue() {
   const el = $("#qcount"); if (!el) return;
   const n = queue().length; el.textContent = n ? `⏳ ${n}` : "✓"; el.title = n ? t("Waiting to send") : "";
+  el.setAttribute("aria-label", n ? `${n} ${t("Waiting to send")}` : t("History"));
 }
 setInterval(() => { if (queue().length) flush(); }, 20000);
 window.addEventListener("online", () => flush());
@@ -193,11 +206,24 @@ window.addEventListener("online", () => flush());
 // A PDT scanner "types" the code + Enter. When no box has the cursor (after a
 // tap somewhere), the keys go into the scan box so no character is lost.
 document.addEventListener("keydown", e => {
+  if (e.key === "Escape") {                            // v7.6: Esc / PDT back key closes the top sheet or the camera
+    const top = $$(".pick, .camera").pop();
+    if (top) { e.preventDefault(); if (top.classList.contains("camera")) $("button", top).click(); else top.remove(); }
+    return;
+  }
   const tag = (e.target.tagName || "").toLowerCase();
   if (tag === "input" || tag === "textarea" || tag === "select") return;   // the field handles it
+  const act = e.target.closest && e.target.closest("button, a, [role=button]");
+  if (act && (e.key === "Enter" || e.key === " ") && act.getAttribute("role") === "button" && !$("#scan")?.value) {
+    e.preventDefault(); act.click(); return;           // a list row picked with the PDT keypad
+  }
   const box = $("#scan");
   if (!current.onScan || !box) return;
-  if (e.key === "Enter") { e.preventDefault(); const v = box.value.trim(); box.value = ""; if (v) current.onScan(v); return; }
+  if (e.key === "Enter") {
+    const v = box.value.trim();
+    if (!v && act) return;                             // nothing scanned: Enter presses the focused button
+    e.preventDefault(); box.value = ""; if (v) current.onScan(v); return;
+  }
   if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) { e.preventDefault(); box.value += e.key; box.focus(); }
 });
 window.daybillScan = code => { if (current.onScan && code) current.onScan(String(code).trim()); };   // Android app / DataWedge
@@ -228,8 +254,8 @@ async function camera() {
 /* ---------- screens ---------- */
 function shell(title, body, { back = true, sub = "" } = {}) {
   current.onScan = null; current.billUid = null;
-  document.documentElement.dir = L() === "ar" ? "rtl" : "ltr";
-  $("#app").innerHTML = `<div class="top">${back ? `<button id="back">‹</button>` : ""}
+  document.documentElement.dir = L() === "ar" ? "rtl" : "ltr"; document.documentElement.lang = L();
+  $("#app").innerHTML = `<div class="top">${back ? `<button id="back" aria-label="${t("Back")}">${L() === "ar" ? "›" : "‹"}</button>` : ""}
     <h1>${esc(title)}${sub ? `<span class="sub">${esc(sub)}</span>` : ""}</h1>
     <button id="qcount" title="">✓</button></div>${body}`;
   if (back) $("#back").onclick = () => home();
@@ -240,7 +266,7 @@ function shell(title, body, { back = true, sub = "" } = {}) {
 /* login */
 async function login() {
   current.onScan = null;
-  document.documentElement.dir = L() === "ar" ? "rtl" : "ltr";
+  document.documentElement.dir = L() === "ar" ? "rtl" : "ltr"; document.documentElement.lang = L();
   let shop = "";
   try {
     const p = await api("ping"); shop = (p.shop || "") + (p.shop_ar ? " · " + p.shop_ar : "");
@@ -269,13 +295,13 @@ async function login() {
     const u = $("#u").value.trim(), p = $("#p").value;
     if (!RELAY && isQr(u)) { $("#u").value = ""; return qrLogin(u); }
     LS.set("device", $("#d").value.trim() || device()); LS.set("last_user", u);
-    $("#go").disabled = true;
+    busy($("#go"), true);
     try {
       const r = await api("login", { body: RELAY ? { van_code: u, pin: p, device: device() } : { username: u, password: p, device: device() } });
       S = r; LS.set("session", S);
       if (S.modules.length === 1) openModule(S.modules[0]); else home();
       flush();
-    } catch (e) { toast(e.message, true); $("#go").disabled = false; }
+    } catch (e) { toast(e.message, true); busy($("#go"), false); }
   };
   $("#go").onclick = go; $("#p").onkeydown = e => { if (e.key === "Enter") go(); };
 }
@@ -302,9 +328,9 @@ function home() {
   if (!S) return login();
   shell(S.company?.company_name_en || "DayBill", `<div class="wrap">
     <div class="muted" style="margin-bottom:10px">👤 ${esc(S.user)} · 📱 ${esc(device())}</div>
-    <div class="tiles">${S.module_list.map(m => `<div class="tile" data-k="${m.key}"><span class="ic">${m.icon}</span>
-      ${esc(L() === "ar" ? m.ar : m.en)}<small>${esc(L() === "ar" ? m.en : m.ar)}</small></div>`).join("")}
-      <div class="tile" data-k="history"><span class="ic">🕘</span>${t("History")}<small>${queue().length ? queue().length + " ⏳" : ""}</small></div>
+    <div class="tiles">${S.module_list.map(m => `<button class="tile" data-k="${m.key}"><span class="ic" aria-hidden="true">${m.icon}</span>
+      ${esc(L() === "ar" ? m.ar : m.en)}<small lang="${L() === "ar" ? "en" : "ar"}">${esc(L() === "ar" ? m.en : m.ar)}</small></button>`).join("")}
+      <button class="tile" data-k="history"><span class="ic" aria-hidden="true">🕘</span>${t("History")}<small>${queue().length ? queue().length + " ⏳" : ""}</small></button>
     </div>
     <div class="spacer"></div>
     <div class="row"><button id="lang">${L() === "ar" ? "English" : "العربية"}</button><button class="danger" id="out">${t("Sign out")}</button></div>
@@ -421,12 +447,12 @@ function scanList(k) {
   $("#send").onclick = async () => {
     if (!D.lines.length) return toast("The list is empty", true);
     if (k === "goods_in" && !D.header.supplier_id && !confirm("No supplier chosen — send for the cash supplier?")) return;
-    $("#send").disabled = true;
+    busy($("#send"), true);
     const doc = { uid: device() + "-" + k + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6), type: k,
       title: cfg.title, header: D.header,
       lines: D.lines.map(l => ({ product_id: l.product_id, unit_id: l.unit_id, unit: l.unit, factor: l.factor, qty: l.qty, cost: l.cost, sign: l.sign })) };
     const res = await enqueue(doc);
-    $("#send").disabled = false;
+    busy($("#send"), false);
     if (res && res.status !== "error") {
       toast("✔ " + (res.result || "Sent"), false, 4000);
       D = { lines: [], header: k === "goods_out" ? { reason: D.header.reason } : {}, mode: D.mode, askQty: D.askQty }; save(); scanList(k);
@@ -453,9 +479,13 @@ async function countPlan(D) {
 
 function sheet(html) {
   const p = document.createElement("div"); p.className = "pick";
-  p.innerHTML = `<div class="sheet">${html}<button style="width:100%" class="danger" data-x>✕ ${t("Back")}</button></div>`;
+  const back = document.activeElement;                 // v7.6: focus goes back where it was when the sheet closes
+  p.innerHTML = `<div class="sheet" role="dialog" aria-modal="true">${html}<button style="width:100%" class="danger" data-x>✕ ${t("Back")}</button></div>`;
+  p.remove = function () { Element.prototype.remove.call(this); try { if (back && back.isConnected) back.focus(); } catch (e) {} };
   p.onclick = e => { if (e.target === p || e.target.hasAttribute("data-x")) p.remove(); };
-  document.body.appendChild(p); return p;
+  document.body.appendChild(p);
+  setTimeout(() => { if (!p.contains(document.activeElement)) { const f = $("input, select, [tabindex], button", p); if (f) f.focus(); } }, 30);
+  return p;
 }
 function pickSupplier(cb) {
   const p = sheet(`<input id="sq" placeholder="Search supplier"><div id="sl" style="margin-top:8px"></div>`);
@@ -535,7 +565,7 @@ function jobScreen(k) {
         <div><label>${t("Note")}</label><input id="note" value="${esc(H.note || "")}"></div></div>
       <div class="row" style="margin-top:8px"><button id="low">⚠ ${t("Low stock")}</button><button id="mine">📋 ${t("Orders")}</button></div></div>`,
     labels: `<div class="card"><label>${t("Label design")}</label><select id="tpl"><option value="">…</option></select>
-      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="prn" style="width:auto;min-height:0" ${H.print ? "checked" : ""}>
+      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="prn" ${H.print ? "checked" : ""}>
         ${t("Print now on the shop label printer")}</label>
       <div class="muted">${t("Each scan adds one label. Tap the number to type how many.")}</div></div>`,
     poster: `<div class="card"><div class="seg" id="otype">${[["percent", "% off"], ["price", "New price"], ["amount", "− Amount"], ["buy_get", "Buy X get Y"], ["none", "Price only"]]
@@ -546,16 +576,16 @@ function jobScreen(k) {
       <div class="row"><div><label>${t("From")}</label><input type="date" id="st" value="${esc(H.start)}"></div>
         <div><label>${t("To")}</label><input type="date" id="en" value="${esc(H.end)}"></div></div>
       <div class="row"><div><label>${t("Size")}</label><select id="size"></select></div><div><label>${t("Design")}</label><select id="theme"></select></div></div>
-      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="mko" style="width:auto;min-height:0" ${H.create_offer ? "checked" : ""}>
+      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="mko" ${H.create_offer ? "checked" : ""}>
         ${t("Start this offer in POS and sales too")}</label>
-      <label style="display:flex;gap:8px;align-items:center;margin-top:4px"><input type="checkbox" id="prn" style="width:auto;min-height:0" ${H.print ? "checked" : ""}>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:4px"><input type="checkbox" id="prn" ${H.print ? "checked" : ""}>
         ${t("Print now on the shop printer")}</label></div>`,
     price_change: `<div class="card"><label>${t("Reason")}</label><select id="why">${(S.settings?.price_reasons || ["Other"]).map(r =>
         `<option ${H.reason === r ? "selected" : ""}>${esc(r)}</option>`).join("")}</select>
-      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="pl" style="width:auto;min-height:0" ${H.print_labels ? "checked" : ""}>
+      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="pl" ${H.print_labels ? "checked" : ""}>
         ${t("Print new shelf labels")}</label>
       <select id="tpl" style="margin-top:4px"><option value="">…</option></select>
-      <label style="display:flex;gap:8px;align-items:center;margin-top:4px"><input type="checkbox" id="low" style="width:auto;min-height:0" ${H.allow_below_cost ? "checked" : ""}>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:4px"><input type="checkbox" id="low" ${H.allow_below_cost ? "checked" : ""}>
         ${t("Allow below cost")}</label>
       <div class="muted">${t("Scan an item, then tap its price to type the new shelf price (with VAT). The number is how many labels.")}</div></div>`
   }[k];
@@ -639,10 +669,10 @@ function jobScreen(k) {
       <div class="info"><div class="nm">${esc(l.name)}</div>
         ${l.unit ? `<span class="unit" data-u="${i}">${esc(l.unit)}${l.factor !== 1 ? " ×" + nq(l.factor) : ""}${(l.units || []).length > 1 ? " ▾" : ""}</span>` : ""}
         ${k === "po" ? ` <span class="muted" data-c="${i}">${t("cost")} ${n2(l.cost)} ✎ = <b>${n2(l.qty * (l.cost || 0))}</b></span>` : ""}
-        ${k === "poster" ? ` <span class="muted" data-p="${i}">${np != null && np < l.price ? `<s>${n2(l.price)}</s> → <b style="color:var(--red)">${n2(np)}</b>` : n2(l.price)}${H.offer_type === "price" ? " ✎" : ""}</span>` : ""}
+        ${k === "poster" ? ` <span class="muted" data-p="${i}">${np != null && np < l.price ? `<s>${n2(l.price)}</s> → <b class="t-red">${n2(np)}</b>` : n2(l.price)}${H.offer_type === "price" ? " ✎" : ""}</span>` : ""}
         ${k === "labels" ? ` <span class="muted">${esc(l.barcode || t("no barcode yet — made on print"))}</span>` : ""}
-        ${k === "price_change" ? ` <span class="muted" data-np="${i}">${n2(l.price)} → <b style="color:${l.new_price != null ? (l.cost && l.new_price / (1 + (l.vat || 0) / 100) < l.cost ? "var(--red)" : "var(--green)") : "var(--muted)"}">${l.new_price != null ? n2(l.new_price) : t("tap to type")}</b> ✎${l.cost ? ` · ${t("cost")} ${n2(l.cost)}${l.new_price != null ? ` · ${t("margin")} ${Math.round((1 - l.cost / (l.new_price / (1 + (l.vat || 0) / 100))) * 100)}%` : ""}` : ""}</span>` : ""}</div>
-      ${k === "poster" ? `<button class="danger" data-x="${i}" style="min-height:42px;width:42px;padding:0">✕</button>` :
+        ${k === "price_change" ? ` <span class="muted" data-np="${i}">${n2(l.price)} → <b class="${l.new_price != null ? (l.cost && l.new_price / (1 + (l.vat || 0) / 100) < l.cost ? "t-red" : "t-green") : "t-muted"}">${l.new_price != null ? n2(l.new_price) : t("tap to type")}</b> ✎${l.cost ? ` · ${t("cost")} ${n2(l.cost)}${l.new_price != null ? ` · ${t("margin")} ${Math.round((1 - l.cost / (l.new_price / (1 + (l.vat || 0) / 100))) * 100)}%` : ""}` : ""}</span>` : ""}</div>
+      ${k === "poster" ? `<button class="danger" data-x="${i}" style="min-height:44px;width:44px;padding:0">✕</button>` :
         `<div class="qty"><button data-d="-1" data-i="${i}">−</button><input data-q="${i}" inputmode="decimal" value="${nq(l.qty)}">
         <button data-d="1" data-i="${i}">+</button></div>`}</li>`; }).join("");
     if (k === "po") $("#tot").innerHTML = `${D.lines.length} ${t("Items")}<small>${esc(S.settings?.currency || "")} ${n2(D.lines.reduce((a, l) => a + l.qty * (l.cost || 0), 0))} + ${t("VAT")}</small>`;
@@ -693,14 +723,14 @@ function jobScreen(k) {
     if (k === "po" && !H.supplier_id) return toast(t("Choose the supplier first"), true);
     if (k === "poster" && H.offer_type === "price" && D.lines.some(l => l.new_price == null)) return toast(t("Type the offer price of every product (tap the price)"), true);
     if (k === "price_change" && D.lines.some(l => l.new_price == null)) return toast(t("Type the new price of every item (tap the price)"), true);
-    $("#send").disabled = true;
+    busy($("#send"), true);
     const doc = { uid: device() + "-" + k + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6), type: k, title: cfg.title,
       header: H, lines: D.lines.map(l => ({ product_id: l.product_id, unit_id: l.unit_id, unit: l.unit, factor: l.factor, qty: l.qty,
         copies: l.qty, cost: l.cost, new_price: l.new_price, old_price: l.price })) };
     let res;
     try { res = await api("submit", { body: { doc, device: device() }, timeout: 60000 }); }
-    catch (e) { $("#send").disabled = false; return toast(e.message, true, 5000); }
-    $("#send").disabled = false;
+    catch (e) { busy($("#send"), false); return toast(e.message, true, 5000); }
+    busy($("#send"), false);
     addSent({ uid: doc.uid, type: k, title: cfg.title, status: res.status, result: res.result, at: Date.now() });
     if (res.status === "error") return toast(res.result, true, 5000);
     beep(1500, .12);
@@ -759,7 +789,7 @@ function receiveScreen(D) {
       <label>${t("Supplier invoice no.")}</label><input id="si" value="${esc(D.header.supplier_invoice || "")}">
       ${D.can_confirm ? `<div class="seg" style="margin-top:8px"><button data-c="0" class="${D.header.confirm ? "" : "on"}">📝 ${t("Draft purchase")}</button>
         <button data-c="1" class="green ${D.header.confirm ? "on" : ""}">✅ ${t("Confirmed invoice (stock in)")}</button></div>` : `<div class="muted">${t("Saved as a draft purchase — the office confirms it.")}</div>`}
-      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="cl" style="width:auto;min-height:0" ${D.header.close_po ? "checked" : ""}>
+      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="cl" ${D.header.close_po ? "checked" : ""}>
         ${t("Close the order even if items are missing")}</label>
       <div class="row" style="margin-top:8px"><button id="all">✓ ${t("Everything came")}</button><button id="other">↺ ${t("Other order")}</button></div></div>
     <ul class="lines" id="lines"></ul><div class="spacer"></div></div>
@@ -779,7 +809,7 @@ function receiveScreen(D) {
     $("#lines").innerHTML = all.map((l, i) => { const [s, ic] = st(l); const f = l.factor || 1;
       return `<li class="ln ${l.product_id === flashId ? "flash" : ""}" data-i="${i}"><span class="sign ${s === "ok" ? "plus" : s === "missing" || s === "short" ? "minus" : ""}">${ic}</span>
         <div class="info"><div class="nm">${esc(l.name)}</div><span class="muted">${t("came")} <b>${nq(l.got / f)}</b> / ${nq(l.left_base / f)} ${esc(l.unit || "")}</span></div>
-        <button data-e="${i}" style="min-height:42px">✎</button></li>`; }).join("");
+        <button data-e="${i}" style="min-height:44px">✎</button></li>`; }).join("");
     $$("button[data-e]").forEach(b => b.onclick = () => { const l = all[+b.dataset.e]; const f = l.factor || 1;
       const v = prompt(t("How many came?") + " (" + (l.unit || "") + ")", nq(l.got / f)); if (v != null) { l.got = Math.max(0, (parseFloat(v) || 0) * f); save(); paint(); } });
     const n = { ok: 0, short: 0, missing: 0, over: 0, extra: 0 }; all.forEach(l => n[st(l)[0]]++);
@@ -802,13 +832,13 @@ function receiveScreen(D) {
   $("#send").onclick = async () => {
     const all = D.lines.concat(D.extra).filter(l => l.got > 0);
     if (!all.length) return toast(t("Nothing received — scan what came"), true);
-    $("#send").disabled = true;
+    busy($("#send"), true);
     const doc = { uid: device() + "-rcv-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6), type: "receive_po",
       title: "Receive " + D.po.po_number, header: { ...D.header, po_id: D.po.po_id, po_number: D.po.po_number },
       lines: all.map(l => ({ product_id: l.product_id, unit_id: null, factor: 1, qty: l.got })) };
     let res; try { res = await api("submit", { body: { doc, device: device() }, timeout: 60000 }); }
-    catch (e) { $("#send").disabled = false; return toast(e.message, true, 5000); }
-    $("#send").disabled = false;
+    catch (e) { busy($("#send"), false); return toast(e.message, true, 5000); }
+    busy($("#send"), false);
     addSent({ uid: doc.uid, type: "receive_po", title: doc.title, status: res.status, result: res.result, at: Date.now() });
     if (res.status === "error") return toast(res.result, true, 5000);
     LS.del("draft_receive_po"); beep(1500, .12);
@@ -911,7 +941,7 @@ async function vanHome() {
       <span class="right"><span class="badge ${b.status === "applied" ? "green" : b.status === "error" ? "red" : "amber"}">${b.status === "applied" ? "✓ in DayBill" : b.status === "sent" ? "↑ sent" : esc(b.status || "waiting")}</span></span></div></div>`).join("")}
   </div>`, { back: S.module_list.length > 1 });
   $("#nb").onclick = () => CAT ? vanBill() : toast("Press Sync first to load products", true);
-  $("#sy").onclick = async () => { $("#sy").disabled = true; await syncVan(); vanHome(); };
+  $("#sy").onclick = async () => { busy($("#sy"), true); await syncVan(); vanHome(); };
   if ($("#hm")) $("#hm").onclick = home;
   if ($("#lo")) $("#lo").onclick = () => logout();
   $$("[data-b]").forEach(el => el.onclick = () => showBill(bills[+el.dataset.b]));
@@ -1092,6 +1122,42 @@ function showBill(b, fresh) {
   };
   if (fresh) { beep(1500, .12); toast("✔ " + b.number + " saved"); }
 }
+
+/* ---------- v7.6: accessibility pass on every screen ----------
+   Screens are built as HTML strings, so this one watcher fixes them all:
+   icon-only buttons get a spoken name, boxes with only a grey example get one too,
+   a label is tied to the box under it, and tappable list rows / chips can be
+   reached and pressed with the PDT arrow keys + Enter. */
+const ICON_NAMES = { "‹": "Back", "›": "Back", "−": "Less", "-": "Less", "+": "More", "📷": "Scan with camera",
+  "✕": "Delete", "✎": "Edit", "🗑": "Delete", "✓": "History" };
+function a11y(root) {
+  $$("button:not([aria-label])", root).forEach(b => {
+    const txt = b.textContent.trim();
+    if (ICON_NAMES[txt]) b.setAttribute("aria-label", t(ICON_NAMES[txt]));
+  });
+  $$("input[placeholder]:not([aria-label]), textarea[placeholder]:not([aria-label])", root).forEach(i => {
+    if (!i.id || !$(`label[for="${i.id}"]`)) i.setAttribute("aria-label", i.placeholder);
+  });
+  $$("label:not([for])", root).forEach(l => {
+    if (l.querySelector("input, select, textarea")) return;
+    const n = l.nextElementSibling;
+    if (n && /^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(n.tagName)) {
+      if (!n.id) n.id = "f" + Math.random().toString(36).slice(2, 8);
+      if (n.tagName === "BUTTON") n.setAttribute("aria-describedby", n.id + "l"), l.id = n.id + "l";
+      else l.htmlFor = n.id;
+    }
+  });
+  $$(".item[data-i], .item[data-cash], .item[data-k], [data-u], [data-c], [data-p], [data-np]", root).forEach(el => {
+    if (el.tagName === "BUTTON" || el.tagName === "INPUT" || el.hasAttribute("tabindex")) return;
+    el.tabIndex = 0; el.setAttribute("role", "button");
+  });
+}
+new MutationObserver(ms => {
+  const roots = new Set();
+  for (const m of ms) if (m.addedNodes.length) roots.add(m.target);
+  roots.forEach(r => { if (r.isConnected) a11y(r); });
+}).observe(document.body, { childList: true, subtree: true });
+document.documentElement.lang = L() === "ar" ? "ar" : "en";
 
 /* ---------- start ---------- */
 window.addEventListener("load", () => {

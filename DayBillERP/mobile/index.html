@@ -2,8 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<meta name="theme-color" content="#2563eb">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1d4ed8" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>DayBill Mobile</title>
@@ -12,8 +14,9 @@
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
-<div id="app"><div class="boot">DayBill Mobile…</div></div>
-<div id="toast"></div>
+<div id="busy" aria-hidden="true"></div>
+<main id="app"><div class="boot" role="status">DayBill Mobile…</div></main>
+<div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 <script src="config.js"></script>
 <script src="vendor/qrcode.js"></script>
 <script src="app.js"></script>

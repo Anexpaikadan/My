@@ -2,6 +2,30 @@
 
 Newest first. The short guide is in the main README.md.
 
+## ✨ v7.6.0 — UI/UX pass (desktop + phone / PDT app)
+
+- Desktop: any button with white text on a light colour is darkened until it
+  reads at 4.5:1 (the bright green Save; themes whose accent is white get the
+  brand colour); keyboard focus ring in the brand colour (ui/ui_polish).
+- No text under 9 pt in the voucher window, connector bar, QR sign-in and
+  return pickers; Print Stations columns fit (narrow columns fixed, text
+  columns share the rest), empty-state hint, readable document names.
+- QR sign-in / loyalty card notes turn red on a failure, green on success;
+  QR ⛔ Turn off shows in the danger colour.
+- Phone / PDT app: all text 4.5:1 or better (new colour tokens), dark mode
+  (follows the phone), every tap target 44 px or more, larger check boxes,
+  bottom bar stays on the bottom edge, pinch-zoom allowed.
+- PDT keypad: tiles are buttons, list rows / unit chips / cost can be reached
+  with the arrow keys and pressed with Enter; Enter presses the focused button
+  when nothing was scanned; Esc / back key closes pop-up sheets and the
+  camera, focus goes back where it was.
+- Screen readers: icon-only buttons are named (Back, Less, More, Delete,
+  Edit, Scan with camera), boxes with only a grey example get a name, labels
+  are tied to their boxes, the toast is a live region, lang / dir follow
+  Arabic.
+- Feedback: thin busy bar while DayBill answers, Send / Sign in spin and
+  cannot be pressed twice; reduced-motion respected.
+
 ## 🧾 v7.5.0 — returns & orders, print stations, loyalty card, PDT receiving
 
 - Returns: pick the bill (search), pick items / all, quantities limited to

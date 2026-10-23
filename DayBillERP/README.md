@@ -1,7 +1,18 @@
-# DayBill ERP  v7.5.0
+# DayBill ERP  v7.6.0
 
 Billing, POS, inventory, accounts and HR for shops in 🇸🇦 Saudi Arabia, 🇦🇪 the UAE and 🇮🇳 India.
 **VAT / GST by country · ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
+
+## ✨ v7.6 — UI/UX pass
+
+- **Readable everywhere.** Buttons with white text on a light colour are
+  darkened until they read (4.5:1); keyboard focus shows a ring in your
+  brand colour; no tiny (under 9 pt) text in the new windows; Print Stations
+  columns fit the screen.
+- **Phone / PDT app.** Dark mode (follows the phone), every button at least
+  44 px, the PDT keypad reaches every tile and list row (arrows + Enter),
+  Esc / back closes pop-ups, a busy bar and a spinning Send while DayBill
+  answers, pinch-zoom allowed, screen-reader names for icon buttons.
 
 ## 🧾 v7.5 — returns & orders, print stations, loyalty card, PDT receiving
 

@@ -559,8 +559,12 @@ class LoyaltyCardDialog:
                       fg="white" if txt.startswith("🔄") else C["text_primary"], padx=10, pady=5, cursor="hand2",
                       command=cmd).pack(fill="x", pady=(8, 0))
         self.msg = tk.StringVar()
-        tk.Label(self.win, textvariable=self.msg, bg=C["content_bg"], fg="#047857", wraplength=520,
-                 justify="left", font=("Segoe UI", 9, "bold")).pack(fill="x", padx=14, pady=(0, 10))
+        self.msg_lbl = tk.Label(self.win, textvariable=self.msg, bg=C["content_bg"], fg="#047857", wraplength=520,
+                                justify="left", font=("Segoe UI", 9, "bold"))
+        self.msg_lbl.pack(fill="x", padx=14, pady=(0, 10))
+        # v7.6: a failure reads red, a success green (not every note in green)
+        self.msg.trace_add("write", lambda *a: self.msg_lbl.config(
+            fg=C["danger"] if self.msg.get().startswith(("❌", "⚠")) else "#047857"))
         self._os, self._tmp = os, tempfile
 
     def new(self, quiet=False):

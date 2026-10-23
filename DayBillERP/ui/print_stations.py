@@ -16,6 +16,7 @@ from modules import permissions as perm
 
 NONE = "— not printed —"
 AUTO = "Any station without categories"
+DOC_NAMES = {"sales": "Sales", "sales_order": "Order", "pos": "POS", "restaurant": "Table", "test": "Test"}
 
 
 class PrintStationsView:
@@ -35,18 +36,24 @@ class PrintStationsView:
                                   "Sales Order is saved — kitchens, warehouse picking, tailors. Restaurant TABLE orders "
                                   "print their kitchen tickets from Restaurant ▸ Setup ▸ Kitchen stations.",
                  font=("Segoe UI", 9), bg=C["content_bg"], fg=C["text_secondary"], wraplength=1100,
-                 justify="left").pack(fill="x", padx=16)
+                 justify="left", anchor="w").pack(fill="x", padx=16)
         body = tk.PanedWindow(self.frame, orient="horizontal", bg=C["content_bg"], sashwidth=6)
         body.pack(fill="both", expand=True, padx=12, pady=8)
         left = tk.Frame(body, bg=C["card_bg"]); right = tk.Frame(body, bg=C["card_bg"])
-        body.add(left, width=720); body.add(right)
+        body.add(left, width=830, minsize=560); body.add(right, minsize=300)
         cols = ("name", "kind", "printer", "template", "copies", "docs", "who", "on")
         self.tv = ttk.Treeview(left, columns=cols, show="headings", height=10)
-        for c, t, w in (("name", "Station", 150), ("kind", "Kind", 80), ("printer", "Printer", 170),
-                        ("template", "Template", 90), ("copies", "Copies", 50), ("docs", "Prints for", 130),
-                        ("who", "Employee", 110), ("on", "On", 40)):
-            self.tv.heading(c, text=t); self.tv.column(c, width=w, anchor="w")
+        # v7.6: narrow columns keep their width, the text columns share what is left — nothing is cut off
+        for c, t, w, grow, anc in (("name", "Station", 130, True, "w"), ("kind", "Kind", 85, False, "w"),
+                                   ("printer", "Printer", 140, True, "w"), ("template", "Template", 95, False, "w"),
+                                   ("copies", "Copies", 62, False, "center"), ("docs", "Prints for", 135, True, "w"),
+                                   ("who", "Employee", 110, False, "w"), ("on", "On", 44, False, "center")):
+            self.tv.heading(c, text=t); self.tv.column(c, width=w, minwidth=w if not grow else 80,
+                                                                 stretch=grow, anchor=anc)
         self.tv.pack(fill="both", expand=True, padx=6, pady=6)
+        self.empty = tk.Label(self.tv, text="No stations yet — press  ＋ Kitchen,  ＋ Warehouse  or  ＋ Tailor  above "
+                                            "to create the first one.", font=("Segoe UI", 10), bg=C["card_bg"],
+                              fg=C["text_secondary"])
         self.tv.bind("<Double-1>", lambda e: self.edit())
         bb = tk.Frame(left, bg=C["card_bg"]); bb.pack(fill="x", padx=6, pady=(0, 6))
         for txt, cmd in (("✎ Edit", self.edit), ("🗑 Delete", self.delete), ("🖨 Test print", self.test),
@@ -56,19 +63,22 @@ class PrintStationsView:
         tk.Label(left, text="Recently printed", font=("Segoe UI", 9, "bold"), bg=C["card_bg"],
                  fg=C["text_secondary"]).pack(anchor="w", padx=8)
         self.logv = ttk.Treeview(left, columns=("time", "station", "doc", "lines", "info"), show="headings", height=6)
-        for c, t, w in (("time", "Time", 110), ("station", "Station", 120), ("doc", "Document", 140),
-                        ("lines", "Items", 50), ("info", "Result", 260)):
-            self.logv.heading(c, text=t); self.logv.column(c, width=w, anchor="w")
+        for c, t, w, grow, anc in (("time", "Time", 128, False, "w"), ("station", "Station", 120, True, "w"),
+                                   ("doc", "Document", 150, True, "w"), ("lines", "Items", 56, False, "center"),
+                                   ("info", "Result", 240, True, "w")):
+            self.logv.heading(c, text=t); self.logv.column(c, width=w, minwidth=w if not grow else 70,
+                                                                     stretch=grow, anchor=anc)
         self.logv.pack(fill="both", expand=False, padx=6, pady=(0, 6))
         tk.Label(right, text="Which categories go to which station", font=("Segoe UI", 10, "bold"),
                  bg=C["card_bg"], fg=C["primary"]).pack(anchor="w", padx=8, pady=(8, 2))
         tk.Label(right, text="Double-click a category to choose its station. A station with no categories "
                              "takes every item no other station takes (one Warehouse / Kitchen shops).",
-                 font=("Segoe UI", 8), bg=C["card_bg"], fg=C["text_secondary"], wraplength=380,
+                 font=("Segoe UI", 9), bg=C["card_bg"], fg=C["text_secondary"], wraplength=380,
                  justify="left").pack(anchor="w", padx=8)
         self.cv = ttk.Treeview(right, columns=("cat", "station"), show="headings", height=18)
-        self.cv.heading("cat", text="Category"); self.cv.column("cat", width=200)
-        self.cv.heading("station", text="Station"); self.cv.column("station", width=180)
+        self.cv.heading("cat", text="Category"); self.cv.column("cat", width=200, anchor="w")
+        self.cv.heading("station", text="Station"); self.cv.column("station", width=180, anchor="w")
+        self.cv.tag_configure("auto", foreground=C["text_secondary"])
         self.cv.pack(fill="both", expand=True, padx=6, pady=6)
         self.cv.bind("<Double-1>", lambda e: self.pick_station())
         self.msg = tk.StringVar()
@@ -96,6 +106,10 @@ class PrintStationsView:
                 s["name"], kinds.get(s["kind"], s["kind"]), s.get("printer_name") or "(PDF only)",
                 tpls.get(s["template"], s["template"]), s.get("copies") or 1, ", ".join(docs),
                 emps.get(s.get("employee_id"), ""), "✔" if s.get("is_active") else "—"))
+        if self.tv.get_children():
+            self.empty.place_forget()
+        else:
+            self.empty.place(relx=0.5, rely=0.45, anchor="center")
         names = {s["station_id"]: s["name"] for s in PS.stations(active_only=False)}
         cmap = PS.category_map()
         self.cv.delete(*self.cv.get_children())
@@ -107,11 +121,12 @@ class PrintStationsView:
         for c in cats:
             sid = cmap.get(c["category_id"])
             self.cv.insert("", "end", iid=str(c["category_id"]), values=(
-                c["category_name_en"], names.get(sid, AUTO)))
+                c["category_name_en"], names.get(sid, AUTO)), tags=() if sid in names else ("auto",))
         self.logv.delete(*self.logv.get_children())
         for r in PS.log(30):
+            kind = DOC_NAMES.get(r.get("doc_kind"), str(r.get("doc_kind") or "").replace("_", " ").title())
             self.logv.insert("", "end", values=(str(r.get("created_at"))[:16], r.get("name") or "",
-                                                "%s %s" % (r.get("doc_kind"), r.get("doc_number") or ""),
+                                                "%s %s" % (kind, r.get("doc_number") or ""),
                                                 r.get("lines"), r.get("info") or ""))
 
     def _sel(self):

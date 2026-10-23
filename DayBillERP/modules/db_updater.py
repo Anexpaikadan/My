@@ -10,7 +10,7 @@ import re
 try:                                    # one version for the whole app (config/version.py)
     from config.version import VERSION as APP_VERSION
 except Exception:
-    APP_VERSION = "7.5.0"
+    APP_VERSION = "7.6.0"
 
 # Ordered list of database patches shipped with the app.
 # (filename relative to project root, human description, version)
@@ -35,6 +35,10 @@ PATCHES = [
 
 # What changed in each version (shown in the Updates panel)
 CHANGELOG = [
+    ("7.6.0", ["✨ UI/UX pass: buttons with white text are always readable (4.5:1), brand-colour focus ring, "
+               "no text under 9 pt in the new windows, Print Stations columns fit.",
+               "📱 Phone / PDT app: dark mode, bigger tap targets, PDT keypad reaches every tile and list row, "
+               "Esc closes pop-ups, a busy bar and spinning Send while DayBill answers, pinch-zoom allowed."]),
     ("7.5.0", ["🧾 Returns: pick the bill and the items (all or some), never more than sold. Sales Orders; "
                "Load Order into Sales / Purchase Invoice with partial delivery.",
                "🍳 Print Stations: Kitchen 1 / Warehouse 1 / Tailor … each with printer and template.",

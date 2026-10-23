@@ -351,8 +351,65 @@ def _select_all_on_focus(w):
     w.bind("<FocusIn>", sel, add="+")
 
 
+# ── readable coloured buttons (v7.6, WCAG 4.5:1) ──────────────
+def _rel_lum(hex_color):
+    h = str(hex_color).lstrip("#")
+    if len(h) == 3:
+        h = "".join(ch * 2 for ch in h)
+    c = [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+    c = [v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4 for v in c]
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+
+
+def contrast(a, b):
+    """WCAG contrast ratio of two #RRGGBB colours (1 … 21)."""
+    la, lb = _rel_lum(a), _rel_lum(b)
+    return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
+
+
+def readable_bg(bg, fg, C=None, target=4.5):
+    """A button with white text on a light colour (bright green Save,
+    or a theme whose accent is white) is hard to read: give back a
+    darker shade of the same colour that reaches 4.5:1. Anything that
+    already passes, or has dark text, is returned unchanged."""
+    try:
+        if not (_is_hex(bg) and _is_hex(fg)) or _rel_lum(fg) < 0.7:
+            return bg
+        if contrast(bg, fg) >= target:
+            return bg
+        if _rel_lum(bg) > 0.8:                     # white on white: use the brand colour
+            prim = (C or cfg.theme()).get("primary", "#2563EB")
+            if _is_hex(prim) and contrast(prim, fg) >= target:
+                return prim
+        h = str(bg).lstrip("#")
+        if len(h) == 3:
+            h = "".join(ch * 2 for ch in h)
+        r, g, b_ = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+        for step in range(1, 20):
+            k = 1 - step * 0.05
+            col = "#%02X%02X%02X" % (int(r * k), int(g * k), int(b_ * k))
+            if contrast(col, fg) >= target:
+                return col
+    except Exception:
+        pass
+    return bg
+
+
 # ── tk.Button: hover + cursor + flatten ────────────────────────
 def _polish_button(w, C):
+    try:
+        bg, fg = w.cget("bg"), w.cget("fg")
+        fg = "#FFFFFF" if str(fg).lower() == "white" else fg
+        nb = readable_bg(bg, fg, C)
+        if nb != bg:
+            w.config(bg=nb)
+    except Exception:
+        pass
+    try:                                   # keyboard focus ring in the brand colour
+        if str(w.cget("highlightcolor")).lower() in ("black", "#000000", "systemwindowframe"):
+            w.config(highlightcolor=C.get("primary", "#2563EB"))
+    except Exception:
+        pass
     try:
         if not str(w.cget("cursor")):
             w.config(cursor="hand2")
