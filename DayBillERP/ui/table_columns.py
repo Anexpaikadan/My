@@ -211,6 +211,127 @@ def set_locked(t, c, on=True):
     return True
 
 
+# ── v7.9: grid design — header text, alignment, row height, colours ──
+# Kept in the table's layout:  titles {col: text}, align {col: w|center|e},
+# look {row_height, alt, head_bg, head_fg, lines, bg, fg}.
+LOOK_KEYS = ("row_height", "alt", "head_bg", "head_fg", "lines", "bg", "fg")
+ALIGNS = (("Left", "w"), ("Centre", "center"), ("Right", "e"))
+
+
+def _lay_get(t, key):
+    lay = _layout(t) or {}
+    return dict(lay.get(key) or {})
+
+
+def look_of(t):
+    return {k: v for k, v in _lay_get(t, "look").items() if k in LOOK_KEYS and v not in (None, "")}
+
+
+def titles_of(t):
+    return _lay_get(t, "titles")
+
+
+def aligns_of(t):
+    return _lay_get(t, "align")
+
+
+def _lay_set(t, key, value):
+    """Save one part of the table's layout (makes the layout if needed)."""
+    k = _key(t)
+    if not k or _off(t):
+        return False
+    if k not in _tables():
+        remember(t)
+    lay = _tables().setdefault(k, {})
+    if value:
+        lay[key] = value
+    else:
+        lay.pop(key, None)
+    t._ct_key = k
+    _write()
+    return True
+
+
+def program_title(t, c):
+    return (getattr(t, "_ct_titles0", {}) or {}).get(c) or _title(t, c)
+
+
+def set_title(t, c, text):
+    """Your own header text for a column ('' = the program's)."""
+    cur = titles_of(t)
+    text = str(text or "").strip()
+    if not text or text == program_title(t, c):
+        cur.pop(c, None)
+        text = program_title(t, c)
+    else:
+        cur[c] = text
+    _lay_set(t, "titles", cur)
+    try:
+        _O["heading"](t, c, text=text)
+    except Exception:
+        pass
+
+
+def set_align(t, c, anchor):
+    cur = aligns_of(t)
+    if anchor in ("w", "center", "e"):
+        cur[c] = anchor
+    else:
+        cur.pop(c, None)
+    _lay_set(t, "align", cur)
+    try:
+        a = cur.get(c) or (getattr(t, "_ct_anchor0", {}) or {}).get(c)
+        if a:
+            _O["column"](t, c, anchor=a)
+    except Exception:
+        pass
+
+
+def set_look(t, **look):
+    """Row height and colours of this table (None / '' = the program's)."""
+    cur = look_of(t)
+    for k, v in look.items():
+        if k not in LOOK_KEYS:
+            continue
+        if v in (None, "", 0):
+            cur.pop(k, None)
+        else:
+            cur[k] = v
+    _lay_set(t, "look", cur)
+    _apply_font(t)
+    _apply_look_extras(t)
+
+
+def _apply_titles_aligns(t):
+    for c, text in titles_of(t).items():
+        try:
+            _O["heading"](t, c, text=text)
+        except Exception:
+            pass
+    for c, a in aligns_of(t).items():
+        try:
+            _O["column"](t, c, anchor=a)
+        except Exception:
+            pass
+
+
+def _apply_look_extras(t):
+    """Alternate-row colour (the zebra tag) and grid-line colour."""
+    lk = look_of(t)
+    t._ct_line_color = lk.get("lines")
+    if lk.get("alt"):
+        try:
+            _O["tag_configure"](t, "uipolish_odd", background=lk["alt"])
+        except Exception:
+            pass
+    try:
+        g = getattr(t, "_excel_grid", None)
+        if g is not None:
+            g.schedule()
+    except Exception:
+        pass
+
+
 def _default(t):
     """What shows before the user changes anything (no optional ones)."""
     base = _base(t)
@@ -322,6 +443,8 @@ def _apply(t, fire=True):
     _set_dc(t, _effective(t, base, lay) if lay else _default(t), base)
     _apply_font(t)
     if lay:
+        _apply_titles_aligns(t)
+        _apply_look_extras(t)
         zf = _zf()
         for c, w in (lay.get("widths") or {}).items():
             if c in base:
@@ -353,8 +476,9 @@ def remember(t):
     old = _tables().get(k) or {}
     _tables()[k] = {"order": shown, "hidden": [c for c in base if c not in shown],
                     "widths": widths}
-    if old.get("font"):                     # the table's font stays
-        _tables()[k]["font"] = old["font"]
+    for part in ("font", "titles", "align", "look"):   # the table's own design stays
+        if old.get(part):
+            _tables()[k][part] = old[part]
     t._ct_key = k
     _write()
     _fire(t)
@@ -573,9 +697,10 @@ def _apply_font(t):
         if getattr(t, "_ct_style0", None) is None:
             t._ct_style0 = str(t.cget("style") or "") or "Treeview"
         spec = font_of(t)
+        lk = look_of(t) if getattr(t, "_ct_key", None) else {}
         base = t._ct_style0
         mine = getattr(t, "_ct_style", None)
-        if not spec:
+        if not spec and not lk:
             if mine and str(t.cget("style")) == mine:
                 _O["configure"](t, None, style=base)
                 for tag, f in dict(getattr(t, "_ct_tagfonts", {}) or {}).items():
@@ -585,23 +710,44 @@ def _apply_font(t):
             _SEQ[0] += 1
             mine = t._ct_style = "DBF%d.%s" % (_SEQ[0], base if base.endswith("Treeview")
                                                else "Treeview")
+        spec = spec or {}
         fam, bsize, bweight, _sl = _base_font(t)
         fam = spec.get("family") or fam
         size = int(spec.get("size") or bsize)
-        weight = "bold" if spec.get("bold") else "normal"
+        weight = "bold" if spec.get("bold") else ("bold" if bweight == "bold" and not spec else "normal")
         st = ttk.Style(t)
         f = tkfont.Font(t, family=fam, size=size, weight=weight)
         try:
             rh0 = int(st.lookup(base, "rowheight") or 0)
         except Exception:
             rh0 = 0
-        rh = max(18, f.metrics("linespace") + (12 if rh0 >= 28 else 9))
-        st.configure(mine, font=(fam, size, weight), rowheight=rh)
-        st.configure(mine + ".Heading", font=(fam, size, "bold"))
+        rh = max(18, f.metrics("linespace") + (12 if rh0 >= 28 else 9)) if spec else (rh0 or 0)
+        if lk.get("row_height"):                # v7.9: the user's row height (at 100 % text size)
+            try:
+                rh = max(16, int(round(float(lk["row_height"]) * _zf())))
+            except (TypeError, ValueError):
+                pass
+        opts = {"font": (fam, size, weight)} if spec else {}
+        if rh:
+            opts["rowheight"] = rh
+        if lk.get("bg"):
+            opts["background"] = opts["fieldbackground"] = lk["bg"]
+        if lk.get("fg"):
+            opts["foreground"] = lk["fg"]
+        st.configure(mine, **opts)
+        hopts = {"font": (fam, size, "bold")} if spec else {}
+        if lk.get("head_bg"):
+            hopts["background"] = lk["head_bg"]
+            st.map(mine + ".Heading", background=[("active", lk["head_bg"])])
+        if lk.get("head_fg"):
+            hopts["foreground"] = lk["head_fg"]
+        if hopts:
+            st.configure(mine + ".Heading", **hopts)
         if str(t.cget("style")) != mine:
             _O["configure"](t, None, style=mine)
-        for tag, tf in dict(getattr(t, "_ct_tagfonts", {}) or {}).items():
-            _O["tag_configure"](t, tag, font=_scaled(t, tf, spec, bsize))
+        if spec:
+            for tag, tf in dict(getattr(t, "_ct_tagfonts", {}) or {}).items():
+                _O["tag_configure"](t, tag, font=_scaled(t, tf, spec, bsize))
     except Exception:
         pass
 
@@ -845,7 +991,8 @@ def menu(t, x_root, y_root, c=None, popup=True):
         checks(sub2, more)
         m.add_cascade(label="➕ More columns  (profit, cost, PLU, stock, units …)", menu=sub2)
     m.add_command(label="Fit all columns to text", command=lambda: fit(t))
-    m.add_command(label="Columns…   (show, order, width, font)", command=lambda: ColumnsDialog(t))
+    m.add_command(label="▦ Grid design…   (columns, header text, align, colours, row height)",
+                  command=lambda: ColumnsDialog(t))
     m.add_cascade(label="Font  (size, design)", menu=font_menu(t, m))
     m.add_separator()
     m.add_command(label="Reset columns to default", command=lambda: reset(t),
@@ -864,7 +1011,14 @@ def menu(t, x_root, y_root, c=None, popup=True):
 
 # ── the Columns… window ──────────────────────────────────────
 class ColumnsDialog:
-    ROWS = 14
+    """v7.9 Grid design — one window for everything a table can show:
+    per column: show, header text, width, alignment, order, 🔒 read only;
+    for the table: font, size, bold, row height and colours (alternate
+    row, header back / text, grid lines, back, text). Saved for this table
+    on this PC; works in every list, report, register and entry grid."""
+    ROWS = 13
+    COLOURS = (("alt", "Alternate rows"), ("head_bg", "Header back"), ("head_fg", "Header text"),
+               ("lines", "Grid lines"), ("bg", "Back"), ("fg", "Text"))
 
     def __init__(self, tree):
         self.t = t = tree
@@ -872,35 +1026,45 @@ class ColumnsDialog:
         shown = shown_columns(t)
         zf = _zf()
         order = [c for c in shown if c in self.base] + [c for c in self.base if c not in shown]
+        al = aligns_of(t)
+        a0 = getattr(t, "_ct_anchor0", {}) or {}
         self.rows = []
         for c in order:
             try:
                 w = int(round(int(_O["column"](t, c, "width")) / zf))
             except Exception:
                 w = 100
+            try:
+                anc = al.get(c) or a0.get(c) or str(_O["column"](t, c, "anchor") or "w")
+            except Exception:
+                anc = "w"
             self.rows.append([c, tk.BooleanVar(master=t, value=c in shown),
-                              tk.StringVar(master=t, value=str(w))])
+                              tk.StringVar(master=t, value=str(w)),
+                              tk.StringVar(master=t, value=titles_of(t).get(c) or program_title(t, c)),
+                              tk.StringVar(master=t, value=dict((v, k) for k, v in ALIGNS).get(anc, "Left"))])
         lk = locked(t)
         self.locks = {c: tk.BooleanVar(master=t, value=c in lk) for c in editable(t)}
+        look = look_of(t)
+        self.look = {k: look.get(k, "") for k, _l in self.COLOURS}
         self.win = win = tk.Toplevel(t)
         t._ct_dialog = self
-        win.title("Columns  ·  الأعمدة")
+        win.title("Grid design  ·  تصميم الجدول")
         win.configure(bg="white")
         try:
             win.transient(t.winfo_toplevel())
         except Exception:
             pass
-        tk.Label(win, text="Columns of this table", font=("Segoe UI", 12, "bold"),
-                 bg="white", fg="#1F2937").pack(anchor="w", padx=14, pady=(12, 0))
-        tk.Label(win, text="Tick = show.   ▲ ▼ = move.   Width in pixels.   "
-                           "➕ = more columns (profit, cost, PLU, stock, units …).\n"
-                           "🔒 Read only = shown, but can't be typed in (e.g. the Rate always comes "
-                           "from the product).\nSaved for this table on this PC.",
-                 font=("Segoe UI", 9), bg="white", fg="#6B7280", justify="left"
-                 ).pack(anchor="w", padx=14, pady=(2, 8))
-        # font of this table: design · size · bold (v6.9.4)
-        fb = tk.Frame(win, bg="white")
-        fb.pack(fill="x", padx=14, pady=(0, 6))
+        head = tk.Frame(win, bg="#1E3A8A")
+        head.pack(fill="x")
+        tk.Label(head, text="▦  Grid design", font=("Segoe UI", 12, "bold"), bg="#1E3A8A",
+                 fg="white").pack(side="left", padx=14, pady=8)
+        tk.Label(head, text="this table · saved on this PC", font=("Segoe UI", 9), bg="#1E3A8A",
+                 fg="#BFDBFE").pack(side="right", padx=14)
+
+        # ── the table: font · row height · colours
+        top = tk.Frame(win, bg="#F8FAFC", highlightthickness=1, highlightbackground="#E2E8F0")
+        top.pack(fill="x", padx=12, pady=(10, 6))
+        r1 = tk.Frame(top, bg="#F8FAFC"); r1.pack(fill="x", padx=10, pady=(8, 4))
         cur = font_of(t) or {}
         fam0, size0, _w, _s = _base_font(t)
         self.fam_var = tk.StringVar(master=t, value=cur.get("family") or fam0)
@@ -908,18 +1072,48 @@ class ColumnsDialog:
         self.bold_var = tk.BooleanVar(master=t, value=bool(cur.get("bold")))
         self.all_var = tk.BooleanVar(master=t, value=False)
         self._font0 = (self.fam_var.get(), self.size_var.get(), self.bold_var.get())
-        tk.Label(fb, text="Font", font=("Segoe UI", 9, "bold"), bg="white",
-                 fg="#374151").pack(side="left")
-        ttk.Combobox(fb, textvariable=self.fam_var, values=FONT_FAMILIES, width=16,
-                     state="readonly").pack(side="left", padx=(6, 4))
-        tk.Spinbox(fb, from_=7, to=24, textvariable=self.size_var, width=4,
-                   font=("Segoe UI", 10), justify="right").pack(side="left", padx=4)
-        tk.Checkbutton(fb, text="Bold", variable=self.bold_var, bg="white",
-                       activebackground="white", highlightthickness=0).pack(side="left", padx=4)
-        tk.Checkbutton(fb, text="for every table", variable=self.all_var, bg="white",
-                       activebackground="white", highlightthickness=0).pack(side="left", padx=4)
+        try:
+            rh0 = int(ttk.Style(t).lookup(str(t.cget("style") or "Treeview"), "rowheight") or 0)
+        except Exception:
+            rh0 = 0
+        self.rh_var = tk.StringVar(master=t, value=str(look.get("row_height") or int(round(rh0 / zf)) or ""))
+        self._rh0 = self.rh_var.get()
+
+        def lab(p, text):
+            tk.Label(p, text=text, font=("Segoe UI", 9, "bold"), bg="#F8FAFC", fg="#334155").pack(
+                side="left", padx=(0, 4))
+        lab(r1, "Font")
+        ttk.Combobox(r1, textvariable=self.fam_var, values=FONT_FAMILIES, width=16,
+                     state="readonly").pack(side="left", padx=(0, 6))
+        lab(r1, "Size")
+        tk.Spinbox(r1, from_=7, to=24, textvariable=self.size_var, width=4,
+                   font=("Segoe UI", 10), justify="right").pack(side="left", padx=(0, 6))
+        tk.Checkbutton(r1, text="Bold", variable=self.bold_var, bg="#F8FAFC",
+                       activebackground="#F8FAFC", highlightthickness=0).pack(side="left", padx=(0, 10))
+        lab(r1, "Row height")
+        tk.Spinbox(r1, from_=16, to=60, textvariable=self.rh_var, width=4,
+                   font=("Segoe UI", 10), justify="right").pack(side="left", padx=(0, 10))
+        tk.Checkbutton(r1, text="font for every table", variable=self.all_var, bg="#F8FAFC",
+                       activebackground="#F8FAFC", highlightthickness=0).pack(side="left")
+        r2 = tk.Frame(top, bg="#F8FAFC"); r2.pack(fill="x", padx=10, pady=(0, 8))
+        lab(r2, "Colours")
+        self.swatch = {}
+        for key, text in self.COLOURS:
+            b = tk.Button(r2, text=text, font=("Segoe UI", 8), relief="flat", padx=8, pady=3,
+                          cursor="hand2", highlightthickness=1, highlightbackground="#CBD5E1",
+                          command=lambda k=key: self.pick_colour(k))
+            b.pack(side="left", padx=(0, 4))
+            self.swatch[key] = b
+        tk.Button(r2, text="↺ Program colours", font=("Segoe UI", 8), relief="flat", bg="#F8FAFC",
+                  fg="#1D4ED8", cursor="hand2", bd=0, command=self.clear_colours).pack(side="left", padx=(6, 0))
+        self._paint_swatches()
+
+        # ── the columns
+        tk.Label(win, text="Tick = show · type your own header text · ▲ ▼ = order · width in pixels"
+                           + (" · 🔒 = read only (can't be typed in)" if self.locks else ""),
+                 font=("Segoe UI", 9), bg="white", fg="#64748B").pack(anchor="w", padx=14)
         mid = tk.Frame(win, bg="white")
-        mid.pack(fill="both", expand=True, padx=10)
+        mid.pack(fill="both", expand=True, padx=10, pady=(4, 0))
         many = len(self.rows) > self.ROWS
         self.canvas = tk.Canvas(mid, bg="white", highlightthickness=0, bd=0)
         self.body = tk.Frame(self.canvas, bg="white")
@@ -944,10 +1138,9 @@ class ColumnsDialog:
             return b
         btn("Fit widths to text", self.fit).pack(side="left", padx=(10, 4), pady=8)
         btn("Reset to default", self.reset).pack(side="left", padx=4, pady=8)
-        btn("✔  OK", self.ok, True).pack(side="right", padx=(4, 10), pady=8)
+        btn("✔  Apply", self.ok, True).pack(side="right", padx=(4, 10), pady=8)
         btn("Cancel", self.cancel).pack(side="right", padx=4, pady=8)
         win.bind("<Escape>", lambda e: self.cancel())
-        win.bind("<Return>", lambda e: self.ok())
         self._draw()
         try:
             win.update_idletasks()
@@ -963,39 +1156,71 @@ class ColumnsDialog:
             pass
         win.focus_set()
 
+    # ── colours ───────────────────────────────────────────────
+    def _paint_swatches(self):
+        for key, b in self.swatch.items():
+            col = self.look.get(key) or ""
+            if col:
+                try:
+                    r, g, bb = (v // 257 for v in b.winfo_rgb(col))
+                    dark = (0.299 * r + 0.587 * g + 0.114 * bb) < 140
+                except Exception:
+                    dark = False
+                b.configure(bg=col, fg="white" if dark else "#0F172A")
+            else:
+                b.configure(bg="white", fg="#475569")
+
+    def pick_colour(self, key):
+        from tkinter import colorchooser
+        try:
+            got = colorchooser.askcolor(color=self.look.get(key) or None, parent=self.win,
+                                        title=dict(self.COLOURS)[key])
+        except Exception:
+            got = (None, None)
+        if got and got[1]:
+            self.look[key] = got[1]
+            self._paint_swatches()
+
+    def clear_colours(self):
+        for k in self.look:
+            self.look[k] = ""
+        self._paint_swatches()
+
+    # ── the column rows ───────────────────────────────────────
     def _draw(self):
         for w in self.body.winfo_children():
             w.destroy()
         keep = _keep(self.t)
-        tk.Label(self.body, text="Show   Column", font=("Segoe UI", 9, "bold"), bg="white",
-                 fg="#374151").grid(row=0, column=0, sticky="w", padx=4)
-        tk.Label(self.body, text="Width", font=("Segoe UI", 9, "bold"), bg="white",
-                 fg="#374151").grid(row=0, column=1, sticky="w")
-        if self.locks:
-            tk.Label(self.body, text="🔒 Read only", font=("Segoe UI", 9, "bold"), bg="white",
-                     fg="#374151").grid(row=0, column=4, sticky="w", padx=(4, 6))
+        heads = ["Show", "Header text", "Width", "Align", "", ""] + (["🔒"] if self.locks else [])
+        for ci, h in enumerate(heads):
+            tk.Label(self.body, text=h, font=("Segoe UI", 9, "bold"), bg="white",
+                     fg="#374151").grid(row=0, column=ci, sticky="w", padx=4)
         opt = _optional(self.t)
-        for i, (c, v, w) in enumerate(self.rows):
+        for i, (c, v, w, title, al) in enumerate(self.rows):
             r = i + 1
-            cb = tk.Checkbutton(self.body, text=("➕ " if c in opt else "") + _title(self.t, c),
-                                variable=v, bg="white",
-                                anchor="w", font=("Segoe UI", 10), width=26,
-                                activebackground="white", highlightthickness=0)
+            cb = tk.Checkbutton(self.body, variable=v, bg="white", activebackground="white",
+                                highlightthickness=0, cursor="hand2")
             if c in keep:
                 cb.configure(state="disabled")
                 v.set(True)
-            cb.grid(row=r, column=0, sticky="w", padx=2, pady=1)
+            cb.grid(row=r, column=0, padx=(6, 2))
+            e = tk.Entry(self.body, textvariable=title, width=24, font=("Segoe UI", 10), relief="solid", bd=1)
+            e.grid(row=r, column=1, sticky="w", padx=2, pady=1)
+            if c in opt:
+                tk.Label(self.body, text="➕", bg="white", fg="#94A3B8").grid(row=r, column=1, sticky="e", padx=4)
             tk.Spinbox(self.body, from_=MIN_W, to=MAX_W, increment=10, textvariable=w, width=6,
-                       font=("Segoe UI", 10), justify="right").grid(row=r, column=1, padx=6)
+                       font=("Segoe UI", 10), justify="right").grid(row=r, column=2, padx=4)
+            ttk.Combobox(self.body, textvariable=al, values=[n for n, _a in ALIGNS], width=7,
+                         state="readonly").grid(row=r, column=3, padx=2)
             tk.Button(self.body, text="▲", width=2, relief="flat", bg="#EEF2F7", bd=0,
                       state="normal" if i > 0 else "disabled",
-                      command=lambda i=i: self.move(i, -1)).grid(row=r, column=2, padx=1)
+                      command=lambda i=i: self.move(i, -1)).grid(row=r, column=4, padx=1)
             tk.Button(self.body, text="▼", width=2, relief="flat", bg="#EEF2F7", bd=0,
                       state="normal" if i < len(self.rows) - 1 else "disabled",
-                      command=lambda i=i: self.move(i, 1)).grid(row=r, column=3, padx=(1, 6))
+                      command=lambda i=i: self.move(i, 1)).grid(row=r, column=5, padx=(1, 6))
             if c in self.locks:
                 tk.Checkbutton(self.body, variable=self.locks[c], bg="white", activebackground="white",
-                               highlightthickness=0, cursor="hand2").grid(row=r, column=4, padx=(4, 6))
+                               highlightthickness=0, cursor="hand2").grid(row=r, column=6, padx=(4, 6))
 
     def move(self, i, d):
         j = i + d
@@ -1006,7 +1231,7 @@ class ColumnsDialog:
     def fit(self):
         fw = fit_widths(self.t, [r[0] for r in self.rows])
         zf = _zf()
-        for c, v, w in self.rows:
+        for c, v, w, _t, _a in self.rows:
             if c in fw:
                 w.set(str(int(round(fw[c] / zf))))
 
@@ -1015,11 +1240,11 @@ class ColumnsDialog:
         self._close()
 
     def ok(self):
-        order = [c for c, v, w in self.rows if v.get()]
+        order = [c for c, v, w, _t, _a in self.rows if v.get()]
         if not order:
             order = [self.rows[0][0]]
         zf = _zf()
-        for c, v, w in self.rows:
+        for c, v, w, _t, _a in self.rows:
             try:
                 px = max(MIN_W, min(MAX_W, int(float(w.get()))))
                 _O["column"](self.t, c, width=int(round(px * zf)))
@@ -1027,6 +1252,14 @@ class ColumnsDialog:
                 pass
         _set_dc(self.t, [c for c in order if c in self.base] or self.base[:1], self.base)
         remember(self.t)
+        anc = dict(ALIGNS)
+        a0 = getattr(self.t, "_ct_anchor0", {}) or {}
+        for c, _v, _w, title, al in self.rows:
+            if (titles_of(self.t).get(c) or program_title(self.t, c)) != title.get().strip():
+                set_title(self.t, c, title.get())
+            want = anc.get(al.get(), "w")
+            if want != (aligns_of(self.t).get(c) or a0.get(c) or "w"):
+                set_align(self.t, c, want)
         for c, v in self.locks.items():
             if bool(v.get()) != is_locked(self.t, c):
                 set_locked(self.t, c, bool(v.get()))
@@ -1037,6 +1270,11 @@ class ColumnsDialog:
                          everywhere=bool(self.all_var.get()))
         except Exception:
             pass
+        look = dict(self.look)
+        rh = self.rh_var.get().strip()
+        look["row_height"] = int(float(rh)) if rh and rh != self._rh0 else (look_of(self.t).get("row_height") or "")
+        if any(v not in ("", None) for v in look.values()) or look_of(self.t):
+            set_look(self.t, **look)
         self._close()
 
     def cancel(self):
@@ -1364,6 +1602,17 @@ def _column(self, column, option=None, **kw):
     if not getattr(self, "_ct_on", False) or getattr(self, "_own_columns", False):
         return _O["column"](self, column, option, **kw)
     column = _tr(self, column)
+    if option is None and "anchor" in kw:
+        try:                                   # v7.9: the program's alignment / the user's own
+            a0 = getattr(self, "_ct_anchor0", None)
+            if a0 is None:
+                a0 = self._ct_anchor0 = {}
+            a0[str(column)] = kw["anchor"]
+            mine = aligns_of(self).get(str(column))
+            if mine:
+                kw["anchor"] = mine
+        except Exception:
+            pass
     if option is None and "width" in kw:
         try:
             cw = kw["width"]
@@ -1379,7 +1628,19 @@ def _column(self, column, option=None, **kw):
 
 
 def _heading(self, column, option=None, **kw):
-    return _O["heading"](self, _tr(self, column), option, **kw)
+    column = _tr(self, column)
+    if "text" in kw and getattr(self, "_ct_on", False) and not getattr(self, "_own_columns", False):
+        try:                                   # v7.9: the program's title / the user's own
+            t0 = getattr(self, "_ct_titles0", None)
+            if t0 is None:
+                t0 = self._ct_titles0 = {}
+            t0[str(column)] = kw["text"]
+            mine = titles_of(self).get(str(column))
+            if mine:
+                kw["text"] = mine
+        except Exception:
+            pass
+    return _O["heading"](self, column, option, **kw)
 
 
 def _set(self, item, column=None, value=None):
@@ -1387,6 +1648,13 @@ def _set(self, item, column=None, value=None):
 
 
 def _tag_configure(self, tagname, option=None, **kw):
+    if tagname == "uipolish_odd" and "background" in kw and getattr(self, "_ct_on", False):
+        try:                                   # v7.9: the user's alternate-row colour wins
+            alt = look_of(self).get("alt")
+            if alt:
+                kw["background"] = alt
+        except Exception:
+            pass
     if "font" in kw and getattr(self, "_ct_on", False):
         try:
             tf = getattr(self, "_ct_tagfonts", None)

@@ -126,7 +126,8 @@ class ExcelGrid:
         n = 0
         for xv in xs[:-1] if len(xs) > 1 else []:
             if 0 < xv < W:
-                self._line(self._v, n, self.color).place(x=xv - 1, y=0, width=1, height=H)
+                self._line(self._v, n, getattr(self.tree, "_ct_line_color", None) or self.color).place(
+                    x=xv - 1, y=0, width=1, height=H)
                 n += 1
         for f in self._v[n:]:
             f.place_forget()
@@ -145,7 +146,8 @@ class ExcelGrid:
                 ys.append(y)
         for yv in ys:
             if 0 < yv < H:
-                self._line(self._h, m, self.color).place(x=0, y=yv - 1, width=right, height=1)
+                self._line(self._h, m, getattr(self.tree, "_ct_line_color", None) or self.color).place(
+                    x=0, y=yv - 1, width=right, height=1)
                 m += 1
         for f in self._h[m:]:
             f.place_forget()
