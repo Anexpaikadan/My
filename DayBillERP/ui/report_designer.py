@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from config import settings as cfg
 from config.database import db
 import modules.report_designer as rd
+from modules import design_options as DO
 
 # toolbox key -> real rendering type (was hardcoded to "text" for everything)
 _TYPE_OF_KEY = {
@@ -26,7 +27,7 @@ _TYPE_OF_KEY = {
 # Paper sizes in mm → pixels at ~3px/mm for the canvas preview
 PAPER = {
     "A4":   (210, 297), "A5": (148, 210), "Letter": (216, 279),
-    "80mm": (80, 200),  "58mm": (58, 200),
+    "80mm": (80, 200),  "58mm": (58, 200), "Custom": (210, 297),
 }
 PXMM = 2.2  # canvas pixels per mm
 
@@ -103,19 +104,11 @@ class ReportDesignerView:
         strip = tk.Frame(self.frame, bg=C["card_bg"], height=42)
         strip.pack(fill="x"); strip.pack_propagate(False)
         tk.Frame(self.frame, bg=C["border"], height=1).pack(fill="x")
-        tk.Label(strip, text="Document:", font=("Segoe UI", 9, "bold"),
-                 bg=C["card_bg"], fg=C["text_primary"]).pack(side="left", padx=(14, 4))
-        self.doc_type_var = tk.StringVar(value="sales_invoice")
         self._doc_types = [(k, lbl) for k, lbl, _kind in rd.DOC_TYPES]
-        doc_cb = ttk.Combobox(strip, textvariable=self.doc_type_var, state="readonly",
-                              font=("Segoe UI", 9), width=18,
-                              values=[lbl for _, lbl in self._doc_types])
-        doc_cb.set(self._doc_types[0][1])
-        doc_cb.pack(side="left", padx=4, pady=8)
-        doc_cb.bind("<<ComboboxSelected>>", lambda e: self._on_doc_type_change())
-        tk.Frame(strip, bg=C["border"], width=1).pack(side="left", fill="y", pady=8, padx=6)
-        tk.Label(strip, text="Template:", font=("Segoe UI", 9, "bold"),
-                 bg=C["card_bg"], fg=C["text_primary"]).pack(side="left", padx=(4, 4))
+        self.doc_type_var = tk.StringVar(value=self._doc_types[0][1])
+        self.doc_type_var.trace_add("write", lambda *a: self._show_doc_pick())
+        tk.Label(strip, text="Design:", font=("Segoe UI", 9, "bold"),
+                 bg=C["card_bg"], fg=C["text_primary"]).pack(side="left", padx=(14, 4))
         self.tpl_var = tk.StringVar()
         self.tpl_cb = ttk.Combobox(strip, textvariable=self.tpl_var, state="readonly",
                                    font=("Segoe UI", 9), width=24)
@@ -126,13 +119,24 @@ class ReportDesignerView:
                          ("⇄ Copy to…", self._copy_to_doc),
                          ("💾 Save to file", self._export_file),
                          ("📂 Open file", self._import_file),
-                         ("★ Set Default", self._set_default),
                          ("🗑 Delete", self._delete_template)):
             tk.Button(strip, text=txt, font=("Segoe UI", 9), bg=C["card_bg"],
                       fg=C["text_primary"], relief="flat", bd=0, padx=9, pady=4,
                       cursor="hand2", activebackground=C["content_bg"],
                       highlightbackground=C.get("field_border", C["border"]),
                       highlightthickness=1, command=cmd).pack(side="left", padx=3)
+        # design slots: which design prints — ★ default, or Print ▸ design 2 / 3
+        tk.Frame(strip, bg=C["border"], width=1).pack(side="left", fill="y", pady=8, padx=6)
+        tk.Label(strip, text="Prints as:", font=("Segoe UI", 9, "bold"),
+                 bg=C["card_bg"], fg=C["text_primary"]).pack(side="left", padx=(2, 4))
+        self.slot_btns = {}
+        for slot in DO.SLOTS:
+            b = tk.Button(strip, text=DO.SLOT_NAMES[slot], font=("Segoe UI", 9), relief="flat",
+                          bd=0, padx=9, pady=4, cursor="hand2", highlightthickness=1,
+                          highlightbackground=C.get("field_border", C["border"]),
+                          command=lambda s_=slot: self._set_slot(s_))
+            b.pack(side="left", padx=2)
+            self.slot_btns[slot] = b
 
         # Body: 3 panels
         body = tk.Frame(self.frame, bg=C["content_bg"])
@@ -141,6 +145,19 @@ class ReportDesignerView:
         # LEFT — toolbox
         left = tk.Frame(body, bg=C["card_bg"], width=218)
         left.pack(side="left", fill="y"); left.pack_propagate(False)
+        tk.Label(left, text="📑  Documents", font=("Segoe UI", 10, "bold"),
+                 bg=C["card_bg"], fg=C["text_primary"]).pack(anchor="w", padx=12, pady=(8, 2))
+        self.doc_list = tk.Listbox(left, height=len(self._doc_types), font=("Segoe UI", 9),
+                                   activestyle="none", exportselection=False, relief="flat",
+                                   bd=0, highlightthickness=1,
+                                   highlightbackground=C.get("border", "#E2E6EE"),
+                                   selectbackground=C["primary"], selectforeground="white",
+                                   bg=C["card_bg"], fg=C["text_primary"])
+        for k, lbl_ in self._doc_types:
+            self.doc_list.insert("end", "  " + DO.doc_label(k, lbl_))
+        self.doc_list.pack(fill="x", padx=10)
+        self.doc_list.selection_set(0)
+        self.doc_list.bind("<<ListboxSelect>>", lambda e: self._doc_list_pick())
         tk.Label(left, text="🧰  Toolbox", font=("Segoe UI", 10, "bold"),
                  bg=C["card_bg"], fg=C["text_primary"]).pack(anchor="w", padx=12, pady=(8, 2))
         tk.Label(left, text="Click a field to add it", font=("Segoe UI", 8),
@@ -168,10 +185,13 @@ class ReportDesignerView:
         center = tk.Frame(body, bg="#E4E7EE")
         center.pack(side="left", fill="both", expand=True)
         ctop = tk.Frame(center, bg="#E4E7EE"); ctop.pack(fill="x")
-        tk.Label(ctop, text="Click a toolbox item to drop it · drag to move · "
-                 "click to select · Delete key removes",
-                 font=("Segoe UI", 8), bg="#E4E7EE", fg=C["text_secondary"]).pack(
-                     side="left", padx=10, pady=4)
+        self.hint_lbl = tk.Label(ctop, text=self.HINT,
+                                 font=("Segoe UI", 8), bg="#E4E7EE", fg=C["text_secondary"])
+        self.hint_lbl.pack(side="left", padx=10, pady=4)
+        self.guides_var = tk.BooleanVar(value=True)
+        tk.Checkbutton(ctop, text="Show sections", variable=self.guides_var, font=("Segoe UI", 8),
+                       bg="#E4E7EE", activebackground="#E4E7EE", highlightthickness=0,
+                       command=lambda: self._redraw_page()).pack(side="right", padx=10)
         cwrap = tk.Frame(center, bg="#E4E7EE")
         cwrap.pack(fill="both", expand=True, padx=(8, 0), pady=(0, 0))
         cvs = ttk.Scrollbar(cwrap, orient="vertical")
@@ -222,15 +242,43 @@ class ReportDesignerView:
                      fg=C["text_secondary"]).pack(anchor="w", pady=10)
             return
 
+        def head(t):
+            """A section title with a rule — Page · Printing · Look · Sections."""
+            fr = tk.Frame(self.props, bg=C["card_bg"]); fr.pack(fill="x", pady=(12, 2))
+            tk.Label(fr, text=t.upper(), font=("Segoe UI", 8, "bold"), bg=C["card_bg"],
+                     fg=C["primary"]).pack(side="left")
+            tk.Frame(fr, bg=C.get("border", "#E2E6EE"), height=1).pack(
+                side="left", fill="x", expand=True, padx=(6, 0), pady=(2, 0))
+
         def lbl(t):
             tk.Label(self.props, text=t, font=("Segoe UI", 8, "bold"),
-                     bg=C["card_bg"], fg=C["text_secondary"]).pack(anchor="w", pady=(8, 1))
+                     bg=C["card_bg"], fg=C["text_secondary"]).pack(anchor="w", pady=(6, 1))
 
-        def combo(var, values):
-            cb = ttk.Combobox(self.props, textvariable=var, values=values,
+        def combo(var, values, parent=None):
+            cb = ttk.Combobox(parent or self.props, textvariable=var, values=values,
                               state="readonly", font=("Segoe UI", 9))
             cb.pack(fill="x"); return cb
 
+        def num_row(label, key, hint, to=500, inc=1):
+            fr = tk.Frame(self.props, bg=C["card_bg"]); fr.pack(fill="x", pady=(4, 0))
+            tk.Label(fr, text=label, font=("Segoe UI", 9), bg=C["card_bg"],
+                     fg=C["text_primary"], anchor="w").pack(side="left")
+            tk.Spinbox(fr, from_=0, to=to, increment=inc, width=6, textvariable=self.p_page[key],
+                       font=("Segoe UI", 9), justify="right").pack(side="right")
+            if hint:
+                tk.Label(self.props, text=hint, font=("Segoe UI", 7), bg=C["card_bg"],
+                         fg=C["text_secondary"]).pack(anchor="w")
+
+        def tick(text, var, cmd=None):
+            tk.Checkbutton(self.props, text=text, variable=var, bg=C["card_bg"],
+                           activebackground=C["card_bg"], font=("Segoe UI", 9), anchor="w",
+                           justify="left", wraplength=200, command=cmd).pack(anchor="w", pady=(2, 0))
+
+        page = DO.page_settings(self.template)
+        self.p_page = {}
+        for k, v in page.items():
+            self.p_page[k] = (tk.BooleanVar(value=v) if isinstance(v, bool) else
+                              tk.StringVar(value=("%g" % v) if isinstance(v, float) else str(v)))
         self.p_paper = tk.StringVar(value=self.template.get("paper_size", "A4"))
         self.p_orient = tk.StringVar(value=self.template.get("orientation", "portrait"))
         self.p_theme = tk.StringVar(value=self.template.get("theme_name", "Modern"))
@@ -241,13 +289,46 @@ class ReportDesignerView:
         self.p_header = tk.StringVar(value=self.template.get("header_text", "") or "")
         self.p_footer = tk.StringVar(value=self.template.get("footer_text", "") or "")
 
-        lbl("Paper Size"); cb1 = combo(self.p_paper, list(PAPER.keys()))
-        cb1.bind("<<ComboboxSelected>>", lambda e: self._redraw_page())
+        # ── PAGE ──
+        head("Page")
+        lbl("Paper size"); cb1 = combo(self.p_paper, list(PAPER.keys()))
+        size = tk.Frame(self.props, bg=C["card_bg"]); size.pack(fill="x", pady=(3, 0))
+        tk.Label(size, text="W", font=("Segoe UI", 8), bg=C["card_bg"],
+                 fg=C["text_secondary"]).pack(side="left")
+        ew = tk.Entry(size, textvariable=self.p_page["custom_w"], width=6, justify="right",
+                      relief="solid", bd=1, font=("Segoe UI", 9))
+        ew.pack(side="left", padx=(2, 6))
+        tk.Label(size, text="H", font=("Segoe UI", 8), bg=C["card_bg"],
+                 fg=C["text_secondary"]).pack(side="left")
+        eh = tk.Entry(size, textvariable=self.p_page["custom_h"], width=6, justify="right",
+                      relief="solid", bd=1, font=("Segoe UI", 9))
+        eh.pack(side="left", padx=(2, 4))
+        tk.Label(size, text="mm", font=("Segoe UI", 8), bg=C["card_bg"],
+                 fg=C["text_secondary"]).pack(side="left")
+
+        def _paper(*_a):
+            st = "normal" if self.p_paper.get() == "Custom" else "disabled"
+            ew.configure(state=st); eh.configure(state=st)
+            self._redraw_page()
+        cb1.bind("<<ComboboxSelected>>", _paper)
+        for k in ("custom_w", "custom_h"):
+            self.p_page[k].trace_add("write", lambda *a: self._redraw_page())
+        _paper()
         lbl("Orientation"); cb2 = combo(self.p_orient, ["portrait", "landscape"])
         cb2.bind("<<ComboboxSelected>>", lambda e: self._redraw_page())
-        lbl("Theme"); cb3 = combo(self.p_theme, [th["theme_name"] for th in rd.list_themes()])
-        cb3.bind("<<ComboboxSelected>>", lambda e: self._apply_theme())
+        num_row("Lines per page", "lines_per_page", "0 = as many item rows as fit", 200)
+        num_row("Minimum lines", "min_lines", "blank rows keep the table one height", 200)
+        num_row("Row gap (mm)", "row_gap", "extra space under every item row", 20, 0.5)
+        tick("Pre-printed paper (letterhead) — no colour bands", self.p_page["preprinted"],
+             cmd=self._redraw_page)
 
+        # ── PRINTING ──
+        head("Printing")
+        lbl("Printing format")
+        self._pmode = tk.StringVar(value=DO.PRINT_MODES[page["print_mode"]])
+        pm = combo(self._pmode, list(DO.PRINT_MODES.values()))
+        pm.bind("<<ComboboxSelected>>", lambda e: self.p_page["print_mode"].set(
+            next(k for k, v in DO.PRINT_MODES.items() if v == self._pmode.get())))
         lbl("Printer")
         own = rd.get_template_printer(self.template["template_id"])
         self.p_use_default = tk.BooleanVar(value=not own)
@@ -262,36 +343,64 @@ class ReportDesignerView:
             else:
                 cb4.configure(state="readonly")
                 self._save_printer_choice()
-        tk.Checkbutton(self.props, text="Use the default printer", variable=self.p_use_default,
-                       bg=C["card_bg"], activebackground=C["card_bg"], font=("Segoe UI", 9),
-                       command=_tick).pack(anchor="w", pady=(2, 0))
+        tick("Use the default printer", self.p_use_default, _tick)
         if self.p_use_default.get():
             cb4.configure(state="disabled")
+        tick("Ask which printer every time", self.p_page["ask_printer"])
         tk.Label(self.props, text=f"{len(printers)} system printer(s) detected"
                                   if printers != ["(no printers detected)"]
                                   else "No printers detected on this PC",
                  font=("Segoe UI", 7), bg=C["card_bg"],
                  fg=C["text_secondary"]).pack(anchor="w", pady=(2, 0))
-        lbl("Print Copies")
-        tk.Spinbox(self.props, from_=1, to=20, textvariable=self.p_copies,
-                   font=("Segoe UI", 9)).pack(fill="x")
+        fr = tk.Frame(self.props, bg=C["card_bg"]); fr.pack(fill="x", pady=(4, 0))
+        tk.Label(fr, text="Copies", font=("Segoe UI", 9), bg=C["card_bg"],
+                 fg=C["text_primary"]).pack(side="left")
+        tk.Spinbox(fr, from_=1, to=20, width=6, textvariable=self.p_copies,
+                   font=("Segoe UI", 9), justify="right").pack(side="right")
 
-        lbl("Header Text")
+        # ── LOOK ──
+        head("Look")
+        lbl("Theme"); cb3 = combo(self.p_theme, [th["theme_name"] for th in rd.list_themes()])
+        cb3.bind("<<ComboboxSelected>>", lambda e: self._apply_theme())
+        lbl("Header text")
         tk.Entry(self.props, textvariable=self.p_header, font=("Segoe UI", 9),
                  relief="solid", bd=1).pack(fill="x", ipady=3)
-        lbl("Footer Text")
+        lbl("Footer text")
         tk.Entry(self.props, textvariable=self.p_footer, font=("Segoe UI", 9),
                  relief="solid", bd=1).pack(fill="x", ipady=3)
-
-        # Colors
-        lbl("Colors")
+        lbl("Colours")
         self._color_btn("Header", "header_color")
         self._color_btn("Table", "table_color")
         self._color_btn("Accent", "accent_color")
         self._color_btn("Font", "font_color")
         tk.Button(self.props, text="✨ Use ready layout", font=("Segoe UI", 9, "bold"),
                   bg=C["primary_light"], fg=C["primary"], relief="flat", padx=10, pady=5,
-                  cursor="hand2", command=self._use_ready_layout).pack(anchor="w", pady=(12, 0))
+                  cursor="hand2", command=self._use_ready_layout).pack(anchor="w", pady=(10, 0))
+
+        # ── SECTIONS ──
+        head("Sections")
+        counts = DO.band_counts(self.elements)
+        for key, name, when in DO.BANDS:
+            row = tk.Frame(self.props, bg=C["card_bg"]); row.pack(fill="x", pady=1)
+            tk.Label(row, text="  ", bg=DO.BAND_COLORS[key], width=2).pack(side="left")
+            tk.Label(row, text=name, font=("Segoe UI", 9), bg=C["card_bg"],
+                     fg=C["text_primary"]).pack(side="left", padx=(6, 0))
+            tk.Label(row, text="%s · %d" % (when, counts.get(key, 0)), font=("Segoe UI", 8),
+                     bg=C["card_bg"], fg=C["text_secondary"]).pack(side="right")
+        tk.Label(self.props, text="Fields above the items are the invoice header, below them the "
+                 "invoice footer. Pick a field ▸ Section to print it on every page.",
+                 font=("Segoe UI", 7), bg=C["card_bg"], fg=C["text_secondary"], justify="left",
+                 wraplength=200).pack(anchor="w", pady=(4, 0))
+
+    def _page_values(self):
+        """The page boxes → settings dict (bad numbers become 0)."""
+        out = {}
+        for k, v in getattr(self, "p_page", {}).items():
+            try:
+                out[k] = v.get()
+            except tk.TclError:
+                out[k] = DO.PAGE_DEFAULTS[k]
+        return DO.page_settings({"page_json": out})
 
     def _color_btn(self, name, key):
         C = self.C
@@ -338,6 +447,30 @@ class ReportDesignerView:
         field("Label text", "label", el["label"])
         if el.get("type", "text") == "text" and el.get("key") not in ("text_label",):
             field("Text before the value (e.g. VAT No: )", "prefix", el.get("prefix", ""))
+        if el.get("type", "text") == "text" and el.get("key") not in ("text_label", "custom_text"):
+            field("Text after the value (e.g.  SAR)", "suffix", el.get("suffix", ""))
+            tk.Label(self.props, text="Format", font=("Segoe UI", 8, "bold"), bg=C["card_bg"],
+                     fg=C["text_secondary"]).pack(anchor="w", pady=(6, 1))
+            self.el_fmt = tk.StringVar(value=DO.FORMAT_NAMES.get(el.get("fmt") or "", "As it is"))
+            fc = ttk.Combobox(self.props, textvariable=self.el_fmt, state="readonly",
+                              values=[n for _k, n in DO.FORMATS], font=("Segoe UI", 9))
+            fc.pack(fill="x")
+            fc.bind("<<ComboboxSelected>>", lambda e: self._update_el(
+                el, "fmt", next(k for k, n in DO.FORMATS if n == self.el_fmt.get())))
+            field("Max length (0 = no limit)", "max_len", el.get("max_len", 0) or 0)
+        if el.get("type") not in ("table",):
+            tk.Label(self.props, text="Section", font=("Segoe UI", 8, "bold"), bg=C["card_bg"],
+                     fg=C["text_secondary"]).pack(anchor="w", pady=(6, 1))
+            bmap = {"auto": "Auto (where it is drawn)"}
+            bmap.update({k: "%s — %s" % (n, w) for k, n, w in DO.BANDS if k != "detail"})
+            self.el_band = tk.StringVar(value=bmap.get(el.get("band") or "auto", bmap["auto"]))
+            bc = ttk.Combobox(self.props, textvariable=self.el_band, state="readonly",
+                              values=list(bmap.values()), font=("Segoe UI", 9))
+            bc.pack(fill="x")
+            bc.bind("<<ComboboxSelected>>", lambda e: self._update_el(
+                el, "band", next(k for k, v in bmap.items() if v == self.el_band.get())))
+            tk.Label(self.props, text="now in: " + DO.BAND_NAMES[DO.band_of(el, self.elements)],
+                     font=("Segoe UI", 7), bg=C["card_bg"], fg=C["text_secondary"]).pack(anchor="w")
         field("X", "x", el["x"])
         field("Y", "y", el["y"])
         field("Width", "w", el["w"])
@@ -366,12 +499,51 @@ class ReportDesignerView:
                                font=("Segoe UI", 8), command=_cols_changed).grid(
                                    row=i // 2, column=i % 2, sticky="w")
 
-        self.el_bold = tk.BooleanVar(value=el.get("bold", False))
-        tk.Checkbutton(self.props, text="Bold", variable=self.el_bold,
-                       font=("Segoe UI", 9), bg=C["card_bg"],
-                       activebackground=C["card_bg"],
-                       command=lambda: self._update_el(el, "bold", self.el_bold.get())
-                       ).pack(anchor="w", pady=(8, 0))
+        # ── how the field prints ──
+        etype = el.get("type", "text")
+        is_text = etype == "text"
+        tk.Label(self.props, text="Style", font=("Segoe UI", 8, "bold"), bg=C["card_bg"],
+                 fg=C["text_secondary"]).pack(anchor="w", pady=(8, 1))
+        flags = [("Bold", "bold", False)]
+        if is_text:
+            flags += [("Italic", "italic", False), ("Underline", "underline", False),
+                      ("Box around", "box", False)]
+        if is_text and el.get("key") not in ("text_label", "custom_text"):
+            flags += [("Hide when empty", "hide_empty", True), ("Hide when zero", "hide_zero", False)]
+        flags += [("Lock position", "locked", False)]
+        grid = tk.Frame(self.props, bg=C["card_bg"]); grid.pack(fill="x")
+        self.el_flags = {}
+        for i, (text, key, dflt) in enumerate(flags):
+            v = tk.BooleanVar(value=bool(el.get(key, dflt)))
+            self.el_flags[key] = v
+            tk.Checkbutton(grid, text=text, variable=v, font=("Segoe UI", 8), bg=C["card_bg"],
+                           activebackground=C["card_bg"], highlightthickness=0,
+                           command=lambda k=key, v_=v: self._update_el(el, k, v_.get())
+                           ).grid(row=i // 2, column=i % 2, sticky="w")
+        self.el_bold = self.el_flags["bold"]
+        if is_text:
+            row = tk.Frame(self.props, bg=C["card_bg"]); row.pack(fill="x", pady=(4, 0))
+            tk.Label(row, text="Text colour", font=("Segoe UI", 9), bg=C["card_bg"],
+                     fg=C["text_primary"]).pack(side="left")
+            sw = tk.Label(row, text="     ", bg=el.get("color") or self.template.get(
+                "font_color", "#1A1438"), relief="solid", bd=1)
+            sw.pack(side="left", padx=6)
+
+            def pick_color():
+                got = colorchooser.askcolor(color=sw["bg"], title="Text colour")[1]
+                if got:
+                    sw.configure(bg=got)
+                    self._update_el(el, "color", got)
+
+            def no_color():
+                sw.configure(bg=self.template.get("font_color", "#1A1438"))
+                el.pop("color", None)
+                self._redraw_page()
+            tk.Button(row, text="Pick", font=("Segoe UI", 8), relief="flat", bg=C["card_bg"],
+                      fg=C["primary"], cursor="hand2", highlightthickness=1,
+                      highlightbackground=C["border"], command=pick_color).pack(side="left")
+            tk.Button(row, text="Theme", font=("Segoe UI", 8), relief="flat", bg=C["card_bg"],
+                      fg=C["text_secondary"], cursor="hand2", command=no_color).pack(side="left", padx=2)
 
         tk.Label(self.props, text="Align", font=("Segoe UI", 8, "bold"),
                  bg=C["card_bg"], fg=C["text_secondary"]).pack(anchor="w", pady=(6, 1))
@@ -496,7 +668,7 @@ class ReportDesignerView:
         if not cols:
             return
         self._push_undo()
-        w_mm, h_mm = PAPER.get(self.p_paper.get() if self.template else "A4", (210, 297))
+        w_mm, h_mm = self._paper_mm()
         if (self.p_orient.get() if self.template else "portrait") == "landscape":
             w_mm = h_mm
         m = 4 if w_mm <= 80 else 8              # roll paper: thinner margins
@@ -625,9 +797,9 @@ class ReportDesignerView:
                 self.tpl_cb.current(idx); self._on_template_pick(); break
 
     def _update_el(self, el, key, val):
-        if key in ("x", "y", "w", "h", "font"):
+        if key in ("x", "y", "w", "h", "font", "max_len"):
             try:
-                el[key] = int(float(val))
+                el[key] = int(float(val or 0))
             except ValueError:
                 return
         else:
@@ -647,9 +819,15 @@ class ReportDesignerView:
 
     def _load_templates(self, select_id=None):
         self._templates = rd.list_templates(self._current_doc_type())
-        names = [f"{t['template_name']}" + ("  ★ prints" if t.get("is_default") else "")
+        names = [f"{t['template_name']}" + (("  " + DO.slot_badge(t)) if DO.slots_of(t) else "")
                  for t in self._templates]
         self.tpl_cb["values"] = names
+        if not self._templates:
+            self.tpl_var.set("")
+            self.template, self.elements, self.sel_id = None, [], None
+            self._build_template_props()
+            self._redraw_page()
+            self._show_slots()
         if self._templates:
             idx = next((i for i, t in enumerate(self._templates)
                         if select_id is not None and t["template_id"] == select_id), 0)
@@ -665,6 +843,76 @@ class ReportDesignerView:
         self.sel_id = None
         self._build_template_props()
         self._redraw_page()
+        self._show_slots()
+        self._status(self.HINT, self.C["text_secondary"])
+
+    # ── document list / design slots ──────────────────────────
+    def _doc_list_pick(self):
+        sel = self.doc_list.curselection()
+        if not sel:
+            return
+        lbl = self._doc_types[sel[0]][1]
+        if lbl != self.doc_type_var.get():
+            self.doc_type_var.set(lbl)
+            self._on_doc_type_change()
+
+    def _show_doc_pick(self):
+        """The list follows doc_type_var (set from code too)."""
+        try:
+            i = next(n for n, (_k, l) in enumerate(self._doc_types) if l == self.doc_type_var.get())
+            self.doc_list.selection_clear(0, "end"); self.doc_list.selection_set(i)
+            self.doc_list.see(i)
+        except (StopIteration, AttributeError, tk.TclError):
+            pass
+
+    def _show_slots(self):
+        C = self.C
+        held = DO.slots_of(self.template) if self.template else []
+        for slot, b in getattr(self, "slot_btns", {}).items():
+            on = slot in held
+            b.configure(bg=C["primary"] if on else C["card_bg"],
+                        fg="white" if on else C["text_primary"],
+                        activebackground=C["primary_dark"] if on else C["content_bg"],
+                        state="normal" if self.template else "disabled",
+                        text=("✓ " if on and slot != 1 else "") + DO.SLOT_NAMES[slot])
+
+    def _set_slot(self, slot):
+        """★ Default / Design 2 / Design 3 → this template. Clicking a held
+        Design 2 / 3 again frees it."""
+        if not self.template:
+            return
+        tid, doc = self.template["template_id"], self._current_doc_type()
+        if slot != 1 and slot in DO.slots_of(self.template):
+            DO.clear_slot(tid, slot)
+            msg = f"This design is no longer {DO.SLOT_NAMES[slot]}."
+        else:
+            DO.set_slot(tid, doc, slot)
+            msg = (f"★ This design now prints {self.doc_type_var.get()}." if slot == 1 else
+                   f"This design is {DO.SLOT_NAMES[slot]} of {self.doc_type_var.get()} — "
+                   f"Print ▾ ▸ Print design {slot}.")
+        self._load_templates(select_id=tid)
+        self._status(msg)
+        return msg
+
+    HINT = "Click a toolbox item to drop it · drag to move · click to select · Delete key removes"
+
+    def _status(self, msg, fg=None):
+        try:
+            self.hint_lbl.configure(text=msg, fg=fg or self.C["primary"])
+        except (AttributeError, tk.TclError):
+            pass
+
+    def _paper_mm(self):
+        """(w, h) mm of the page on the canvas (Custom from its boxes)."""
+        paper = self.p_paper.get() if (self.template and hasattr(self, "p_paper")) else "A4"
+        if paper == "Custom" and hasattr(self, "p_page"):
+            try:
+                w = float(self.p_page["custom_w"].get() or 0)
+                h = float(self.p_page["custom_h"].get() or 0)
+            except (ValueError, tk.TclError):
+                w = h = 0
+            return (w if w >= 30 else 210), (h if h >= 30 else 297)
+        return PAPER.get(paper, (210, 297))
 
     def _new_template(self):
         """New design for the chosen document: name, paper, and whether to
@@ -688,7 +936,8 @@ class ReportDesignerView:
                      relief="solid", bd=1)
         e.grid(row=0, column=1, sticky="ew", pady=4, ipady=3)
         tk.Label(body, text="Paper", bg=C["card_bg"], font=("Segoe UI", 9)).grid(row=1, column=0, sticky="w")
-        ttk.Combobox(body, textvariable=paper_v, values=list(PAPER.keys()), state="readonly",
+        ttk.Combobox(body, textvariable=paper_v, values=[p_ for p_ in PAPER if p_ != "Custom"],
+                     state="readonly",
                      width=10).grid(row=1, column=1, sticky="w", pady=4)
         tk.Checkbutton(body, text="Start with the ready layout (all fields placed)",
                        variable=ready_v, bg=C["card_bg"], activebackground=C["card_bg"]
@@ -773,9 +1022,8 @@ class ReportDesignerView:
     def _set_default(self):
         if not self.template:
             return
-        rd.set_default(self.template["template_id"], self._current_doc_type())
-        self._load_templates(select_id=self.template["template_id"])
-        messagebox.showinfo("Default", f"★ This design now prints {self.doc_type_var.get()}.")
+        msg = self._set_slot(1)
+        messagebox.showinfo("Default", msg)
 
     def _delete_template(self):
         if not self.template:
@@ -800,8 +1048,10 @@ class ReportDesignerView:
             "accent_color": self.template.get("accent_color"),
             "font_color": self.template.get("font_color"),
             "layout_json": json.dumps(self.elements),
+            "page_json": DO.page_json(self._page_values()),
         }
         rd.update_template(self.template["template_id"], data)
+        self.template.update(data)
         tid = self.template["template_id"]
         doc_name = self.doc_type_var.get() if hasattr(self, "doc_type_var") else "this document"
         is_def = bool(self.template.get("is_default"))
@@ -823,7 +1073,7 @@ class ReportDesignerView:
 
     # ── Canvas drawing ────────────────────────────────────────
     def _page_px(self):
-        w_mm, h_mm = PAPER.get(self.p_paper.get() if self.template else "A4", (210, 297))
+        w_mm, h_mm = self._paper_mm()
         if (self.p_orient.get() if self.template else "portrait") == "landscape":
             w_mm, h_mm = h_mm, w_mm
         return int(w_mm * PXMM * self.zoom), int(h_mm * PXMM * self.zoom)
@@ -833,7 +1083,7 @@ class ReportDesignerView:
         val = self.zoom_var.get() if hasattr(self, "zoom_var") else "100%"
         if not str(val).startswith("Fit"):
             return False
-        w_mm, h_mm = PAPER.get(self.p_paper.get() if self.template else "A4", (210, 297))
+        w_mm, h_mm = self._paper_mm()
         if (self.p_orient.get() if self.template else "portrait") == "landscape":
             w_mm, h_mm = h_mm, w_mm
         cw = self.canvas.winfo_width()
@@ -881,29 +1131,63 @@ class ReportDesignerView:
                                      fill="#C9CED8", outline="")
         self.canvas.create_rectangle(OX, OY, OX + pw, OY + ph,
                                      fill="white", outline="#B8BECB")
+        pre = bool(hasattr(self, "p_page") and self.p_page["preprinted"].get())
         # header band
         hc = self.template.get("header_color") or "#3A1FD6"
         hh = int(float(self.template.get("header_height") or 38)
                  * PXMM / 3 * self.zoom)
-        self.canvas.create_rectangle(OX, OY, OX + pw, OY + hh,
-                                     fill=hc, outline="")
-        ht = self.p_header.get() if hasattr(self, "p_header") else ""
-        self.canvas.create_text(OX + 10, OY + hh / 2, text=ht or "Header",
-                                anchor="w", fill="white",
-                                font=("Segoe UI", 11, "bold"))
+        if pre:                                    # letterhead already on the paper
+            self.canvas.create_rectangle(OX, OY, OX + pw, OY + hh, fill="#F8FAFC",
+                                         outline="#CBD5E1", dash=(3, 3))
+            self.canvas.create_text(OX + 10, OY + hh / 2, text="pre-printed letterhead",
+                                    anchor="w", fill="#94A3B8", font=("Segoe UI", 9, "italic"))
+        else:
+            self.canvas.create_rectangle(OX, OY, OX + pw, OY + hh,
+                                         fill=hc, outline="")
+            ht = self.p_header.get() if hasattr(self, "p_header") else ""
+            self.canvas.create_text(OX + 10, OY + hh / 2, text=ht or "Header",
+                                    anchor="w", fill="white",
+                                    font=("Segoe UI", 11, "bold"))
         # footer band
         fc = self.template.get("footer_color") or \
             self.template.get("header_color") or "#3A1FD6"
         fh = int(float(self.template.get("footer_height") or 20)
                  * PXMM / 3 * self.zoom)
-        self.canvas.create_rectangle(OX, OY + ph - fh, OX + pw, OY + ph,
-                                     fill=fc, outline="")
-        ft = self.p_footer.get() if hasattr(self, "p_footer") else ""
-        self.canvas.create_text(OX + 10, OY + ph - fh / 2, text=ft or "Footer",
-                                anchor="w", fill="white", font=("Segoe UI", 8))
+        if not pre:
+            self.canvas.create_rectangle(OX, OY + ph - fh, OX + pw, OY + ph,
+                                         fill=fc, outline="")
+            ft = self.p_footer.get() if hasattr(self, "p_footer") else ""
+            self.canvas.create_text(OX + 10, OY + ph - fh / 2, text=ft or "Footer",
+                                    anchor="w", fill="white", font=("Segoe UI", 8))
+        if getattr(self, "guides_var", None) is None or self.guides_var.get():
+            self._draw_sections(OX, OY, pw, ph)
         # elements
         for el in self.elements:
             self._draw_element(el)
+
+    def _draw_sections(self, OX, OY, pw, ph):
+        """Section guides: a coloured strip down the left edge of the page
+        (invoice header · details · invoice footer) and a dashed line
+        where the items start and end."""
+        cv, z = self.canvas, self.zoom
+        rect = DO.table_rect(self.elements)
+        if rect is None:
+            spans = [("invoice_header", 0, ph)]
+        else:
+            t0, t1 = rect[0] * z, rect[1] * z
+            spans = [("invoice_header", 0, t0), ("detail", t0, t1), ("invoice_footer", t1, ph)]
+            for yy in (t0, t1):
+                cv.create_line(OX, OY + yy, OX + pw, OY + yy, fill="#94A3B8", dash=(2, 4),
+                               tags=("guide",))
+        for key, a, b in spans:
+            if b - a < 2:
+                continue
+            cv.create_rectangle(OX - 7, OY + a, OX - 1, OY + b, fill=DO.BAND_COLORS[key],
+                                outline="", tags=("guide",))
+            if b - a > 40:
+                cv.create_text(OX - 4, OY + (a + b) / 2, text=DO.BAND_NAMES[key].upper(),
+                               angle=90, font=("Segoe UI", 6, "bold"), fill="#475569",
+                               tags=("guide",))
 
     _SAMPLE = {"line_no": ("1", ""), "item_code": ("P0001", ""), "barcode": ("6281000000017", ""),
                "product_name": ("Basmati Rice 5kg", "أرز بسمتي 5 كجم"),
@@ -991,9 +1275,31 @@ class ReportDesignerView:
         anchor = {"left": "w", "center": "center", "right": "e"}[el.get("align", "left")]
         tx = x + (4 if anchor == "w" else (w - 4 if anchor == "e" else w / 2))
         label = (f"{icon}  {el['label']}" if icon else el["label"])
+        if el.get("fmt"):
+            label += "  ·" + {"amount": "0.00", "amount0": "0", "qty": "qty", "date": "date",
+                              "date_long": "date", "upper": "ABC", "lower": "abc",
+                              "title": "Abc", "words": "words"}.get(el["fmt"], "")
+        if el.get("italic"):
+            font = font + ("italic",)
+        if el.get("underline"):
+            font = font + ("underline",)
         self.canvas.create_text(tx, y + h / 2, text=label,
                                 anchor=anchor, font=font,
-                                fill=self.template.get("font_color", "#1A1438"))
+                                fill=el.get("color") or self.template.get("font_color", "#1A1438"))
+        if el.get("box"):
+            self.canvas.create_rectangle(x + 1, y + 1, x + w - 1, y + h - 1, outline="#475569")
+        tags = []
+        if el.get("band") in DO.REPEAT_BANDS:      # prints on every page
+            self.canvas.create_rectangle(x - 2, y - 2, x + w + 2, y + h + 2, outline="#16A34A",
+                                         dash=(3, 2))
+            tags.append("⟳ every page")
+        elif el.get("band") in ("invoice_header", "invoice_footer"):
+            tags.append("page 1" if el["band"] == "invoice_header" else "last page")
+        if el.get("locked"):
+            tags.append("🔒")
+        if tags:
+            self.canvas.create_text(x + w, y - 1, text="  ".join(tags), anchor="se",
+                                    font=("Segoe UI", 7), fill="#15803D")
         el["_box"] = box
         if sel:
             self._draw_handle(x + w, y + h)
@@ -1036,7 +1342,7 @@ class ReportDesignerView:
                     el[k] = cols[0].get(k, True)
             self.elements.append(el)
             self.sel_id = eid
-            w_mm = PAPER.get(self.p_paper.get() if hasattr(self, "p_paper") else "A4", (210, 297))[0]
+            w_mm = self._paper_mm()[0]
             if el["x"] + el["w"] > w_mm * PXMM - (4 if w_mm <= 80 else 8):
                 self._fit_columns()              # no room: all columns share the width
             self._build_element_props(el)
@@ -1067,7 +1373,7 @@ class ReportDesignerView:
     def _free_spot(self, w, h):
         """First place on the page (left column, then right) where a new
         element does not cover another one."""
-        pw, ph = PAPER.get(self.p_paper.get() if hasattr(self, "p_paper") else "A4", (210, 297))
+        pw, ph = self._paper_mm()
         pw, ph = pw * PXMM, ph * PXMM
 
         def hits(x, y):
@@ -1092,7 +1398,7 @@ class ReportDesignerView:
         dx = (self.canvas.canvasx(event.x) - self._ox) / z
         dy = (self.canvas.canvasy(event.y) - self._oy) / z
         cur = next((e for e in self.elements if e["id"] == self.sel_id), None)
-        if cur is not None and abs(dx - (cur["x"] + cur["w"])) <= 8 / z + 2 \
+        if cur is not None and not cur.get("locked") and abs(dx - (cur["x"] + cur["w"])) <= 8 / z + 2 \
                 and abs(dy - (cur["y"] + cur["h"])) <= 8 / z + 2:
             self._push_undo()
             self._drag = (dx, dy, cur, "resize")
@@ -1104,7 +1410,7 @@ class ReportDesignerView:
         if hit:
             self.sel_id = hit["id"]
             self._push_undo()
-            self._drag = (dx, dy, hit, "move")
+            self._drag = None if hit.get("locked") else (dx, dy, hit, "move")
             self._build_element_props(hit)
         else:
             self.sel_id = None
@@ -1217,6 +1523,8 @@ class ReportDesignerView:
                 t["print_copies"] = int(self.p_copies.get() or 1)
             except ValueError:
                 pass
+        if hasattr(self, "p_page"):
+            t["page_json"] = DO.page_json(self._page_values())
         return t
 
     def _sample(self):

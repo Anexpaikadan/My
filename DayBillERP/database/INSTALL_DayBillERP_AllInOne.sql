@@ -1,6 +1,6 @@
 -- ============================================================
 -- DayBill ERP — FULL DATABASE INSTALLER  (clean new installation)
--- generated 2026-10-23 17:05  ·  ONE file = the whole database
+-- generated 2026-10-23 20:36  ·  ONE file = the whole database
 -- ------------------------------------------------------------
 -- WHAT IT MAKES
 --   • the DayBillERP database (Arabic collation) and EVERY table,
@@ -5985,6 +5985,25 @@ GO
 -- ============================================================
 IF OBJECT_ID('sales_invoices','U') IS NOT NULL AND COL_LENGTH('sales_invoices','customer_phone') IS NULL
     ALTER TABLE sales_invoices ADD customer_phone NVARCHAR(30) NULL;
+GO
+
+GO
+
+-- ▼▼▼  PATCH: zzz_v790_designer_patch.sql  ▼▼▼
+-- ============================================================
+-- DayBill ERP v7.9 — Invoice Designer options
+--   design_slot : 2 / 3 = "Design 2" / "Design 3" of the document
+--                 (the ★ default stays in is_default) — the Print menu
+--                 offers them next to the default layout
+--   page_json   : page settings (lines per page, minimum lines, row
+--                 gap, custom paper size, pre-printed paper, ask the
+--                 printer, graphics / text printing)
+-- ============================================================
+IF OBJECT_ID('report_templates','U') IS NOT NULL AND COL_LENGTH('report_templates','design_slot') IS NULL
+    ALTER TABLE report_templates ADD design_slot TINYINT NULL;
+GO
+IF OBJECT_ID('report_templates','U') IS NOT NULL AND COL_LENGTH('report_templates','page_json') IS NULL
+    ALTER TABLE report_templates ADD page_json NVARCHAR(MAX) NULL;
 GO
 
 GO

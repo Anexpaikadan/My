@@ -223,9 +223,15 @@ def _draw_text(c, el, value, tmpl, W, H, top_y):
     y = top_y - (el["y"] + el["h"]) / PXMM * mm
     w = el["w"] / PXMM * mm
     h = el["h"] / PXMM * mm
-    font = "Helvetica-Bold" if el.get("bold") else "Helvetica"
+    italic = bool(el.get("italic"))
+    font = ("Helvetica-BoldOblique" if italic else "Helvetica-Bold") if el.get("bold") else \
+        ("Helvetica-Oblique" if italic else "Helvetica")
     size = max(6, int(el.get("font", 9)))
     value = str(value if value is not None else "")
+    if el.get("box"):
+        c.setStrokeColor(colors.HexColor(el.get("color") or tmpl.get("font_color") or "#1A1438"))
+        c.setLineWidth(0.6)
+        c.rect(x, y, w, h, fill=0, stroke=1)
     if _ar(value):
         try:
             from modules import pdf_invoice as _pi
@@ -235,15 +241,23 @@ def _draw_text(c, el, value, tmpl, W, H, top_y):
         except Exception:
             pass
     c.setFont(font, size)
-    c.setFillColor(colors.HexColor(tmpl.get("font_color") or "#1A1438"))
+    ink = colors.HexColor(el.get("color") or tmpl.get("font_color") or "#1A1438")
+    c.setFillColor(ink)
     align = el.get("align", "left")
     ty = y + h / 2 - size * 0.35
+    pad = 1.2 * mm if el.get("box") else 0
     if align == "center":
         c.drawCentredString(x + w / 2, ty, value)
+        x0 = x + w / 2 - c.stringWidth(value, font, size) / 2
     elif align == "right":
-        c.drawRightString(x + w, ty, value)
+        c.drawRightString(x + w - pad, ty, value)
+        x0 = x + w - pad - c.stringWidth(value, font, size)
     else:
-        c.drawString(x, ty, value)
+        c.drawString(x + pad, ty, value)
+        x0 = x + pad
+    if el.get("underline") and value:
+        c.setStrokeColor(ink); c.setLineWidth(0.5)
+        c.line(x0, ty - 1.2, x0 + c.stringWidth(value, font, size), ty - 1.2)
 
 
 def _draw_line(c, el, top_y):
@@ -388,21 +402,27 @@ def render_template(template, elements, invoice, company, lines, out_path,
     table grows with the number of lines; whatever was drawn BELOW the
     table moves down by the same amount, and a long table continues on
     the next page (with the header band and column titles again)."""
+    from modules import design_options as DO
     lines = list(lines or [])
-    paper = template.get("paper_size", "A4")
-    pw_mm, ph_mm = PAPER_MM.get(paper, (210, 297))
+    ps = DO.page_settings(template)
+    pw_mm, ph_mm = DO.paper_mm(template, PAPER_MM)
     if str(template.get("orientation", "portrait")) == "landscape" and ph_mm:
         pw_mm, ph_mm = ph_mm, pw_mm
     hdr_mm = float(template.get("header_height") or 0) / 3.0
     ftr_mm = float(template.get("footer_height") or 0) / 3.0
     elements = sorted(elements or [], key=lambda e: (e.get("y", 0), e.get("x", 0)))
+    # Page header / Page footer fields print on EVERY page, where drawn
+    rep_h = [e for e in elements if e.get("band") == "page_header"]
+    rep_f = [e for e in elements if e.get("band") == "page_footer"]
+    elements = [e for e in elements if e not in rep_h and e not in rep_f]
+    gap_mm = float(ps["row_gap"] or 0)
     tbl = _items_table(elements)              # separate columns (or old one-block table)
     if tbl:
         _squeeze_to_page(tbl, pw_mm * PXMM)   # columns past the paper edge never get lost
     table = tbl["rect"] if tbl else None
     grow_px = 0.0
     if tbl:
-        need_mm = tbl["head_mm"] + sum(_row_mm(tbl, ln) for ln in lines)
+        need_mm = tbl["head_mm"] + sum(_row_mm(tbl, ln) + gap_mm for ln in lines)
         grow_px = max(0.0, need_mm * PXMM - float(table.get("h") or 0))
     roll = ph_mm is None
     if roll:                        # thermal roll: page as long as needed
@@ -422,9 +442,12 @@ def render_template(template, elements, invoice, company, lines, out_path,
     ftr_color = template.get("footer_color") or hdr_color
 
     def bands():
-        _band(c, W, H, hdr_mm, hdr_color, template.get("header_text") or "", 11)
-        _band(c, W, ftr_mm * mm, ftr_mm, ftr_color, template.get("footer_text") or "", 8,
-              align_bottom=True)
+        if not ps["preprinted"]:          # pre-printed letterhead: no colour bands
+            _band(c, W, H, hdr_mm, hdr_color, template.get("header_text") or "", 11)
+            _band(c, W, ftr_mm * mm, ftr_mm, ftr_color, template.get("footer_text") or "", 8,
+                  align_bottom=True)
+        for el in rep_h + rep_f:
+            draw(el, H)
 
     def draw(el, top_y):
         etype = el.get("type", "text")
@@ -451,12 +474,19 @@ def render_template(template, elements, invoice, company, lines, out_path,
                     return
                 if key in ("discount_total",) and value in ("0.00", "0"):
                     return                           # no discount → no line
-                value = f"{el.get('prefix', '') or ''}{value}"
+                if el.get("hide_zero") and DO.is_zero(value):
+                    return
+                value = DO.format_value(value, el.get("fmt"), el.get("max_len"))
+                value = f"{el.get('prefix', '') or ''}{value}{el.get('suffix', '') or ''}"
             _draw_text(c, el, value, template, W, H, top_y)
 
     bands()
     page_top = H                                   # PDF y of designer y=0
     bottom_limit = (ftr_mm + 6) * mm
+    if rep_f and not roll:                         # items stop above the page footer
+        bottom_limit = max(bottom_limit, page_top - min(float(e.get("y", 0)) for e in rep_f)
+                           / PXMM * mm + 2 * mm)
+    per_page = int(ps["lines_per_page"] or 0)
     if table is None:
         for el in elements:
             draw(el, page_top)
@@ -465,11 +495,13 @@ def render_template(template, elements, invoice, company, lines, out_path,
         t_bottom = t_y + float(table.get("h") or 0)
         rest = [e for e in elements if e not in tbl["skip"]]
         tx0 = float(table["x"]); tx1 = tx0 + float(table["w"])
-        above = [e for e in rest if float(e.get("y", 0)) < t_bottom
-                 and float(e.get("y", 0)) + float(e.get("h", 0)) <= t_y + 1]
+        above = [e for e in rest if e.get("band") == "invoice_header" or (
+            e.get("band") != "invoice_footer" and float(e.get("y", 0)) < t_bottom
+            and float(e.get("y", 0)) + float(e.get("h", 0)) <= t_y + 1)]
         # beside = next to the table (no horizontal overlap); anything that
         # overlaps the table's width and starts inside it goes UNDER it
-        beside = [e for e in rest if e not in above and float(e.get("y", 0)) < t_bottom
+        beside = [e for e in rest if e not in above and e.get("band") != "invoice_footer"
+                  and float(e.get("y", 0)) < t_bottom
                   and (float(e.get("x", 0)) >= tx1 - 1
                        or float(e.get("x", 0)) + float(e.get("w", 0)) <= tx0 + 1)]
         below = [e for e in rest if e not in above and e not in beside]
@@ -478,14 +510,31 @@ def render_template(template, elements, invoice, company, lines, out_path,
         # table, continuing on new pages when it runs out of room
         y = page_top - t_y / PXMM * mm
         restart_y = H - (hdr_mm + 6) * mm
+        if rep_h:                                  # continue under the page header
+            restart_y = min(restart_y, page_top - max(
+                float(e.get("y", 0)) + float(e.get("h", 0)) for e in rep_h) / PXMM * mm - 2 * mm)
         y = _cols_header(c, tbl, y, template)
+        on_page = 0
         for i, ln in enumerate(lines):
-            rh = _row_mm(tbl, ln) * mm
-            if not roll and y - rh < bottom_limit:
+            rh = (_row_mm(tbl, ln) + gap_mm) * mm
+            if not roll and (y - rh < bottom_limit or (per_page and on_page >= per_page)):
                 c.showPage(); bands()
                 y = _cols_header(c, tbl, restart_y, template)
+                on_page = 0
             _cols_row(c, tbl, y, ln, i, template, rh)
             y -= rh
+            on_page += 1
+        # minimum lines: blank rows keep the table the same height
+        blank_h = (ROW_MM + gap_mm) * mm
+        want = int(ps["min_lines"] or 0)
+        if per_page:
+            want = min(want, per_page)
+        i = len(lines)
+        while on_page < want and (roll or y - blank_h >= bottom_limit):
+            _blank_row(c, tbl, y, i, blank_h)
+            y -= blank_h
+            on_page += 1
+            i += 1
         # under the table: totals / QR / words FOLLOW the table; things
         # drawn in the lower part of the page (signatures, stamp, bank…)
         # stay ANCHORED there, just above the footer
@@ -701,6 +750,23 @@ def _cols_row(c, tbl, y, ln, i, tmpl, rh):
     if lines_on:
         c.setStrokeColor(colors.HexColor("#C9D2DE")); c.setLineWidth(0.4)
         c.line(x0, y - rh, x0 + tw, y - rh)                  # under the row
+        c.line(x0, y, x0, y - rh); c.line(x0 + tw, y, x0 + tw, y - rh)
+        for el in cols[1:]:
+            x, _w = _col_x(el)
+            c.line(x, y, x, y - rh)
+
+
+def _blank_row(c, tbl, y, i, rh):
+    """An empty item row (stripes and cell lines only) — Minimum lines."""
+    cols = tbl["cols"]
+    x0 = tbl["rect"]["x"] / PXMM * mm
+    tw = tbl["rect"]["w"] / PXMM * mm
+    if i % 2 == 1 and cols[0].get("stripes", True):
+        c.setFillColor(colors.HexColor("#F5F6FA"))
+        c.rect(x0, y - rh, tw, rh, fill=1, stroke=0)
+    if cols[0].get("cell_lines", True):
+        c.setStrokeColor(colors.HexColor("#C9D2DE")); c.setLineWidth(0.4)
+        c.line(x0, y - rh, x0 + tw, y - rh)
         c.line(x0, y, x0, y - rh); c.line(x0 + tw, y, x0 + tw, y - rh)
         for el in cols[1:]:
             x, _w = _col_x(el)

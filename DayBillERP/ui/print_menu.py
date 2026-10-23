@@ -4,6 +4,8 @@
 #   🖨 Print (default)        default layout → printer
 #   🖨 Dot-matrix             text → impact printer
 #   📄 PDF                    open / save the A4 PDF
+#   🖨 Print design 2 / 3     the document's other designs (Invoice
+#                             Designer ▸ Set as Design 2 / 3), if any
 #   ─────
 #   🖨 Print to… (choose printer)
 #   ↺ Print previous <doc>    the last saved one of this kind
@@ -190,6 +192,8 @@ def show_menu(parent, kind, get_id, widget=None, before=None, status=None, previ
 
     for opt in DP.OPTIONS:
         menu.add_command(label=OPTION_LABELS[opt], command=lambda o=opt: go(o))
+    for slot in DP.design_slots(kind):
+        menu.add_command(label=f"🖨  Print design {slot}", command=lambda o=f"design{slot}": go(o))
     menu.add_separator()
     menu.add_command(label="🖨  Print to…  (choose printer)", command=lambda: go("default", ask=True))
     if previous:

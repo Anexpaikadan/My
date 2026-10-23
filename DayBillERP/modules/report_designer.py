@@ -94,7 +94,7 @@ def create_template(data):
             "scaling", "print_copies", "theme_name", "header_color",
             "footer_color", "table_color", "font_color", "accent_color",
             "header_text", "footer_text", "header_height", "footer_height",
-            "language", "layout_json"]
+            "language", "layout_json", "page_json"]
     vals = [data.get(c) for c in cols]
     placeholders = ",".join(["?"] * len(cols))
     db.execute(
@@ -470,7 +470,8 @@ FILE_KIND = "daybill-template"
 _TPL_FIELDS = ("template_name", "paper_size", "orientation", "margin_top", "margin_bottom",
                "margin_left", "margin_right", "scaling", "print_copies", "theme_name",
                "header_color", "footer_color", "table_color", "font_color", "accent_color",
-               "header_text", "footer_text", "header_height", "footer_height", "language")
+               "header_text", "footer_text", "header_height", "footer_height", "language",
+               "page_json")
 
 
 def template_to_dict(template, elements, report_type=None):

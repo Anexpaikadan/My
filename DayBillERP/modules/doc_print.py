@@ -14,6 +14,11 @@
 #                   Dot-matrix template in Print & Invoice).
 #   3. pdf        - A4 PDF saved in Documents\DayBill PDF and opened
 #                   (view / save / e-mail / print from the PDF app).
+#   design2 / design3 (v7.9) - the document's "Design 2" / "Design 3"
+#                   from the Invoice Designer, to the printer.
+#
+# A design's page settings can say "ask the printer each time" and
+# "text (dot-matrix)" printing — both are followed here.
 #
 # Printer: Settings ▸ Printing ▸ "Print on the default printer without
 # asking" (print_direct). On = straight to the printer; off = a small
@@ -286,20 +291,35 @@ def last_id(kind):
 
 
 # ── designer template (Report / Invoice Designer) ────────────
-def designer_template(kind):
-    """(template, elements) of the ★ default design for this document,
-    or (None, None) when there is no design yet."""
+def designer_template(kind, slot=1):
+    """(template, elements) of the ★ default design (slot 1) — or Design
+    2 / 3 — for this document, or (None, None) when there is none."""
     try:
         from modules import report_designer as rd
+        from modules import design_options as DO
         if not rd.tables_ready():
             return None, None
-        tpl = rd.get_default_template(KINDS[kind]["tpl"])
+        tpl = DO.template_for(KINDS[kind]["tpl"], slot)
         if not tpl:
             return None, None
         els = rd.load_layout(tpl["template_id"])
         return (tpl, els) if els else (None, None)
     except Exception:
         return None, None
+
+
+def _tpl(doc):
+    return designer_template(doc["kind"], doc.get("slot", 1))
+
+
+def design_slots(kind):
+    """[2, 3] — the extra designs this document has (for the Print menu)."""
+    try:
+        from modules import report_designer as rd
+        from modules import design_options as DO
+        return DO.free_slots(KINDS[kind]["tpl"]) if rd.tables_ready() else []
+    except Exception:
+        return []
 
 
 def _is_roll(tpl):
@@ -372,7 +392,7 @@ def qr_note(doc, option="default", source=None):
         from modules.zatca.qr_generator import QR_FIX_HINT
         why = inv.get("_qr_problem") or "The company VAT number is missing."
         return why + "\n" + QR_FIX_HINT
-    tpl, els = designer_template(doc["kind"])
+    tpl, els = _tpl(doc)
     if source is None:
         source = "designer" if (tpl and (option != "pdf" or not _is_roll(tpl))) else "builtin"
     if source == "designer" and tpl:
@@ -394,7 +414,7 @@ def render_default(doc):
     'designer' or 'builtin'."""
     global last_template_error
     last_template_error = ""
-    tpl, els = designer_template(doc["kind"])
+    tpl, els = _tpl(doc)
     path = _tmp(doc, "print", "pdf")
     if tpl:
         try:
@@ -409,7 +429,7 @@ def render_default(doc):
 
 def render_pdf(doc, folder=None):
     """A4 PDF for viewing / saving. Kept in Documents\\DayBill PDF."""
-    tpl, els = designer_template(doc["kind"])
+    tpl, els = _tpl(doc)
     folder = folder or pdf_folder()
     path = os.path.join(folder, f"{_safe(doc['conf']['label'])}_{_safe(doc['number'])}.pdf")
     if tpl and not _is_roll(tpl):
@@ -465,7 +485,7 @@ def default_printer_for(doc, option="default"):
     from modules import printer_service as ps
     if option == "dotmatrix":
         return ps.printer_for("dotmatrix")
-    tpl, _els = designer_template(doc["kind"])
+    tpl, _els = _tpl(doc)
     if tpl:
         try:
             from modules import report_designer as rd
@@ -481,7 +501,7 @@ def default_printer_for(doc, option="default"):
 
 
 def copies_for(doc):
-    tpl, _els = designer_template(doc["kind"])
+    tpl, _els = _tpl(doc)
     try:
         if tpl and int(tpl.get("print_copies") or 0) > 1:
             return int(tpl["print_copies"])
@@ -502,6 +522,8 @@ def print_document(kind, doc_id, option="default", printer=None, copies=None,
     global last_message, last_qr_note
     from modules import printer_service as ps
     last_qr_note = ""
+    from modules import design_options as DO
+    slot = DO.SLOT_OPTIONS.get(option, 1)
     if option not in OPTIONS:
         option = "default"
     doc = load(kind, doc_id)
@@ -509,6 +531,18 @@ def print_document(kind, doc_id, option="default", printer=None, copies=None,
         last_message = "Document not found."
         return False, last_message
     label = f"{doc['conf']['label']} {doc['number']}"
+    if slot != 1:
+        doc["slot"] = slot
+        if not _tpl(doc)[0]:
+            last_message = (f"{doc['conf']['label']} has no {DO.SLOT_NAMES[slot]} yet — "
+                            f"Invoice Designer ▸ pick a template ▸ Set as {DO.SLOT_NAMES[slot]}.")
+            return False, last_message
+    own = _tpl(doc)[0]
+    page = DO.page_settings(own)
+    if own and option == "default" and page["print_mode"] == "text":
+        option = "dotmatrix"                      # the design says: dot-matrix text
+    if own and ask is None and page["ask_printer"]:
+        ask = True
 
     if option == "pdf":
         path = render_pdf(doc)
