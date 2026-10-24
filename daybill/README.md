@@ -181,7 +181,7 @@ normal app, with a bottom tab bar (Jobs · QR code · Settings) for staff. Works
   on the device.
 
 **Settings** (bottom tab ⚙️) is a menu like a phone's settings app: Employees, Customer options, Prices,
-Printing, Shop settings, QR code poster (admin only), plus **My account** (every employee can change
+Printing, Shop settings, **App colour** (8 ready themes or your own 2 colours, with live preview), QR code poster (admin only), plus **My account** (every employee can change
 their own password), Install app and Log out.
 
 ## 7. Daily use

@@ -395,6 +395,59 @@ function t(string $key, ...$args): string
     return $args ? vsprintf($s, $args) : $s;
 }
 
+// ---- App colours (Settings → App colour) ---------------------------
+
+const DEFAULT_COLORS = ['#360dd9', '#7ed957']; // DAYbill logo purple + green
+
+function valid_hex(string $c): bool
+{
+    return (bool)preg_match('/^#[0-9a-f]{6}$/i', $c);
+}
+
+function app_colors(): array
+{
+    $p = strtolower(setting('color_primary', DEFAULT_COLORS[0]));
+    $a = strtolower(setting('color_accent', DEFAULT_COLORS[1]));
+    return [valid_hex($p) ? $p : DEFAULT_COLORS[0], valid_hex($a) ? $a : DEFAULT_COLORS[1]];
+}
+
+// Mixes a colour with white (amount > 0) or black (amount < 0).
+function mix_hex(string $hex, float $amount): string
+{
+    $rgb = sscanf($hex, '#%02x%02x%02x');
+    $to = $amount >= 0 ? 255 : 0;
+    $k = abs($amount);
+    return vsprintf('#%02x%02x%02x', array_map(fn($c) => (int)round($c + ($to - $c) * $k), $rgb));
+}
+
+function luminance(string $hex): float
+{
+    [$r, $g, $b] = array_map(function ($c) {
+        $c /= 255;
+        return $c <= 0.03928 ? $c / 12.92 : (($c + 0.055) / 1.055) ** 2.4;
+    }, sscanf($hex, '#%02x%02x%02x'));
+    return 0.2126 * $r + 0.7152 * $g + 0.0722 * $b;
+}
+
+// CSS variables for the chosen colours, incl. tints and readable text colours.
+function theme_css(): string
+{
+    [$p, $a] = app_colors();
+    $dark = fn(string $c) => luminance($c) > 0.18 ? mix_hex($c, -0.55) : mix_hex($c, -0.2);
+    $vars = [
+        '--primary' => $p, '--accent' => $a,
+        '--on-primary' => luminance($p) > 0.45 ? '#111111' : '#ffffff',
+        '--p-50' => mix_hex($p, 0.95), '--p-100' => mix_hex($p, 0.9), '--p-200' => mix_hex($p, 0.72),
+        '--p-300' => mix_hex($p, 0.6), '--p-dark' => $dark($p),
+        '--a-50' => mix_hex($a, 0.88), '--a-200' => mix_hex($a, 0.6), '--a-dark' => $dark($a),
+    ];
+    $css = '';
+    foreach ($vars as $k => $v) {
+        $css .= "$k:$v;";
+    }
+    return ':root{' . $css . '}';
+}
+
 // ---- Layout (installable app shell) --------------------------------
 
 /**
@@ -418,7 +471,8 @@ function page_header(string $title, bool $staff = false, string $lang = 'en', st
         . '<meta name="mobile-web-app-capable" content="yes">'
         . '<meta name="apple-mobile-web-app-status-bar-style" content="default">'
         . '<meta name="apple-mobile-web-app-title" content="' . h($staff ? 'Print Staff' : $shop) . '">'
-        . '<link rel="stylesheet" href="assets/style.css?v=6">'
+        . '<link rel="stylesheet" href="assets/style.css?v=7">'
+        . '<style>' . theme_css() . '</style>'
         . '<script src="assets/app.js?v=6" defer></script></head>'
         . '<body class="' . ($u ? 'has-tabs' : '') . '">';
     echo '<header class="top"><div class="wrap">';

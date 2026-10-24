@@ -6,7 +6,12 @@ require __DIR__ . '/printer.php';
 $admin = require_admin();
 
 $sections = ['employees' => 'Employees', 'options' => 'Customer options', 'prices' => 'Prices',
-    'printing' => 'Printing', 'shop' => 'Shop settings'];
+    'printing' => 'Printing', 'shop' => 'Shop settings', 'colors' => 'App colour'];
+$themes = [
+    'DAYbill' => ['#360dd9', '#7ed957'], 'Ocean' => ['#1f6feb', '#14b8a6'], 'Emerald' => ['#047857', '#f59e0b'],
+    'Royal' => ['#6d28d9', '#ec4899'], 'Rose' => ['#be123c', '#0ea5e9'], 'Sunset' => ['#c2410c', '#2563eb'],
+    'Midnight' => ['#12233f', '#22c55e'], 'Charcoal' => ['#27272a', '#eab308'],
+];
 $sec = (string)($_GET['s'] ?? '');
 if (!isset($sections[$sec])) {
     redirect('settings.php');
@@ -50,6 +55,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'delete_user' && $uid !== (int)$admin['id']) {
         $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$uid]);
         flash('User deleted.');
+    } elseif ($action === 'colors') {
+        foreach (['color_primary' => 0, 'color_accent' => 1] as $k => $i) {
+            $c = strtolower(trim((string)($_POST[$k] ?? '')));
+            save_setting($k, valid_hex($c) && empty($_POST['reset_flag']) ? $c : DEFAULT_COLORS[$i]);
+        }
+        flash(!empty($_POST['reset_flag']) ? 'Colours reset to the DAYbill logo colours.' : 'App colours saved.');
     } elseif ($action === 'settings') {
         save_setting('shop_name', mb_substr(trim((string)($_POST['shop_name'] ?? '')), 0, 100) ?: 'Daybill Print');
         save_setting('currency', mb_substr(trim((string)($_POST['currency'] ?? '')), 0, 5));
@@ -282,6 +293,66 @@ echo flash();
     </form>
   <?php endif; ?>
 </div>
+
+<?php elseif ($sec === 'colors'): [$cp, $ca] = app_colors(); ?>
+<div class="card">
+  <p class="muted">Choose the colours of the app for customers and staff. <b>Main colour</b>: buttons, tabs, order codes.
+    <b>Second colour</b>: amount to pay, success messages and the line under the logo.</p>
+  <h3>Ready themes</h3>
+  <div class="swatches">
+    <?php foreach ($themes as $name => [$tp, $ta]): ?>
+      <button type="button" class="swatch<?= [$tp, $ta] === [$cp, $ca] ? ' on' : '' ?>" data-p="<?= $tp ?>" data-a="<?= $ta ?>">
+        <i><b style="background:<?= $tp ?>"></b><b style="background:<?= $ta ?>"></b></i><?= h($name) ?>
+      </button>
+    <?php endforeach; ?>
+  </div>
+  <form method="post" id="colorForm">
+    <?= csrf_field() ?>
+    <h3>Your own colours</h3>
+    <div class="color-row">
+      <label>Main colour<input type="color" name="color_primary" value="<?= h($cp) ?>"></label>
+      <label>Second colour<input type="color" name="color_accent" value="<?= h($ca) ?>"></label>
+    </div>
+    <div class="preview">
+      <div class="pv-bar"></div>
+      <div class="pv-body">
+        <span class="pv-btn">OK – Print</span>
+        <span class="pv-pay">Amount to pay: 6 SR</span>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" name="action" value="colors">Save colours</button>
+      <button class="btn" name="action" value="colors" formnovalidate onclick="this.form.reset_flag.value=1">Reset to logo colours</button>
+      <input type="hidden" name="reset_flag" value="">
+    </div>
+  </form>
+</div>
+<script>
+(function () {
+  var f = document.getElementById('colorForm'), p = f.color_primary, a = f.color_accent;
+  function mix(hex, k) { // toward white
+    var n = parseInt(hex.slice(1), 16), c = [n >> 16, n >> 8 & 255, n & 255];
+    return 'rgb(' + c.map(function (v) { return Math.round(v + (255 - v) * k); }).join(',') + ')';
+  }
+  function lum(hex) {
+    var n = parseInt(hex.slice(1), 16);
+    return [n >> 16, n >> 8 & 255, n & 255].map(function (v) { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); })
+      .reduce(function (s, v, i) { return s + v * [.2126, .7152, .0722][i]; }, 0);
+  }
+  function paint() {
+    var bar = f.querySelector('.pv-bar'), btn = f.querySelector('.pv-btn'), pay = f.querySelector('.pv-pay');
+    bar.style.background = 'linear-gradient(90deg,' + p.value + ' 0 62%,' + a.value + ' 62% 100%)';
+    btn.style.background = p.value; btn.style.color = lum(p.value) > .45 ? '#111' : '#fff';
+    pay.style.background = mix(a.value, .88); pay.style.border = '1px solid ' + mix(a.value, .6);
+    document.querySelectorAll('.swatch').forEach(function (s) { s.classList.toggle('on', s.dataset.p === p.value && s.dataset.a === a.value); });
+  }
+  document.querySelectorAll('.swatch').forEach(function (s) {
+    s.onclick = function () { p.value = s.dataset.p; a.value = s.dataset.a; paint(); };
+  });
+  p.oninput = a.oninput = paint;
+  paint();
+})();
+</script>
 
 <?php else: ?>
 <div class="card">

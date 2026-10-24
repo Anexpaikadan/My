@@ -1,6 +1,8 @@
 :root {
   --bg: #f3f5f9; --card: #fff; --text: #1b2330; --muted: #6b7686; --line: #dfe4ec;
-  --primary: #360dd9; --accent: #7ed957; --ok: #2f8f1f; --danger: #c93636; --warn: #b7791f; --radius: 12px;
+  --primary: #360dd9; --accent: #7ed957; --ok: #2f8f1f;
+  --on-primary: #fff; --p-50: #f7f5ff; --p-100: #efeafd; --p-200: #cfc4f7; --p-300: #b9aaf2; --p-dark: #4b3c8f;
+  --a-50: #eefbe8; --a-200: #c9eeb8; --a-dark: #2a7a1c; --danger: #c93636; --warn: #b7791f; --radius: 12px;
 }
 * { box-sizing: border-box; }
 body { margin: 0; font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
@@ -178,20 +180,37 @@ body.has-tabs main.wrap { padding-bottom: calc(90px + env(safe-area-inset-bottom
 }
 
 /* ---- v6: DAYbill brand (logo purple #360dd9 + green #7ed957), white app bar ---- */
-.top { background: #fff; color: var(--text); box-shadow: 0 1px 0 var(--line), 0 2px 10px rgba(54,13,217,.06); }
+.top { background: #fff; color: var(--text); box-shadow: 0 1px 0 var(--line), 0 2px 10px rgba(18,35,63,.06); }
 .top::after { content: ""; display: block; height: 3px; background: linear-gradient(90deg, var(--primary) 0 62%, var(--accent) 62% 100%); }
 .brand { color: var(--text); }
 .brand img.logo { height: 38px; width: auto; border-radius: 0; }
 .back-btn { color: var(--primary); }
-.back-btn:active { background: #efeafd; }
+.back-btn:active { background: var(--p-100); }
 .top .title { color: var(--text); }
-.top nav.lang a { color: var(--primary); border-color: #cfc4f7; }
-.drop { border-color: #b9aaf2; background: #f7f5ff; }
-.tabs a { background: #ebe7fb; }
-.menu-item:active, .menu-item:hover, .job:active, .job:hover { background: #f6f4ff; }
-.menu-item .ic { background: #efeafd; }
-.pay-box { background: #eefbe8; color: #2a7a1c; border: 1px solid #c9eeb8; }
-.alert.ok { background: #eefbe8; color: #2a7a1c; }
-.badge { background: #efeafd; color: #4b3c8f; }
+.top nav.lang a { color: var(--primary); border-color: var(--p-200); }
+.drop { border-color: var(--p-300); background: var(--p-50); }
+.tabs a { background: var(--p-100); }
+.menu-item:active, .menu-item:hover, .job:active, .job:hover { background: var(--p-50); }
+.menu-item .ic { background: var(--p-100); }
+.pay-box { background: var(--a-50); color: var(--a-dark); border: 1px solid var(--a-200); }
+.alert.ok { background: var(--a-50); color: var(--a-dark); }
+.badge { background: var(--p-100); color: var(--p-dark); }
 .login-logo { display: block; margin: 8px auto 4px; height: 64px; width: auto; }
 .poster .logo { height: 110px; width: auto; margin-bottom: 8px; }
+
+/* ---- v7: admin-chosen app colours (variables set in page_header) ---- */
+.btn.primary, .tabs a.on, .avatar, .bigcode, .install-chip { color: var(--on-primary); }
+.price-total, .file .price { color: var(--a-dark); }
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin: 10px 0 16px; }
+.swatch { display: flex; align-items: center; gap: 10px; padding: 10px; border: 2px solid var(--line); border-radius: 10px; background: #fff; cursor: pointer; font-weight: 600; color: var(--text); text-align: start; }
+.swatch.on { border-color: var(--primary); }
+.swatch i { display: inline-flex; flex: none; width: 34px; height: 34px; border-radius: 50%; overflow: hidden; }
+.swatch i b { flex: 1; }
+.color-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.color-row label { flex: 1 1 140px; }
+input[type=color] { height: 46px; padding: 4px; cursor: pointer; }
+.preview { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; margin: 12px 0; }
+.preview .pv-bar { height: 4px; }
+.preview .pv-body { padding: 12px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.preview .pv-btn { padding: 10px 16px; border-radius: 8px; font-weight: 600; }
+.preview .pv-pay { padding: 10px 14px; border-radius: 8px; font-weight: 700; }
