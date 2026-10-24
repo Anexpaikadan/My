@@ -1,0 +1,995 @@
+# ============================================================
+# DayBill ERP - Sales Return & Purchase Return
+# One reusable ReturnForm (mode="sales"|"purchase") that mirrors
+# the Sales Invoice layout: minimal header, big Polosys grid,
+# bottom totals + payment, prev/next nav, find-by-number.
+# Plus simple list views for each.
+# ============================================================
+
+import tkinter as tk
+from tkinter import ttk, messagebox
+import sys, os
+from datetime import date, datetime
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from config import settings as cfg
+from config.database import db
+from modules.barcode_gen import sys_select     # v6.9.5: 5-digit system barcode
+from ui import close_guard
+
+
+CONF = {
+    "sales": {
+        "title": "Sales Return", "prefix": "SR",
+        "table": "sales_returns", "lines": "sales_return_lines",
+        "party": "customer", "party_id": "customer_id",
+        "party_name": "customer_name_en", "ref_col": "original_invoice_no",
+        "ref_label": "Original Invoice #", "src_table": "sales_invoices",
+        "src_lines": "sales_invoice_lines", "stock_sign": +1, "src_id": "invoice_id",
+    },
+    "purchase": {
+        "title": "Purchase Return", "prefix": "PR",
+        "table": "purchase_returns", "lines": "purchase_return_lines",
+        "party": "supplier", "party_id": "supplier_id",
+        "party_name": "supplier_name_en", "ref_col": "original_purchase_no",
+        "ref_label": "Original Purchase #", "src_table": "purchase_invoices",
+        "src_lines": "purchase_invoice_lines", "stock_sign": -1, "src_id": "purchase_id",
+    },
+}
+
+
+class ReturnForm:
+    def __init__(self, parent, mode="sales", return_id=None, view_only=False):
+        self.parent = parent
+        self.mode = mode
+        self.cfg = CONF[mode]
+        self.return_id = return_id
+        self.view_only = view_only
+        self._lines = []
+        self._parties = []
+        self._products = []
+        self._product_units = {}
+        self._load_lookups()
+        self._build_window()
+        if return_id:
+            self._load_return()
+        else:
+            self._set_defaults()
+        try:      # v6.9 connector bar: New · Edit · Save · Delete (user rights)
+            from ui import txn_connector as _tc
+            _tc.attach(self, f"{mode}_return")
+        except Exception:
+            pass
+
+    # ── lookups ───────────────────────────────────────────────
+    def _load_lookups(self):
+        try:
+            self._products = db.fetchall(
+                "SELECT p.product_id, p.product_code, p.product_name_en, "
+                "p.product_name_ar, p.unit_price, p.unit_of_measure_en, "
+                "p.vat_category_id, ISNULL(p.alias_name,'') AS alias_name, "
+                "ISNULL(p.purchase_price,0) AS purchase_price, "
+                "ISNULL(p.stock_quantity,0) AS stock_quantity, "
+                "ISNULL(p.barcode,'') AS barcode, " + sys_select("p") + ", "
+                "vc.category_code AS vat_code, vc.vat_rate "
+                "FROM products p LEFT JOIN vat_categories vc "
+                "ON p.vat_category_id=vc.vat_category_id "
+                "WHERE p.is_active=1 ORDER BY p.product_name_en") or []
+            self._product_units = {}
+            try:
+                for u in db.fetchall("SELECT * FROM product_units WHERE is_active=1"):
+                    self._product_units.setdefault(u["product_id"], []).append(u)
+            except Exception:
+                self._product_units = {}
+        except Exception:
+            self._products = []
+
+        if self.mode == "sales":
+            try:
+                self._parties = db.fetchall(
+                    "SELECT customer_id AS id, customer_code AS code, "
+                    "customer_name_en AS name, customer_name_ar AS name_ar, "
+                    "ISNULL(vat_registration_no,'') AS vat FROM customers "
+                    "WHERE is_active=1 ORDER BY customer_name_en") or []
+            except Exception:
+                self._parties = []
+        else:
+            try:
+                self._parties = db.fetchall(
+                    "SELECT supplier_id AS id, supplier_code AS code, "
+                    "supplier_name_en AS name, ISNULL(supplier_name_ar,'') AS name_ar, "
+                    "ISNULL(vat_registration_no,'') AS vat FROM suppliers "
+                    "WHERE is_active=1 ORDER BY supplier_name_en") or []
+            except Exception:
+                self._parties = []
+        self._company = {}
+        try:
+            self._company = db.fetchone("SELECT * FROM company WHERE company_id=1") or {}
+        except Exception:
+            self._company = {}
+
+    # ── window ────────────────────────────────────────────────
+    def _build_window(self):
+        C = cfg.theme()
+        self.win = tk.Toplevel()
+        self.win._doc_window = True     # item grid: may fill the screen
+        self.win._form = self           # v6.7: compact header (ui/compact.py)
+        self.win.title(self.cfg["title"])
+        w = min(1360, int(self.win.winfo_screenwidth() * 0.90))
+        h = min(840, int(self.win.winfo_screenheight() * 0.92))
+        self.win.geometry(f"{w}x{h}")
+        self.win.configure(bg=C["content_bg"])
+        self._center(w, h)
+        if not self.view_only:
+            self.win.bind("<F9>",  lambda e: self._save(confirm=False))
+            self.win.bind("<F10>", lambda e: self._save(confirm=True))
+            self.win.bind("<F6>",  lambda e: self._focus_barcode())
+        close_guard.bind_escape(self.win)     # Esc = ✕ (asks if lines are unsaved)
+
+        hdr = tk.Frame(self.win, bg=C["primary"], height=40)
+        hdr.pack(fill="x"); hdr.pack_propagate(False)
+        tk.Label(hdr, text=f"↩  {self.cfg['title']}", font=("Segoe UI", 12, "bold"),
+                 bg=C["primary"], fg="white").pack(side="left", padx=16)
+
+        self.form_body = tk.Frame(self.win, bg=C["card_bg"],
+                                  highlightbackground=C["border"], highlightthickness=1)
+        self.form_body.pack(side="top", fill="x")
+        self.items_area = tk.Frame(self.win, bg=C["content_bg"])    # packed last (v6.9)
+
+        self._build_header(C)
+        self._build_grid(C)
+        self._build_footer(C)
+        self.bottom_bar = tk.Frame(self.win, bg=C["card_bg"],
+                                   highlightbackground=C["border"], highlightthickness=1)
+        self.bottom_bar.pack(side="bottom", fill="x")
+        self._build_totals(C)
+        self.items_area.pack(side="top", fill="both", expand=True)
+
+    def _center(self, w, h):
+        self.win.update_idletasks()
+        x = (self.win.winfo_screenwidth() - w) // 2
+        y = (self.win.winfo_screenheight() - h) // 2
+        self.win.geometry(f"{w}x{h}+{x}+{max(0, y-20)}")
+
+    def _build_header(self, C):
+        """v7.9: titled blocks (Return · Original bill · Customer / Supplier)
+        and the party's balance card — the same look as the Sales window."""
+        state = "disabled" if self.view_only else "normal"
+        self.hdr = {}
+        from ui.doc_header import DocHeader
+        F10 = ("Segoe UI", 10)
+        H = DocHeader(self.form_body, C, pady=(4, 4))
+        self._doc_header = H
+
+        def ent(var, width=10, st=None):
+            return lambda p: tk.Entry(p, textvariable=var, width=width, font=F10, relief="solid",
+                                      bd=1, state=st or state)
+
+        # ── Return: number (▲▼) · date · find
+        b1 = H.block("Return", weight=2, minwidth=210)
+        self.hdr["number"] = tk.StringVar()
+
+        def nav_btns(p):
+            if self.view_only:
+                return None
+            f = tk.Frame(p, bg=C["card_bg"])
+            for t_, cmd_ in (("▲", self._nav_prev), ("▼", self._nav_next)):
+                tk.Button(f, text=t_, font=("Segoe UI", 7), width=2, padx=1, pady=0, bd=0,
+                          bg=C["content_bg"], relief="flat", cursor="hand2",
+                          command=cmd_).pack(side="left", padx=(1, 0))
+            return f
+        b1.row("No.", ent(self.hdr["number"], 10, "disabled"), extra=nav_btns)
+        self.hdr["date"] = tk.StringVar()
+        de = b1.row("Date", ent(self.hdr["date"], 11), required=True)
+        if state == "normal":
+            try:
+                from ui.datepicker import attach_datepicker
+                attach_datepicker(de, self.hdr["date"])
+            except Exception:
+                pass
+        if not self.view_only:
+            self.find_on = tk.BooleanVar(value=False)
+            self.find_var = tk.StringVar()
+
+            def find_box(p):
+                self.find_entry = tk.Entry(p, textvariable=self.find_var, width=8, font=("Segoe UI", 9),
+                                           relief="solid", bd=1, state="disabled")
+                self.find_entry.bind("<Return>", lambda e: self._find())
+                return self.find_entry
+            b1.row("Find", find_box, extra=lambda p: tk.Checkbutton(
+                p, variable=self.find_on, command=self._toggle_find, bg=C["card_bg"],
+                activebackground=C["card_bg"], highlightthickness=0))
+
+        # ── Original bill: its number (+ 📂 load it with its items) · payment
+        b2 = H.block("Original bill", weight=3, minwidth=260)
+        self.hdr["ref"] = tk.StringVar()
+        b2.row(self.cfg["ref_label"].replace(" #", "").replace("Original ", "") + " #",
+               ent(self.hdr["ref"], 12),
+               extra=(None if self.view_only else lambda p: tk.Button(
+                   p, text="📂 Load bill", font=("Segoe UI", 8, "bold"), bg=C["primary"], fg="white",
+                   relief="flat", padx=8, cursor="hand2", command=self._load_original)))
+        self.hdr["payment"] = tk.StringVar(value="cash")
+        b2.row("Refund as", lambda p: ttk.Combobox(
+            p, textvariable=self.hdr["payment"], values=["cash", "credit", "card", "bank_transfer"],
+            state="readonly" if state == "normal" else "disabled", font=F10, width=12))
+
+        # ── Customer / Supplier · notes
+        who = "Customer" if self.mode == "sales" else "Supplier"
+        b3 = H.block(who, weight=4, minwidth=300)
+        self.party_var = tk.StringVar()
+        opts = [f"{p['code']} — {p['name']}" for p in self._parties]
+
+        def party_box(p):
+            self.party_combo = ttk.Combobox(p, textvariable=self.party_var, values=opts,
+                                            state="readonly", font=F10, width=24)
+            self.party_combo.bind("<<ComboboxSelected>>", lambda e: self._show_party_facts(), add="+")
+            return self.party_combo
+        b3.row(who, party_box, required=True)
+        self.hdr["notes"] = tk.StringVar()
+        b3.row("Notes", ent(self.hdr["notes"], 18))
+        try:
+            self.party_var.trace_add("write", lambda *a: self.win.after_idle(self._show_party_facts))
+        except Exception:
+            pass
+
+        # ── the party's balance card
+        self._bal_card = H.balance_card()
+
+    def _show_party_facts(self):
+        """v7.9: balance + last bill of the customer / supplier."""
+        card = getattr(self, "_bal_card", None)
+        if card is None:
+            return ""
+        try:
+            pid = self._party_id()
+        except Exception:
+            pid = None
+        return card.show("customer" if self.mode == "sales" else "supplier", pid)
+
+    def _build_grid(self, C):
+        # v6.9: no title line above the grid — more rows for the items
+        try:
+            from ui.invoice_grid import InvoiceGrid
+            mode = (cfg.get("sales_price_tax_mode", "inclusive") if self.mode == "sales"
+                    else cfg.get("purchase_cost_tax_mode", "exclusive"))
+            self.grid = InvoiceGrid(self.items_area, C, self._products,
+                                    self._product_units, on_change=self._on_change,
+                                    tax_mode=mode,
+                                    doc_type=("sales_return" if self.mode == "sales"
+                                              else "purchase_return"))
+            self.grid.pack(fill="both", expand=True, padx=8, pady=(4, 0))
+            self._on_change()
+            if not self.view_only:
+                self.grid.focus_first_product()
+        except Exception as e:
+            import traceback; traceback.print_exc()
+            tk.Label(self.items_area, text=f"⚠ Grid load error:\n{e}",
+                     bg=C["content_bg"], fg=C["danger"]).pack(padx=16, pady=20)
+
+    def _build_totals(self, C):
+        """v6.9: totals on one slim line (was a tall block)."""
+        from ui.ui_kit import total_strip
+        self.tvars = total_strip(self.bottom_bar,
+                                 [("Total Qty", "qty", None), ("Gross", "gross", None),
+                                  ("Discount", "disc", C["danger"]), ("Taxable", "taxable", None),
+                                  ("VAT", "vat", C["info"])],
+                                 ("NET TOTAL (SAR)", "total"), C)
+        # v7.9: refunded from / into which cash / bank account(s); the rest
+        # goes on the party's account
+        from ui.pay_panel import PayPanel
+        self._cur_total = 0.0
+        self.pay = PayPanel(self.bottom_bar, C, lambda: self._cur_total,
+                            title="Refund from" if self.mode == "sales" else "Refund into",
+                            state="disabled" if self.view_only else "normal")
+        try:
+            self.hdr["payment"].trace_add("write", lambda *a: self.pay.set_auto(self.hdr["payment"].get()))
+            self.pay.set_auto(self.hdr["payment"].get())
+        except Exception:
+            pass
+
+    def _build_footer(self, C):
+        footer = tk.Frame(self.win, bg=C["card_bg"],
+                          highlightbackground=C["border"], highlightthickness=1)
+        footer.pack(fill="x", side="bottom")
+        inner = tk.Frame(footer, bg=C["card_bg"]); inner.pack(fill="x", padx=10, pady=3)
+        self.status = tk.StringVar()
+        tk.Label(inner, textvariable=self.status, font=("Segoe UI", 9),
+                 bg=C["card_bg"], fg=C["danger"]).pack(side="left")
+        tk.Button(inner, command=lambda: close_guard.request_close(self.win),
+                  **__import__("ui.ui_kit", fromlist=["x"]).slim_ghost_key_style("Esc", "Cancel")).pack(
+                      side="right", padx=(8, 0))
+        from ui import print_menu
+        print_menu.print_button(inner, f"{self.mode}_return", lambda: self.return_id,
+                                before=self._save_for_print, status=self.status,
+                                **__import__("ui.ui_kit", fromlist=["x"]).slim_key_style(
+                                    C.get("tile_purple", C["info"]), "🖨 ▾", "Print")).pack(side="right", padx=(8, 0))
+        if not self.view_only:
+            tk.Button(inner, command=lambda: self._save(confirm=True),
+                      **__import__("ui.ui_kit", fromlist=["x"]).slim_key_style(
+                          C.get("tile_green", C["success"]), "F10", "Save & Confirm")).pack(
+                          side="right", padx=(8, 0))
+            tk.Button(inner, command=lambda: self._save(confirm=False),
+                      **__import__("ui.ui_kit", fromlist=["x"]).slim_key_style(
+                          C.get("tile_blue", C["primary"]), "F9", "Save Draft")).pack(
+                          side="right")
+
+    # ── helpers ───────────────────────────────────────────────
+    def _focus_barcode(self):
+        try:
+            self.grid.focus_barcode()
+        except Exception:
+            pass
+
+    def _on_change(self):
+        grid = getattr(self, "grid", None)
+        if grid is None:
+            return
+        from modules.doc_math import doc_totals, round_lines
+        self._lines = round_lines(grid.data_lines())        # halalas (v6.9.2)
+        if not hasattr(self, "tvars"):
+            return
+        gross = sum(l.get("line_amount", 0) for l in self._lines)
+        disc = sum(l.get("discount_amount", 0) for l in self._lines)
+        T = doc_totals(self._lines, (getattr(getattr(self, "grid", None), "tax_mode", "exclusive") == "inclusive"))               # VAT once per rate
+        vat, total = T["vat"], T["total"]
+        qty = sum(l.get("quantity", 0) for l in self._lines)
+        self.tvars["qty"].set(f"{qty:g}")
+        self.tvars["gross"].set(f"{gross:,.2f}")
+        self.tvars["disc"].set(f"−{disc:,.2f}")
+        self.tvars["taxable"].set(f"{T['taxable']:,.2f}")
+        self.tvars["vat"].set(f"{vat:,.2f}")
+        self.tvars["total"].set(f"{total:,.2f}")
+        self._cur_total = total
+        if getattr(self, "pay", None) is not None:
+            self.pay.total_changed()
+
+    def _set_defaults(self):
+        self.hdr["date"].set(date.today().isoformat())
+        self.hdr["number"].set(self._next_number())
+        if getattr(self, "pay", None) is not None:       # v7.9: the panel follows Refund as
+            self.pay.manual = False
+            self.pay.set_auto(self.hdr["payment"].get())
+        # Default party = Cash customer/supplier, so a cash return
+        # doesn't require picking a party first (mirrors Sales Invoice
+        # and Purchase Invoice).
+        cash = next((p for p in self._parties
+                     if str(p.get("code", "")).upper() in
+                     ("CASH", "WALKIN", "CASH-001", "WALK-IN")
+                     or "cash" in str(p.get("name", "")).lower()
+                     or "walk" in str(p.get("name", "")).lower()), None)
+        if cash:
+            self.party_var.set(f"{cash['code']} — {cash['name']}")
+
+    def _save_for_print(self):
+        """Print needs a saved return: save it (as draft) if new."""
+        if self.return_id or self.view_only:
+            return True
+        return self._save(confirm=False, keep_open=True) is True
+
+    def _next_number(self):
+        try:
+            from modules.doc_numbering import next_number
+            return next_number(self.cfg["table"], "return_number",
+                               self.cfg["prefix"])
+        except Exception:
+            ym = datetime.now().strftime("%Y%m")
+            return f"{self.cfg['prefix']}-{ym}-000001"
+
+    # ── load original source invoice/purchase ─────────────────
+    def _party_id(self):
+        code = (self.party_var.get() or "").split(" — ")[0]
+        p = next((x for x in self._parties if x["code"] == code), None)
+        if not p or str(p.get("code", "")).upper() in ("CASH", "WALKIN", "CASH-001", "WALK-IN"):
+            return None
+        return p["id"]
+
+    def _load_original(self):
+        """v7.5: pick the bill (type its number, or search by number / party),
+        then pick the items to return — all or some, with quantities that
+        never go above what was sold minus what came back before."""
+        from modules import doc_links as DL
+        from ui.doc_pick import DocPicker, LinePicker
+        kind = DL.RETURN_SRC[self.mode]
+        k = DL.KINDS[kind]
+        ref = self.hdr["ref"].get().strip()
+        src_id = None
+        if ref:
+            row = db.fetchone("SELECT %s AS id FROM %s WHERE invoice_number=?" % (k["id"], k["table"]), (ref,))
+            src_id = row["id"] if row else None
+        if not src_id:
+            dp = DocPicker(self.win, [kind], party_id=self._party_id(), search=ref,
+                           title="Load the %s to return from" % k["title"].lower())
+            if not dp.result:
+                return
+            src_id = dp.result[1]
+        h, lines = DL.return_lines(self.mode, src_id, exclude_return_id=self.return_id)
+        if not h:
+            messagebox.showinfo("Not found", "The bill was not found.", parent=self.win)
+            return
+        if not any(l["_left"] > 0 for l in lines):
+            messagebox.showinfo("Return", "Everything on %s was already returned." % h["invoice_number"],
+                                parent=self.win)
+            return
+        lp = LinePicker(self.win, lines, title="Return from %s — pick the items" % h["invoice_number"])
+        if lp.result:
+            self._apply_return_pick(h, lp.result)
+
+    def _apply_return_pick(self, src, picked):
+        """Put the picked items (with their quantities) on the return."""
+        from modules import doc_links as DL
+        self.hdr["ref"].set(src.get("invoice_number") or "")
+        self.grid.set_lines(DL.to_grid(picked))
+        self._on_change()
+        pid = src.get(self.cfg["party_id"])
+        if pid:
+            p = next((x for x in self._parties if x["id"] == pid), None)
+            if p:
+                self.party_combo.set(f"{p['code']} — {p['name']}")
+        # v6.9.1: a bill that is still open → the return goes on the
+        # party's account (and settles that bill); a paid bill →
+        # money back the way it was paid
+        try:
+            left = float(src.get("total_amount") or 0) - float(src.get("paid_amount") or 0)
+            if str(src.get("payment_status") or "").lower() == "paid":
+                left = 0.0
+            paid_by = str(src.get("payment_method") or "").lower()
+            pick = ("credit" if left > 0.005 else
+                    paid_by if paid_by in ("cash", "card", "bank_transfer") else "cash")
+            self.hdr["payment"].set(pick)
+        except Exception:
+            pass
+        self.status.set("Loaded %d item(s) from %s — change a quantity in the grid if needed."
+                        % (len(picked), src.get("invoice_number")))
+
+    # ── navigation / find ─────────────────────────────────────
+    def _toggle_find(self):
+        on = self.find_on.get()
+        self.find_entry.configure(state="normal" if on else "disabled")
+        if on:
+            self.find_entry.focus_set()
+
+    def _find(self):
+        num = self.find_var.get().strip()
+        if not num:
+            return
+        row = db.fetchone(
+            f"SELECT return_id FROM {self.cfg['table']} WHERE return_number=?", (num,))
+        if not row:
+            row = db.fetchone(
+                f"SELECT TOP 1 return_id FROM {self.cfg['table']} "
+                f"WHERE return_number LIKE ? ORDER BY return_id DESC", ("%" + num + "%",))
+        if row:
+            self._goto(row["return_id"])
+        else:
+            messagebox.showinfo("Not found", f"No return matching '{num}'.")
+
+    def _nav_prev(self):
+        cur = self.return_id
+        if cur:
+            row = db.fetchone(f"SELECT TOP 1 return_id FROM {self.cfg['table']} "
+                              f"WHERE return_id<? ORDER BY return_id DESC", (cur,))
+        else:
+            row = db.fetchone(f"SELECT TOP 1 return_id FROM {self.cfg['table']} "
+                              f"ORDER BY return_id DESC")
+        if row:
+            self._goto(row["return_id"])
+        else:
+            messagebox.showinfo("Navigation", "No earlier return.")
+
+    def _nav_next(self):
+        cur = self.return_id
+        if not cur:
+            messagebox.showinfo("Navigation", "Already on a new return.")
+            return
+        row = db.fetchone(f"SELECT TOP 1 return_id FROM {self.cfg['table']} "
+                          f"WHERE return_id>? ORDER BY return_id ASC", (cur,))
+        if row:
+            self._goto(row["return_id"])
+        else:
+            messagebox.showinfo("Navigation", "This is the latest return.")
+
+    def _goto(self, rid):
+        self.return_id = rid
+        try:
+            self.grid.set_lines([])
+        except Exception:
+            pass
+        self._load_return()
+
+    def _load_return(self):
+        r = db.fetchone(f"SELECT * FROM {self.cfg['table']} WHERE return_id=?",
+                        (self.return_id,))
+        if not r:
+            return
+        self.hdr["number"].set(r.get("return_number", ""))
+        self.hdr["date"].set(str(r.get("return_date", "")))
+        self.hdr["ref"].set(r.get(self.cfg["ref_col"], "") or "")
+        self.hdr["payment"].set(r.get("payment_method", "cash") or "cash")
+        self.hdr["notes"].set(r.get("notes_en", "") or "")
+        pid = r.get(self.cfg["party_id"])
+        if pid:
+            p = next((x for x in self._parties if x["id"] == pid), None)
+            if p:
+                self.party_combo.set(f"{p['code']} — {p['name']}")
+        lines = db.fetchall(f"SELECT * FROM {self.cfg['lines']} WHERE return_id=? "
+                            f"ORDER BY line_number", (self.return_id,))
+        try:
+            self.grid.set_lines([dict(l) for l in lines])
+        except Exception:
+            pass
+        self._on_change()
+        if getattr(self, "pay", None) is not None:       # v7.9: what it was refunded with
+            try:
+                from modules import tenders as _td
+                rows = _td.lines_for(f"{self.mode}_return", self.return_id)
+            except Exception:
+                rows = []
+            if rows:
+                self.pay.set_rows(rows)
+            else:
+                self.pay.manual = False
+                self.pay.set_auto(self.hdr["payment"].get())
+        self._mark_clean()
+
+    # ── close guard: ask only when lines are not saved ────────
+    def _lines_sig(self):
+        try:
+            return close_guard.lines_sig(self.grid.data_lines())
+        except Exception:
+            return ()
+
+    def _mark_clean(self):
+        """The grid now matches the saved / loaded return."""
+        self._clean_sig = self._lines_sig()
+
+    def _is_dirty(self):
+        """✕ / Esc / Cancel ask first only while the grid has lines that
+        are not saved: a new return, or lines changed since load / save."""
+        if self.view_only:
+            return False
+        sig = self._lines_sig()
+        if not sig:
+            return False
+        return not self.return_id or sig != getattr(self, "_clean_sig", None)
+
+    # ── save ──────────────────────────────────────────────────
+    def _save(self, confirm=False, keep_open=False):
+        if self.view_only:                 # v6.9.5: a view-only window never saves
+            return False
+        from modules import permissions as _pm
+        if not _pm.allowed(("sales_return" if self.mode == "sales" else "purchase_return"), ("edit" if self.return_id else "add")):
+            return False
+        # v6.9.5: a CONFIRMED return stays confirmed when it is changed
+        # (F9 / Save Draft took its stock and books back out)
+        if self.return_id and not confirm:
+            from modules import doc_edit
+            confirm = doc_edit.info(f"{self.mode}_return", self.return_id)[1] == "confirmed"
+        try:
+            self._lines = self.grid.data_lines()
+        except Exception:
+            pass
+        if not self._lines:
+            self.status.set("⚠️  Add at least one item.")
+            return
+        if not self.party_var.get() or "—" not in self.party_var.get():
+            self.status.set("⚠️  Select a " + self.cfg["party"] + ".")
+            return
+        try:                    # v7.5: never more back than was sold (minus earlier returns)
+            from modules import doc_links as _DL
+            probs = _DL.check_return(self.mode, self.hdr["ref"].get().strip(), self._lines, self.return_id)
+        except Exception:
+            probs = []
+        if probs:
+            self.status.set("⚠️  " + probs[0])
+            messagebox.showwarning("Return", "\n".join(probs[:8]), parent=self.win)
+            return
+        rdate = self.hdr["date"].get().strip()
+        from modules.date_utils import validate_invoice_date
+        ok, iso_date, err = validate_invoice_date(rdate)
+        if not ok:
+            self.status.set(f"⚠️  {err}")
+            return
+        self.hdr["date"].set(iso_date)
+        try:
+            from modules import financial_year as fy
+            lock_msg = fy.guard_active(iso_date)
+            if lock_msg:
+                self.status.set(f"⚠️  {lock_msg}")
+                return
+        except Exception:
+            pass
+        if self.return_id:
+            try:
+                from modules import doc_edit
+                why = doc_edit.block_reason(f"{self.mode}_return", self.return_id, "edit")
+            except Exception:
+                why = ""
+            if why:
+                self.status.set(f"⚠️  {why}")
+                return
+        self.status.set("")
+
+        code = self.party_var.get().split(" — ")[0]
+        party = next((p for p in self._parties if p["code"] == code), None)
+        from modules.doc_math import doc_totals, round_lines
+        self._lines = round_lines(self._lines)
+        T = doc_totals(self._lines, (getattr(getattr(self, "grid", None), "tax_mode", "exclusive") == "inclusive"))     # v6.9.2: the ZATCA way
+        gross, vat, total = T["taxable"], T["vat"], T["total"]
+        disc = sum(l.get("discount_amount", 0) for l in self._lines)
+        cf = self.cfg
+        editing = bool(self.return_id)
+        pp = getattr(self, "pay", None)
+        if pp is not None:                         # v7.9: the payment area decides
+            self._cur_total = total
+            if pp.manual:
+                from ui.pay_panel import ok_for_party
+                why = ok_for_party(self._party_id() is None, total, pp.paid(),
+                                   "customer" if self.mode == "sales" else "supplier")
+                if why:
+                    self.status.set("⚠️  " + why)
+                    messagebox.showwarning("Refund", why, parent=self.win)
+                    return False
+                m = pp.method()
+                if m in ("cash", "credit", "card", "bank_transfer"):
+                    self.hdr["payment"].set(m)
+            else:
+                pp.set_auto(self.hdr["payment"].get())
+        number = self.hdr["number"].get() if editing else self._next_number()
+
+        # v5.27: header, lines, stock, journal and ZATCA are ONE transaction
+        _tx = None
+        try:
+            _tx = db.begin()
+            if editing:
+                # edit a saved return: same number, new header + lines;
+                # doc_posting.sync below reverses the old stock + journal
+                pcols = ("customer_id, customer_name_en, customer_name_ar, customer_vat_no"
+                         if self.mode == "sales" else
+                         "supplier_id, supplier_name_en, supplier_name_ar, supplier_vat_no")
+                sets = ", ".join(f"{c.strip()}=?" for c in pcols.split(","))
+                db.execute(
+                    f"UPDATE {cf['table']} SET return_date=?, {cf['ref_col']}=?, {sets}, "
+                    f"subtotal_amount=?, discount_amount=?, taxable_amount=?, vat_amount=?, "
+                    f"total_amount=?, payment_method=?, notes_en=?, return_status=? "
+                    f"WHERE return_id=?",
+                    (self.hdr["date"].get(), self.hdr["ref"].get(),
+                     party["id"], party["name"], party.get("name_ar", ""),
+                     party.get("vat", ""), gross, disc, gross, vat, total,
+                     self.hdr["payment"].get(), self.hdr["notes"].get(),
+                     "confirmed" if confirm else "draft", self.return_id))
+                db.execute(f"DELETE FROM {cf['lines']} WHERE return_id=?",
+                           (self.return_id,))
+            elif self.mode == "sales":
+                db.execute(
+                    f"INSERT INTO {cf['table']} (return_number, return_date, "
+                    f"{cf['ref_col']}, customer_id, customer_name_en, customer_name_ar, "
+                    f"customer_vat_no, subtotal_amount, discount_amount, taxable_amount, "
+                    f"vat_amount, total_amount, payment_method, notes_en, return_status) "
+                    f"VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (number, self.hdr["date"].get(), self.hdr["ref"].get(),
+                     party["id"], party["name"], party.get("name_ar", ""),
+                     party.get("vat", ""), gross, disc, gross, vat, total,
+                     self.hdr["payment"].get(), self.hdr["notes"].get(),
+                     "confirmed" if confirm else "draft"))
+            else:
+                db.execute(
+                    f"INSERT INTO {cf['table']} (return_number, return_date, "
+                    f"{cf['ref_col']}, supplier_id, supplier_name_en, supplier_name_ar, "
+                    f"supplier_vat_no, subtotal_amount, discount_amount, taxable_amount, "
+                    f"vat_amount, total_amount, payment_method, notes_en, return_status) "
+                    f"VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (number, self.hdr["date"].get(), self.hdr["ref"].get(),
+                     party["id"], party["name"], party.get("name_ar", ""),
+                     party.get("vat", ""), gross, disc, gross, vat, total,
+                     self.hdr["payment"].get(), self.hdr["notes"].get(),
+                     "confirmed" if confirm else "draft"))
+            rid = self.return_id if editing else db.last_identity(cf["table"], "return_id")
+            if pp is not None:                     # v7.9: which accounts refunded how much
+                pp.save(f"{self.mode}_return", rid)
+            for i, ln in enumerate(self._lines, 1):
+                db.execute(
+                    f"INSERT INTO {cf['lines']} (return_id, line_number, product_id, "
+                    f"product_code, product_name_en, product_name_ar, quantity, "
+                    f"unit_of_measure_en, unit_price, discount_amount, line_amount, "
+                    f"vat_category_code, vat_rate, vat_amount, line_total) "
+                    f"VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (rid, i, ln.get("product_id"), ln.get("product_code", ""),
+                     ln.get("product_name_en", ""), ln.get("product_name_ar", ""),
+                     ln.get("quantity", 0), ln.get("unit_of_measure_en", "Unit"),
+                     ln.get("unit_price", 0), ln.get("discount_amount", 0),
+                     ln.get("line_amount", 0), ln.get("vat_category_code", "S"),
+                     ln.get("vat_rate", 15), ln.get("vat_amount", 0),
+                     ln.get("line_total", 0)))
+            # ── Stock + accounts (one engine for every document) ──
+            # Draft → nothing moves. Confirmed → stock back in (sales
+            # return) / out (purchase return) in BASE units, the return
+            # journal, and for sales returns the cost-of-sales reversal.
+            from modules import doc_posting
+            try:
+                doc_posting.sync(f"{self.mode}_return", rid)
+            except Exception as e:
+                doc_posting.last_warning = str(e)[:200]
+            if confirm and self.mode == "sales":    # ZATCA Phase 2: credit note signed
+                try:
+                    from modules.zatca import egs as _zegs
+                    _zegs.after_save("sales_return", rid)
+                except Exception:
+                    pass
+            _tx.commit()                # all kept together — or the except undoes it all
+            self.return_id = rid
+            self._mark_clean()          # close guard: nothing unsaved now
+            if keep_open:                          # saved on the way to printing
+                self.status.set(f"💾 Saved {number} ({'confirmed' if confirm else 'draft'}).")
+                return True
+            if confirm:
+                messagebox.showinfo("Saved", f"{cf['title']} {number} confirmed.\n"
+                                    f"Stock and accounts updated.")
+                doc_posting.notify(self.win)
+            else:
+                messagebox.showinfo("Saved", f"{cf['title']} {number} saved as DRAFT.\n"
+                                    f"Stock and accounts update when you confirm it "
+                                    f"(✅ Confirm in the list).")
+            # v6.9.3: the window stays open (Settings ▸ General ▸ After saving)
+            from ui import after_save
+            parent, md = self.parent, self.mode
+            after_save.finish(self, number,
+                              new=lambda: ReturnForm(parent, mode=md),
+                              keep=lambda: ReturnForm(parent, mode=md, return_id=rid),
+                              edited=editing)
+            return True
+        except Exception as e:
+            if _tx is not None and not _tx.kept:
+                _tx.rollback()                     # nothing of a failed save is kept
+                messagebox.showerror("Not saved", "The return was NOT saved — nothing was "
+                                     "kept. Please try again.\n\n" + str(e)[:400])
+                return False
+            messagebox.showerror("Save Error", str(e))
+
+
+# ── List views ────────────────────────────────────────────────
+class _ReturnListView:
+    mode = "sales"
+
+    def __init__(self, parent):
+        C = cfg.theme()
+        for w in parent.winfo_children():
+            w.destroy()
+        self.parent = parent
+        self.cfg = CONF[self.mode]
+        self.frame = tk.Frame(parent, bg=C["content_bg"])
+        self.frame.pack(fill="both", expand=True)
+
+        head = tk.Frame(self.frame, bg=C["content_bg"])
+        head.pack(fill="x", padx=16, pady=12)
+        tk.Label(head, text=f"↩  {self.cfg['title']}s", font=("Segoe UI", 16, "bold"),
+                 bg=C["content_bg"], fg=C["text_primary"]).pack(side="left")
+        self.search_var = tk.StringVar()
+        se = tk.Entry(head, textvariable=self.search_var, font=("Segoe UI", 10),
+                      width=26, relief="solid", bd=1, bg="white")
+        se.pack(side="left", padx=(16, 0), ipady=3)
+        se.insert(0, "")
+        tk.Label(head, text="🔍", font=("Segoe UI Emoji", 11),
+                 bg=C["content_bg"]).pack(side="left", padx=(4, 0))
+        self.search_var.trace("w", lambda *a: self._load())
+        tk.Button(head, text=f"＋ New {self.cfg['title']}", font=("Segoe UI", 10, "bold"),
+                  bg=C["primary"], fg="white", relief="flat", padx=16, pady=8,
+                  cursor="hand2", command=self._new).pack(side="right")
+        tk.Button(head, text="🔄 Refresh", font=("Segoe UI", 10), bg=C["card_bg"],
+                  fg=C["text_primary"], relief="flat", padx=12, pady=8, cursor="hand2",
+                  highlightbackground=C["border"], highlightthickness=1,
+                  command=self._load).pack(side="right", padx=8)
+
+        cols = ("number", "date", "party", "total", "status")
+        heads = {"number": ("Return #", 160), "date": ("Date", 110),
+                 "party": (self.cfg["party"].title(), 240),
+                 "total": ("Total", 110), "status": ("Status", 100)}
+        style = ttk.Style()
+        try:
+            style.theme_use("clam")
+        except Exception:
+            pass
+        style.configure("Ret.Treeview", rowheight=30, font=("Segoe UI", 10))
+        wrap = tk.Frame(self.frame, bg=C["card_bg"])
+        wrap.pack(fill="both", expand=True, padx=16, pady=(0, 16))
+        self.tree = ttk.Treeview(wrap, columns=cols, show="headings", style="Ret.Treeview")
+        for c in cols:
+            txt, w = heads[c]
+            self.tree.heading(c, text=txt)
+            self.tree.column(c, width=w,
+                             anchor="e" if c == "total" else "w")
+        self.tree.pack(fill="both", expand=True, side="left")
+        self.tree.bind("<Double-1>", self._open)
+
+        # ── Action bar: Open · Delete · Export · Report ───────
+        bbar = tk.Frame(self.frame, bg=C["content_bg"])
+        bbar.pack(fill="x", padx=16, pady=(0, 14))
+        for txt, bg, fg, cmd in [
+            ("👁  Open", C["card_bg"], C["text_primary"], self._open),
+            ("✏  Edit", C["card_bg"], C["text_primary"], self._edit),
+            ("✅  Confirm", "#F0FDF4", C["success"], self._confirm),
+            ("🖨  Print ▾", C["card_bg"], C["text_primary"], None),
+            ("🗑  Delete", "#FEF2F2", C["danger"], self._delete),
+            ("📥  Export", C["card_bg"], C["text_primary"], self._export_excel),
+            ("📊  Report", C["card_bg"], C["text_primary"], self._report_pdf),
+        ]:
+            b_ = tk.Button(bbar, text=txt, font=("Segoe UI", 9), bg=bg, fg=fg,
+                           relief="flat", padx=12, pady=6, cursor="hand2",
+                           highlightbackground=C["border"], highlightthickness=1,
+                           command=cmd)
+            if cmd is None:
+                from ui import print_menu
+                b_.configure(command=lambda b__=b_: print_menu.show_menu(
+                    self.frame, f"{self.mode}_return",
+                    lambda: int(self.tree.selection()[0]) if self.tree.selection() else None,
+                    widget=b__))
+            b_.pack(side="left", padx=(0, 6))
+        self._load()
+
+    def _load(self):
+        self.tree.delete(*self.tree.get_children())
+        pname = "customer_name_en" if self.mode == "sales" else "supplier_name_en"
+        try:
+            rows = db.fetchall(
+                f"SELECT return_id, return_number, return_date, {pname} AS party, "
+                f"total_amount, return_status FROM {self.cfg['table']} "
+                f"ORDER BY return_id DESC") or []
+            self._rows = rows
+            q = (self.search_var.get() or "").strip().lower()
+            if q:
+                rows = [r for r in rows if q in " ".join(
+                    str(r.get(k) or "") for k in
+                    ("return_number", "return_date", "party", "return_status")).lower()]
+            for r in rows:
+                self.tree.insert("", "end", iid=str(r["return_id"]), values=(
+                    r["return_number"], r["return_date"], r.get("party", ""),
+                    f"{float(r.get('total_amount', 0)):,.2f}",
+                    r.get("return_status", "")))
+        except Exception as e:
+            self.tree.insert("", "end", values=(f"(load error: {e})", "", "", "", ""))
+
+    def _new(self):
+        from modules import permissions as _pm
+        if not _pm.allowed(("sales_return" if self.mode == "sales" else "purchase_return"), "add"):
+            return False
+        key = "allow_sales_return" if self.mode == "sales" else "allow_purchase_return"
+        if not cfg.flag(key, True):
+            messagebox.showwarning(
+                "Returns disabled",
+                f"New {self.cfg['title'].lower()}s are turned off.\n\n"
+                f"Turn on 'Allow {self.mode.title()} Return' in Settings ▸ "
+                f"{'Sales' if self.mode == 'sales' else 'Purchase'}.")
+            return
+        ReturnForm(self.parent, mode=self.mode)
+
+    def _open(self, event=None):
+        sel = self.tree.selection()
+        if sel:
+            ReturnForm(self.parent, mode=self.mode,
+                       return_id=int(sel[0]), view_only=True)
+
+    def _edit(self):
+        """Edit a saved return (draft or confirmed). Confirmed: on save the
+        old stock + journal are reversed and the new ones posted."""
+        from modules import permissions as _pm
+        if not _pm.allowed(("sales_return" if self.mode == "sales" else "purchase_return"), "edit"):
+            return False
+        sel = self.tree.selection()
+        if not sel:
+            messagebox.showwarning("Select", "Select a return first.")
+            return
+        rid = int(sel[0])
+        from modules import doc_edit
+        kind = f"{self.mode}_return"
+        why = doc_edit.block_reason(kind, rid, "edit")
+        if why:
+            messagebox.showwarning("Edit Return", why)
+            return
+        q = doc_edit.ask_text(kind, rid, "edit")
+        if q and not messagebox.askyesno("Edit Return", q):
+            return
+        f = ReturnForm(self.parent, mode=self.mode, return_id=rid)
+        try:
+            f.win.bind("<Destroy>", lambda e, w=f.win: self._load()
+                       if e.widget is w else None, add="+")
+        except Exception:
+            pass
+
+    def _confirm(self):
+        """Confirm a DRAFT return → stock moves and the journal posts."""
+        from modules import permissions as _pm
+        if not _pm.allowed(("sales_return" if self.mode == "sales" else "purchase_return"), "edit"):
+            return False
+        sel = self.tree.selection()
+        if not sel:
+            messagebox.showwarning("Select", "Select a return first.")
+            return
+        rid = int(sel[0])
+        row = db.fetchone(f"SELECT return_number, return_status FROM {self.cfg['table']} "
+                          f"WHERE return_id=?", (rid,)) or {}
+        if (row.get("return_status") or "").lower() == "confirmed":
+            messagebox.showinfo("Confirm", "This return is already confirmed.")
+            return
+        if not messagebox.askyesno("Confirm", f"Confirm {row.get('return_number', '')}?\n"
+                                   "Stock and accounts will be updated."):
+            return
+        try:
+            from modules import doc_posting
+            with db.transaction():        # status, stock, journal, ZATCA together (v5.27)
+                db.execute(f"UPDATE {self.cfg['table']} SET return_status='confirmed' "
+                           f"WHERE return_id=?", (rid,))
+                try:
+                    doc_posting.sync(f"{self.mode}_return", rid)
+                except Exception as e:
+                    doc_posting.last_warning = str(e)[:200]
+                if self.mode == "sales":            # ZATCA Phase 2: credit note signed
+                    try:
+                        from modules.zatca import egs as _zegs
+                        _zegs.after_save("sales_return", rid)
+                    except Exception:
+                        pass
+            self._load()
+            doc_posting.notify(self.frame)
+        except Exception as e:
+            messagebox.showerror("Confirm", str(e)[:300])
+
+    def _delete(self):
+        from modules import permissions as _pm
+        if not _pm.allowed(("sales_return" if self.mode == "sales" else "purchase_return"), "delete"):
+            return False
+        sel = self.tree.selection()
+        if not sel:
+            messagebox.showwarning("Select", "Select a return first.")
+            return
+        rid = int(sel[0])
+        from modules import doc_edit
+        kind = f"{self.mode}_return"
+        number, status, _d = doc_edit.info(kind, rid)
+        why = doc_edit.block_reason(kind, rid, "delete")
+        if why:
+            messagebox.showwarning("Delete", why)
+            return
+        # a confirmed return: type its number (v6.9.3); a draft: Yes / No
+        if not doc_edit.confirm_delete(kind, rid):
+            return
+        ok, msg = doc_edit.delete_document(kind, rid)
+        if not ok:
+            messagebox.showerror("Delete", msg)
+        self._load()
+
+    def _export_excel(self):
+        from modules import permissions as _pm
+        if not _pm.allowed(("sales_return" if self.mode == "sales" else "purchase_return"), "export"):
+            return False
+        try:
+            from modules.doc_actions import export_tree_excel
+            headers = ["Return #", "Date", self.cfg["party"].title(),
+                       "Total", "Status"]
+            export_tree_excel(self.frame, self.tree,
+                              f"{self.cfg['title']}s", headers,
+                              title=f"{self.cfg['title']}s")
+        except Exception as e:
+            messagebox.showerror("Export", str(e)[:300])
+
+    def _report_pdf(self):
+        from modules import permissions as _pm
+        if not _pm.allowed(("sales_return" if self.mode == "sales" else "purchase_return"), "print"):
+            return False
+        try:
+            from modules.doc_actions import export_tree_pdf
+            headers = ["Return #", "Date", self.cfg["party"].title(),
+                       "Total", "Status"]
+            export_tree_pdf(self.frame, self.tree,
+                            f"{self.cfg['title']}_Register", headers,
+                            title=f"{self.cfg['title']} Register",
+                            subtitle=f"{len(self.tree.get_children())} returns")
+        except Exception as e:
+            messagebox.showerror("Report", str(e)[:300])
+
+
+class SalesReturnView(_ReturnListView):
+    mode = "sales"
+
+
+class PurchaseReturnView(_ReturnListView):
+    mode = "purchase"
