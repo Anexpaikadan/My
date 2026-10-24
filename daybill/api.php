@@ -2,6 +2,7 @@
 // API for the shop-PC print agent (print mode "agent", used on cloud hosting).
 // Authenticated with the agent key shown in Admin, sent as the X-Agent-Key header.
 
+define('DAYBILL_NO_SESSION', true); // the agent sends no cookies; don't create a session file per request
 require __DIR__ . '/lib.php';
 require_once __DIR__ . '/printer.php';
 
@@ -26,20 +27,31 @@ $pdo = db();
 $action = (string)($_GET['action'] ?? '');
 
 if ($action === 'next') {
-    // Files the agent claimed but never reported (agent crashed) go back to the queue.
-    $pdo->exec("UPDATE job_files SET status = 'queued' WHERE status = 'sending' AND queued_at < (NOW() - INTERVAL 5 MINUTE)");
-    $rows = $pdo->query("SELECT * FROM job_files WHERE status = 'queued' AND stored_name <> '' ORDER BY queued_at, id LIMIT 5")->fetchAll();
-    foreach ($rows as $f) {
-        $claim = $pdo->prepare("UPDATE job_files SET status = 'sending', queued_at = NOW() WHERE id = ? AND status = 'queued'");
-        $claim->execute([$f['id']]);
-        if ($claim->rowCount() === 1) {
-            out(['job' => [
-                'id' => (int)$f['id'], 'name' => $f['original_name'], 'ext' => $f['ext'],
-                'copies' => (int)$f['copies'], 'paper' => $f['paper'], 'color' => $f['color'], 'sides' => $f['sides'],
-                'orientation' => $f['orientation'], 'page_range' => $f['page_range'], 'printer' => printer_for($f),
-            ]]);
+    // Long polling: the request waits (up to ?wait= seconds) until staff press Print,
+    // so the agent starts printing within a second instead of polling every few seconds.
+    $wait = max(0, min(25, (int)($_GET['wait'] ?? 0)));
+    @set_time_limit($wait + 20);
+    $until = microtime(true) + $wait;
+    $claim = $pdo->prepare("UPDATE job_files SET status = 'sending', queued_at = NOW() WHERE id = ? AND status = 'queued'");
+    do {
+        // Files the agent claimed but never reported (agent crashed) go back to the queue.
+        $pdo->exec("UPDATE job_files SET status = 'queued' WHERE status = 'sending' AND queued_at < (NOW() - INTERVAL 5 MINUTE)");
+        $rows = $pdo->query("SELECT * FROM job_files WHERE status = 'queued' AND stored_name <> '' ORDER BY queued_at, id LIMIT 5")->fetchAll();
+        foreach ($rows as $f) {
+            $claim->execute([$f['id']]);
+            if ($claim->rowCount() === 1) {
+                out(['job' => [
+                    'id' => (int)$f['id'], 'name' => $f['original_name'], 'ext' => $f['ext'],
+                    'copies' => (int)$f['copies'], 'paper' => $f['paper'], 'color' => $f['color'], 'sides' => $f['sides'],
+                    'orientation' => $f['orientation'], 'page_range' => $f['page_range'], 'printer' => printer_for($f),
+                ]]);
+            }
         }
-    }
+        if (connection_aborted()) {
+            exit;
+        }
+        usleep(700000);
+    } while (microtime(true) < $until);
     out(['job' => null]);
 }
 

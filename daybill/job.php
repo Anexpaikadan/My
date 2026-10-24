@@ -312,7 +312,7 @@ document.querySelectorAll('[data-reload]').forEach(function (b) {
 });
 <?php if ($waiting): ?>
 // Waiting for the print agent: refresh until the files are printed.
-setTimeout(function () { location.reload(); }, 4000);
+setTimeout(function () { location.reload(); }, 1500);
 <?php endif; ?>
 </script>
 <?php page_footer(); ?>

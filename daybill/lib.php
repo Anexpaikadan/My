@@ -13,7 +13,7 @@ function cfg(string $key)
 
 require_once __DIR__ . '/https.php';
 
-if (PHP_SAPI !== 'cli' && session_status() === PHP_SESSION_NONE) {
+if (PHP_SAPI !== 'cli' && !defined('DAYBILL_NO_SESSION') && session_status() === PHP_SESSION_NONE) {
     session_name('daybill_sid');
     session_set_cookie_params([
         'lifetime' => 0,

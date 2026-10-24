@@ -25,8 +25,9 @@ return [
     // and put its full path here, e.g. 'C:\\xampp\\php\\extras\\ssl\\cacert.pem'.
     'ca_file' => '',
 
-    // Seconds between checks for new print jobs.
-    'poll_seconds' => 3,
+    // Seconds to wait before trying again after a connection problem.
+    // (New jobs arrive instantly – the agent keeps a connection open to the website.)
+    'poll_seconds' => 1,
 
     // true = only log what would be printed.
     'dry_run' => false,

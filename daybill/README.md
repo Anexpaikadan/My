@@ -149,6 +149,13 @@ Test without a printer: set `'print_dry_run' => true` in `config.php` (commands 
 
 ### Print agent on the shop PC
 
+**Recommended:** after the agent works once, double-click **`autostart-on.bat`**. The agent then runs hidden
+in the background (no window that can be paused by clicking it), restarts itself if it stops, and starts
+with Windows. Stop it with `stop-agent.bat`, remove the autostart with `autostart-off.bat`.
+Log file: `agent.log` in the agent folder. Jobs print within about a second: the agent keeps a
+connection open and the website answers as soon as staff press Print.
+
+
 The website cannot reach your shop printer, so a small program on the shop PC asks the website
 for print jobs every 3 seconds and prints them.
 

@@ -32,14 +32,27 @@ if ($c['ca_file'] === '' && !ini_get('openssl.cafile')) {
     }
 }
 $base = rtrim($c['server_url'], '/') . '/api.php';
+
+// Only one agent at a time (e.g. the background agent and the window version).
+$lock = fopen(__DIR__ . DIRECTORY_SEPARATOR . 'agent.lock', 'c');
+if (!$lock || !flock($lock, LOCK_EX | LOCK_NB)) {
+    exit("The print agent is already running on this PC (maybe in the background). Nothing to do.\n");
+}
 $tmpDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'daybill-agent';
 if (!is_dir($tmpDir)) {
     mkdir($tmpDir, 0700, true);
 }
 
+// Writes to the window and to agent.log (useful when the agent runs hidden in the background).
 function say(string $msg): void
 {
-    echo '[' . date('H:i:s') . '] ' . $msg . PHP_EOL;
+    $line = '[' . date('Y-m-d H:i:s') . '] ' . $msg . PHP_EOL;
+    echo $line;
+    $log = __DIR__ . DIRECTORY_SEPARATOR . 'agent.log';
+    if (@filesize($log) > 1048576) {
+        @rename($log, $log . '.old');
+    }
+    @file_put_contents($log, $line, FILE_APPEND);
 }
 
 function api(string $url, array $c, ?array $post = null, int $timeout = 30): array
@@ -97,7 +110,7 @@ if ($status !== 200) {
     say('Fix: ' . $hint);
     exit(1);
 }
-say('Connected to "' . (json_decode($body, true)['shop'] ?? '?') . '". Waiting for print jobs… (Ctrl+C to stop)');
+say('Connected to "' . (json_decode($body, true)['shop'] ?? '?') . '". Waiting for print jobs…');
 
 $tools = ['sumatra' => find_sumatra($c['sumatra_path'], __DIR__), 'soffice' => $c['soffice_path'], 'lp' => $c['lp_path']];
 if (core_is_windows()) {
@@ -114,7 +127,9 @@ try {
 
 while (true) {
     try {
-        [$status, $body] = api($base . '?action=next', $c);
+        // Waits on the server until a job arrives (long polling) – printing starts within a second.
+        $asked = microtime(true);
+        [$status, $body] = api($base . '?action=next&wait=20', $c, null, 45);
         $job = $status === 200 ? (json_decode($body, true)['job'] ?? null) : null;
         if ($status !== 200) {
             say("Server error $status");
@@ -141,8 +156,11 @@ while (true) {
             @unlink($file . '.pdf');
             continue; // check for the next job straight away
         }
+        if ($status === 200 && microtime(true) - $asked > 5) {
+            continue; // the server waited for us: ask again right away
+        }
     } catch (Throwable $e) {
-        say('Connection problem: ' . $e->getMessage());
+        say('Connection problem: ' . $e->getMessage() . ' – retrying');
     }
     sleep(max(1, (int)$c['poll_seconds']));
 }

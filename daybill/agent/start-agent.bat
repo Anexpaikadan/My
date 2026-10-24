@@ -11,6 +11,9 @@ if errorlevel 1 (
   exit /b 1
 )
 :loop
+echo  Do NOT click inside this window - Windows pauses the agent while text is selected.
+echo  Better: run autostart-on.bat once, then the agent works hidden in the background.
+echo.
 "%PHP%" print-agent.php
 echo.
 echo Agent stopped - read the message above. Restarting in 15 seconds... (close this window to stop)

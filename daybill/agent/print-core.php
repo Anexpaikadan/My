@@ -76,16 +76,41 @@ function build_print_command(array $f, string $path, string $printer, array $too
         . ' ' . escapeshellarg($path);
 }
 
-function core_run(string $cmd, bool $dryRun): array
+// Runs a command; a printer program that hangs (e.g. a stuck dialog) is stopped after $timeout seconds.
+function core_run(string $cmd, bool $dryRun, int $timeout = 120): array
 {
     if ($dryRun) {
         error_log('Daybill dry-run: ' . $cmd);
         return [0, 'dry run'];
     }
-    $out = [];
-    $code = 0;
-    exec($cmd . ' 2>&1', $out, $code);
-    return [$code, trim(implode("\n", $out))];
+    $proc = proc_open($cmd, [1 => ['pipe', 'w'], 2 => ['redirect', 1]], $pipes);
+    if (!is_resource($proc)) {
+        return [-1, 'could not start: ' . $cmd];
+    }
+    stream_set_blocking($pipes[1], false);
+    $out = '';
+    $end = time() + $timeout;
+    while (true) {
+        $out .= (string)stream_get_contents($pipes[1]);
+        $st = proc_get_status($proc);
+        if (!$st['running']) {
+            $out .= (string)stream_get_contents($pipes[1]);
+            fclose($pipes[1]);
+            proc_close($proc);
+            return [$st['exitcode'], trim($out)];
+        }
+        if (time() > $end) {
+            if (core_is_windows()) {
+                exec('taskkill /T /F /PID ' . (int)$st['pid'] . ' 2>NUL');
+            } else {
+                proc_terminate($proc, 9);
+            }
+            fclose($pipes[1]);
+            proc_close($proc);
+            return [-2, 'timed out after ' . $timeout . ' s (is the printer on and not showing an error?)'];
+        }
+        usleep(100000);
+    }
 }
 
 // Converts an Office/text file to PDF with LibreOffice; returns the PDF path.
