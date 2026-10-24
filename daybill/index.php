@@ -117,6 +117,17 @@ function handle_upload(): array
 
 $lang = lang();
 $result = null;
+
+// Page count only (nothing is stored) – fallback for phones that cannot read the PDF themselves.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['ajax'] ?? '') === 'count') {
+    $tmp = $_FILES['pdf']['tmp_name'] ?? '';
+    $ok = $tmp !== '' && ($_FILES['pdf']['error'] ?? 1) === UPLOAD_ERR_OK
+        && strncmp((string)file_get_contents($tmp, false, null, 0, 4), '%PDF', 4) === 0;
+    header('Content-Type: application/json');
+    echo json_encode(['pages' => $ok ? pdf_page_count($tmp) : 0]);
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $result = empty($_POST) && empty($_FILES)
         ? ['ok' => false, 'error' => t('err_post', cfg('max_file_mb'))]
@@ -174,6 +185,8 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
     <h1><?= h(t('sent')) ?></h1>
     <p><?= h(t('show_code')) ?></p>
     <div class="bigcode"><?= h($result['code']) ?></div>
+    <p class="pay-box"><?= h($result['price'] !== '' ? t('estimate') : t('estimate_ph')) ?><?php if ($result['price'] !== ''): ?><b><?= h($result['price']) ?></b><?php endif; ?></p>
+    <p class="muted"><?= h(t('final_note')) ?></p>
     <a class="btn block" href="index.php"><?= h(t('send_more')) ?></a>
   </div>
 <?php else: ?>
@@ -183,7 +196,7 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
     <h1><?= h(t('sent')) ?></h1>
     <p><?= h(t('show_code')) ?></p>
     <div class="bigcode" id="doneCode"></div>
-    <p id="donePrice" class="price-total"></p>
+    <p id="donePrice" class="pay-box"></p>
     <p class="muted"><?= h(t('final_note')) ?></p>
     <a class="btn block" href="index.php"><?= h(t('send_more')) ?></a>
   </div>
@@ -198,7 +211,7 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
     </label>
 
     <div id="list"></div>
-    <div id="total" class="price-total hidden"></div>
+    <div id="total" class="pay-box hidden"></div>
 
     <!-- Used when JavaScript is off: options of the first file -->
     <noscript>
@@ -252,7 +265,7 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
   (function () {
     var maxFiles = <?= (int)cfg('max_files') ?>, maxMb = <?= (int)cfg('max_file_mb') ?>;
     var rules = <?= json_encode($rules) ?>, currency = <?= json_encode(setting('currency', 'SR')) ?>;
-    var T = <?php $keys = ['err_none', 'err_server', 'err_net', 'estimate', 'estimate_ph', 'pages_count'];
+    var T = <?php $keys = ['err_none', 'err_server', 'err_net', 'estimate', 'estimate_ph', 'pages_count', 'counting'];
                 echo json_encode(array_combine($keys, array_map('t', $keys))); ?>;
     var Terr = { max: <?= json_encode(t('err_max', cfg('max_files'))) ?>, big: <?= json_encode(t('err_big', '%s', cfg('max_file_mb'))) ?> };
     var picker = document.getElementById('picker'), list = document.getElementById('list'),
@@ -297,27 +310,71 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
       var sum = 0, known = items.length > 0;
       items.forEach(function (it) {
         var p = price(it), el = it.node.querySelector('.price');
-        el.textContent = (it.pages ? T.pages_count.replace('%d', it.pages) + ' · ' : '')
-          + (p === null ? T.estimate_ph : T.estimate + ': ' + money(p));
+        el.textContent = it.counting ? T.counting
+          : (it.pages ? T.pages_count.replace('%d', it.pages) + ' · ' : '')
+            + (p === null ? T.estimate_ph : T.estimate + ': ' + money(p));
         if (p === null) known = false; else sum += p;
       });
-      totalEl.textContent = known ? T.estimate + ': ' + money(sum) : '';
-      totalEl.classList.toggle('hidden', !known || items.length < 2);
+      totalEl.innerHTML = '';
+      if (known) {
+        totalEl.appendChild(document.createTextNode(T.estimate));
+        var b = document.createElement('b'); b.textContent = money(sum); totalEl.appendChild(b);
+      }
+      totalEl.classList.toggle('hidden', !known);
     }
 
-    // Rough page count, same approach as pdf_page_count() on the server.
+    function latin1(buf) { return new TextDecoder('latin1').decode(buf); }
+
+    // Same logic as pdf_tree_count() in lib.php.
+    function treeCount(s) {
+      var m, max = 0, re = /<<[^<>]*\/Type\s*\/Pages\b[^<>]*>>/g;
+      while ((m = re.exec(s))) { var c = /\/Count\s+(\d+)/.exec(m[0]); if (c) max = Math.max(max, +c[1]); }
+      if (!max) { re = /\/Type\s*\/Pages\b[^>]*?\/Count\s+(\d+)/g; while ((m = re.exec(s))) max = Math.max(max, +m[1]); }
+      return max;
+    }
+
+    function inflate(bytes) {
+      var ds = new DecompressionStream('deflate');
+      return new Response(new Blob([bytes]).stream().pipeThrough(ds)).arrayBuffer().then(latin1, function () { return ''; });
+    }
+
+    // Same approach as pdf_page_count() in lib.php: plain text plus compressed object streams.
+    function pdfPages(buf) {
+      var s = latin1(buf), parts = [], re = /stream\r?\n/g, m;
+      while (window.DecompressionStream && (m = re.exec(s))) {
+        var start = m.index + m[0].length, end = s.indexOf('endstream', start);
+        if (end < 0) break;
+        var dict = s.slice(Math.max(0, m.index - 400), m.index);
+        dict = dict.slice(Math.max(0, dict.lastIndexOf('obj')));
+        if (dict.indexOf('/ObjStm') >= 0 && dict.indexOf('/FlateDecode') >= 0) {
+          while (end > start && (s[end - 1] === '\n' || s[end - 1] === '\r')) end--;
+          parts.push(inflate(new Uint8Array(buf, start, end - start)));
+        }
+        re.lastIndex = end;
+      }
+      return Promise.all(parts).then(function (texts) {
+        var all = s + '\n' + texts.join('\n');
+        return treeCount(all) || (all.match(/\/Type\s*\/Page\b(?!s)/g) || []).length;
+      });
+    }
+
+    // Asks the server to count pages when the phone could not (old browser or unusual PDF).
+    function serverPages(file) {
+      var fd = new FormData(); fd.append('ajax', 'count'); fd.append('pdf', file, file.name);
+      return fetch('index.php', { method: 'POST', body: fd }).then(function (r) { return r.json(); })
+        .then(function (d) { return d.pages || 0; }, function () { return 0; });
+    }
+
     function countPages(it) {
       var ext = it.file.name.split('.').pop().toLowerCase();
       if (['jpg', 'jpeg', 'png'].indexOf(ext) >= 0) { it.pages = 1; return refresh(); }
-      if (ext !== 'pdf' || !window.FileReader) return refresh();
-      var rd = new FileReader();
-      rd.onload = function () {
-        var s = rd.result, m, max = 0, re = /\/Type\s*\/Pages\b[^>]*?\/Count\s+(\d+)/g;
-        while ((m = re.exec(s))) max = Math.max(max, +m[1]);
-        it.pages = max || (s.match(/\/Type\s*\/Page\b(?!s)/g) || []).length;
-        refresh();
-      };
-      rd.readAsBinaryString(it.file);
+      if (ext !== 'pdf') return refresh();
+      it.counting = true; refresh();
+      var local = it.file.arrayBuffer && window.TextDecoder
+        ? it.file.arrayBuffer().then(pdfPages).catch(function () { return 0; }) : Promise.resolve(0);
+      local.then(function (n) { return n || serverPages(it.file); }).then(function (n) {
+        it.pages = n; it.counting = false; refresh();
+      });
     }
 
     function addFile(file) {
@@ -369,7 +426,9 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
         if (!r.ok) return showErr(r.error);
         form.classList.add('hidden');
         document.getElementById('doneCode').textContent = r.code;
-        document.getElementById('donePrice').textContent = r.price ? T.estimate + ': ' + r.price : '';
+        var dp = document.getElementById('donePrice');
+        dp.textContent = r.price ? T.estimate : T.estimate_ph;
+        if (r.price) { var b = document.createElement('b'); b.textContent = r.price; dp.appendChild(b); }
         document.getElementById('done').classList.remove('hidden');
         window.scrollTo(0, 0);
       };

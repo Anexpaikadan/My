@@ -300,17 +300,55 @@ function money(float $v): string
     return (substr($s, -3) === '.00' ? substr($s, 0, -3) : $s) . ' ' . setting('currency', 'SR');
 }
 
-// Rough PDF page count without external tools.
+// Largest /Count of a /Type /Pages dictionary, i.e. the root of the page tree.
+function pdf_tree_count(string $data): int
+{
+    $max = 0;
+    if (preg_match_all('/<<[^<>]*\/Type\s*\/Pages\b[^<>]*>>/', $data, $m)) {
+        foreach ($m[0] as $dict) {
+            if (preg_match('/\/Count\s+(\d+)/', $dict, $c)) {
+                $max = max($max, (int)$c[1]);
+            }
+        }
+    }
+    if (!$max && preg_match_all('/\/Type\s*\/Pages\b[^>]*?\/Count\s+(\d+)/s', $data, $m)) {
+        $max = (int)max($m[1]);
+    }
+    return $max;
+}
+
+// Page count without external tools. Newer PDFs keep the page tree inside
+// compressed object streams (/ObjStm), so those are inflated and searched too.
 function pdf_page_count(string $path): int
 {
     $data = @file_get_contents($path);
     if ($data === false) {
         return 0;
     }
-    if (preg_match_all('/\/Type\s*\/Pages\b[^>]*?\/Count\s+(\d+)/s', $data, $m)) {
-        return (int)max($m[1]);
+    $inflated = '';
+    $offset = 0;
+    while (preg_match('/stream\r?\n/', $data, $m, PREG_OFFSET_CAPTURE, $offset)) {
+        $start = $m[0][1] + strlen($m[0][0]);
+        $end = strpos($data, 'endstream', $start);
+        if ($end === false) {
+            break;
+        }
+        $dict = substr($data, max(0, $m[0][1] - 400), min(400, $m[0][1]));
+        $dict = substr($dict, (int)strrpos($dict, 'obj'));
+        if (strpos($dict, '/ObjStm') !== false && strpos($dict, '/FlateDecode') !== false) {
+            $raw = rtrim(substr($data, $start, $end - $start), "\r\n");
+            $out = @gzuncompress($raw);
+            if ($out === false) {
+                $out = @gzinflate(substr($raw, 2));
+            }
+            if ($out !== false) {
+                $inflated .= $out . "\n";
+            }
+        }
+        $offset = $end + 9;
     }
-    return preg_match_all('/\/Type\s*\/Page\b(?!s)/', $data);
+    $all = $data . "\n" . $inflated;
+    return pdf_tree_count($all) ?: preg_match_all('/\/Type\s*\/Page\b(?!s)/', $all);
 }
 
 function format_bytes(int $b): string
@@ -376,7 +414,7 @@ function page_header(string $title, bool $staff = false, string $lang = 'en'): v
     echo '<!doctype html><html lang="' . h($lang) . '" dir="' . ($lang === 'ar' ? 'rtl' : 'ltr') . '"><head><meta charset="utf-8">'
         . '<meta name="viewport" content="width=device-width, initial-scale=1">'
         . '<title>' . h($title) . ' – ' . h($shop) . '</title>'
-        . '<link rel="stylesheet" href="assets/style.css?v=2"></head><body>';
+        . '<link rel="stylesheet" href="assets/style.css?v=3"></head><body>';
     echo '<header class="top"><div class="wrap"><a class="brand" href="' . ($staff ? 'staff.php' : 'index.php') . '">🖨️ ' . h($shop) . '</a>';
     if ($u) {
         echo '<nav><a href="staff.php">Jobs</a>';

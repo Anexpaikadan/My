@@ -116,3 +116,6 @@ code.key { word-break: break-all; font-size: .95rem; }
   .price-tbl input { width: 100%; }
   .price-tbl td[data-label]::before { content: attr(data-label); display: block; font-size: .75rem; color: var(--muted); }
 }
+.pay-box { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: #e3f5ea; color: #13643a; border-radius: var(--radius); padding: 14px 16px; margin: 8px 0 14px; font-size: 1.05rem; font-weight: 600; }
+.pay-box b { font-size: 1.7rem; white-space: nowrap; }
+#done .pay-box { justify-content: center; flex-direction: column; gap: 2px; }
