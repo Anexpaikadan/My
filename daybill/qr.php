@@ -36,6 +36,7 @@ page_header('QR code', true);
 </div>
 
 <div class="poster">
+  <img src="assets/logo.png" alt="DAYbill Solution" class="logo">
   <h1><?= h(setting('shop_name', 'Daybill Print')) ?></h1>
   <p class="lead">Scan to send your files for printing</p>
   <div id="qr"></div>

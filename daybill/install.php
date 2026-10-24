@@ -68,10 +68,11 @@ if ($hasAdmin) {
 ?>
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Install – Daybill Print</title><link rel="stylesheet" href="assets/style.css"></head>
+<title>Install – Daybill Print</title><link rel="stylesheet" href="assets/style.css?v=6"><link rel="icon" type="image/png" href="assets/icons/favicon.png"></head>
 <body><main class="wrap narrow">
 <div class="card">
-  <h1>Daybill Print – Setup</h1>
+  <img src="assets/logo.png" alt="DAYbill Solution" class="login-logo">
+  <h1 class="center">Setup</h1>
   <?php if ($msg): ?><div class="alert <?= $done ? 'ok' : 'err' ?>"><?= htmlspecialchars($msg) ?></div><?php endif; ?>
   <?php if ($done): ?>
     <a class="btn primary block" href="login.php">Go to login</a>

@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS settings (
 
 INSERT IGNORE INTO settings (k, v) VALUES
   ('schema_version', '3'),
-  ('shop_name', 'Daybill Print'),
+  ('shop_name', 'DAYbill Solution'),
   ('print_mode', 'local'),
   ('printer_bw', ''),
   ('printer_color', ''),

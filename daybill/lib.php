@@ -410,15 +410,15 @@ function page_header(string $title, bool $staff = false, string $lang = 'en', st
     echo '<!doctype html><html lang="' . h($lang) . '" dir="' . ($rtl ? 'rtl' : 'ltr') . '"><head><meta charset="utf-8">'
         . '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'
         . '<title>' . h($title) . ' – ' . h($shop) . '</title>'
-        . '<meta name="theme-color" content="#12233f">'
+        . '<meta name="theme-color" content="#ffffff">'
         . '<link rel="manifest" href="manifest.php' . ($staff ? '?app=staff' : '') . '">'
         . '<link rel="icon" type="image/png" href="assets/icons/favicon.png">'
         . '<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">'
         . '<meta name="apple-mobile-web-app-capable" content="yes">'
         . '<meta name="mobile-web-app-capable" content="yes">'
-        . '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">'
+        . '<meta name="apple-mobile-web-app-status-bar-style" content="default">'
         . '<meta name="apple-mobile-web-app-title" content="' . h($staff ? 'Print Staff' : $shop) . '">'
-        . '<link rel="stylesheet" href="assets/style.css?v=5">'
+        . '<link rel="stylesheet" href="assets/style.css?v=6">'
         . '<script src="assets/app.js?v=6" defer></script></head>'
         . '<body class="' . ($u ? 'has-tabs' : '') . '">';
     echo '<header class="top"><div class="wrap">';
@@ -427,7 +427,7 @@ function page_header(string $title, bool $staff = false, string $lang = 'en', st
             . '<span class="title">' . h($title) . '</span>';
     } else {
         echo '<a class="brand" href="' . ($staff ? 'staff.php' : 'index.php') . '">'
-            . '<img src="assets/icons/icon-192.png" alt="" width="28" height="28"> ' . h($shop) . '</a>';
+            . '<img class="logo" src="assets/logo.png" alt="' . h($shop) . '" width="120" height="38"></a>';
     }
     if (!$staff && basename($_SERVER['SCRIPT_NAME'] ?? '') === 'index.php') {
         echo '<nav class="lang"><button type="button" class="install-chip hidden" data-install>⬇ ' . h(t('install_app')) . '</button>'

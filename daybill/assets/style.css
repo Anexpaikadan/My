@@ -1,6 +1,6 @@
 :root {
   --bg: #f3f5f9; --card: #fff; --text: #1b2330; --muted: #6b7686; --line: #dfe4ec;
-  --primary: #1f6feb; --ok: #1a8f4c; --danger: #c93636; --warn: #b7791f; --radius: 12px;
+  --primary: #360dd9; --accent: #7ed957; --ok: #2f8f1f; --danger: #c93636; --warn: #b7791f; --radius: 12px;
 }
 * { box-sizing: border-box; }
 body { margin: 0; font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
@@ -48,7 +48,7 @@ input:focus, select:focus { outline: 2px solid var(--primary); outline-offset: 0
 .more { margin: 8px 0 12px; } .more summary { cursor: pointer; color: var(--primary); margin-bottom: 8px; }
 .progress { height: 8px; background: #e4e9f1; border-radius: 4px; overflow: hidden; margin: 8px 0; }
 .progress div { height: 100%; width: 0; background: var(--primary); transition: width .2s; }
-.bigcode { font: 700 3.2rem/1.1 ui-monospace, Consolas, monospace; letter-spacing: .15em; background: #12233f; color: #fff; border-radius: 12px; padding: 16px; margin: 12px 0 16px; }
+.bigcode { font: 700 3.2rem/1.1 ui-monospace, Consolas, monospace; letter-spacing: .15em; background: var(--primary); color: #fff; border-radius: 12px; padding: 16px; margin: 12px 0 16px; }
 .bigcode.small { font-size: 1.6rem; padding: 8px 12px; margin: 0; }
 
 /* Staff */
@@ -176,3 +176,22 @@ body.has-tabs main.wrap { padding-bottom: calc(90px + env(safe-area-inset-bottom
   .tabbar { left: 50%; right: auto; transform: translateX(-50%); bottom: 16px; border: 1px solid var(--line); border-radius: 16px; padding: 0 10px; }
   .tabbar a { min-width: 110px; }
 }
+
+/* ---- v6: DAYbill brand (logo purple #360dd9 + green #7ed957), white app bar ---- */
+.top { background: #fff; color: var(--text); box-shadow: 0 1px 0 var(--line), 0 2px 10px rgba(54,13,217,.06); }
+.top::after { content: ""; display: block; height: 3px; background: linear-gradient(90deg, var(--primary) 0 62%, var(--accent) 62% 100%); }
+.brand { color: var(--text); }
+.brand img.logo { height: 38px; width: auto; border-radius: 0; }
+.back-btn { color: var(--primary); }
+.back-btn:active { background: #efeafd; }
+.top .title { color: var(--text); }
+.top nav.lang a { color: var(--primary); border-color: #cfc4f7; }
+.drop { border-color: #b9aaf2; background: #f7f5ff; }
+.tabs a { background: #ebe7fb; }
+.menu-item:active, .menu-item:hover, .job:active, .job:hover { background: #f6f4ff; }
+.menu-item .ic { background: #efeafd; }
+.pay-box { background: #eefbe8; color: #2a7a1c; border: 1px solid #c9eeb8; }
+.alert.ok { background: #eefbe8; color: #2a7a1c; }
+.badge { background: #efeafd; color: #4b3c8f; }
+.login-logo { display: block; margin: 8px auto 4px; height: 64px; width: auto; }
+.poster .logo { height: 110px; width: auto; margin-bottom: 8px; }

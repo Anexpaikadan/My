@@ -33,7 +33,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 page_header('Staff login', true);
 ?>
 <div class="card narrow">
-  <h1>Staff login</h1>
+  <img src="assets/logo.png" alt="DAYbill Solution" class="login-logo">
+  <h1 class="center">Staff login</h1>
   <?php if ($error): ?><div class="alert err"><?= h($error) ?></div><?php endif; ?>
   <form method="post">
     <?= csrf_field() ?>

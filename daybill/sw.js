@@ -1,7 +1,7 @@
 // Service worker: makes the app installable and shows an offline page.
 // Pages and customer files are never cached (they are private); only static assets are.
-const CACHE = 'daybill-v6';
-const ASSETS = ['offline.html', 'assets/style.css', 'assets/app.js', 'assets/qrcode.js',
+const CACHE = 'daybill-v7';
+const ASSETS = ['offline.html', 'assets/logo.png', 'assets/style.css', 'assets/app.js', 'assets/qrcode.js',
   'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/favicon.png'];
 
 self.addEventListener('install', (e) => {
