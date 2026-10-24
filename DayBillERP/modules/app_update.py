@@ -28,6 +28,13 @@ import shutil
 import sys
 import zipfile
 
+HELPER = "update_daybill.bat"
+# never taken from an update file: the helper itself (it would overwrite the
+# helper while it runs) and the updater's own folders
+SKIP_FILES = (HELPER, "update_download.zip")
+SKIP_DIRS = ("update_staging", "update_backup_", "__pycache__")
+SKIP_TOP = ("logs", "backups")                 # this PC's own folders
+
 KEEP = ("config/app_settings.json", "config/db_config.json", "config/license.json",
         "config/daybill_vault_recovery.dat", "config/table_layouts.json",
         "db_config.json", "license.json")
@@ -55,6 +62,17 @@ def vtuple(v):
 def newer(a, b):
     """Is version a newer than b?"""
     return vtuple(a) > vtuple(b)
+
+
+def _skip(rel):
+    """An updater file that must never come from an update."""
+    rel = rel.replace("\\", "/").lstrip("/")
+    parts = rel.split("/")
+    if parts[-1] in SKIP_FILES and len(parts) == 1:
+        return True
+    if len(parts) > 1 and parts[0] in SKIP_TOP:
+        return True
+    return any(p == d or (d.endswith("_") and p.startswith(d)) for p in parts[:-1] for d in SKIP_DIRS)
 
 
 def _zip_root(names):
@@ -103,6 +121,14 @@ def inspect(path):
         bad = [n for n in names if n.startswith("/") or ".." in n.split("/")]
         if bad:
             out["problems"].append("Unsafe file names in the zip.")
+        # the built program does not read the .py files next to it: a source
+        # zip would change nothing (the version would stay the same)
+        out["has_exe"] = (root + "DayBillERP.exe") in names
+        if getattr(sys, "frozen", False) and not out["has_exe"]:
+            out["problems"].append(
+                "This is the source .zip, but this PC runs DayBillERP.exe — the program would not "
+                "change. Build the new DayBillERP.exe from this zip (BUILD_EXE.bat on a PC with "
+                "Python) and pick that DayBillERP.exe here.")
     if out["version"] and not newer(out["version"], current_version()):
         out["problems"].append("This is version %s — you already have %s."
                                % (out["version"], current_version()))
@@ -135,7 +161,7 @@ def stage(path, info=None):
             if not n.startswith(root) or n.endswith("/"):
                 continue
             rel = n[len(root):]
-            if not rel or rel.replace("\\", "/") in KEEP or "/__pycache__/" in "/" + rel:
+            if not rel or rel.replace("\\", "/") in KEEP or _skip(rel):
                 continue
             target = os.path.normpath(os.path.join(dst, rel))
             if not target.startswith(os.path.normpath(dst)):
@@ -208,7 +234,8 @@ def write_helper(staging, restart=True):
         'robocopy "%s" "%s" /E /XD update_staging update_backup_* logs backups __pycache__ /NFL /NDL /NJH /NJS >nul'
         % (ad, backup),
         "echo Copying the new version...",
-        'robocopy "%s" "%s" /E /R:20 /W:2 /XF %s /NFL /NDL /NJH /NJS' % (staging, ad, excl),
+        'robocopy "%s" "%s" /E /R:20 /W:2 /XF %s %s /XD update_staging update_backup_* '
+        '/NFL /NDL /NJH /NJS' % (staging, ad, excl, " ".join('"%s"' % f for f in SKIP_FILES)),
         "if errorlevel 8 goto failed",
         'rmdir /s /q "%s"' % staging,
         "echo Done.",
@@ -222,7 +249,7 @@ def write_helper(staging, restart=True):
         "echo The update could not be copied. The old version is in %s" % backup,
         "pause",
     ]
-    p = os.path.join(ad, "update_daybill.bat")
+    p = os.path.join(ad, HELPER)
     with open(p, "w", encoding="utf-8", newline="\r\n") as f:
         f.write("\n".join(l for l in lines if l is not None) + "\n")
     return p

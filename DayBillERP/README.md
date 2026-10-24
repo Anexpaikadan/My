@@ -1,7 +1,15 @@
-# DayBill ERP  v7.9.1
+# DayBill ERP  v7.9.2
 
 Billing, POS, inventory, accounts and HR for shops in 🇸🇦 Saudi Arabia, 🇦🇪 the UAE and 🇮🇳 India.
 **VAT / GST by country · ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
+
+## 🔧 v7.9.2 — update fixes
+
+- Fixed *"Windows cannot find 'C:\Python314\pythonw.exe'"* at the end of an
+  update (a test file had gone into the 7.9.1 zip).
+- **Running DayBillERP.exe?** Update with the new **DayBillERP.exe** (build it
+  with BUILD_EXE.bat from the zip), not with the source .zip — the exe does
+  not change from source files, so Updates now refuses the .zip there.
 
 ## 🔧 v7.9.1 — update restart fixed
 

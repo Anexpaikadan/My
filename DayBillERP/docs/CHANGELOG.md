@@ -2,6 +2,18 @@
 
 Newest first. The short guide is in the main README.md.
 
+## 🔧 v7.9.2 — update fixes
+
+- The 7.9.1 zip held a test update_daybill.bat. During an update the new
+  files are copied over the running helper, so Windows went on with the
+  test's last line ("cannot find C:\Python314\pythonw.exe"). Removed it,
+  and an update can no longer bring the helper, update_staging,
+  update_backup_*, logs, backups or __pycache__ (app_update._skip; robocopy
+  /XF update_daybill.bat /XD update_staging update_backup_*).
+- On a PC running DayBillERP.exe, Updates refuses a source .zip without a
+  DayBillERP.exe inside (the exe never reads the .py files next to it, so
+  nothing would change) and says to build / pick the new DayBillERP.exe.
+
 ## 🔧 v7.9.1 — update restart fixed
 
 - Updates ▸ Install a new version: the helper (update_daybill.bat) inherited

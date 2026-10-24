@@ -12,3 +12,8 @@ backups/
 build/
 dist/
 build_log.txt
+# made by Updates ▸ Install a new version — never part of the product
+update_daybill.bat
+update_staging/
+update_backup_*/
+update_download.zip
