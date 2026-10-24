@@ -1,0 +1,2 @@
+# Uploaded customer files must never be served directly.
+Require all denied
