@@ -17,6 +17,20 @@ $c = require __DIR__ . '/agent-config.php';
 if (stripos($c['server_url'], 'https://') !== 0) {
     exit("server_url in agent-config.php must start with https:// (HTTPS is required).\n");
 }
+if (!extension_loaded('openssl')) {
+    exit("PHP cannot use HTTPS: the openssl extension is off.\n"
+        . 'Fix: open ' . (php_ini_loaded_file() ?: 'php.ini') . ", remove the ; before  extension=openssl  and start the agent again.\n");
+}
+// Windows PHP often has no list of trusted certificates; use one that ships with XAMPP if available.
+if ($c['ca_file'] === '' && !ini_get('openssl.cafile')) {
+    foreach (['C:\\xampp\\apache\\bin\\curl-ca-bundle.crt', 'C:\\xampp\\php\\extras\\ssl\\cacert.pem',
+              __DIR__ . DIRECTORY_SEPARATOR . 'cacert.pem', dirname(PHP_BINARY) . DIRECTORY_SEPARATOR . 'extras\\ssl\\cacert.pem'] as $ca) {
+        if (is_file($ca)) {
+            $c['ca_file'] = $ca;
+            break;
+        }
+    }
+}
 $base = rtrim($c['server_url'], '/') . '/api.php';
 $tmpDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'daybill-agent';
 if (!is_dir($tmpDir)) {
@@ -34,7 +48,9 @@ function api(string $url, array $c, ?array $post = null, int $timeout = 30): arr
     if ($c['ca_file'] !== '') {
         $ssl['cafile'] = $c['ca_file'];
     }
-    $http = ['header' => 'X-Agent-Key: ' . $c['agent_key'] . "\r\n", 'timeout' => $timeout, 'ignore_errors' => true];
+    // A User-Agent is needed: many hosting firewalls block requests without one.
+    $http = ['header' => 'X-Agent-Key: ' . $c['agent_key'] . "\r\nUser-Agent: DaybillPrintAgent/1.1 (PHP " . PHP_VERSION . ")\r\n",
+        'timeout' => $timeout, 'ignore_errors' => true];
     if ($post !== null) {
         $http['method'] = 'POST';
         $http['header'] .= "Content-Type: application/x-www-form-urlencoded\r\n";
@@ -54,11 +70,31 @@ function api(string $url, array $c, ?array $post = null, int $timeout = 30): arr
     return [$status, $body];
 }
 
-say('Daybill print agent starting – server ' . $c['server_url']);
-[$status, $body] = api($base . '?action=ping', $c);
+say('Daybill print agent starting – server ' . $c['server_url'] . ' (PHP ' . PHP_VERSION . ')');
+if ($c['ca_file'] !== '') {
+    say('Certificates: ' . $c['ca_file']);
+}
+try {
+    [$status, $body] = api($base . '?action=ping', $c);
+} catch (Throwable $e) {
+    say('CANNOT CONNECT: ' . $e->getMessage());
+    if (stripos($e->getMessage(), 'certificate') !== false || stripos($e->getMessage(), 'SSL') !== false) {
+        say('Fix: download https://curl.se/ca/cacert.pem, save it in ' . __DIR__ . ' as cacert.pem, start again.');
+    } elseif (stripos($e->getMessage(), 'getaddrinfo') !== false || stripos($e->getMessage(), 'resolve') !== false) {
+        say('Fix: check the internet connection and the spelling of server_url in agent-config.php.');
+    }
+    exit(1);
+}
 if ($status !== 200) {
-    say("Server answered $status: $body");
-    say('Check server_url and agent_key in agent-config.php.');
+    $hint = [
+        403 => strpos($body, 'Invalid agent key') !== false
+            ? 'The agent key does not match: copy it again from Settings → Printing (no spaces).'
+            : 'The hosting firewall blocked the agent. Ask the host to allow requests to api.php, or check .htaccess.',
+        404 => 'api.php was not found: server_url must be the folder that contains api.php (the same address as the customer page, without index.php).',
+        500 => 'Server error: open the website once in a browser to see the problem.',
+    ][$status] ?? 'Check server_url and agent_key in agent-config.php.';
+    say("Server answered $status: " . mb_substr(strip_tags($body), 0, 200));
+    say('Fix: ' . $hint);
     exit(1);
 }
 say('Connected to "' . (json_decode($body, true)['shop'] ?? '?') . '". Waiting for print jobs… (Ctrl+C to stop)');
