@@ -241,6 +241,7 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
     <div id="progress" class="progress hidden"><div></div></div>
     <button class="btn primary block big" id="sendBtn"><?= h(t('send')) ?></button>
   </form>
+  <div class="card install-card hidden"><?= install_box(false) ?></div>
 
   <template id="tpl">
     <div class="file">

@@ -47,6 +47,10 @@ return [
         'err_server'   => 'Server error. Please try again.',
         'err_net'      => 'Network error. Please try again.',
         'err_post'     => 'Upload too large for the server (max %d MB per file).',
+        'install_app'  => 'Install app',
+        'install_ios'  => 'iPhone/iPad: tap Share ⬆ at the bottom of Safari, then "Add to Home Screen".',
+        'install_other' => 'To install, open this page in Chrome or Edge (menu ⋮ → Install app / Add to Home screen).',
+        'installed'    => 'App installed – you are using the app.',
     ],
     'ar' => [
         'title'        => 'أرسل ملفاتك للطباعة',
@@ -93,5 +97,9 @@ return [
         'err_server'   => 'خطأ في الخادم. حاول مرة أخرى.',
         'err_net'      => 'خطأ في الشبكة. حاول مرة أخرى.',
         'err_post'     => 'حجم الرفع كبير جداً (الحد الأقصى %d ميجابايت لكل ملف).',
+        'install_app'  => 'تثبيت التطبيق',
+        'install_ios'  => 'آيفون/آيباد: اضغط زر المشاركة ⬆ أسفل Safari ثم "إضافة إلى الشاشة الرئيسية".',
+        'install_other' => 'للتثبيت افتح الصفحة في Chrome أو Edge (القائمة ⋮ ← تثبيت التطبيق / إضافة إلى الشاشة الرئيسية).',
+        'installed'    => 'تم تثبيت التطبيق – أنت تستخدم التطبيق الآن.',
     ],
 ];

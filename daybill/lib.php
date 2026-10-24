@@ -369,8 +369,6 @@ function cleanup_old_files(): void
     }
 }
 
-// ---- Layout -------------------------------------------------------
-
 // ---- Customer language (English / Arabic) ------------------------
 
 function lang(): string
@@ -397,33 +395,74 @@ function t(string $key, ...$args): string
     return $args ? vsprintf($s, $args) : $s;
 }
 
-// ---- Layout -------------------------------------------------------
+// ---- Layout (installable app shell) --------------------------------
 
-function page_header(string $title, bool $staff = false, string $lang = 'en'): void
+/**
+ * @param string $back  URL for a "‹" back button (sub-pages); '' shows the shop name instead.
+ */
+function page_header(string $title, bool $staff = false, string $lang = 'en', string $back = ''): void
 {
+    global $LAYOUT_STAFF;
+    $LAYOUT_STAFF = $staff;
     $shop = setting('shop_name', 'Daybill Print');
     $u = $staff ? current_user() : null;
-    echo '<!doctype html><html lang="' . h($lang) . '" dir="' . ($lang === 'ar' ? 'rtl' : 'ltr') . '"><head><meta charset="utf-8">'
-        . '<meta name="viewport" content="width=device-width, initial-scale=1">'
+    $rtl = $lang === 'ar';
+    echo '<!doctype html><html lang="' . h($lang) . '" dir="' . ($rtl ? 'rtl' : 'ltr') . '"><head><meta charset="utf-8">'
+        . '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'
         . '<title>' . h($title) . ' – ' . h($shop) . '</title>'
-        . '<link rel="stylesheet" href="assets/style.css?v=4"></head><body>';
-    echo '<header class="top"><div class="wrap"><a class="brand" href="' . ($staff ? 'staff.php' : 'index.php') . '">🖨️ ' . h($shop) . '</a>';
-    if ($u) {
-        echo '<nav><a href="staff.php">Jobs</a>';
-        if ($u['role'] === 'admin') {
-            echo '<a href="admin.php">Admin</a><a href="qr.php">QR code</a>';
-        }
-        echo '<a href="logout.php">Logout (' . h($u['username']) . ')</a></nav>';
-    } elseif (!$staff && basename($_SERVER['SCRIPT_NAME'] ?? '') === 'index.php') {
-        echo '<nav class="lang">' . ($lang === 'ar'
-            ? '<a href="?lang=en">English</a>' : '<a href="?lang=ar">العربية</a>') . '</nav>';
+        . '<meta name="theme-color" content="#12233f">'
+        . '<link rel="manifest" href="manifest.php' . ($staff ? '?app=staff' : '') . '">'
+        . '<link rel="icon" type="image/png" href="assets/icons/favicon.png">'
+        . '<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">'
+        . '<meta name="apple-mobile-web-app-capable" content="yes">'
+        . '<meta name="mobile-web-app-capable" content="yes">'
+        . '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">'
+        . '<meta name="apple-mobile-web-app-title" content="' . h($staff ? 'Print Staff' : $shop) . '">'
+        . '<link rel="stylesheet" href="assets/style.css?v=5">'
+        . '<script src="assets/app.js?v=6" defer></script></head>'
+        . '<body class="' . ($u ? 'has-tabs' : '') . '">';
+    echo '<header class="top"><div class="wrap">';
+    if ($back !== '') {
+        echo '<a class="back-btn" href="' . h($back) . '" aria-label="Back">' . ($rtl ? '›' : '‹') . '</a>'
+            . '<span class="title">' . h($title) . '</span>';
+    } else {
+        echo '<a class="brand" href="' . ($staff ? 'staff.php' : 'index.php') . '">'
+            . '<img src="assets/icons/icon-192.png" alt="" width="28" height="28"> ' . h($shop) . '</a>';
+    }
+    if (!$staff && basename($_SERVER['SCRIPT_NAME'] ?? '') === 'index.php') {
+        echo '<nav class="lang"><button type="button" class="install-chip hidden" data-install>⬇ ' . h(t('install_app')) . '</button>'
+            . ($rtl ? '<a href="?lang=en">English</a>' : '<a href="?lang=ar">العربية</a>') . '</nav>';
     }
     echo '</div></header><main class="wrap">';
 }
 
+// "Install app" box: install button (Android/Chrome/Edge) or Add-to-Home-Screen steps (iPhone).
+function install_box(bool $showHelp = true): string
+{
+    return '<div class="install-box">'
+        . '<button type="button" class="btn primary block hidden" data-install>⬇ ' . h(t('install_app')) . '</button>'
+        . '<div class="hidden muted" data-install-ios>📱 ' . h(t('install_ios')) . '</div>'
+        . ($showHelp ? '<div class="hidden muted" data-install-other>💻 ' . h(t('install_other')) . '</div>' : '')
+        . '<div class="hidden ok-text" data-installed>✓ ' . h(t('installed')) . '</div>'
+        . '</div>';
+}
+
 function page_footer(): void
 {
-    echo '</main></body></html>';
+    global $LAYOUT_STAFF;
+    echo '</main>';
+    $u = $LAYOUT_STAFF ? current_user() : null;
+    if ($u) {
+        $page = basename($_SERVER['SCRIPT_NAME'] ?? '');
+        $tab = fn(string $href, array $pages, string $icon, string $label) =>
+            '<a href="' . $href . '" class="' . (in_array($page, $pages, true) ? 'on' : '') . '"><span>' . $icon . '</span>' . $label . '</a>';
+        echo '<nav class="tabbar">'
+            . $tab('staff.php', ['staff.php', 'job.php'], '🖨️', 'Jobs')
+            . ($u['role'] === 'admin' ? $tab('qr.php', ['qr.php'], '▦', 'QR code') : '')
+            . $tab('settings.php', ['settings.php', 'admin.php', 'account.php'], '⚙️', 'Settings')
+            . '</nav>';
+    }
+    echo '</body></html>';
 }
 
 function flash(?string $msg = null, string $type = 'ok'): string

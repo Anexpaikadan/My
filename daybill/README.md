@@ -21,12 +21,12 @@ press **Mark printed**).
 
 ## Admin: options and prices
 
-**Customer options** (Admin → Customer options): tick the paper sizes (A4, A3, A5, A6, A2, Letter,
+**Customer options** (Settings → Customer options): tick the paper sizes (A4, A3, A5, A6, A2, Letter,
 Legal, Tabloid, Statement, plus your own e.g. `Photo 4x6`), colour (B/W, colour) and sides
 (one side, both sides) you offer. Only ticked options appear for customers — if only **A4** is
 ticked, customers just see "A4" with nothing to choose.
 
-**Prices** (Admin → Prices): every paper + colour + sides combination has its own rule:
+**Prices** (Settings → Prices): every paper + colour + sides combination has its own rule:
 
 | First N pages | Fixed price | Each extra page | Result |
 |---|---|---|---|
@@ -43,7 +43,7 @@ or when completing the order. Page counts are read from PDFs automatically; for 
 the page count is unknown, so staff should check the price.
 
 **Language**: customers switch English / العربية at the top of the upload page; the default
-language is set in Admin → Shop settings.
+language is set in Settings → Shop settings.
 
 ---
 
@@ -103,11 +103,11 @@ The app prints from the PC that runs XAMPP, to any printer installed in Windows.
    - install it normally. The app finds it automatically in `Program Files`, `Program Files (x86)`
      and `C:\Users\<you>\AppData\Local\SumatraPDF\`.
 
-   **Admin → Printing** shows ✅ *SumatraPDF found* or ❌ *not found* (you can also type the path there).
+   **Settings → Printing** shows ✅ *SumatraPDF found* or ❌ *not found* (you can also type the path there).
    If an order shows *"SumatraPDF is not installed"*, do this step and press **OK – Print** again.
 2. *(Optional)* Install **[LibreOffice](https://www.libreoffice.org/)** so Word/Excel/PowerPoint
    files can be printed with one tap (`soffice_path` in `config.php`).
-3. **Admin → Printing**: set the default B/W printer and (optionally) colour printer, and under
+3. **Settings → Printing**: set the default B/W printer and (optionally) colour printer, and under
    **Printer for each paper size** pick a printer per paper size and colour — e.g. A4 B/W → your A4
    laser printer, A3 → your A3 printer, colour → your colour printer. Empty = default printer.
    On each order, staff can choose another printer in the **Printer** menu before pressing **OK – Print**.
@@ -125,7 +125,7 @@ On Linux/macOS the app uses the CUPS `lp` command instead.
 
 Test without a printer: set `'print_dry_run' => true` in `config.php` (commands are written to the PHP error log).
 
-### Print modes (Admin → Printing)
+### Print modes (Settings → Printing)
 
 | Mode | Use when | How it prints |
 |---|---|---|
@@ -142,7 +142,7 @@ Test without a printer: set `'print_dry_run' => true` in `config.php` (commands 
 3. Edit `public_html/daybill/config.php`: set `db_host` (`localhost`), `db_name`, `db_user`, `db_pass`.
 4. **SSL**: hPanel → Security → SSL → install the free SSL for your domain (HTTPS works without warnings).
 5. Open `https://yourdomain.com/daybill/install.php`, create the admin, then **delete `install.php`**.
-6. Log in → **Admin → Printing** → choose **Cloud + print agent** → Save. An **agent key** appears.
+6. Log in → **Settings → Printing** → choose **Cloud + print agent** → Save. An **agent key** appears.
 7. **QR code** page: the address is `https://yourdomain.com/daybill/index.php` — print the poster.
    Customers can now upload over mobile data too, no shop Wi‑Fi needed.
 8. PHP upload limits come from `.user.ini` (25 MB per file); you can also change them in hPanel → PHP Configuration.
@@ -155,7 +155,7 @@ for print jobs every 3 seconds and prints them.
 1. Install PHP on the shop PC — easiest is XAMPP (only `C:\xampp\php\php.exe` is used; Apache/MySQL
    don't need to run). Install **SumatraPDF** (or put the portable `.exe` in the agent's `tools` folder)
    and optionally LibreOffice, as in section 4. The agent sends the shop PC's printer list to the
-   website, so you can pick printers per paper size in Admin → Printing.
+   website, so you can pick printers per paper size in Settings → Printing.
 2. Copy the `agent` folder to the shop PC, e.g. `C:\daybill-agent\`.
 3. Edit `agent-config.php`: `server_url` = `https://yourdomain.com/daybill/`, `agent_key` = the key from Admin.
 4. Double-click **`start-agent.bat`**. You should see `Connected to "<shop name>". Waiting for print jobs…`
@@ -163,17 +163,34 @@ for print jobs every 3 seconds and prints them.
    put a shortcut to `start-agent.bat` there.
 5. If it says *certificate verify failed*: download `https://curl.se/ca/cacert.pem` and set `ca_file` in `agent-config.php`.
 
-In Admin → Printing you can see whether the agent is connected; the order page warns staff when it is not.
+In Settings → Printing you can see whether the agent is connected; the order page warns staff when it is not.
 When staff press **OK – Print** the file is *queued*, the agent prints it within seconds and it shows as *printed*
 (or *failed* with the reason).
 
-## 6. Daily use
+## 6. Install as an app (phone, tablet, PC)
+
+Daybill Print is an installable web app (PWA): it gets its own icon and opens full screen like a
+normal app, with a bottom tab bar (Jobs · QR code · Settings) for staff. Works over HTTPS only.
+
+- **Customers**: on the upload page tap **⬇ Install app** (Android / Chrome / Edge). On iPhone the page
+  shows: Safari **Share ⬆ → Add to Home Screen**.
+- **Staff / admin**: open the login page or **Settings → Install on this device**. The staff app opens
+  straight to the job list.
+- On a PC (Chrome/Edge) an install icon also appears in the address bar.
+- Without internet the app shows a "No internet connection" page; orders and files are never cached
+  on the device.
+
+**Settings** (bottom tab ⚙️) is a menu like a phone's settings app: Employees, Customer options, Prices,
+Printing, Shop settings, QR code poster (admin only), plus **My account** (every employee can change
+their own password), Install app and Log out.
+
+## 7. Daily use
 
 | Who | Page |
 |---|---|
 | Customer | `https://<pc-ip>/daybill/` (via QR code) |
 | Employee / Admin | `https://<pc-ip>/daybill/login.php` |
-| Admin | **Admin** (employees, printers, prices) and **QR code** |
+| Admin | **Settings** tab (employees, printers, prices…) and **QR code** tab |
 
 - **Waiting** tab: new orders, oldest first. The page checks for new orders every 8 seconds and beeps.
 - **Done today**: completed orders; the top shows today's count and total bill.
@@ -189,7 +206,10 @@ When staff press **OK – Print** the file is *queued*, the agent prints it with
 | `staff.php` | Order list for employees |
 | `job.php` | Order details: preview, change options, print, complete |
 | `file.php` | Secure file preview/download (staff only) |
-| `admin.php` | Employees and settings (admin only) |
+| `settings.php` | Settings menu |
+| `admin.php` | Settings pages: `?s=employees`, `options`, `prices`, `printing`, `shop` (admin only) |
+| `account.php` | Change your own password |
+| `manifest.php`, `sw.js`, `offline.html`, `assets/app.js`, `assets/icons/` | Installable app (PWA) |
 | `qr.php` | QR code poster (admin only, works offline) |
 | `printer.php` | Local printing (print mode "Local") |
 | `api.php` | API for the shop-PC print agent (cloud mode) |

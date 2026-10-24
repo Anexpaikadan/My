@@ -124,3 +124,55 @@ code.key { word-break: break-all; font-size: .95rem; }
   .map-tbl tr { display: grid; grid-template-columns: 1fr; }
   .map-tbl td[data-label]::before { content: attr(data-label); display: block; font-size: .75rem; color: var(--muted); }
 }
+
+/* ---- v5: installable app shell ---- */
+html { -webkit-tap-highlight-color: transparent; }
+body { min-height: 100vh; overscroll-behavior-y: contain; }
+.top { position: sticky; top: 0; z-index: 20; padding-top: env(safe-area-inset-top); box-shadow: 0 1px 0 rgba(0,0,0,.25); }
+.top .wrap { min-height: 56px; padding-top: 8px; padding-bottom: 8px; flex-wrap: nowrap; }
+.brand { display: inline-flex; align-items: center; gap: 10px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.brand img { border-radius: 7px; flex: none; }
+.top .title { flex: 1; font-weight: 700; font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.back-btn { color: #fff; text-decoration: none; font-size: 2rem; line-height: 1; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; margin-inline-start: -10px; border-radius: 50%; flex: none; }
+.back-btn:active { background: rgba(255,255,255,.15); }
+.top nav.lang { display: flex; gap: 8px; align-items: center; flex: none; }
+.install-chip { background: var(--primary); color: #fff; border: 0; border-radius: 6px; padding: 5px 10px; font-weight: 600; font-size: .85rem; cursor: pointer; }
+
+body.has-tabs main.wrap { padding-bottom: calc(90px + env(safe-area-inset-bottom)); }
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; justify-content: center; background: #fff; border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -2px 12px rgba(18,35,63,.06); }
+.tabbar a { flex: 1; max-width: 200px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 10px; color: var(--muted); text-decoration: none; font-size: .75rem; font-weight: 600; }
+.tabbar a span { font-size: 1.35rem; line-height: 1.2; filter: grayscale(1); opacity: .7; }
+.tabbar a.on { color: var(--primary); }
+.tabbar a.on span { filter: none; opacity: 1; }
+
+.menu-title { margin: 18px 4px 6px; font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.menu.card { padding: 0; overflow: hidden; }
+.menu-item { display: flex; align-items: center; gap: 14px; padding: 14px 16px; color: var(--text); text-decoration: none; border-bottom: 1px solid var(--line); }
+.menu-item:last-child { border-bottom: 0; }
+.menu-item:active, .menu-item:hover { background: #f5f8ff; }
+.menu-item .ic { width: 36px; height: 36px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 9px; background: #eef2f8; font-size: 1.15rem; }
+.menu-item .txt { flex: 1; min-width: 0; }
+.menu-item .txt small { display: block; color: var(--muted); font-size: .82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.menu-item .chev { color: #b4bfcf; font-size: 1.5rem; }
+[dir=rtl] .menu-item .chev { transform: scaleX(-1); }
+.menu-item.danger { color: var(--danger); }
+.menu-item.danger .ic { background: #fbe6e6; }
+
+.profile { display: flex; align-items: center; gap: 14px; }
+.avatar { width: 46px; height: 46px; flex: none; border-radius: 50%; background: var(--primary); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.2rem; }
+.user-card .user-head { display: flex; align-items: center; gap: 12px; }
+.user-card .grow { flex: 1; min-width: 0; }
+.user-card.disabled { opacity: .65; }
+.user-card details { margin-top: 10px; }
+.user-card summary { cursor: pointer; color: var(--primary); font-weight: 600; }
+.row-form { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.row-form input { flex: 1 1 180px; margin: 0; }
+
+.install-box .muted { line-height: 1.5; }
+.ok-text { color: var(--ok); font-weight: 600; }
+@media (display-mode: standalone) { .install-card { display: none; } }
+
+@media (min-width: 900px) {
+  .tabbar { left: 50%; right: auto; transform: translateX(-50%); bottom: 16px; border: 1px solid var(--line); border-radius: 16px; padding: 0 10px; }
+  .tabbar a { min-width: 110px; }
+}

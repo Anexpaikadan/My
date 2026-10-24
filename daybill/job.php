@@ -176,10 +176,9 @@ function sel(string $name, array $values, string $current, array $labels): strin
     return $s . '</select>';
 }
 
-page_header('Order ' . $job['code'], true);
+page_header('Order ' . $job['code'], true, 'en', 'staff.php');
 echo flash();
 ?>
-<a href="staff.php" class="back">← All orders</a>
 <div class="card">
   <div class="job-title">
     <span class="bigcode small"><?= h($job['code']) ?></span>

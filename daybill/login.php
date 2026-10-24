@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-page_header('Staff login');
+page_header('Staff login', true);
 ?>
 <div class="card narrow">
   <h1>Staff login</h1>
@@ -41,5 +41,9 @@ page_header('Staff login');
     <label>Password<input name="password" type="password" required autocomplete="current-password"></label>
     <button class="btn primary block">Login</button>
   </form>
+</div>
+<div class="card narrow">
+  <p class="muted">Install the staff app on this phone or PC:</p>
+  <?= install_box() ?>
 </div>
 <?php page_footer(); ?>

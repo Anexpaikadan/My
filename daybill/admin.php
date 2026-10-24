@@ -1,9 +1,16 @@
 <?php
-// Admin: manage employees and shop/printer settings.
+// Admin settings pages: admin.php?s=employees | options | prices | printing | shop
 
 require __DIR__ . '/lib.php';
 require __DIR__ . '/printer.php';
 $admin = require_admin();
+
+$sections = ['employees' => 'Employees', 'options' => 'Customer options', 'prices' => 'Prices',
+    'printing' => 'Printing', 'shop' => 'Shop settings'];
+$sec = (string)($_GET['s'] ?? '');
+if (!isset($sections[$sec])) {
+    redirect('settings.php');
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
@@ -100,60 +107,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         save_setting('pricing', json_encode($table));
         flash('Prices saved.');
     }
-    redirect('admin.php');
+    redirect('admin.php?s=' . $sec);
 }
 
 $users = db()->query('SELECT id, username, full_name, role, active, created_at FROM users ORDER BY role, username')->fetchAll();
-$printers = list_printers();
-
-page_header('Admin', true);
-echo flash();
-?>
-<div class="card">
-  <h2>Employees</h2>
-  <table class="tbl">
-    <tr><th>User</th><th>Role</th><th>Status</th><th></th></tr>
-    <?php foreach ($users as $u): ?>
-      <tr>
-        <td><b><?= h($u['username']) ?></b><br><small class="muted"><?= h($u['full_name']) ?></small></td>
-        <td><?= h($u['role']) ?></td>
-        <td><?= $u['active'] ? 'Active' : '<span class="muted">Disabled</span>' ?></td>
-        <td class="actions">
-          <form method="post" class="inline">
-            <?= csrf_field() ?><input type="hidden" name="user_id" value="<?= (int)$u['id'] ?>">
-            <input type="password" name="password" placeholder="New password" minlength="6" required>
-            <button class="btn small" name="action" value="reset_password">Set</button>
-          </form>
-          <?php if ((int)$u['id'] !== (int)$admin['id']): ?>
-            <form method="post" class="inline">
-              <?= csrf_field() ?><input type="hidden" name="user_id" value="<?= (int)$u['id'] ?>">
-              <button class="btn small" name="action" value="toggle_active"><?= $u['active'] ? 'Disable' : 'Enable' ?></button>
-              <button class="btn small danger" name="action" value="delete_user" onclick="return confirm('Delete user?')">Delete</button>
-            </form>
-          <?php endif; ?>
-        </td>
-      </tr>
-    <?php endforeach; ?>
-  </table>
-
-  <h3>Add new employee</h3>
-  <form method="post" class="opts">
-    <?= csrf_field() ?>
-    <label>Username<input name="username" required pattern="[A-Za-z0-9_.\-]{3,50}"></label>
-    <label>Full name<input name="full_name"></label>
-    <label>Password<input name="password" type="password" required minlength="6"></label>
-    <label>Role<select name="role"><option value="employee">Employee</option><option value="admin">Admin</option></select></label>
-    <div class="actions wide"><button class="btn primary" name="action" value="create_user">Create employee</button></div>
-  </form>
-</div>
-
-<?php
+$printers = $sec === 'printing' ? list_printers() : [];
 $mode = setting('print_mode', 'local');
 $labels = ['bw' => 'Black & white', 'color' => 'Colour', 'single' => 'One side', 'double' => 'Both sides'];
 $seen = (int)setting('agent_seen', '0');
+
+page_header($sections[$sec], true, 'en', 'settings.php');
+echo flash();
 ?>
+<?php if ($sec === 'employees'): ?>
+<?php foreach ($users as $u): ?>
+  <div class="card user-card<?= $u['active'] ? '' : ' disabled' ?>">
+    <div class="user-head">
+      <span class="avatar"><?= h(mb_strtoupper(mb_substr($u['full_name'] ?: $u['username'], 0, 1))) ?></span>
+      <div class="grow"><b><?= h($u['full_name'] ?: $u['username']) ?></b>
+        <div class="muted">@<?= h($u['username']) ?> · <?= h($u['role']) ?><?= $u['active'] ? '' : ' · disabled' ?><?= (int)$u['id'] === (int)$admin['id'] ? ' · you' : '' ?></div></div>
+    </div>
+    <details>
+      <summary>Manage</summary>
+      <form method="post" class="row-form">
+        <?= csrf_field() ?><input type="hidden" name="user_id" value="<?= (int)$u['id'] ?>">
+        <input type="password" name="password" placeholder="New password (min 6)" minlength="6" required autocomplete="new-password">
+        <button class="btn" name="action" value="reset_password">Set password</button>
+      </form>
+      <?php if ((int)$u['id'] !== (int)$admin['id']): ?>
+        <form method="post" class="actions">
+          <?= csrf_field() ?><input type="hidden" name="user_id" value="<?= (int)$u['id'] ?>">
+          <button class="btn" name="action" value="toggle_active"><?= $u['active'] ? 'Disable login' : 'Enable login' ?></button>
+          <button class="btn danger" name="action" value="delete_user" onclick="return confirm('Delete user?')">Delete</button>
+        </form>
+      <?php endif; ?>
+    </details>
+  </div>
+<?php endforeach; ?>
+
 <div class="card">
-  <h2>Customer options</h2>
+  <h2>Add new employee</h2>
+  <form method="post" class="opts">
+    <?= csrf_field() ?>
+    <label>Username<input name="username" required pattern="[A-Za-z0-9_.\-]{3,50}" autocapitalize="none"></label>
+    <label>Full name<input name="full_name"></label>
+    <label>Password<input name="password" type="password" required minlength="6" autocomplete="new-password"></label>
+    <label>Role<select name="role"><option value="employee">Employee</option><option value="admin">Admin</option></select></label>
+    <div class="actions wide"><button class="btn primary block" name="action" value="create_user">Create employee</button></div>
+  </form>
+</div>
+
+<?php elseif ($sec === 'options'): ?>
+<div class="card">
   <p class="muted">Only ticked options are shown to customers. If only one is ticked (e.g. only A4), customers see just that.</p>
   <form method="post">
     <?= csrf_field() ?>
@@ -183,8 +188,8 @@ $seen = (int)setting('agent_seen', '0');
   </form>
 </div>
 
+<?php elseif ($sec === 'prices'): ?>
 <div class="card">
-  <h2>Prices</h2>
   <p class="muted">Per order file: the first <b>N pages</b> cost the <b>fixed price</b>, each page after that costs the <b>extra page</b> price
     (pages × copies). Example: N = 2, fixed = 2, extra = 1 → 1–2 pages = 2 <?= h(setting('currency', 'SR')) ?>, 5 pages = 5 <?= h(setting('currency', 'SR')) ?>.
     Staff can still change the price of any order.</p>
@@ -208,8 +213,8 @@ $seen = (int)setting('agent_seen', '0');
   </form>
 </div>
 
+<?php elseif ($sec === 'printing'): ?>
 <div class="card">
-  <h2>Printing</h2>
   <form method="post" class="opts">
     <?= csrf_field() ?>
     <label class="wide">Print mode
@@ -278,8 +283,8 @@ $seen = (int)setting('agent_seen', '0');
   <?php endif; ?>
 </div>
 
+<?php else: ?>
 <div class="card">
-  <h2>Shop settings</h2>
   <form method="post" class="opts">
     <?= csrf_field() ?>
     <label>Shop name<input name="shop_name" value="<?= h(setting('shop_name')) ?>"></label>
@@ -294,4 +299,5 @@ $seen = (int)setting('agent_seen', '0');
     <div class="actions wide"><button class="btn primary" name="action" value="settings">Save settings</button></div>
   </form>
 </div>
+<?php endif; ?>
 <?php page_footer(); ?>
