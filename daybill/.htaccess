@@ -5,12 +5,18 @@ Options -Indexes
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteCond %{HTTPS} off
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
   RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 </IfModule>
 
 # Block access to config, schema and helper files
-<FilesMatch "^(config|lib|printer)\.php$|\.(sql|md|log)$">
-  Require all denied
+<FilesMatch "^(config|lib|printer|lang)\.php$|\.(sql|md|log|ini)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Deny from all
+  </IfModule>
 </FilesMatch>
 
 <IfModule mod_headers.c>
@@ -20,7 +26,7 @@ Options -Indexes
   Header always set Referrer-Policy "same-origin"
 </IfModule>
 
-# Allow bigger uploads (mod_php only; for other setups edit php.ini)
+# Allow bigger uploads (mod_php / XAMPP; cloud hosting uses .user.ini)
 <IfModule mod_php.c>
   php_value upload_max_filesize 25M
   php_value post_max_size 260M

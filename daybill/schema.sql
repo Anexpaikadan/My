@@ -35,13 +35,15 @@ CREATE TABLE IF NOT EXISTS job_files (
   size_bytes    INT UNSIGNED NOT NULL DEFAULT 0,
   pages_total   INT UNSIGNED NOT NULL DEFAULT 0,
   copies        INT UNSIGNED NOT NULL DEFAULT 1,
-  paper         VARCHAR(10)  NOT NULL DEFAULT 'A4',
+  paper         VARCHAR(30)  NOT NULL DEFAULT 'A4',
   color         ENUM('bw','color') NOT NULL DEFAULT 'bw',
   sides         ENUM('single','double') NOT NULL DEFAULT 'single',
   orientation   ENUM('portrait','landscape') NOT NULL DEFAULT 'portrait',
   page_range    VARCHAR(100) NOT NULL DEFAULT '',
-  status        ENUM('pending','printed','failed') NOT NULL DEFAULT 'pending',
+  price         DECIMAL(10,2) NULL,
+  status        ENUM('pending','queued','sending','printed','failed') NOT NULL DEFAULT 'pending',
   print_count   INT UNSIGNED NOT NULL DEFAULT 0,
+  queued_at     DATETIME NULL,
   last_error    VARCHAR(500) NOT NULL DEFAULT '',
   printed_at    DATETIME NULL,
   printed_by    INT UNSIGNED NULL,
@@ -52,14 +54,20 @@ CREATE TABLE IF NOT EXISTS job_files (
 
 CREATE TABLE IF NOT EXISTS settings (
   k VARCHAR(50)  NOT NULL PRIMARY KEY,
-  v VARCHAR(500) NOT NULL DEFAULT ''
+  v TEXT NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT IGNORE INTO settings (k, v) VALUES
+  ('schema_version', '2'),
   ('shop_name', 'Daybill Print'),
+  ('print_mode', 'local'),
   ('printer_bw', ''),
   ('printer_color', ''),
-  ('price_bw', '2'),
-  ('price_color', '10'),
-  ('currency', '₹'),
+  ('papers_enabled', 'A4,A3'),
+  ('papers_custom', ''),
+  ('colors_enabled', 'bw,color'),
+  ('sides_enabled', 'single,double'),
+  ('pricing', '{"A4":{"bw":{"single":[1,2,1],"double":[1,2,1]},"color":{"single":[1,5,3],"double":[1,5,3]}},"A3":{"bw":{"single":[1,4,2],"double":[1,4,2]},"color":{"single":[1,10,6],"double":[1,10,6]}}}'),
+  ('currency', 'SR'),
+  ('default_lang', 'en'),
   ('retention_days', '2');

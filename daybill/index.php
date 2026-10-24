@@ -16,12 +16,11 @@ function make_code(): string
 function handle_upload(): array
 {
     if (empty($_FILES['files']) || !is_array($_FILES['files']['name'])) {
-        return ['ok' => false, 'error' => 'Please choose at least one file.'];
+        return ['ok' => false, 'error' => t('err_none')];
     }
     $files = $_FILES['files'];
-    $count = count($files['name']);
-    if ($count > cfg('max_files')) {
-        return ['ok' => false, 'error' => 'Maximum ' . cfg('max_files') . ' files per order.'];
+    if (count($files['name']) > cfg('max_files')) {
+        return ['ok' => false, 'error' => t('err_max', cfg('max_files'))];
     }
     $maxBytes = cfg('max_file_mb') * 1048576;
     $dir = cfg('upload_dir');
@@ -36,31 +35,34 @@ function handle_upload(): array
         }
         if ($files['error'][$i] === UPLOAD_ERR_INI_SIZE || $files['error'][$i] === UPLOAD_ERR_FORM_SIZE
             || $files['size'][$i] > $maxBytes) {
-            return ['ok' => false, 'error' => "\"$name\" is too large (max " . cfg('max_file_mb') . ' MB).'];
+            return ['ok' => false, 'error' => t('err_big', $name, cfg('max_file_mb'))];
         }
         if ($files['error'][$i] !== UPLOAD_ERR_OK) {
-            return ['ok' => false, 'error' => "Upload of \"$name\" failed. Please try again."];
+            return ['ok' => false, 'error' => t('err_fail', $name)];
         }
         $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
         if (!in_array($ext, ALLOWED_EXT, true)) {
-            return ['ok' => false, 'error' => "\"$name\": file type not supported."];
+            return ['ok' => false, 'error' => t('err_type', $name)];
         }
         $tmp = $files['tmp_name'][$i];
         $head = (string)file_get_contents($tmp, false, null, 0, 8);
         if ($ext === 'pdf' && strncmp($head, '%PDF', 4) !== 0) {
-            return ['ok' => false, 'error' => "\"$name\" is not a valid PDF."];
+            return ['ok' => false, 'error' => t('err_pdf', $name)];
         }
         if (in_array($ext, ['jpg', 'jpeg', 'png'], true) && @getimagesize($tmp) === false) {
-            return ['ok' => false, 'error' => "\"$name\" is not a valid image."];
+            return ['ok' => false, 'error' => t('err_img', $name)];
         }
         $accepted[] = ['i' => $i, 'name' => $name, 'ext' => $ext, 'tmp' => $tmp, 'size' => (int)$files['size'][$i]];
     }
     if (!$accepted) {
-        return ['ok' => false, 'error' => 'Please choose at least one file.'];
+        return ['ok' => false, 'error' => t('err_none')];
     }
 
     $pdo = db();
     $pdo->beginTransaction();
+    $saved = [];
+    $total = 0.0;
+    $unknown = false;
     try {
         $jobId = 0;
         for ($try = 0; $try < 20 && !$jobId; $try++) {
@@ -93,25 +95,31 @@ function handle_upload(): array
             if (!move_uploaded_file($f['tmp'], $dir . '/' . $stored)) {
                 throw new RuntimeException('Could not save file');
             }
+            $saved[] = $dir . '/' . $stored;
             $pages = $f['ext'] === 'pdf' ? pdf_page_count($dir . '/' . $stored)
                 : (in_array($f['ext'], ['jpg', 'jpeg', 'png'], true) ? 1 : 0);
             $o = clean_options(is_array($opts[$f['i']] ?? null) ? $opts[$f['i']] : []);
             $ins->execute([$jobId, mb_substr(basename($f['name']), 0, 255), $stored, $f['ext'], $f['size'], $pages,
                 $o['copies'], $o['paper'], $o['color'], $o['sides'], $o['orientation'], $o['page_range']]);
+            $total += auto_price($o + ['pages_total' => $pages]);
+            $unknown = $unknown || $pages === 0;
         }
         $pdo->commit();
     } catch (Throwable $e) {
         $pdo->rollBack();
+        array_map('unlink', $saved);
         error_log('Daybill upload error: ' . $e->getMessage());
-        return ['ok' => false, 'error' => 'Server error while saving. Please try again.'];
+        return ['ok' => false, 'error' => t('err_server')];
     }
-    return ['ok' => true, 'code' => $code, 'files' => count($accepted)];
+    return ['ok' => true, 'code' => $code, 'files' => count($accepted),
+        'price' => $unknown ? '' : money($total)];
 }
 
+$lang = lang();
 $result = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $result = empty($_POST) && empty($_FILES)
-        ? ['ok' => false, 'error' => 'Upload too large for the server (max ' . cfg('max_file_mb') . ' MB per file).']
+        ? ['ok' => false, 'error' => t('err_post', cfg('max_file_mb'))]
         : handle_upload();
     if (($_POST['ajax'] ?? '') === '1' || empty($_POST)) {
         header('Content-Type: application/json');
@@ -120,79 +128,122 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-page_header('Send files to print');
+$papers = enabled_papers();
+$colors = enabled_colors();
+$sides = enabled_sides();
+
+// Rules for every offered combination, for the live price estimate.
+$rules = [];
+foreach ($papers as $p) {
+    foreach ($colors as $c) {
+        foreach ($sides as $s) {
+            $rules[$p][$c][$s] = price_rule($p, $c, $s);
+        }
+    }
+}
+
+// A select, or a fixed label when only one choice is offered.
+function choice(string $key, string $label, array $values, bool $translate): string
+{
+    $text = fn($v) => $translate ? t($v) : $v;
+    if (count($values) === 1) {
+        return '<label>' . h(t($label)) . '<span class="fixed">' . h($text($values[0])) . '</span>'
+            . '<input type="hidden" data-k="' . $key . '" value="' . h($values[0]) . '"></label>';
+    }
+    $s = '<label>' . h(t($label)) . '<select data-k="' . $key . '">';
+    foreach ($values as $v) {
+        $s .= '<option value="' . h($v) . '">' . h($text($v)) . '</option>';
+    }
+    return $s . '</select></label>';
+}
+
+function rule_text(array $r): string
+{
+    [$n, $base, $extra] = $r;
+    if ($n <= 1 && abs($base - $extra) < 0.001) {
+        return t('rule_flat', money($extra));
+    }
+    return t('rule', $n, money($base), money($extra));
+}
+
+page_header(t('title'), false, $lang);
 $accept = '.' . implode(',.', ALLOWED_EXT);
 ?>
 <?php if ($result && $result['ok']): ?>
   <div class="card center">
-    <h1>✅ Sent!</h1>
-    <p>Show this code at the counter:</p>
+    <h1><?= h(t('sent')) ?></h1>
+    <p><?= h(t('show_code')) ?></p>
     <div class="bigcode"><?= h($result['code']) ?></div>
-    <a class="btn block" href="index.php">Send more files</a>
+    <a class="btn block" href="index.php"><?= h(t('send_more')) ?></a>
   </div>
 <?php else: ?>
   <?php if ($result): ?><div class="alert err"><?= h($result['error']) ?></div><?php endif; ?>
 
   <div id="done" class="card center hidden">
-    <h1>✅ Sent!</h1>
-    <p>Show this code at the counter:</p>
+    <h1><?= h(t('sent')) ?></h1>
+    <p><?= h(t('show_code')) ?></p>
     <div class="bigcode" id="doneCode"></div>
-    <a class="btn block" href="index.php">Send more files</a>
+    <p id="donePrice" class="price-total"></p>
+    <p class="muted"><?= h(t('final_note')) ?></p>
+    <a class="btn block" href="index.php"><?= h(t('send_more')) ?></a>
   </div>
 
   <form id="upForm" method="post" enctype="multipart/form-data" class="card">
-    <h1>Send files to print</h1>
-    <p class="muted">PDF, photos, Word, Excel, PowerPoint · max <?= (int)cfg('max_file_mb') ?> MB each</p>
+    <h1><?= h(t('title')) ?></h1>
+    <p class="muted"><?= h(t('hint', cfg('max_file_mb'))) ?></p>
 
     <label class="drop" id="drop">
       <input type="file" id="picker" name="files[]" multiple accept="<?= h($accept) ?>">
-      <span>📄 Tap to choose files</span>
+      <span><?= h(t('choose')) ?></span>
     </label>
 
     <div id="list"></div>
+    <div id="total" class="price-total hidden"></div>
 
-    <!-- Used when JavaScript is off: one set of options for all files -->
+    <!-- Used when JavaScript is off: options of the first file -->
     <noscript>
       <div class="opts">
-        <label>Copies<input type="number" name="opt[0][copies]" value="1" min="1" max="999"></label>
-        <label>Paper<select name="opt[0][paper]"><?php foreach (PAPER_SIZES as $p): ?><option><?= $p ?></option><?php endforeach; ?></select></label>
+        <label><?= h(t('copies')) ?><input type="number" name="opt[0][copies]" value="1" min="1" max="999"></label>
+        <label><?= h(t('paper')) ?><select name="opt[0][paper]"><?php foreach ($papers as $p): ?><option><?= h($p) ?></option><?php endforeach; ?></select></label>
       </div>
     </noscript>
 
     <details class="more">
-      <summary>Your name / phone (optional)</summary>
-      <label>Name<input name="customer_name" maxlength="100" autocomplete="name"></label>
-      <label>Phone<input name="phone" maxlength="30" inputmode="tel" autocomplete="tel"></label>
-      <label>Note for the shop<input name="note" maxlength="500" placeholder="e.g. staple, spiral binding"></label>
+      <summary><?= h(t('prices')) ?></summary>
+      <table class="tbl prices">
+        <?php foreach ($rules as $p => $byColor): foreach ($byColor as $c => $bySides): foreach ($bySides as $s => $r): ?>
+          <tr><td><b><?= h($p) ?></b> · <?= h(t($c)) ?> · <?= h(t($s)) ?></td><td><?= h(rule_text($r)) ?></td></tr>
+        <?php endforeach; endforeach; endforeach; ?>
+      </table>
+    </details>
+
+    <details class="more">
+      <summary><?= h(t('optional')) ?></summary>
+      <label><?= h(t('name')) ?><input name="customer_name" maxlength="100" autocomplete="name"></label>
+      <label><?= h(t('phone')) ?><input name="phone" maxlength="30" inputmode="tel" autocomplete="tel"></label>
+      <label><?= h(t('note')) ?><input name="note" maxlength="500" placeholder="<?= h(t('note_ph')) ?>"></label>
     </details>
 
     <div id="err" class="alert err hidden"></div>
     <div id="progress" class="progress hidden"><div></div></div>
-    <button class="btn primary block big" id="sendBtn">Upload &amp; send to shop</button>
+    <button class="btn primary block big" id="sendBtn"><?= h(t('send')) ?></button>
   </form>
 
   <template id="tpl">
     <div class="file">
-      <div class="file-head"><span class="fname"></span><button type="button" class="x" aria-label="Remove">✕</button></div>
+      <div class="file-head"><span class="fname"></span><button type="button" class="x" aria-label="<?= h(t('remove')) ?>">✕</button></div>
       <div class="opts">
-        <label>Copies
+        <label><?= h(t('copies')) ?>
           <span class="stepper"><button type="button" data-step="-1">−</button><input type="number" data-k="copies" value="1" min="1" max="999"><button type="button" data-step="1">+</button></span>
         </label>
-        <label>Paper size
-          <select data-k="paper"><?php foreach (PAPER_SIZES as $p): ?><option><?= $p ?></option><?php endforeach; ?></select>
+        <?= choice('paper', 'paper', $papers, false) ?>
+        <?= choice('color', 'colour', $colors, true) ?>
+        <?= choice('sides', 'sides', $sides, true) ?>
+        <?= choice('orientation', 'layout', ['portrait', 'landscape'], true) ?>
+        <label><?= h(t('pages')) ?>
+          <input data-k="page_range" placeholder="<?= h(t('pages_ph')) ?>" inputmode="numeric" pattern="[0-9,\- ]*">
         </label>
-        <label>Colour
-          <select data-k="color"><option value="bw">Black &amp; white</option><option value="color">Colour</option></select>
-        </label>
-        <label>Sides
-          <select data-k="sides"><option value="single">One side</option><option value="double">Both sides</option></select>
-        </label>
-        <label>Layout
-          <select data-k="orientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select>
-        </label>
-        <label>Pages
-          <input data-k="page_range" placeholder="All  (or e.g. 1-3,5)" inputmode="numeric" pattern="[0-9,\- ]*">
-        </label>
+        <div class="price wide muted"></div>
       </div>
     </div>
   </template>
@@ -200,10 +251,14 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
   <script>
   (function () {
     var maxFiles = <?= (int)cfg('max_files') ?>, maxMb = <?= (int)cfg('max_file_mb') ?>;
+    var rules = <?= json_encode($rules) ?>, currency = <?= json_encode(setting('currency', 'SR')) ?>;
+    var T = <?php $keys = ['err_none', 'err_server', 'err_net', 'estimate', 'estimate_ph', 'pages_count'];
+                echo json_encode(array_combine($keys, array_map('t', $keys))); ?>;
+    var Terr = { max: <?= json_encode(t('err_max', cfg('max_files'))) ?>, big: <?= json_encode(t('err_big', '%s', cfg('max_file_mb'))) ?> };
     var picker = document.getElementById('picker'), list = document.getElementById('list'),
         tpl = document.getElementById('tpl'), form = document.getElementById('upForm'),
         err = document.getElementById('err'), prog = document.getElementById('progress'),
-        btn = document.getElementById('sendBtn');
+        btn = document.getElementById('sendBtn'), totalEl = document.getElementById('total');
     var items = [];
 
     picker.removeAttribute('name'); // files are sent by JavaScript instead
@@ -213,30 +268,85 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
     });
 
     function showErr(m) { err.textContent = m; err.classList.toggle('hidden', !m); }
+    function money(v) { var s = v.toFixed(2); return (s.slice(-3) === '.00' ? s.slice(0, -3) : s) + ' ' + currency; }
+    function val(node, k) { return node.querySelector('[data-k=' + k + ']').value; }
+
+    // Same logic as pages_selected() in lib.php.
+    function selected(total, range) {
+      range = range.replace(/\s+/g, '');
+      if (!/^(\d+(-\d+)?)(,\d+(-\d+)?)*$/.test(range)) return Math.max(1, total);
+      var pages = {};
+      range.split(',').forEach(function (part) {
+        var ab = part.split('-'), a = +ab[0], b = ab.length > 1 ? +ab[1] : a;
+        if (b < a) { var t = a; a = b; b = t; }
+        if (total > 0) b = Math.min(b, total);
+        for (var i = a; i <= b && i - a < 10000; i++) pages[i] = 1;
+      });
+      return Math.max(1, Object.keys(pages).length);
+    }
+
+    function price(it) {
+      if (!it.pages) return null;
+      var r = ((rules[val(it.node, 'paper')] || {})[val(it.node, 'color')] || {})[val(it.node, 'sides')];
+      if (!r) return null;
+      var n = selected(it.pages, val(it.node, 'page_range')) * Math.max(1, parseInt(val(it.node, 'copies'), 10) || 1);
+      return r[1] + Math.max(0, n - r[0]) * r[2];
+    }
+
+    function refresh() {
+      var sum = 0, known = items.length > 0;
+      items.forEach(function (it) {
+        var p = price(it), el = it.node.querySelector('.price');
+        el.textContent = (it.pages ? T.pages_count.replace('%d', it.pages) + ' · ' : '')
+          + (p === null ? T.estimate_ph : T.estimate + ': ' + money(p));
+        if (p === null) known = false; else sum += p;
+      });
+      totalEl.textContent = known ? T.estimate + ': ' + money(sum) : '';
+      totalEl.classList.toggle('hidden', !known || items.length < 2);
+    }
+
+    // Rough page count, same approach as pdf_page_count() on the server.
+    function countPages(it) {
+      var ext = it.file.name.split('.').pop().toLowerCase();
+      if (['jpg', 'jpeg', 'png'].indexOf(ext) >= 0) { it.pages = 1; return refresh(); }
+      if (ext !== 'pdf' || !window.FileReader) return refresh();
+      var rd = new FileReader();
+      rd.onload = function () {
+        var s = rd.result, m, max = 0, re = /\/Type\s*\/Pages\b[^>]*?\/Count\s+(\d+)/g;
+        while ((m = re.exec(s))) max = Math.max(max, +m[1]);
+        it.pages = max || (s.match(/\/Type\s*\/Page\b(?!s)/g) || []).length;
+        refresh();
+      };
+      rd.readAsBinaryString(it.file);
+    }
 
     function addFile(file) {
-      if (items.length >= maxFiles) return showErr('Maximum ' + maxFiles + ' files.');
-      if (file.size > maxMb * 1048576) return showErr('"' + file.name + '" is larger than ' + maxMb + ' MB.');
+      if (items.length >= maxFiles) return showErr(Terr.max);
+      if (file.size > maxMb * 1048576) return showErr(Terr.big.replace('%s', file.name));
       showErr('');
       var node = tpl.content.firstElementChild.cloneNode(true);
       node.querySelector('.fname').textContent = file.name;
-      var item = { file: file, node: node };
+      var item = { file: file, node: node, pages: 0 };
       node.querySelector('.x').onclick = function () {
-        items.splice(items.indexOf(item), 1); node.remove();
+        items.splice(items.indexOf(item), 1); node.remove(); refresh();
       };
       node.querySelectorAll('[data-step]').forEach(function (b) {
         b.onclick = function () {
           var inp = node.querySelector('[data-k=copies]');
           inp.value = Math.max(1, Math.min(999, (parseInt(inp.value, 10) || 1) + parseInt(b.dataset.step, 10)));
+          refresh();
         };
       });
+      node.addEventListener('input', refresh);
+      node.addEventListener('change', refresh);
       items.push(item);
       list.appendChild(node);
+      countPages(item);
     }
 
     form.addEventListener('submit', function (e) {
       e.preventDefault();
-      if (!items.length) return showErr('Please choose at least one file.');
+      if (!items.length) return showErr(T.err_none);
       showErr('');
       var fd = new FormData();
       fd.append('ajax', '1');
@@ -255,14 +365,15 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
       };
       xhr.onload = function () {
         btn.disabled = false; prog.classList.add('hidden');
-        var r; try { r = JSON.parse(xhr.responseText); } catch (x) { r = { ok: false, error: 'Server error. Please try again.' }; }
+        var r; try { r = JSON.parse(xhr.responseText); } catch (x) { r = { ok: false, error: T.err_server }; }
         if (!r.ok) return showErr(r.error);
         form.classList.add('hidden');
         document.getElementById('doneCode').textContent = r.code;
+        document.getElementById('donePrice').textContent = r.price ? T.estimate + ': ' + r.price : '';
         document.getElementById('done').classList.remove('hidden');
         window.scrollTo(0, 0);
       };
-      xhr.onerror = function () { btn.disabled = false; prog.classList.add('hidden'); showErr('Network error. Please try again.'); };
+      xhr.onerror = function () { btn.disabled = false; prog.classList.add('hidden'); showErr(T.err_net); };
       xhr.send(fd);
     });
   })();

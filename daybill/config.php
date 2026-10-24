@@ -5,7 +5,9 @@
 // ---------------------------------------------------------------
 
 return [
-    // MySQL (XAMPP default: user "root", empty password)
+    // MySQL. XAMPP default: user "root", empty password.
+    // Cloud hosting (e.g. Hostinger): create the database + user in the control
+    // panel and copy the names here (they look like u123456789_daybill).
     'db_host' => '127.0.0.1',
     'db_port' => 3306,
     'db_name' => 'daybill_print',
@@ -26,7 +28,9 @@ return [
     // Maximum number of files a customer can send in one order.
     'max_files' => 10,
 
-    // ---- Printing -------------------------------------------------
+    // ---- Printing (print mode "local" in Admin) ---------------------
+    // On cloud hosting choose print mode "agent" in Admin instead and
+    // configure agent/agent-config.php on the shop PC.
     // Windows (XAMPP): install SumatraPDF and point to SumatraPDF.exe.
     //   https://www.sumatrapdfreader.org/download-free-pdf-viewer
     'sumatra_path' => 'C:\\Program Files\\SumatraPDF\\SumatraPDF.exe',

@@ -40,8 +40,12 @@ if ($hasAdmin) {
             if (!preg_match('/^[A-Za-z0-9_]+$/', $CONFIG['db_name'])) {
                 throw new RuntimeException('Invalid db_name in config.php');
             }
-            installer_pdo($CONFIG, false)->exec('CREATE DATABASE IF NOT EXISTS `' . $CONFIG['db_name']
-                . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+            try {
+                installer_pdo($CONFIG, false)->exec('CREATE DATABASE IF NOT EXISTS `' . $CONFIG['db_name']
+                    . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+            } catch (PDOException $e) {
+                // Shared hosting (e.g. Hostinger): the database is created in the control panel instead.
+            }
             $pdo = installer_pdo($CONFIG, true);
             $sql = preg_replace('/^--.*$/m', '', file_get_contents(__DIR__ . '/schema.sql'));
             foreach (array_filter(array_map('trim', explode(';', $sql))) as $stmt) {
@@ -70,7 +74,7 @@ if ($hasAdmin) {
   <?php if ($done): ?>
     <a class="btn primary block" href="login.php">Go to login</a>
   <?php else: ?>
-    <p class="muted">Database <b><?= htmlspecialchars($CONFIG['db_name']) ?></b> on <?= htmlspecialchars($CONFIG['db_host']) ?> will be created. Edit <code>config.php</code> first if needed.</p>
+    <p class="muted">Tables will be created in database <b><?= htmlspecialchars($CONFIG['db_name']) ?></b> on <?= htmlspecialchars($CONFIG['db_host']) ?>. Edit <code>config.php</code> first if needed. On cloud hosting, create the database in your hosting panel first.</p>
     <form method="post">
       <label>Admin username<input name="username" required value="admin"></label>
       <label>Admin password<input name="password" type="password" required minlength="6"></label>

@@ -1,0 +1,97 @@
+<?php
+// Daybill print agent – runs on the shop PC when the app is hosted in the cloud.
+// It asks the website for print jobs, downloads each file and prints it locally.
+//
+//   Windows:  C:\xampp\php\php.exe print-agent.php      (or double-click start-agent.bat)
+//   Linux:    php print-agent.php
+
+declare(strict_types=1);
+
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit('Run this from the command line on the shop PC.');
+}
+
+require __DIR__ . '/print-core.php';
+$c = require __DIR__ . '/agent-config.php';
+$base = rtrim($c['server_url'], '/') . '/api.php';
+$tmpDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'daybill-agent';
+if (!is_dir($tmpDir)) {
+    mkdir($tmpDir, 0700, true);
+}
+
+function say(string $msg): void
+{
+    echo '[' . date('H:i:s') . '] ' . $msg . PHP_EOL;
+}
+
+function api(string $url, array $c, ?array $post = null, int $timeout = 30): array
+{
+    $ssl = ['verify_peer' => true, 'verify_peer_name' => true];
+    if ($c['ca_file'] !== '') {
+        $ssl['cafile'] = $c['ca_file'];
+    }
+    $http = ['header' => 'X-Agent-Key: ' . $c['agent_key'] . "\r\n", 'timeout' => $timeout, 'ignore_errors' => true];
+    if ($post !== null) {
+        $http['method'] = 'POST';
+        $http['header'] .= "Content-Type: application/x-www-form-urlencoded\r\n";
+        $http['content'] = http_build_query($post);
+    }
+    $body = @file_get_contents($url, false, stream_context_create(['http' => $http, 'ssl' => $ssl]));
+    if ($body === false) {
+        $err = error_get_last()['message'] ?? 'connection failed';
+        throw new RuntimeException($err);
+    }
+    $status = 0;
+    foreach ($http_response_header ?? [] as $h) {
+        if (preg_match('#^HTTP/\S+\s+(\d+)#', $h, $m)) {
+            $status = (int)$m[1];
+        }
+    }
+    return [$status, $body];
+}
+
+say('Daybill print agent starting – server ' . $c['server_url']);
+[$status, $body] = api($base . '?action=ping', $c);
+if ($status !== 200) {
+    say("Server answered $status: $body");
+    say('Check server_url and agent_key in agent-config.php.');
+    exit(1);
+}
+say('Connected to "' . (json_decode($body, true)['shop'] ?? '?') . '". Waiting for print jobs… (Ctrl+C to stop)');
+
+$tools = ['sumatra' => $c['sumatra_path'], 'soffice' => $c['soffice_path'], 'lp' => $c['lp_path']];
+while (true) {
+    try {
+        [$status, $body] = api($base . '?action=next', $c);
+        $job = $status === 200 ? (json_decode($body, true)['job'] ?? null) : null;
+        if ($status !== 200) {
+            say("Server error $status");
+        }
+        if ($job) {
+            $ext = preg_replace('/[^a-z0-9]/', '', strtolower((string)$job['ext']));
+            $file = $tmpDir . DIRECTORY_SEPARATOR . 'job' . (int)$job['id'] . '.' . $ext;
+            say('Printing "' . $job['name'] . '" – ' . $job['copies'] . 'x ' . $job['paper'] . ' ' . $job['color'] . ' ' . $job['sides']);
+            try {
+                [$s, $data] = api($base . '?action=file&id=' . (int)$job['id'], $c, null, 300);
+                if ($s !== 200) {
+                    throw new RuntimeException("download failed ($s)");
+                }
+                file_put_contents($file, $data);
+                $printer = $c['printer_override'] !== '' ? $c['printer_override'] : (string)$job['printer'];
+                print_with_options($job, $file, $ext, $printer, $tools, (bool)$c['dry_run']);
+                api($base . '?action=result', $c, ['id' => $job['id'], 'ok' => '1']);
+                say('  done');
+            } catch (Throwable $e) {
+                api($base . '?action=result', $c, ['id' => $job['id'], 'ok' => '0', 'error' => $e->getMessage()]);
+                say('  FAILED: ' . $e->getMessage());
+            }
+            @unlink($file);
+            @unlink($file . '.pdf');
+            continue; // check for the next job straight away
+        }
+    } catch (Throwable $e) {
+        say('Connection problem: ' . $e->getMessage());
+    }
+    sleep(max(1, (int)$c['poll_seconds']));
+}

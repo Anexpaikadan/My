@@ -92,3 +92,27 @@ code { background: #eef1f6; padding: 1px 5px; border-radius: 4px; }
   .top, .noprint { display: none !important; }
   body { background: #fff; } .poster { border: 0; } .poster #qr { width: 11cm; }
 }
+
+/* v2: fixed options, prices, admin checks, RTL */
+.fixed { display: block; margin-top: 4px; padding: 10px 12px; border-radius: 8px; background: #eef2f8; color: var(--text); font-weight: 600; }
+.price-total { font-size: 1.15rem; font-weight: 700; color: var(--ok); margin: 4px 0 12px; }
+.file .price { color: var(--ok); font-weight: 600; margin-top: 2px; }
+label small { display: block; margin-top: 3px; font-size: .8rem; }
+.warn { color: var(--warn); }
+.checks { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.check { display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; color: var(--text); cursor: pointer; }
+.check input { width: auto; margin: 0; }
+.tbl-wrap { overflow-x: auto; }
+.price-tbl input { width: 90px; margin: 0; padding: 6px 8px; }
+.prices td { font-size: .9rem; }
+code.key { word-break: break-all; font-size: .95rem; }
+.top nav.lang a { margin: 0; font-weight: 600; color: #fff; border: 1px solid #5d7299; border-radius: 6px; padding: 4px 10px; }
+[dir=rtl] .stepper button:first-child { border-radius: 0 8px 8px 0; }
+[dir=rtl] .stepper button:last-child { border-radius: 8px 0 0 8px; }
+[dir=rtl] .tbl th, [dir=rtl] .tbl td { text-align: right; }
+@media (max-width: 600px) {
+  .price-tbl tr { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 8px; }
+  .price-tbl td:nth-child(-n+3) { font-weight: 600; }
+  .price-tbl input { width: 100%; }
+  .price-tbl td[data-label]::before { content: attr(data-label); display: block; font-size: .75rem; color: var(--muted); }
+}

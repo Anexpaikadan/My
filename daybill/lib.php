@@ -47,8 +47,28 @@ function db(): PDO
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES   => false,
         ]);
+        migrate($pdo);
     }
     return $pdo;
+}
+
+// Upgrades databases created by older versions of the app.
+function migrate(PDO $pdo): void
+{
+    try {
+        $v = (int)$pdo->query("SELECT v FROM settings WHERE k = 'schema_version'")->fetchColumn();
+    } catch (PDOException $e) {
+        exit('Database not installed yet – open install.php first.');
+    }
+    if ($v < 2) {
+        $pdo->exec('ALTER TABLE settings MODIFY v TEXT NOT NULL');
+        $pdo->exec("ALTER TABLE job_files
+            MODIFY paper VARCHAR(30) NOT NULL DEFAULT 'A4',
+            MODIFY status ENUM('pending','queued','sending','printed','failed') NOT NULL DEFAULT 'pending',
+            ADD COLUMN price DECIMAL(10,2) NULL AFTER page_range,
+            ADD COLUMN queued_at DATETIME NULL AFTER print_count");
+        $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '2') ON DUPLICATE KEY UPDATE v = '2'");
+    }
 }
 
 function h($s): string
@@ -133,10 +153,10 @@ function require_admin(): array
 
 // ---- Settings (key/value table) -----------------------------------
 
-function setting(string $key, string $default = ''): string
+function setting(string $key, string $default = '', bool $reload = false): string
 {
     static $cache = null;
-    if ($cache === null) {
+    if ($cache === null || $reload) {
         $cache = [];
         foreach (db()->query('SELECT k, v FROM settings') as $row) {
             $cache[$row['k']] = $row['v'];
@@ -149,27 +169,63 @@ function save_setting(string $key, string $value): void
 {
     $st = db()->prepare('INSERT INTO settings (k, v) VALUES (?, ?) ON DUPLICATE KEY UPDATE v = VALUES(v)');
     $st->execute([$key, $value]);
+    setting($key, '', true);
 }
 
 // ---- Print options ------------------------------------------------
 
-const PAPER_SIZES = ['A4', 'A3', 'A5', 'Letter', 'Legal'];
+const BUILTIN_PAPERS = ['A4', 'A3', 'A5', 'A6', 'A2', 'Letter', 'Legal', 'Tabloid', 'Statement'];
 const ALLOWED_EXT = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt'];
+const COLORS = ['bw', 'color'];
+const SIDES = ['single', 'double'];
 
+function csv_setting(string $key, string $default): array
+{
+    return array_values(array_filter(array_map('trim', explode(',', setting($key, $default))), 'strlen'));
+}
+
+// Built-in sizes plus any custom sizes the admin added (e.g. "Photo 4x6").
+function all_papers(): array
+{
+    return array_values(array_unique(array_merge(BUILTIN_PAPERS, csv_setting('papers_custom', ''))));
+}
+
+function enabled_papers(): array
+{
+    $on = array_values(array_intersect(all_papers(), csv_setting('papers_enabled', 'A4')));
+    return $on ?: ['A4'];
+}
+
+function enabled_colors(): array
+{
+    return array_values(array_intersect(COLORS, csv_setting('colors_enabled', 'bw,color'))) ?: ['bw'];
+}
+
+function enabled_sides(): array
+{
+    return array_values(array_intersect(SIDES, csv_setting('sides_enabled', 'single,double'))) ?: ['single'];
+}
+
+function pick(string $value, array $allowed): string
+{
+    return in_array($value, $allowed, true) ? $value : $allowed[0];
+}
+
+// Validates print options; only offered (enabled) choices are accepted.
 function clean_options(array $in): array
 {
     $copies = max(1, min(999, (int)($in['copies'] ?? 1)));
-    $paper = in_array($in['paper'] ?? '', PAPER_SIZES, true) ? $in['paper'] : 'A4';
-    $color = ($in['color'] ?? '') === 'color' ? 'color' : 'bw';
-    $sides = ($in['sides'] ?? '') === 'double' ? 'double' : 'single';
-    $orient = ($in['orientation'] ?? '') === 'landscape' ? 'landscape' : 'portrait';
     $range = preg_replace('/\s+/', '', (string)($in['page_range'] ?? ''));
     if (!preg_match('/^(\d+(-\d+)?)(,\d+(-\d+)?)*$/', $range)) {
         $range = ''; // empty = all pages
     }
     return [
-        'copies' => $copies, 'paper' => $paper, 'color' => $color,
-        'sides' => $sides, 'orientation' => $orient, 'page_range' => $range,
+        'copies'      => $copies,
+        'paper'       => pick((string)($in['paper'] ?? ''), enabled_papers()),
+        'color'       => pick((string)($in['color'] ?? ''), enabled_colors()),
+        'sides'       => pick((string)($in['sides'] ?? ''), enabled_sides()),
+        'orientation' => ($in['orientation'] ?? '') === 'landscape' ? 'landscape' : 'portrait',
+        'page_range'  => $range,
     ];
 }
 
@@ -197,10 +253,51 @@ function pages_selected(int $total, string $range): int
     return max(1, count($pages));
 }
 
-function estimate_price(array $f): float
+// ---- Pricing ------------------------------------------------------
+// Each paper/colour/sides combination has a rule:
+//   [first N pages, fixed price for those N pages, price for each extra page]
+// e.g. [2, 2, 1] = pages 1–2 cost 2 SR, every page after that costs 1 SR.
+
+const DEFAULT_RULE = [1, 1.0, 1.0];
+
+function pricing_table(): array
 {
-    $per = (float)setting($f['color'] === 'color' ? 'price_color' : 'price_bw', '0');
-    return pages_selected((int)$f['pages_total'], (string)$f['page_range']) * (int)$f['copies'] * $per;
+    $t = json_decode(setting('pricing', '{}'), true);
+    return is_array($t) ? $t : [];
+}
+
+function price_rule(string $paper, string $color, string $sides): array
+{
+    $r = pricing_table()[$paper][$color][$sides] ?? null;
+    if (!is_array($r) || count($r) !== 3) {
+        return DEFAULT_RULE;
+    }
+    return [max(0, (int)$r[0]), max(0, (float)$r[1]), max(0, (float)$r[2])];
+}
+
+function rule_price(array $rule, int $pages): float
+{
+    [$n, $base, $extra] = $rule;
+    return round($base + max(0, $pages - $n) * $extra, 2);
+}
+
+// Price calculated from the rules (ignores a staff override).
+function auto_price(array $f): float
+{
+    $pages = pages_selected((int)$f['pages_total'], (string)$f['page_range']) * (int)$f['copies'];
+    return rule_price(price_rule($f['paper'], $f['color'], $f['sides']), $pages);
+}
+
+// Price to charge: staff override if set, otherwise calculated.
+function file_price(array $f): float
+{
+    return isset($f['price']) && $f['price'] !== null ? (float)$f['price'] : auto_price($f);
+}
+
+function money(float $v): string
+{
+    $s = number_format($v, 2);
+    return (substr($s, -3) === '.00' ? substr($s, 0, -3) : $s) . ' ' . setting('currency', 'SR');
 }
 
 // Rough PDF page count without external tools.
@@ -244,14 +341,42 @@ function cleanup_old_files(): void
 
 // ---- Layout -------------------------------------------------------
 
-function page_header(string $title, bool $staff = false): void
+// ---- Customer language (English / Arabic) ------------------------
+
+function lang(): string
+{
+    static $lang = null;
+    if ($lang === null) {
+        $want = $_GET['lang'] ?? $_COOKIE['daybill_lang'] ?? setting('default_lang', 'en');
+        $lang = $want === 'ar' ? 'ar' : 'en';
+        if (isset($_GET['lang']) && PHP_SAPI !== 'cli') {
+            setcookie('daybill_lang', $lang, ['expires' => time() + 31536000, 'path' => '/',
+                'secure' => is_https(), 'samesite' => 'Lax']);
+        }
+    }
+    return $lang;
+}
+
+function t(string $key, ...$args): string
+{
+    static $dict = null;
+    if ($dict === null) {
+        $dict = require __DIR__ . '/lang.php';
+    }
+    $s = $dict[lang()][$key] ?? $dict['en'][$key] ?? $key;
+    return $args ? vsprintf($s, $args) : $s;
+}
+
+// ---- Layout -------------------------------------------------------
+
+function page_header(string $title, bool $staff = false, string $lang = 'en'): void
 {
     $shop = setting('shop_name', 'Daybill Print');
     $u = $staff ? current_user() : null;
-    echo '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+    echo '<!doctype html><html lang="' . h($lang) . '" dir="' . ($lang === 'ar' ? 'rtl' : 'ltr') . '"><head><meta charset="utf-8">'
         . '<meta name="viewport" content="width=device-width, initial-scale=1">'
         . '<title>' . h($title) . ' – ' . h($shop) . '</title>'
-        . '<link rel="stylesheet" href="assets/style.css"></head><body>';
+        . '<link rel="stylesheet" href="assets/style.css?v=2"></head><body>';
     echo '<header class="top"><div class="wrap"><a class="brand" href="' . ($staff ? 'staff.php' : 'index.php') . '">🖨️ ' . h($shop) . '</a>';
     if ($u) {
         echo '<nav><a href="staff.php">Jobs</a>';
@@ -259,6 +384,9 @@ function page_header(string $title, bool $staff = false): void
             echo '<a href="admin.php">Admin</a><a href="qr.php">QR code</a>';
         }
         echo '<a href="logout.php">Logout (' . h($u['username']) . ')</a></nav>';
+    } elseif (!$staff && basename($_SERVER['SCRIPT_NAME'] ?? '') === 'index.php') {
+        echo '<nav class="lang">' . ($lang === 'ar'
+            ? '<a href="?lang=en">English</a>' : '<a href="?lang=ar">العربية</a>') . '</nav>';
     }
     echo '</div></header><main class="wrap">';
 }

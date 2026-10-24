@@ -39,14 +39,13 @@ $jobs = $st->fetchAll();
 $today = db()->query("SELECT COUNT(*) AS n, COALESCE(SUM(amount), 0) AS total FROM jobs
                       WHERE status = 'done' AND updated_at >= CURDATE()")->fetch();
 $latest = (int)db()->query('SELECT COALESCE(MAX(id), 0) FROM jobs')->fetchColumn();
-$cur = setting('currency', '₹');
 
 page_header('Print jobs', true);
 echo flash();
 ?>
 <div class="stats">
   <div><b><?= (int)$today['n'] ?></b><span>done today</span></div>
-  <div><b><?= h($cur) ?><?= number_format((float)$today['total'], 2) ?></b><span>today's bill</span></div>
+  <div><b><?= h(money((float)$today['total'])) ?></b><span>today's bill</span></div>
 </div>
 
 <form class="search" method="get">
@@ -70,7 +69,7 @@ echo flash();
     <span class="code"><?= h($j['code']) ?></span>
     <span class="info">
       <b><?= h($j['customer_name'] ?: 'Walk-in customer') ?></b>
-      <small><?= (int)$j['nfiles'] ?> file(s) · <?= (int)$j['nprinted'] ?> printed · <?= h(date('d M, h:i A', strtotime($j['created_at']))) ?></small>
+      <small><?= (int)$j['nfiles'] ?> file(s) · <?= (int)$j['nprinted'] ?> printed · <?= h(date('d M, h:i A', strtotime($j['created_at']))) ?><?= $j['status'] === 'done' ? ' · ' . h(money((float)$j['amount'])) : '' ?></small>
       <?php if ($j['note']): ?><small class="note">📝 <?= h($j['note']) ?></small><?php endif; ?>
     </span>
     <span class="badge"><?= h($j['status']) ?></span>
