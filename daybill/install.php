@@ -39,16 +39,18 @@ if ($hasAdmin) {
         $msg = 'Password must be at least 6 characters.';
     } else {
         try {
-            if (!preg_match('/^[A-Za-z0-9_]+$/', $CONFIG['db_name'])) {
-                throw new RuntimeException('Invalid db_name in config.php');
+            // Hosting panels use names like u123_daybill or printer-3530343932cc (with a dash).
+            if (!preg_match('/^[A-Za-z0-9_$-]{1,64}$/', $CONFIG['db_name'])) {
+                throw new RuntimeException('Invalid db_name in config.php: use the exact database name from your hosting panel.');
             }
             try {
+                $pdo = installer_pdo($CONFIG, true); // database already exists (normal on shared hosting)
+            } catch (PDOException $e) {
+                // Local XAMPP: create the database, then connect to it.
                 installer_pdo($CONFIG, false)->exec('CREATE DATABASE IF NOT EXISTS `' . $CONFIG['db_name']
                     . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
-            } catch (PDOException $e) {
-                // Shared hosting (e.g. Hostinger): the database is created in the control panel instead.
+                $pdo = installer_pdo($CONFIG, true);
             }
-            $pdo = installer_pdo($CONFIG, true);
             $sql = preg_replace('/^--.*$/m', '', file_get_contents(__DIR__ . '/schema.sql'));
             foreach (array_filter(array_map('trim', explode(';', $sql))) as $stmt) {
                 $pdo->exec($stmt);

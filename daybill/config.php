@@ -7,7 +7,9 @@
 return [
     // MySQL. XAMPP default: user "root", empty password.
     // Cloud hosting (e.g. Hostinger): create the database + user in the control
-    // panel and copy the names here (they look like u123456789_daybill).
+    // panel and copy the names here exactly (e.g. u123456789_daybill or
+    // printer-3530343932cc). db_host is shown in the panel too (often 'localhost',
+    // on StackCP/20i something like 'sdb-68.hosting.stackcp.net').
     'db_host' => '127.0.0.1',
     'db_port' => 3306,
     'db_name' => 'daybill_print',
