@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS job_files (
   orientation   ENUM('portrait','landscape') NOT NULL DEFAULT 'portrait',
   page_range    VARCHAR(100) NOT NULL DEFAULT '',
   price         DECIMAL(10,2) NULL,
+  printer       VARCHAR(200) NOT NULL DEFAULT '',
   status        ENUM('pending','queued','sending','printed','failed') NOT NULL DEFAULT 'pending',
   print_count   INT UNSIGNED NOT NULL DEFAULT 0,
   queued_at     DATETIME NULL,
@@ -58,11 +59,12 @@ CREATE TABLE IF NOT EXISTS settings (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT IGNORE INTO settings (k, v) VALUES
-  ('schema_version', '2'),
+  ('schema_version', '3'),
   ('shop_name', 'Daybill Print'),
   ('print_mode', 'local'),
   ('printer_bw', ''),
   ('printer_color', ''),
+  ('printer_map', '{}'),
   ('papers_enabled', 'A4,A3'),
   ('papers_custom', ''),
   ('colors_enabled', 'bw,color'),

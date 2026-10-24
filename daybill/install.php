@@ -4,6 +4,8 @@
 
 declare(strict_types=1);
 
+require __DIR__ . '/https.php';
+
 $CONFIG = require __DIR__ . '/config.php';
 $msg = '';
 $done = false;

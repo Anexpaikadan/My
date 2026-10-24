@@ -70,9 +70,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $price = max(0, round((float)$raw, 2));
             }
-            $pdo->prepare('UPDATE job_files SET copies = ?, paper = ?, color = ?, sides = ?, orientation = ?, page_range = ?, price = ? WHERE id = ?')
-                ->execute([$o['copies'], $o['paper'], $o['color'], $o['sides'], $o['orientation'], $o['page_range'], $price, $f['id']]);
-            $f = array_merge($f, $o, ['price' => $price]);
+            // Printer: '' = automatic (admin's printer for this paper size and colour).
+            $printer = mb_substr(trim((string)($_POST['printer'] ?? '')), 0, 200);
+            if ($printer !== '' && !in_array($printer, known_printers(), true)) {
+                $printer = '';
+            }
+            $pdo->prepare('UPDATE job_files SET copies = ?, paper = ?, color = ?, sides = ?, orientation = ?, page_range = ?, price = ?, printer = ? WHERE id = ?')
+                ->execute([$o['copies'], $o['paper'], $o['color'], $o['sides'], $o['orientation'], $o['page_range'], $price, $printer, $f['id']]);
+            $f = array_merge($f, $o, ['price' => $price, 'printer' => $printer]);
             if ($action === 'print') {
                 $pdo->prepare("UPDATE jobs SET status = IF(status = 'new', 'printing', status), handled_by = ? WHERE id = ?")
                     ->execute([$user['id'], $id]);
@@ -223,6 +228,16 @@ echo flash();
         <label>Sides<?= sel('sides', enabled_sides(), $f['sides'], $labels) ?></label>
         <label>Layout<?= sel('orientation', ['portrait', 'landscape'], $f['orientation'], $labels) ?></label>
         <label>Pages<input name="page_range" value="<?= h($f['page_range']) ?>" placeholder="All"></label>
+        <?php if ($mode !== 'browser'): ?>
+          <label>Printer
+            <select name="printer">
+              <option value="">Auto – <?= h(auto_printer($f) ?: 'default printer') ?></option>
+              <?php foreach (known_printers() as $pn): ?>
+                <option value="<?= h($pn) ?>" <?= $f['printer'] === $pn ? 'selected' : '' ?>><?= h($pn) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </label>
+        <?php endif; ?>
         <label>Price (<?= h(setting('currency', 'SR')) ?>)
           <input name="price" inputmode="decimal" value="<?= h(number_format(file_price($f), 2, '.', '')) ?>">
           <input type="hidden" name="price_shown" value="<?= h(number_format(file_price($f), 2, '.', '')) ?>">
@@ -264,7 +279,8 @@ echo flash();
       <input type="hidden" name="id" value="<?= (int)$job['id'] ?>">
       <label>Bill amount (<?= h(setting('currency', 'SR')) ?>)<input name="amount" inputmode="decimal" value="<?= h(number_format($amount, 2, '.', '')) ?>"></label>
       <button class="btn" name="action" value="save_amount">Save amount</button>
-      <button class="btn ok big" name="action" value="done">✔ Complete order</button>
+      <?php $unprinted = count(array_filter($files, fn($f) => $f['status'] !== 'printed')); ?>
+      <button class="btn ok big" name="action" value="done"<?= $unprinted ? ' onclick="return confirm(\'' . $unprinted . ' file(s) not printed yet. Complete anyway?\')"' : '' ?>>✔ Complete order</button>
       <button class="btn danger" name="action" value="cancel" onclick="return confirm('Cancel this order?')">Cancel order</button>
     </form>
   <?php else: ?>

@@ -14,8 +14,10 @@ if (in_array($host, ['localhost', '127.0.0.1', '::1', '[::1]'], true)) {
     }
 }
 $url = trim((string)($_GET['url'] ?? setting('upload_url', $default)));
-if (!preg_match('#^https?://#i', $url)) {
-    $url = $default;
+// The QR code must always open the HTTPS address.
+$url = preg_replace('#^http://#i', 'https://', $url);
+if (!preg_match('#^https://#i', $url)) {
+    $url = $url !== '' ? 'https://' . ltrim($url, '/') : $default;
 }
 if (isset($_GET['url'])) {
     save_setting('upload_url', $url);

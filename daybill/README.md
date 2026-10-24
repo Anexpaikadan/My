@@ -81,8 +81,10 @@ XAMPP already ships Apache with SSL on port 443 and a self-signed test certifica
    With a self-signed certificate customers will see a "Not secure / Advanced → Proceed" warning
    the first time — mkcert's root CA can be installed on the shop's own devices to avoid it.
    If you have a real domain name pointing to the shop, a free Let's Encrypt certificate removes the warning for everyone.
-3. Restart Apache. `http://` requests are automatically redirected to `https://`
-   (`.htaccess` + `force_https` in `config.php`).
+3. Restart Apache. **HTTPS is always required** and cannot be switched off: `http://` pages
+   redirect to `https://`, forms/uploads over `http://` are refused, login cookies are HTTPS-only,
+   browsers are told to always use HTTPS (HSTS), the QR code always uses `https://`, and the print
+   agent only connects to an `https://` address. So HTTPS must be set up before `install.php`.
 
 ## 3. Let customers' phones reach the PC
 
@@ -95,14 +97,21 @@ XAMPP already ships Apache with SSL on port 443 and a self-signed test certifica
 
 The app prints from the PC that runs XAMPP, to any printer installed in Windows.
 
-1. Install **[SumatraPDF](https://www.sumatrapdfreader.org/download-free-pdf-viewer)**
-   (free). Default path `C:\Program Files\SumatraPDF\SumatraPDF.exe` — change `sumatra_path` in
-   `config.php` if you installed it elsewhere (portable/per-user installs often go to
-   `C:\Users\<you>\AppData\Local\SumatraPDF\SumatraPDF.exe`).
+1. Get **[SumatraPDF](https://www.sumatrapdfreader.org/download-free-pdf-viewer)** (free) — either:
+   - **easiest:** download the *portable* version and copy the `.exe` into the app's `tools` folder
+     (`C:\xampp\htdocs\daybill\tools\`), or
+   - install it normally. The app finds it automatically in `Program Files`, `Program Files (x86)`
+     and `C:\Users\<you>\AppData\Local\SumatraPDF\`.
+
+   **Admin → Printing** shows ✅ *SumatraPDF found* or ❌ *not found* (you can also type the path there).
+   If an order shows *"SumatraPDF is not installed"*, do this step and press **OK – Print** again.
 2. *(Optional)* Install **[LibreOffice](https://www.libreoffice.org/)** so Word/Excel/PowerPoint
    files can be printed with one tap (`soffice_path` in `config.php`).
-3. In **Admin → Shop & printer settings**, choose the B/W printer and (optionally) a colour
-   printer. Leave empty to use the Windows default printer.
+3. **Admin → Printing**: set the default B/W printer and (optionally) colour printer, and under
+   **Printer for each paper size** pick a printer per paper size and colour — e.g. A4 B/W → your A4
+   laser printer, A3 → your A3 printer, colour → your colour printer. Empty = default printer.
+   On each order, staff can choose another printer in the **Printer** menu before pressing **OK – Print**.
+   Use the exact printer names from Windows Settings → Printers (the list is suggested automatically).
 4. **Important:** start Apache from the XAMPP Control Panel as your normal Windows user
    (not as a Windows *service*). A service runs as the SYSTEM account, which usually cannot
    see your printers. If you must run it as a service: `services.msc` → Apache → Properties →
@@ -144,7 +153,9 @@ The website cannot reach your shop printer, so a small program on the shop PC as
 for print jobs every 3 seconds and prints them.
 
 1. Install PHP on the shop PC — easiest is XAMPP (only `C:\xampp\php\php.exe` is used; Apache/MySQL
-   don't need to run). Install **SumatraPDF** (and optionally LibreOffice) as in section 4.
+   don't need to run). Install **SumatraPDF** (or put the portable `.exe` in the agent's `tools` folder)
+   and optionally LibreOffice, as in section 4. The agent sends the shop PC's printer list to the
+   website, so you can pick printers per paper size in Admin → Printing.
 2. Copy the `agent` folder to the shop PC, e.g. `C:\daybill-agent\`.
 3. Edit `agent-config.php`: `server_url` = `https://yourdomain.com/daybill/`, `agent_key` = the key from Admin.
 4. Double-click **`start-agent.bat`**. You should see `Connected to "<shop name>". Waiting for print jobs…`
@@ -183,6 +194,7 @@ When staff press **OK – Print** the file is *queued*, the agent prints it with
 | `printer.php` | Local printing (print mode "Local") |
 | `api.php` | API for the shop-PC print agent (cloud mode) |
 | `agent/` | Print agent for the shop PC: `print-agent.php`, `agent-config.php`, `start-agent.bat`, `print-core.php` |
+| `tools/` | Optional place for the portable `SumatraPDF.exe` |
 | `lang.php` | English / Arabic texts for the customer page |
 | `lib.php`, `config.php` | Shared code and configuration |
 | `schema.sql`, `install.php` | Database setup |

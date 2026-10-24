@@ -69,6 +69,14 @@ if ($action === 'result' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     out(['ok' => true]);
 }
 
+if ($action === 'printers' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Printers installed on the shop PC, offered in Admin and on the order page.
+    $names = array_filter(array_map(fn($n) => mb_substr(trim(str_replace(',', ' ', (string)$n)), 0, 200),
+        (array)($_POST['names'] ?? [])), 'strlen');
+    save_setting('printers_detected', implode(',', array_slice(array_unique($names), 0, 50)));
+    out(['ok' => true]);
+}
+
 if ($action === 'ping') {
     out(['ok' => true, 'shop' => setting('shop_name', 'Daybill Print')]);
 }

@@ -11,25 +11,14 @@ function cfg(string $key)
     return $CONFIG[$key] ?? null;
 }
 
-function is_https(): bool
-{
-    return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-        || ($_SERVER['SERVER_PORT'] ?? '') == 443
-        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
-}
-
-if (PHP_SAPI !== 'cli' && cfg('force_https') && !is_https()) {
-    $host = preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? 'localhost');
-    header('Location: https://' . $host . ($_SERVER['REQUEST_URI'] ?? '/'), true, 301);
-    exit;
-}
+require_once __DIR__ . '/https.php';
 
 if (PHP_SAPI !== 'cli' && session_status() === PHP_SESSION_NONE) {
     session_name('daybill_sid');
     session_set_cookie_params([
         'lifetime' => 0,
         'path'     => '/',
-        'secure'   => is_https(),
+        'secure'   => true,
         'httponly' => true,
         'samesite' => 'Lax',
     ]);
@@ -69,6 +58,10 @@ function migrate(PDO $pdo): void
             ADD COLUMN queued_at DATETIME NULL AFTER print_count");
         $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '2') ON DUPLICATE KEY UPDATE v = '2'");
     }
+    if ($v < 3) {
+        $pdo->exec("ALTER TABLE job_files ADD COLUMN printer VARCHAR(200) NOT NULL DEFAULT '' AFTER price");
+        $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '3') ON DUPLICATE KEY UPDATE v = '3'");
+    }
 }
 
 function h($s): string
@@ -84,10 +77,9 @@ function redirect(string $url): void
 
 function base_url(): string
 {
-    $scheme = is_https() ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     $dir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
-    return $scheme . '://' . $host . $dir . '/';
+    return 'https://' . $host . $dir . '/';
 }
 
 // ---- CSRF ---------------------------------------------------------
@@ -389,7 +381,7 @@ function lang(): string
         $lang = $want === 'ar' ? 'ar' : 'en';
         if (isset($_GET['lang']) && PHP_SAPI !== 'cli') {
             setcookie('daybill_lang', $lang, ['expires' => time() + 31536000, 'path' => '/',
-                'secure' => is_https(), 'samesite' => 'Lax']);
+                'secure' => true, 'samesite' => 'Lax']);
         }
     }
     return $lang;
@@ -414,7 +406,7 @@ function page_header(string $title, bool $staff = false, string $lang = 'en'): v
     echo '<!doctype html><html lang="' . h($lang) . '" dir="' . ($lang === 'ar' ? 'rtl' : 'ltr') . '"><head><meta charset="utf-8">'
         . '<meta name="viewport" content="width=device-width, initial-scale=1">'
         . '<title>' . h($title) . ' – ' . h($shop) . '</title>'
-        . '<link rel="stylesheet" href="assets/style.css?v=3"></head><body>';
+        . '<link rel="stylesheet" href="assets/style.css?v=4"></head><body>';
     echo '<header class="top"><div class="wrap"><a class="brand" href="' . ($staff ? 'staff.php' : 'index.php') . '">🖨️ ' . h($shop) . '</a>';
     if ($u) {
         echo '<nav><a href="staff.php">Jobs</a>';

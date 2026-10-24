@@ -9,7 +9,8 @@ return [
     'agent_key' => 'PASTE-AGENT-KEY-HERE',
 
     // SumatraPDF (Windows) – https://www.sumatrapdfreader.org
-    'sumatra_path' => 'C:\\Program Files\\SumatraPDF\\SumatraPDF.exe',
+    // Leave '' to find it automatically (normal install, or SumatraPDF.exe in a "tools" folder here).
+    'sumatra_path' => '',
 
     // Optional LibreOffice for Word/Excel/PowerPoint files ('' = disabled).
     'soffice_path' => 'C:\\Program Files\\LibreOffice\\program\\soffice.exe',

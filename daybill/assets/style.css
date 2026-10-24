@@ -119,3 +119,8 @@ code.key { word-break: break-all; font-size: .95rem; }
 .pay-box { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: #e3f5ea; color: #13643a; border-radius: var(--radius); padding: 14px 16px; margin: 8px 0 14px; font-size: 1.05rem; font-weight: 600; }
 .pay-box b { font-size: 1.7rem; white-space: nowrap; }
 #done .pay-box { justify-content: center; flex-direction: column; gap: 2px; }
+.map-tbl input { margin: 0; min-width: 160px; }
+@media (max-width: 600px) {
+  .map-tbl tr { display: grid; grid-template-columns: 1fr; }
+  .map-tbl td[data-label]::before { content: attr(data-label); display: block; font-size: .75rem; color: var(--muted); }
+}

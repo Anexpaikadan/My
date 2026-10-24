@@ -10,6 +10,32 @@ function core_is_windows(): bool
     return stripos(PHP_OS_FAMILY, 'Windows') === 0;
 }
 
+// Looks for SumatraPDF.exe: the configured path, a "tools" folder next to the app,
+// then the usual install folders. Returns '' when it is not installed.
+function find_sumatra(string $configured, string $appDir): string
+{
+    $candidates = [$configured, $appDir . '/tools/SumatraPDF.exe'];
+    foreach (glob($appDir . '/tools/SumatraPDF*.exe') ?: [] as $f) {
+        $candidates[] = $f; // portable download, e.g. SumatraPDF-3.5.2-64.exe
+    }
+    foreach (['ProgramFiles', 'ProgramFiles(x86)', 'ProgramW6432', 'LOCALAPPDATA'] as $env) {
+        if (getenv($env)) {
+            $candidates[] = getenv($env) . '\\SumatraPDF\\SumatraPDF.exe';
+        }
+    }
+    $candidates[] = 'C:\\Program Files\\SumatraPDF\\SumatraPDF.exe';
+    $candidates[] = 'C:\\Program Files (x86)\\SumatraPDF\\SumatraPDF.exe';
+    foreach (glob('C:/Users/*/AppData/Local/SumatraPDF/SumatraPDF.exe') ?: [] as $f) {
+        $candidates[] = $f; // per-user install (default for the Sumatra installer)
+    }
+    foreach ($candidates as $c) {
+        if ($c !== '' && is_file($c)) {
+            return $c;
+        }
+    }
+    return '';
+}
+
 /**
  * @param array  $f       copies, paper, color, sides, orientation, page_range
  * @param string $path    file to print (PDF or image)
@@ -21,7 +47,8 @@ function build_print_command(array $f, string $path, string $printer, array $too
     if (core_is_windows()) {
         $exe = (string)($tools['sumatra'] ?? '');
         if ($exe === '' || !is_file($exe)) {
-            throw new RuntimeException('SumatraPDF not found at ' . $exe);
+            throw new RuntimeException('SumatraPDF is not installed. Download it from sumatrapdfreader.org and install it, '
+                . 'or put SumatraPDF.exe in the "tools" folder of the app (see Admin → Printing).');
         }
         $settings = [(int)$f['copies'] . 'x', $f['orientation'],
             $f['color'] === 'color' ? 'color' : 'monochrome',

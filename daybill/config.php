@@ -14,9 +14,6 @@ return [
     'db_user' => 'root',
     'db_pass' => '',
 
-    // Redirect every http:// request to https://
-    'force_https' => true,
-
     // Where uploaded files are stored (must NOT be web-accessible;
     // the bundled uploads/.htaccess blocks direct access).
     'upload_dir' => __DIR__ . '/uploads',

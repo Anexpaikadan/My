@@ -14,6 +14,9 @@ if (PHP_SAPI !== 'cli') {
 
 require __DIR__ . '/print-core.php';
 $c = require __DIR__ . '/agent-config.php';
+if (stripos($c['server_url'], 'https://') !== 0) {
+    exit("server_url in agent-config.php must start with https:// (HTTPS is required).\n");
+}
 $base = rtrim($c['server_url'], '/') . '/api.php';
 $tmpDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'daybill-agent';
 if (!is_dir($tmpDir)) {
@@ -60,7 +63,19 @@ if ($status !== 200) {
 }
 say('Connected to "' . (json_decode($body, true)['shop'] ?? '?') . '". Waiting for print jobs… (Ctrl+C to stop)');
 
-$tools = ['sumatra' => $c['sumatra_path'], 'soffice' => $c['soffice_path'], 'lp' => $c['lp_path']];
+$tools = ['sumatra' => find_sumatra($c['sumatra_path'], __DIR__), 'soffice' => $c['soffice_path'], 'lp' => $c['lp_path']];
+if (core_is_windows()) {
+    say($tools['sumatra'] !== '' ? 'SumatraPDF: ' . $tools['sumatra']
+        : 'WARNING: SumatraPDF not found – install it or put SumatraPDF.exe in ' . __DIR__ . DIRECTORY_SEPARATOR . 'tools');
+}
+$printers = core_list_printers();
+say('Printers on this PC: ' . ($printers ? implode(', ', $printers) : 'none found'));
+try {
+    api($base . '?action=printers', $c, ['names' => $printers]);
+} catch (Throwable $e) {
+    say('Could not send printer list: ' . $e->getMessage());
+}
+
 while (true) {
     try {
         [$status, $body] = api($base . '?action=next', $c);

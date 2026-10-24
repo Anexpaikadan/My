@@ -52,8 +52,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'printing') {
         $mode = (string)($_POST['print_mode'] ?? '');
         save_setting('print_mode', in_array($mode, ['local', 'agent', 'browser'], true) ? $mode : 'local');
-        save_setting('printer_bw', mb_substr(trim((string)($_POST['printer_bw'] ?? '')), 0, 200));
-        save_setting('printer_color', mb_substr(trim((string)($_POST['printer_color'] ?? '')), 0, 200));
+        $name = fn($v) => mb_substr(trim((string)$v), 0, 200);
+        save_setting('printer_bw', $name($_POST['printer_bw'] ?? ''));
+        save_setting('printer_color', $name($_POST['printer_color'] ?? ''));
+        save_setting('sumatra_path', $name($_POST['sumatra_path'] ?? ''));
+        $map = [];
+        foreach ((array)($_POST['map'] ?? []) as $paper => $byColor) {
+            foreach (COLORS as $c) {
+                $n = $name(((array)$byColor)[$c] ?? '');
+                if ($n !== '' && in_array($paper, all_papers(), true)) {
+                    $map[$paper][$c] = $n;
+                }
+            }
+        }
+        save_setting('printer_map', json_encode($map));
         if ($mode === 'agent' && setting('agent_key') === '') {
             save_setting('agent_key', bin2hex(random_bytes(20)));
         }
@@ -207,17 +219,52 @@ $seen = (int)setting('agent_seen', '0');
         <option value="browser" <?= $mode === 'browser' ? 'selected' : '' ?>>Browser – staff open the file and print from the browser</option>
       </select>
     </label>
-    <label>B/W printer
-      <input name="printer_bw" list="printers" value="<?= h(setting('printer_bw')) ?>" placeholder="(default printer)">
+    <label>Default B/W printer
+      <input name="printer_bw" list="printers" value="<?= h(setting('printer_bw')) ?>" placeholder="(Windows default printer)">
     </label>
-    <label>Colour printer
+    <label>Default colour printer
       <input name="printer_color" list="printers" value="<?= h(setting('printer_color')) ?>" placeholder="(same as B/W)">
     </label>
-    <datalist id="printers"><?php foreach ($printers as $p): ?><option value="<?= h($p) ?>"><?php endforeach; ?></datalist>
+    <div class="wide">
+      <h3>Printer for each paper size</h3>
+      <p class="muted">e.g. A4 → your A4 laser printer, A3 → your A3 printer. Leave empty to use the default printer above.
+        Staff can still pick another printer on each order.</p>
+      <div class="tbl-wrap">
+      <table class="tbl map-tbl">
+        <tr><th>Paper</th><?php foreach (enabled_colors() as $c): ?><th><?= $labels[$c] ?> printer</th><?php endforeach; ?></tr>
+        <?php $map = printer_map(); foreach (enabled_papers() as $p): ?>
+          <tr>
+            <td><b><?= h($p) ?></b></td>
+            <?php foreach (enabled_colors() as $c): ?>
+              <td data-label="<?= $labels[$c] ?>"><input name="map[<?= h($p) ?>][<?= $c ?>]" list="printers" value="<?= h($map[$p][$c] ?? '') ?>" placeholder="(default)"></td>
+            <?php endforeach; ?>
+          </tr>
+        <?php endforeach; ?>
+      </table>
+      </div>
+    </div>
+    <datalist id="printers"><?php foreach (known_printers() as $p): ?><option value="<?= h($p) ?>"><?php endforeach; ?></datalist>
+    <?php if ($mode === 'local' && core_is_windows()): ?>
+      <label class="wide">SumatraPDF.exe location (leave empty to find it automatically)
+        <input name="sumatra_path" value="<?= h(setting('sumatra_path')) ?>" placeholder="C:\Program Files\SumatraPDF\SumatraPDF.exe">
+      </label>
+    <?php endif; ?>
     <div class="actions wide"><button class="btn primary" name="action" value="printing">Save printing</button></div>
   </form>
   <?php if ($mode === 'local'): ?>
-    <p class="muted">Printers found on this server: <?= $printers ? h(implode(', ', $printers)) : 'none detected (type the exact printer name)' ?></p>
+    <p class="muted">Printers found on this computer: <?= $printers ? h(implode(', ', $printers)) : 'none detected (type the exact printer name as shown in Windows Settings → Printers)' ?></p>
+    <?php if (core_is_windows()): $sp = sumatra_path(); ?>
+      <?php if ($sp !== ''): ?>
+        <div class="alert ok">✅ SumatraPDF found: <?= h($sp) ?></div>
+      <?php else: ?>
+        <div class="alert err">❌ SumatraPDF not found – one-tap printing will not work yet. Either:
+          <ol>
+            <li>Install it from <a href="https://www.sumatrapdfreader.org/download-free-pdf-viewer" target="_blank" rel="noopener">sumatrapdfreader.org</a> (choose "Install for all users" if asked), or</li>
+            <li>Download the <b>portable</b> version and put the .exe in <code><?= h(__DIR__ . DIRECTORY_SEPARATOR . 'tools') ?></code></li>
+          </ol>
+          Then reload this page.</div>
+      <?php endif; ?>
+    <?php endif; ?>
   <?php elseif ($mode === 'agent'): ?>
     <div class="alert <?= time() - $seen < 60 ? 'ok' : 'err' ?>">
       Print agent: <?= $seen ? (time() - $seen < 60 ? 'connected' : 'last seen ' . h(date('d M, h:i A', $seen))) : 'never connected' ?>
