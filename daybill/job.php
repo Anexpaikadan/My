@@ -24,8 +24,10 @@ function load_file(int $jobId, int $fileId): ?array
 
 function mark_printed(int $fileId, int $userId): void
 {
+    global $id, $autoDone;
     db()->prepare("UPDATE job_files SET status = 'printed', print_count = print_count + 1, last_error = '',
                    printed_at = NOW(), printed_by = ? WHERE id = ?")->execute([$userId, $fileId]);
+    $autoDone = update_job_status((int)$id) || !empty($autoDone);
 }
 
 // Prints now (local), queues for the shop-PC agent (agent), or just records it (browser).
@@ -144,6 +146,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->prepare('DELETE FROM jobs WHERE id = ?')->execute([$id]);
         flash('Order deleted.');
         redirect('staff.php');
+    }
+    if (!empty($autoDone)) {
+        flash('All files printed – order ' . $job['code'] . ' completed automatically (' . money((float)db()->query(
+            'SELECT amount FROM jobs WHERE id = ' . (int)$id)->fetchColumn()) . ').');
     }
     redirect('job.php?id=' . $id);
 }

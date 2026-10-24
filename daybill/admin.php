@@ -66,6 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         save_setting('currency', mb_substr(trim((string)($_POST['currency'] ?? '')), 0, 5));
         save_setting('default_lang', ($_POST['default_lang'] ?? '') === 'ar' ? 'ar' : 'en');
         save_setting('retention_days', (string)max(0, (int)($_POST['retention_days'] ?? 2)));
+        save_setting('auto_complete', isset($_POST['auto_complete']) ? '1' : '0');
         flash('Settings saved.');
     } elseif ($action === 'printing') {
         $mode = (string)($_POST['print_mode'] ?? '');
@@ -367,6 +368,8 @@ echo flash();
       </select>
     </label>
     <label>Delete files after (days, 0 = never)<input name="retention_days" type="number" min="0" value="<?= h(setting('retention_days', '2')) ?>"></label>
+    <label class="check wide"><input type="checkbox" name="auto_complete" value="1" <?= setting('auto_complete', '1') === '1' ? 'checked' : '' ?>>
+      Complete orders automatically when all files are printed (bill = calculated price)</label>
     <div class="actions wide"><button class="btn primary" name="action" value="settings">Save settings</button></div>
   </form>
 </div>

@@ -292,6 +292,29 @@ function money(float $v): string
     return (substr($s, -3) === '.00' ? substr($s, 0, -3) : $s) . ' ' . setting('currency', 'SR');
 }
 
+// After a file is printed: an order with every file printed becomes "done" by itself
+// (Settings → Shop settings → complete automatically), otherwise "printing".
+// Returns true when the order was completed now.
+function update_job_status(int $jobId): bool
+{
+    $pdo = db();
+    $st = $pdo->prepare('SELECT * FROM job_files WHERE job_id = ?');
+    $st->execute([$jobId]);
+    $files = $st->fetchAll();
+    if (!$files) {
+        return false;
+    }
+    $printed = count(array_filter($files, fn($f) => $f['status'] === 'printed'));
+    if ($printed === count($files) && setting('auto_complete', '1') === '1') {
+        $total = array_sum(array_map('file_price', $files));
+        $up = $pdo->prepare("UPDATE jobs SET status = 'done', amount = IF(amount > 0, amount, ?) WHERE id = ? AND status IN ('new','printing')");
+        $up->execute([$total, $jobId]);
+        return $up->rowCount() === 1;
+    }
+    $pdo->prepare("UPDATE jobs SET status = 'printing' WHERE id = ? AND status = 'new'")->execute([$jobId]);
+    return false;
+}
+
 // Largest /Count of a /Type /Pages dictionary, i.e. the root of the page tree.
 function pdf_tree_count(string $data): int
 {

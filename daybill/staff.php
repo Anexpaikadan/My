@@ -7,7 +7,9 @@ $user = require_login();
 // Lightweight polling endpoint used to detect new orders.
 if (isset($_GET['poll'])) {
     header('Content-Type: application/json');
-    echo json_encode(['latest' => (int)db()->query('SELECT COALESCE(MAX(id), 0) FROM jobs')->fetchColumn()]);
+    // "latest" = newest order (beep), "stamp" changes whenever any order changes status.
+    echo json_encode(db()->query("SELECT COALESCE(MAX(id), 0) AS latest, CONCAT(COALESCE(MAX(updated_at), ''), '/', COUNT(*)) AS stamp
+                                  FROM jobs")->fetch());
     exit;
 }
 
@@ -38,7 +40,8 @@ $jobs = $st->fetchAll();
 
 $today = db()->query("SELECT COUNT(*) AS n, COALESCE(SUM(amount), 0) AS total FROM jobs
                       WHERE status = 'done' AND updated_at >= CURDATE()")->fetch();
-$latest = (int)db()->query('SELECT COALESCE(MAX(id), 0) FROM jobs')->fetchColumn();
+$poll = db()->query("SELECT COALESCE(MAX(id), 0) AS latest, CONCAT(COALESCE(MAX(updated_at), ''), '/', COUNT(*)) AS stamp FROM jobs")->fetch();
+$latest = (int)$poll['latest'];
 
 page_header('Print jobs', true);
 echo flash();
@@ -79,7 +82,7 @@ echo flash();
 
 <script>
 (function () {
-  var latest = <?= $latest ?>;
+  var latest = <?= $latest ?>, stamp = <?= json_encode($poll['stamp']) ?>;
   function beep() {
     try {
       var c = new (window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator();
@@ -88,9 +91,10 @@ echo flash();
   }
   setInterval(function () {
     fetch('staff.php?poll=1', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (d) {
-      if (d.latest > latest) { beep(); setTimeout(function () { location.reload(); }, 400); }
+      if (+d.latest > latest) { beep(); setTimeout(function () { location.reload(); }, 400); }
+      else if (d.stamp !== stamp) { location.reload(); } // an order was printed / completed
     }).catch(function () {});
-  }, 8000);
+  }, 5000);
 })();
 </script>
 <?php page_footer(); ?>

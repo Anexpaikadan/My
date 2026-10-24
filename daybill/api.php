@@ -74,6 +74,9 @@ if ($action === 'result' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (($_POST['ok'] ?? '') === '1') {
         $pdo->prepare("UPDATE job_files SET status = 'printed', print_count = print_count + 1, last_error = '', printed_at = NOW()
                        WHERE id = ? AND status = 'sending'")->execute([$id]);
+        $jid = $pdo->prepare('SELECT job_id FROM job_files WHERE id = ?');
+        $jid->execute([$id]);
+        update_job_status((int)$jid->fetchColumn());
     } else {
         $pdo->prepare("UPDATE job_files SET status = 'failed', last_error = ? WHERE id = ? AND status = 'sending'")
             ->execute([mb_substr('Print agent: ' . (string)($_POST['error'] ?? 'unknown error'), 0, 500), $id]);
