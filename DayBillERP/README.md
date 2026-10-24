@@ -1,7 +1,13 @@
-# DayBill ERP  v7.9.0
+# DayBill ERP  v7.9.1
 
 Billing, POS, inventory, accounts and HR for shops in 🇸🇦 Saudi Arabia, 🇦🇪 the UAE and 🇮🇳 India.
 **VAT / GST by country · ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
+
+## 🔧 v7.9.1 — update restart fixed
+
+- After **Updates ▸ Install a new version**, DayBillERP.exe could stop with
+  *"Failed to load Python DLL … _MEI… python3xx.dll"* instead of starting
+  again. The new version now starts cleanly once the old one has closed.
 
 ## 🧾 v7.9 — new transaction header, payment area, grid design, designer options
 

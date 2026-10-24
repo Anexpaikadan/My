@@ -11,6 +11,11 @@
 #      and starts DayBill again. Your settings, database settings and
 #      product key are never touched.
 #   4. at the next start the database update runs by itself.
+# v7.9.1: the helper starts DayBill with a CLEAN environment. A one-file
+# DayBillERP.exe unpacks Python to a temporary _MEI… folder and tells its
+# own child process where it is through environment variables; when the
+# helper inherited them, the new DayBillERP.exe looked for python3xx.dll
+# in the old _MEI… folder (already deleted) → "Failed to load Python DLL".
 # Online: when Settings ▸ System ▸ "Update address" points at a
 # latest.json ({"version", "url", "sha256"}), "Check online" downloads the
 # zip and checks its SHA-256 before using it.
@@ -141,6 +146,35 @@ def stage(path, info=None):
     return dst
 
 
+# PyInstaller's own variables (5.x: _MEIPASS2; 6.x: _PYI_…) — never pass
+# them on to a new DayBill
+_PYI_VARS = ("_MEIPASS2", "_PYI_APPLICATION_HOME_DIR", "_PYI_ARCHIVE_FILE",
+             "_PYI_PARENT_PROCESS_LEVEL", "_PYI_SPLASH_IPC", "_PYI_LINUX_PROCESS_NAME")
+
+
+def _mei_dir():
+    """The temporary _MEI… folder of a one-file exe ('' otherwise)."""
+    d = getattr(sys, "_MEIPASS", "") if getattr(sys, "frozen", False) else ""
+    return d if d and os.path.basename(os.path.normpath(d)).upper().startswith("_MEI") else ""
+
+
+def clean_env(env=None):
+    """A copy of the environment without anything that points DayBill at
+    this run's temporary _MEI… folder."""
+    env = dict(os.environ if env is None else env)
+    mei = _mei_dir()
+    for k in list(env):
+        if k.upper() in _PYI_VARS or k.upper().startswith("_PYI_"):
+            env.pop(k, None)
+        elif mei and k.upper() != "PATH" and os.path.normcase(mei) in os.path.normcase(str(env[k])):
+            env.pop(k, None)               # TCL_LIBRARY, TK_LIBRARY, SSL_CERT_FILE …
+    if mei and env.get("PATH"):
+        env["PATH"] = os.pathsep.join(p for p in env["PATH"].split(os.pathsep)
+                                      if os.path.normcase(mei) not in os.path.normcase(p))
+    env["PYINSTALLER_RESET_ENVIRONMENT"] = "1"   # PyInstaller 6.9+: start as a new program
+    return env
+
+
 def write_helper(staging, restart=True):
     """The small Windows helper that swaps the files after DayBill closes.
     → path of update_daybill.bat"""
@@ -148,6 +182,16 @@ def write_helper(staging, restart=True):
     backup = os.path.join(ad, "update_backup_%s" % current_version().replace(".", "_"))
     exe = os.path.join(ad, "DayBillERP.exe")
     pid = os.getpid()
+    # a one-file exe runs as two processes: the small launcher (parent) and
+    # Python (this one). Wait for both — the launcher holds DayBillERP.exe
+    # open and removes the _MEI… folder when it ends.
+    pids = [pid]
+    if _mei_dir():
+        try:
+            if os.getppid() and os.getppid() != pid:
+                pids.append(os.getppid())
+        except Exception:
+            pass
     start = ('start "" "%s"' % exe) if getattr(sys, "frozen", False) else \
         ('start "" "%s" "%s"' % (sys.executable.replace("python.exe", "pythonw.exe"),
                                  os.path.join(ad, "main.py")))
@@ -156,16 +200,22 @@ def write_helper(staging, restart=True):
         "@echo off",
         "title DayBill ERP - installing the update",
         "echo Waiting for DayBill ERP to close...",
-        ":wait",
-        'tasklist /fi "PID eq %d" | find "%d" >nul && (timeout /t 1 /nobreak >nul & goto wait)' % (pid, pid),
+    ] + [x for p_ in pids for x in (
+        ":wait%d" % p_,
+        'tasklist /fi "PID eq %d" | find "%d" >nul && (timeout /t 1 /nobreak >nul & goto wait%d)' % (p_, p_, p_),
+    )] + [
         "echo Keeping a copy of the old version in %s" % backup,
         'robocopy "%s" "%s" /E /XD update_staging update_backup_* logs backups __pycache__ /NFL /NDL /NJH /NJS >nul'
         % (ad, backup),
         "echo Copying the new version...",
-        'robocopy "%s" "%s" /E /XF %s /NFL /NDL /NJH /NJS' % (staging, ad, excl),
+        'robocopy "%s" "%s" /E /R:20 /W:2 /XF %s /NFL /NDL /NJH /NJS' % (staging, ad, excl),
         "if errorlevel 8 goto failed",
         'rmdir /s /q "%s"' % staging,
         "echo Done.",
+        # start the new version as a NEW program (not part of the old run)
+        "set PYINSTALLER_RESET_ENVIRONMENT=1",
+    ] + ["set %s=" % v for v in _PYI_VARS] + (
+        ["set TCL_LIBRARY=", "set TK_LIBRARY="] if _mei_dir() else []) + [
         start if restart else "",
         "exit /b 0",
         ":failed",
@@ -184,7 +234,8 @@ def launch_helper(bat):
     flags = 0
     if sys.platform.startswith("win"):
         flags = getattr(subprocess, "CREATE_NEW_CONSOLE", 0x10)
-    subprocess.Popen(["cmd", "/c", bat], creationflags=flags, close_fds=True)
+    subprocess.Popen(["cmd", "/c", bat], creationflags=flags, close_fds=True, env=clean_env(),
+                     cwd=app_dir())
 
 
 # ── online check ─────────────────────────────────────────────

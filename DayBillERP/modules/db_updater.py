@@ -10,7 +10,7 @@ import re
 try:                                    # one version for the whole app (config/version.py)
     from config.version import VERSION as APP_VERSION
 except Exception:
-    APP_VERSION = "7.9.0"
+    APP_VERSION = "7.9.1"
 
 # Ordered list of database patches shipped with the app.
 # (filename relative to project root, human description, version)
@@ -35,6 +35,9 @@ PATCHES = [
 
 # What changed in each version (shown in the Updates panel)
 CHANGELOG = [
+    ("7.9.1", ["🔧 Fixed: after Updates ▸ Install a new version, DayBillERP.exe could not start again — "
+               "\"Failed to load Python DLL … _MEI…\\python3xx.dll\". The new version now starts as a new "
+               "program, after the old one has fully closed."]),
     ("7.9.0", ["🧾 Sales, Sales Return, Purchase, Purchase Return: a new header in titled blocks with the "
                "party's balance card (balance, last bill, this counter's last bill).",
                "💳 Payment area in every transaction: pick any cash or bank account (more than one), pay part — "

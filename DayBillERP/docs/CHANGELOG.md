@@ -2,6 +2,18 @@
 
 Newest first. The short guide is in the main README.md.
 
+## 🔧 v7.9.1 — update restart fixed
+
+- Updates ▸ Install a new version: the helper (update_daybill.bat) inherited
+  the one-file exe's own environment variables (_PYI_APPLICATION_HOME_DIR,
+  _PYI_ARCHIVE_FILE, _PYI_PARENT_PROCESS_LEVEL, TCL / TK paths), so the new
+  DayBillERP.exe looked for python3xx.dll in the old, already deleted
+  _MEI… folder ("Failed to load Python DLL"). The helper now gets a clean
+  environment (app_update.clean_env, PYINSTALLER_RESET_ENVIRONMENT=1),
+  clears them again before it starts DayBill, waits for both processes of
+  the old exe (launcher + Python) and retries a locked file for a short
+  time instead of 30 s per try.
+
 ## 🧾 v7.9.0 — transaction header, payment area, grid design, Invoice Designer options
 
 - Sales, Sales Return, Purchase and Purchase Return: the header is rebuilt
