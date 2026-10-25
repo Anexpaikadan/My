@@ -91,13 +91,20 @@ your own sizes from Settings → Layouts) and the **price per photo or per sheet
 **Rights:** the super admin allows or blocks photo print per shop (Shops page → 📷 Allow / Block photo print);
 the shop admin then switches it on and sets paper, printer, sizes and price.
 
-Customers then see a **📷 Photo print** button. It opens a full-screen tool: choose any photo (JPG, PNG, iPhone photos)
-→ tap a size → the photo appears in a frame of that size (face guide for passport sizes): drag to move, pinch or slide
-to zoom, rotate, brightness, contrast → set how many (quick buttons 1–8, full sheet). The order gets the edited photo;
-staff see pictures of the sheets on the order page (👁 Preview). The photos are arranged on the paper automatically – turned 90° when
-more fit, extra sheets added when needed – with live sheet previews; tap them for a big preview (close with ✕ or the
-back button). **Add to order** puts it in the order; ✏️ changes it later. Photo items print in colour, at exact size
-(no scaling), on the photo printer.
+Customers then see a **📷 Photo print** tile. It opens the full-screen **photo studio** (`assets/photo-studio.js`):
+
+1. **Choose photos** – one or several (up to 12; JPG, PNG, WebP, iPhone photos in Safari).
+2. For each photo the editor opens: pick the **size**, then drag to move, pinch / slider to zoom (double tap = centre),
+   rotate, mirror, **whole photo** (no cropping, white edges), **face guide** for passport sizes, brightness, contrast,
+   colour, black & white, and **how many** (1–8 or a full sheet). On phones that can detect faces (some Chrome versions)
+   passport photos are placed for you.
+3. All photos – different sizes mixed – are **arranged on the photo paper automatically**: rows from the top,
+   turned 90° when more fit, new sheets added when needed. The live sheet pictures update at once; tap a photo on a sheet
+   to change it, tap the paper (or 👁 Preview) for a big preview.
+4. **Add to order** makes the print-ready PDF on the phone and adds it as one item; ✏️ changes it later.
+
+Staff see pictures of the sheets on the order page (👁 Preview). Photo items print in colour, at exact size
+(no scaling), on the photo printer. The price is per photo, per sheet, or the colour page price for the sheets.
 
 ## Print layouts
 

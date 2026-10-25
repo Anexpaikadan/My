@@ -271,7 +271,7 @@ echo flash();
   <?php $gone = $f['stored_name'] === ''; $auto = auto_price($f); ?>
   <div class="card file-card fstatus-<?= h($f['status']) ?>">
     <div class="file-head">
-      <span class="fname">📄 <?= h($f['original_name']) ?></span>
+      <span class="fname"><?= $f['kind'] === 'photo' ? '📷 Photo print' : '📄 ' . h($f['original_name']) ?></span>
       <span class="badge"><?= h($f['status']) ?><?= $f['print_count'] > 1 ? ' ×' . (int)$f['print_count'] : '' ?></span>
     </div>
     <div class="muted">

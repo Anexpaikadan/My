@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS job_files (
   sides         ENUM('single','double') NOT NULL DEFAULT 'single',
   orientation   ENUM('portrait','landscape') NOT NULL DEFAULT 'portrait',
   page_range    VARCHAR(100) NOT NULL DEFAULT '',
-  layout        VARCHAR(40)  NOT NULL DEFAULT '',
+  layout        VARCHAR(255)  NOT NULL DEFAULT '',
   kind          VARCHAR(10)  NOT NULL DEFAULT '',
   previews      TINYINT UNSIGNED NOT NULL DEFAULT 0,
   price         DECIMAL(10,2) NULL,
@@ -79,4 +79,4 @@ CREATE TABLE IF NOT EXISTS settings (
   PRIMARY KEY (shop_id, k)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT IGNORE INTO settings (shop_id, k, v) VALUES (0, 'schema_version', '8');
+INSERT IGNORE INTO settings (shop_id, k, v) VALUES (0, 'schema_version', '9');

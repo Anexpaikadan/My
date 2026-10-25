@@ -103,6 +103,11 @@ function migrate(PDO $pdo): void
             ADD COLUMN pin_tries TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER verified");
         $pdo->exec("UPDATE settings SET v = '8' WHERE shop_id = 0 AND k = 'schema_version'");
     }
+    if ($v < 9) {
+        // Photo studio: one photo item can hold several photos of different sizes ("passport:4,photo4x6:2").
+        $pdo->exec("ALTER TABLE job_files MODIFY layout VARCHAR(255) NOT NULL DEFAULT ''");
+        $pdo->exec("UPDATE settings SET v = '9' WHERE shop_id = 0 AND k = 'schema_version'");
+    }
 }
 
 function h($s): string
@@ -563,11 +568,28 @@ function photo_sizes(): array
     return array_intersect_key($sizes, array_flip(csv_setting('photo_sizes', 'passport,photo4x6,photo10x15')));
 }
 
-// "passport:8" → valid code for the photo tool, or ''.
+// "passport:8" or several photos "passport:4,photo4x6:2" → valid code for the photo tool, or ''.
 function clean_photo_layout(string $code): string
 {
-    [$id, $pieces] = array_pad(explode(':', $code, 2), 2, '');
-    return isset(photo_sizes()[$id]) && (int)$pieces >= 1 ? $id . ':' . min(500, (int)$pieces) : '';
+    $parts = [];
+    foreach (array_slice(explode(',', $code), 0, 12) as $part) {
+        [$id, $pieces] = array_pad(explode(':', $part, 2), 2, '');
+        if (!isset(photo_sizes()[$id]) || (int)$pieces < 1) {
+            return '';
+        }
+        $parts[] = $id . ':' . min(500, (int)$pieces);
+    }
+    return implode(',', $parts);
+}
+
+// Number of photos in a photo tool code ("passport:4,photo4x6:2" → 6).
+function photo_pieces(string $code): int
+{
+    $n = 0;
+    foreach (explode(',', $code) as $part) {
+        $n += (int)(explode(':', $part)[1] ?? 0);
+    }
+    return $n;
 }
 
 // Price of a photo item: per photo or per sheet (Settings → Photo print); null = normal colour page prices.
@@ -579,7 +601,7 @@ function photo_price(array $f): ?float
     }
     $count = setting('photo_price_mode', 'photo') === 'sheet'
         ? max(1, (int)$f['pages_total'])
-        : max(1, (int)(explode(':', (string)$f['layout'])[1] ?? 1));
+        : max(1, photo_pieces((string)$f['layout']));
     return round($count * (int)$f['copies'] * max(0, (float)$price), 2);
 }
 
@@ -624,6 +646,9 @@ function layout_def(string $code): ?array
 
 function layout_label(string $code): string
 {
+    if (strpos($code, ',') !== false) { // photo tool order with several photos
+        return implode(' + ', array_map('layout_label', explode(',', $code)));
+    }
     $L = layout_def($code);
     if (!$L) {
         return '';
@@ -881,6 +906,24 @@ function theme_css(): string
 
 // ---- Layout (installable app shell) --------------------------------
 
+// Line icons (24×24, drawn with the text colour).
+function icon(string $name): string
+{
+    $paths = [
+        'jobs'     => '<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/><path d="M17 12h.01"/>',
+        'qr'       => '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 17h4v4h-4"/>',
+        'settings' => '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+        'back'     => '<path d="M15 18l-6-6 6-6"/>',
+        'doc'      => '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
+        'photo'    => '<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="12" cy="11" r="3"/><path d="M7 20c.8-2.5 2.7-4 5-4s4.2 1.5 5 4"/>',
+        'tag'      => '<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
+        'user'     => '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.2-4 4.2-6 8-6s6.8 2 8 6"/>',
+        'shop'     => '<path d="M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9h18M9 20v-6h6v6"/>',
+    ];
+    return '<svg class="i" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'
+        . ($paths[$name] ?? '') . '</svg>';
+}
+
 /**
  * @param string $back  URL for a "‹" back button (sub-pages); '' shows the shop name instead.
  */
@@ -903,7 +946,7 @@ function page_header(string $title, bool $staff = false, string $lang = 'en', st
         . '<meta name="mobile-web-app-capable" content="yes">'
         . '<meta name="apple-mobile-web-app-status-bar-style" content="default">'
         . '<meta name="apple-mobile-web-app-title" content="' . h($staff ? 'Print Staff' : $shop) . '">'
-        . '<link rel="stylesheet" href="assets/style.css?v=14">'
+        . '<link rel="stylesheet" href="assets/style.css?v=20">'
         . '<style>' . theme_css() . '</style>'
         . '<script>addEventListener("pagereveal",function(e){var v=e.viewTransition;if(v){v.ready.catch(function(){});v.finished.catch(function(){});}});</script>'
         . '<script src="assets/app.js?v=8" defer></script></head>'
@@ -914,7 +957,7 @@ function page_header(string $title, bool $staff = false, string $lang = 'en', st
     }
     echo '<header class="top"><div class="wrap">';
     if ($back !== '') {
-        echo '<a class="back-btn" href="' . h($back) . '" aria-label="Back">' . ($rtl ? '›' : '‹') . '</a>'
+        echo '<a class="back-btn" href="' . h($back) . '" aria-label="Back">' . icon('back') . '</a>'
             . '<span class="title">' . h($title) . '</span>';
     } else {
         echo '<a class="brand" href="' . ($staff ? 'staff.php' : 'index.php') . '">'
@@ -925,7 +968,7 @@ function page_header(string $title, bool $staff = false, string $lang = 'en', st
             . ($rtl ? '<a href="?lang=en">English</a>' : '<a href="?lang=ar">العربية</a>') . '</nav>';
     }
     if ($u && is_super($u) && shop()) {
-        echo '<a class="shop-chip" href="shops.php" title="Change shop">🏬 ' . h(shop()['name']) . ' ▾</a>';
+        echo '<a class="shop-chip" href="shops.php" title="Change shop">' . icon('shop') . '<span>' . h(shop()['name']) . '</span></a>';
     }
     echo '</div></header><main class="wrap">';
 }
@@ -949,11 +992,11 @@ function page_footer(): void
     if ($u && !in_sheet()) {
         $page = basename($_SERVER['SCRIPT_NAME'] ?? '');
         $tab = fn(string $href, array $pages, string $icon, string $label) =>
-            '<a href="' . $href . '" class="' . (in_array($page, $pages, true) ? 'on' : '') . '"><span>' . $icon . '</span>' . $label . '</a>';
+            '<a href="' . $href . '" class="' . (in_array($page, $pages, true) ? 'on' : '') . '"><span>' . icon($icon) . '</span>' . $label . '</a>';
         echo '<nav class="tabbar">'
-            . $tab('staff.php', ['staff.php', 'job.php'], '🖨️', 'Jobs')
-            . ($u['role'] !== 'employee' ? $tab('qr.php', ['qr.php'], '▦', 'QR code') : '')
-            . $tab('settings.php', ['settings.php', 'admin.php', 'account.php', 'shops.php'], '⚙️', 'Settings')
+            . $tab('staff.php', ['staff.php', 'job.php'], 'jobs', 'Jobs')
+            . ($u['role'] !== 'employee' ? $tab('qr.php', ['qr.php'], 'qr', 'QR code') : '')
+            . $tab('settings.php', ['settings.php', 'admin.php', 'account.php', 'shops.php'], 'settings', 'Settings')
             . '</nav>';
     }
     echo '</body></html>';

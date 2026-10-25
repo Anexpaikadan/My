@@ -220,5 +220,5 @@
   }
 
   window.DaybillLayout = { parse: parse, sheets: sheets, pieces: pieces, build: build, sizeFit: sizeFit,
-    sizePlan: sizePlan, drawPreview: drawPreview, papers: PAPER };
+    sizePlan: sizePlan, drawPreview: drawPreview, papers: PAPER, margin: margin, GAP: GAP };
 })();

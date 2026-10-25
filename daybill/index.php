@@ -302,7 +302,8 @@ page_header(t('title'), false, $lang);
 $accept = '.' . implode(',.', ALLOWED_EXT);
 ?>
 <?php if ($result && $result['ok']): ?>
-  <div class="card center">
+  <div class="card center done-card">
+    <div class="done-ic">✓</div>
     <h1><?= h(t('sent')) ?></h1>
     <p><?= h(t('show_code')) ?></p>
     <div class="bigcode"><?= h($result['code']) ?></div>
@@ -318,7 +319,8 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
 <?php else: ?>
   <?php if ($result): ?><div class="alert err"><?= h($result['error']) ?></div><?php endif; ?>
 
-  <div id="done" class="card center hidden">
+  <div id="done" class="card center done-card hidden">
+    <div class="done-ic">✓</div>
     <h1><?= h(t('sent')) ?></h1>
     <p><?= h(t('show_code')) ?></p>
     <div class="bigcode" id="doneCode"></div>
@@ -347,24 +349,31 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
   </dialog>
   <?php endif; ?>
 
-  <form id="upForm" method="post" enctype="multipart/form-data" class="card">
-    <h1><?= h(t('title')) ?></h1>
-    <p class="muted"><?= h(t('hint', cfg('max_file_mb'))) ?></p>
+  <form id="upForm" method="post" enctype="multipart/form-data" class="upload">
+    <section class="hero">
+      <h1><?= h(t('title')) ?></h1>
+      <p><?= h(t('hint', cfg('max_file_mb'))) ?></p>
+      <ol class="steps">
+        <li><span>1</span><?= h(t('step_choose')) ?></li><li><span>2</span><?= h(t('step_options')) ?></li><li><span>3</span><?= h(t('step_send')) ?></li>
+      </ol>
+    </section>
 
-    <label class="drop" id="drop">
-      <input type="file" id="picker" name="files[]" multiple accept="<?= h($accept) ?>">
-      <span><?= h(t('choose')) ?></span>
-    </label>
-    <?php if ($photoJs): ?>
-      <button type="button" class="photo-entry" id="photoBtn">
-        <span class="pe-ic">📷</span><span><b><?= h(t('photo_print')) ?></b><small><?= h(t('photo_print_sub')) ?></small></span><span class="chev">›</span>
-      </button>
-    <?php endif; ?>
+    <div class="tiles<?= $photoJs ? ' two' : '' ?>">
+      <label class="tile" id="drop">
+        <input type="file" id="picker" name="files[]" multiple accept="<?= h($accept) ?>">
+        <span class="tile-ic"><?= icon('doc') ?></span>
+        <b><?= h(t('tile_docs')) ?></b><small><?= h(t('tile_docs_sub')) ?></small>
+      </label>
+      <?php if ($photoJs): ?>
+        <button type="button" class="tile tile-photo" id="photoBtn">
+          <span class="tile-ic"><?= icon('photo') ?></span>
+          <b><?= h(t('photo_print')) ?></b><small><?= h(t('photo_print_sub')) ?></small>
+        </button>
+      <?php endif; ?>
+    </div>
 
     <div id="list"></div>
-    <div id="total" class="pay-box hidden"></div>
 
-    <!-- Used when JavaScript is off: options of the first file -->
     <noscript>
       <div class="opts">
         <label><?= h(t('copies')) ?><input type="number" name="opt[0][copies]" value="1" min="1" max="999"></label>
@@ -373,8 +382,8 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
     </noscript>
 
     <div class="icon-btns">
-      <button type="button" class="btn" data-sheet="#pricesSheet">💰 <?= h(t('prices')) ?></button>
-      <button type="button" class="btn" data-sheet="#meSheet" id="meBtn">👤 <?= h(t('details')) ?></button>
+      <button type="button" class="btn" data-sheet="#pricesSheet"><?= icon('tag') ?> <?= h(t('prices')) ?></button>
+      <button type="button" class="btn" data-sheet="#meSheet" id="meBtn"><?= icon('user') ?> <?= h(t('details')) ?></button>
     </div>
     <?= sheet_start('pricesSheet', t('prices')) ?>
       <table class="tbl prices">
@@ -394,55 +403,79 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
     <?= sheet_end() ?>
 
     <div id="err" class="alert err hidden"></div>
-    <div id="progress" class="progress hidden"><div></div></div>
-    <button class="btn primary block big" id="sendBtn"><?= h(t('send')) ?></button>
+    <div class="cta-bar">
+      <div id="progress" class="progress hidden"><div></div></div>
+      <div class="cta-row">
+        <div id="total" class="cta-total hidden"></div>
+        <button class="btn primary big" id="sendBtn"><?= h(t('send')) ?></button>
+      </div>
+    </div>
   </form>
   <div class="card install-card hidden"><?= install_box(false) ?></div>
 
   <?php if ($photoJs): ?>
-  <!-- Photo print tool (full screen) – logic in assets/photo-tool.js -->
-  <dialog class="sheet full" id="photoTool">
+  <!-- Photo studio (full screen) – logic in assets/photo-studio.js -->
+  <dialog class="sheet full studio" id="photoTool">
     <div class="sheet-head"><span class="grip"></span><b>📷 <?= h(t('photo_print')) ?></b><button type="button" class="sheet-x" aria-label="Close">✕</button></div>
     <div class="sheet-body">
-      <label class="drop pt-pick" id="ptPick">
-        <input type="file" id="ptFile" accept="image/*">
-        <span>🖼️ <?= h(t('photo_choose')) ?><small><?= h(t('photo_any')) ?></small></span>
-      </label>
-      <div class="pt-main hidden" id="ptMain">
-        <div class="pt-sizes" id="ptSizes"></div>
-        <div class="pt-editor">
-          <div class="pt-frame">
-            <canvas id="ptStage"></canvas>
-            <svg id="ptGuide" class="pt-guide hidden" viewBox="0 0 100 128" preserveAspectRatio="none" aria-hidden="true">
-              <ellipse cx="50" cy="52" rx="27" ry="34"/><line x1="0" y1="14" x2="100" y2="14"/><line x1="0" y1="96" x2="100" y2="96"/>
-            </svg>
-          </div>
-          <p class="muted center pt-tip">✋ <?= h(t('photo_move')) ?></p>
-          <div class="pt-tools">
-            <button type="button" class="btn" id="ptRotate">⟳ <?= h(t('photo_rotate')) ?></button>
-            <label class="btn pt-change"><input type="file" id="ptFile2" accept="image/*" hidden>🔄 <?= h(t('photo_change')) ?></label>
-            <button type="button" class="btn" id="ptReset">↺ <?= h(t('photo_reset')) ?></button>
-          </div>
-          <div class="pt-sliders">
-            <label>🔍 <?= h(t('photo_zoom')) ?><input type="range" id="ptZoom" min="1" max="5" step="0.01" value="1"></label>
-            <label>☀️ <?= h(t('photo_bright')) ?><input type="range" id="ptBright" min="50" max="160" step="1" value="100"></label>
-            <label>◐ <?= h(t('photo_contrast')) ?><input type="range" id="ptContrast" min="50" max="160" step="1" value="100"></label>
-          </div>
+      <div class="st-empty" id="stEmpty">
+        <div class="st-art" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <h2><?= h(t('st_empty_title')) ?></h2>
+        <p class="muted"><?= h(t('st_empty_sub')) ?></p>
+        <div class="chips center-chips" id="stSizeInfo"></div>
+        <label class="btn primary big block st-pick"><input type="file" id="stFile" accept="image/*" multiple hidden>🖼️ <?= h(t('st_choose')) ?></label>
+        <p class="muted small-note"><?= h(t('photo_any')) ?> · <?= h(t('paper')) ?>: <b><?= h($photoJs['paper']) ?></b></p>
+      </div>
+      <div class="st-main hidden" id="stMain">
+        <div class="st-paper">
+          <div class="st-sheets" id="stSheets"></div>
+          <div class="st-paper-foot"><span id="stInfo"></span><button type="button" class="link-btn" id="stPreviewBtn">👁 <?= h(t('photo_preview')) ?></button></div>
         </div>
-        <h4><?= h(t('photo_count')) ?></h4>
-        <div class="pt-count">
-          <span class="stepper"><button type="button" data-pt-step="-1">−</button><input type="number" id="ptCount" value="4" min="1" max="500"><button type="button" data-pt-step="1">+</button></span>
-          <div class="pt-quick" id="ptQuick"></div>
-        </div>
-        <div class="pt-info" id="ptInfo"></div>
-        <div class="pt-sheets" id="ptSheets" role="button" tabindex="0"></div>
-        <button type="button" class="btn block big" id="ptPreviewBtn">👁 <?= h(t('photo_preview')) ?></button>
-        <div class="pay-box" id="ptPay"></div>
-        <button type="button" class="btn primary block big" id="ptAdd">✓ <?= h(t('photo_add')) ?></button>
+        <p class="muted small-note">👆 <?= h(t('st_tap_photo')) ?></p>
+        <div class="st-list" id="stList"></div>
+        <label class="st-add" id="stAddWrap"><input type="file" id="stFile2" accept="image/*" multiple hidden>＋ <?= h(t('st_add_photo')) ?></label>
       </div>
     </div>
+    <div class="sheet-foot hidden" id="stFoot">
+      <div class="st-pay" id="stPay"></div>
+      <button type="button" class="btn primary big" id="stAdd">✓ <?= h(t('photo_add')) ?></button>
+    </div>
   </dialog>
-  <dialog class="sheet full" id="ptPreview">
+  <dialog class="sheet full dark st-editor" id="stEdit">
+    <div class="sheet-head"><span class="grip"></span><b>✏️ <?= h(t('st_edit_title')) ?></b><button type="button" class="sheet-x" aria-label="Close">✕</button></div>
+    <div class="sheet-body">
+      <div class="st-sizes" id="stSizes"></div>
+      <div class="st-stage"><canvas id="stStage"></canvas></div>
+      <p class="st-tip">✋ <?= h(t('photo_move')) ?></p>
+      <div class="st-tools">
+        <button type="button" data-t="rotate"><span>⟳</span><?= h(t('photo_rotate')) ?></button>
+        <button type="button" data-t="flip"><span>⇋</span><?= h(t('st_flip')) ?></button>
+        <button type="button" data-t="fit"><span>▣</span><?= h(t('st_fit')) ?></button>
+        <button type="button" data-t="guide"><span>☺</span><?= h(t('st_guide')) ?></button>
+        <button type="button" data-t="bw"><span>◑</span><?= h(t('st_bw')) ?></button>
+        <label><input type="file" id="stFile3" accept="image/*" hidden><span>🔄</span><?= h(t('photo_change')) ?></label>
+        <button type="button" data-t="reset"><span>↺</span><?= h(t('photo_reset')) ?></button>
+      </div>
+      <div class="st-sliders">
+        <label><span>🔍</span><?= h(t('photo_zoom')) ?><input type="range" id="stZoom" min="1" max="6" step="0.01" value="1"></label>
+        <label><span>☀️</span><?= h(t('photo_bright')) ?><input type="range" id="stBright" min="50" max="160" step="1" value="100"></label>
+        <label><span>◐</span><?= h(t('photo_contrast')) ?><input type="range" id="stContrast" min="50" max="160" step="1" value="100"></label>
+        <label><span>🎨</span><?= h(t('st_sat')) ?><input type="range" id="stSat" min="0" max="200" step="1" value="100"></label>
+      </div>
+      <div class="st-count">
+        <b><?= h(t('photo_count')) ?></b> <small id="stFitInfo"></small>
+        <div class="st-count-row">
+          <span class="stepper"><button type="button" data-st-step="-1">−</button><input type="number" id="stCount" value="4" min="1" max="500" inputmode="numeric"><button type="button" data-st-step="1">+</button></span>
+          <div class="pt-quick" id="stQuick"></div>
+        </div>
+      </div>
+    </div>
+    <div class="sheet-foot">
+      <button type="button" class="btn danger" id="stDel">🗑 <?= h(t('st_remove')) ?></button>
+      <button type="button" class="btn primary big" data-sheet-close>✓ <?= h(t('done')) ?></button>
+    </div>
+  </dialog>
+  <dialog class="sheet full dark" id="ptPreview">
     <div class="sheet-head"><span class="grip"></span><b>👁 <?= h(t('photo_preview')) ?></b><button type="button" class="sheet-x" aria-label="Close">✕</button></div>
     <div class="sheet-body pt-big" id="ptBig"></div>
   </dialog>
@@ -484,9 +517,9 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
 
   <?php if ($layoutsJs || $photoJs): ?>
     <script src="assets/pdf-lib.min.js" defer></script>
-    <script src="assets/layout.js?v=3" defer></script>
+    <script src="assets/layout.js?v=4" defer></script>
   <?php endif; ?>
-  <?php if ($photoJs): ?><script src="assets/photo-tool.js?v=1" defer></script><?php endif; ?>
+  <?php if ($photoJs): ?><script src="assets/photo-studio.js?v=1" defer></script><?php endif; ?>
   <script>
   (function () {
     var maxFiles = <?= (int)cfg('max_files') ?>, maxMb = <?= (int)cfg('max_file_mb') ?>, SELF = <?= json_encode($self) ?>;
@@ -504,15 +537,13 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
     var items = [];
     var PHOTO = <?= json_encode($photoJs, JSON_UNESCAPED_UNICODE) ?>, PDEFS = {};
     if (PHOTO) PHOTO.sizes.forEach(function (L) { PDEFS[L.id] = L; });
-    var TP = <?php $pk = ['photo_info', 'photo_sheet_of', 'full_sheet', 'photo_edit', 'photo_bad', 'estimate'];
+    var TP = <?php $pk = ['photo_sheet_of', 'full_sheet', 'photo_edit', 'photo_bad', 'estimate', 'photo_print', 'preparing', 'layout_fail',
+                'st_summary', 'st_fit_n', 'st_edit', 'st_remove', 'st_fit', 'st_max'];
                 echo json_encode(array_combine($pk, array_map('t', $pk))); ?>;
 
-    function photoSheets(it) {
-      var L = PDEFS[it.photo.id];
-      return Math.ceil(it.photo.pieces / window.DaybillLayout.sizeFit(L.w, L.h, PHOTO.paper).max);
-    }
+    // Photo studio item: it.photo = {code, pieces, sheets, labels}
     function photoPrice(it) {
-      var sheets = photoSheets(it);
+      var sheets = it.photo.sheets;
       if (PHOTO.price !== '') return (PHOTO.mode === 'sheet' ? sheets : it.photo.pieces) * parseFloat(PHOTO.price);
       var r = PHOTO.rule;
       return r[1] + Math.max(0, sheets - r[0]) * r[2];
@@ -598,8 +629,7 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
     function chips(it) {
       var box = it.node.querySelector('.chips'), parts = [];
       if (it.photo) {
-        var L = PDEFS[it.photo.id];
-        parts = [L.name, it.photo.pieces + ' ' + T.pieces, PHOTO.paper, T.sheets_count.replace('%d', photoSheets(it))];
+        parts = it.photo.labels.concat([PHOTO.paper, T.sheets_count.replace('%d', it.photo.sheets)]);
         box.innerHTML = '';
         parts.forEach(function (t) { var c = document.createElement('span'); c.className = 'chip'; c.textContent = t; box.appendChild(c); });
         return;
@@ -768,7 +798,7 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
       }).catch(function () { document.getElementById('pinMsg').textContent = T.err_net; pinVal = ''; paintPin(''); });
     }
 
-    // Used by assets/photo-tool.js
+    // Used by assets/photo-studio.js
     window.DaybillOrder = { items: items, list: list, refresh: refresh, showErr: showErr, money: money,
       maxFiles: maxFiles, maxMb: maxMb, PHOTO: PHOTO, PDEFS: PDEFS, photoPrice: photoPrice,
       T: Object.assign({}, TP, { err_max: Terr.max, err_big: Terr.big }) };
@@ -783,20 +813,12 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
       btn.disabled = true;
       for (var i = 0; i < items.length; i++) {
         var it = items[i];
-        if (it.photo) { // photo print tool: sheets with the photos at exact size
+        if (it.photo) { // photo studio: the print-ready sheets were made when the photos were added
           fd.append('files[]', it.file, it.file.name);
-          btn.textContent = T.preparing;
-          try {
-            var pc = it.photo.id + ':' + it.photo.pieces;
-            var pr = await window.DaybillLayout.build(it.file, pc, PDEFS, PHOTO.paper, '');
-            fd.append('print[' + i + ']', pr.blob, 'photo.pdf');
-            fd.append('opt[' + i + '][layout]', pc);
-            fd.append('opt[' + i + '][kind]', 'photo');
-            (it.previews || []).forEach(function (pv, k) { fd.append('preview[' + i + '][' + k + ']', pv, 'sheet' + k + '.jpg'); });
-          } catch (x) {
-            btn.disabled = false; btn.textContent = T.send;
-            return showErr(T.layout_fail.replace('%s', it.file.name) + ' (' + x.message + ')');
-          }
+          fd.append('print[' + i + ']', it.printBlob, 'photo.pdf');
+          fd.append('opt[' + i + '][layout]', it.photo.code);
+          fd.append('opt[' + i + '][kind]', 'photo');
+          (it.previews || []).forEach(function (pv, k) { fd.append('preview[' + i + '][' + k + ']', pv, 'sheet' + k + '.jpg'); });
           continue;
         }
         var code = layoutCode(it);
