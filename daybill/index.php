@@ -84,6 +84,8 @@ function handle_upload(): array
     }
 
     $pdo = db();
+    // Order check "pin": the customer gets a 4-digit PIN that staff must type before printing.
+    $pin = verify_mode() === 'pin' ? str_pad((string)random_int(0, 9999), 4, '0', STR_PAD_LEFT) : '';
     $pdo->beginTransaction();
     $saved = [];
     $total = 0.0;
@@ -93,13 +95,15 @@ function handle_upload(): array
         for ($try = 0; $try < 20 && !$jobId; $try++) {
             $code = make_code();
             try {
-                $st = $pdo->prepare('INSERT INTO jobs (shop_id, code, customer_name, phone, note) VALUES (?, ?, ?, ?, ?)');
+                $st = $pdo->prepare('INSERT INTO jobs (shop_id, code, customer_name, phone, note, pin, verified) VALUES (?, ?, ?, ?, ?, ?, ?)');
                 $st->execute([
                     shop_id(),
                     $code,
                     mb_substr(trim((string)($_POST['customer_name'] ?? '')), 0, 100),
                     mb_substr(trim((string)($_POST['phone'] ?? '')), 0, 30),
                     mb_substr(trim((string)($_POST['note'] ?? '')), 0, 500),
+                    $pin,
+                    $pin === '' ? 1 : 0,
                 ]);
                 $jobId = (int)$pdo->lastInsertId();
             } catch (PDOException $e) {
@@ -176,7 +180,11 @@ function handle_upload(): array
         error_log('Daybill upload error: ' . $e->getMessage());
         return ['ok' => false, 'error' => t('err_server')];
     }
-    return ['ok' => true, 'code' => $code, 'files' => count($accepted),
+    if (verify_mode() === 'auto') {
+        auto_print_job($jobId); // no check: print straight away
+    }
+    return ['ok' => true, 'code' => $code, 'files' => count($accepted), 'pin' => $pin,
+        'auto' => verify_mode() === 'auto' && setting('print_mode', 'local') !== 'browser',
         'price' => $unknown ? '' : money($total)];
 }
 
@@ -271,6 +279,11 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
     <h1><?= h(t('sent')) ?></h1>
     <p><?= h(t('show_code')) ?></p>
     <div class="bigcode"><?= h($result['code']) ?></div>
+    <?php if ($result['pin'] !== ''): ?>
+      <div class="pin-box"><span><?= h(t('pin_title')) ?></span><b><?= h($result['pin']) ?></b><small><?= h(t('pin_tell')) ?></small></div>
+    <?php elseif ($result['auto']): ?>
+      <div class="alert ok">🖨 <?= h(t('auto_printing')) ?></div>
+    <?php endif; ?>
     <p class="pay-box"><?= h($result['price'] !== '' ? t('estimate') : t('estimate_ph')) ?><?php if ($result['price'] !== ''): ?><b><?= h($result['price']) ?></b><?php endif; ?></p>
     <p class="muted"><?= h(t('final_note')) ?></p>
     <a class="btn block" href="<?= h($self) ?>"><?= h(t('send_more')) ?></a>
@@ -282,6 +295,8 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
     <h1><?= h(t('sent')) ?></h1>
     <p><?= h(t('show_code')) ?></p>
     <div class="bigcode" id="doneCode"></div>
+    <div class="pin-box hidden" id="donePin"><span><?= h(t('pin_title')) ?></span><b></b><small><?= h(t('pin_tell')) ?></small></div>
+    <div class="alert ok hidden" id="doneAuto">🖨 <?= h(t('auto_printing')) ?></div>
     <p id="donePrice" class="pay-box"></p>
     <p class="muted"><?= h(t('final_note')) ?></p>
     <a class="btn block" href="<?= h($self) ?>"><?= h(t('send_more')) ?></a>
@@ -730,6 +745,9 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
         if (!r.ok) return showErr(r.error);
         form.classList.add('hidden');
         document.getElementById('doneCode').textContent = r.code;
+        var dpin = document.getElementById('donePin');
+        if (r.pin) { dpin.querySelector('b').textContent = r.pin; dpin.classList.remove('hidden'); }
+        document.getElementById('doneAuto').classList.toggle('hidden', !r.auto);
         var dp = document.getElementById('donePrice');
         dp.textContent = r.price ? T.estimate : T.estimate_ph;
         if (r.price) { var b = document.createElement('b'); b.textContent = r.price; dp.appendChild(b); }

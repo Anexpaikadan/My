@@ -57,6 +57,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
     $action = (string)($_POST['action'] ?? '');
     $pdo = db();
+    $isAdmin = in_array($user['role'], ['admin', 'super'], true);
+
+    // Order check "pin": nothing can be printed before the customer's PIN was entered.
+    if (!$job['verified'] && in_array($action, ['print', 'print_all', 'mark_printed', 'done'], true)) {
+        flash('🔒 Enter the customer\'s 4-digit PIN first.', 'err');
+        redirect('job.php?id=' . $id);
+    }
+    if ($action === 'verify_pin' && !$job['verified']) {
+        $given = preg_replace('/\D/', '', (string)($_POST['pin'] ?? ''));
+        if ((int)$job['pin_tries'] >= 5) {
+            flash('Too many wrong PINs. ' . ($isAdmin ? 'You can unlock the order as admin.' : 'Ask an admin to unlock the order.'), 'err');
+        } elseif (strlen($given) === 4 && hash_equals((string)$job['pin'], $given)) {
+            $pdo->prepare('UPDATE jobs SET verified = 1, handled_by = ? WHERE id = ?')->execute([$user['id'], $id]);
+            flash('✅ PIN correct – the order can be printed now.');
+        } else {
+            $pdo->prepare('UPDATE jobs SET pin_tries = pin_tries + 1 WHERE id = ?')->execute([$id]);
+            flash('Wrong PIN (' . (4 - (int)$job['pin_tries']) . ' tries left).', 'err');
+        }
+        redirect('job.php?id=' . $id);
+    }
+    if ($action === 'unlock' && $isAdmin && !$job['verified']) {
+        $pdo->prepare('UPDATE jobs SET verified = 1, handled_by = ? WHERE id = ?')->execute([$user['id'], $id]);
+        flash('Order unlocked by admin without PIN.');
+        redirect('job.php?id=' . $id);
+    }
 
     if ($action === 'print' || $action === 'save') {
         $f = load_file($id, (int)($_POST['file_id'] ?? 0));
@@ -225,6 +250,21 @@ echo flash();
     </div>
   </div>
   <?php if ($job['note']): ?><div class="alert info">📝 <?= h($job['note']) ?></div><?php endif; ?>
+  <?php if (!$job['verified']): ?>
+    <form method="post" class="pin-check" autocomplete="off">
+      <?= csrf_field() ?><input type="hidden" name="id" value="<?= (int)$job['id'] ?>">
+      <b>🔒 Ask the customer for their 4-digit PIN</b>
+      <div class="pin-inputs">
+        <input name="pin" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required placeholder="••••" autofocus>
+        <button class="btn primary big" name="action" value="verify_pin">Check PIN</button>
+      </div>
+      <?php if (in_array($user['role'], ['admin', 'super'], true)): ?>
+        <button class="btn small" name="action" value="unlock" formnovalidate onclick="return confirm('Unlock this order without the PIN?')">Admin: unlock without PIN</button>
+      <?php endif; ?>
+    </form>
+    <style>/* locked: no printing until the PIN is checked */
+      button[value=print], button[value=print_all], button[value=mark_printed], button[value=done] { display: none !important; }</style>
+  <?php endif; ?>
   <?php if ($mode === 'agent' && time() - (int)setting('agent_seen', '0') > 60): ?>
     <div class="alert err">⚠ The shop print agent has not connected in the last minute. Is it running on the shop PC?</div>
   <?php endif; ?>

@@ -96,6 +96,13 @@ function migrate(PDO $pdo): void
         $pdo->exec("ALTER TABLE job_files ADD COLUMN previews TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER kind");
         $pdo->exec("UPDATE settings SET v = '7' WHERE shop_id = 0 AND k = 'schema_version'");
     }
+    if ($v < 8) {
+        // Order check: customer PIN that staff must enter before printing.
+        $pdo->exec("ALTER TABLE jobs ADD COLUMN pin VARCHAR(4) NOT NULL DEFAULT '' AFTER note,
+            ADD COLUMN verified TINYINT(1) NOT NULL DEFAULT 1 AFTER pin,
+            ADD COLUMN pin_tries TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER verified");
+        $pdo->exec("UPDATE settings SET v = '8' WHERE shop_id = 0 AND k = 'schema_version'");
+    }
 }
 
 function h($s): string
@@ -443,6 +450,44 @@ const BUILTIN_LAYOUTS = [
 
 // ---- Photo print tool (Settings → Photo print) -----------------------
 const PHOTO_PAPERS = ['A4', 'A5', 'A6', 'Letter', '10x15 cm', '13x18 cm'];
+
+// ---- Order check (Settings → Order check) ---------------------------
+//   staff – staff open the order and press Print (default)
+//   pin   – the customer gets a 4-digit PIN; staff must type it before the order can be printed
+//   auto  – no check: uploads are printed straight away
+const VERIFY_MODES = ['staff', 'pin', 'auto'];
+
+function verify_mode(): string
+{
+    $m = setting('verify_mode', 'staff');
+    return in_array($m, VERIFY_MODES, true) ? $m : 'staff';
+}
+
+// Sends every file of an order to the printer without staff (verify mode "auto").
+function auto_print_job(int $jobId): void
+{
+    $mode = setting('print_mode', 'local');
+    $pdo = db();
+    if ($mode === 'agent') {
+        $pdo->prepare("UPDATE job_files SET status = 'queued', queued_at = NOW() WHERE job_id = ? AND stored_name <> ''")->execute([$jobId]);
+        $pdo->prepare("UPDATE jobs SET status = 'printing' WHERE id = ? AND status = 'new'")->execute([$jobId]);
+    } elseif ($mode === 'local') {
+        require_once __DIR__ . '/printer.php';
+        $st = $pdo->prepare("SELECT * FROM job_files WHERE job_id = ? AND stored_name <> ''");
+        $st->execute([$jobId]);
+        foreach ($st->fetchAll() as $f) {
+            try {
+                print_file($f);
+                $pdo->prepare("UPDATE job_files SET status = 'printed', print_count = print_count + 1, printed_at = NOW() WHERE id = ?")->execute([$f['id']]);
+            } catch (Throwable $e) {
+                $pdo->prepare("UPDATE job_files SET status = 'failed', last_error = ? WHERE id = ?")
+                    ->execute([mb_substr($e->getMessage(), 0, 500), $f['id']]);
+            }
+        }
+        update_job_status($jobId);
+    }
+    // "browser" mode cannot print without staff: the order simply waits in the list.
+}
 
 // Super admin decides per shop whether photo print may be used (Shops page); the shop admin switches it on.
 function photo_allowed(): bool
@@ -822,7 +867,7 @@ function page_header(string $title, bool $staff = false, string $lang = 'en', st
         . '<meta name="mobile-web-app-capable" content="yes">'
         . '<meta name="apple-mobile-web-app-status-bar-style" content="default">'
         . '<meta name="apple-mobile-web-app-title" content="' . h($staff ? 'Print Staff' : $shop) . '">'
-        . '<link rel="stylesheet" href="assets/style.css?v=12">'
+        . '<link rel="stylesheet" href="assets/style.css?v=13">'
         . '<style>' . theme_css() . '</style>'
         . '<script>addEventListener("pagereveal",function(e){var v=e.viewTransition;if(v){v.ready.catch(function(){});v.finished.catch(function(){});}});</script>'
         . '<script src="assets/app.js?v=8" defer></script></head>'

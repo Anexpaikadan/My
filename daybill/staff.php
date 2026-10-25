@@ -82,7 +82,7 @@ echo flash();
       <small><?= (int)$j['nfiles'] ?> file(s) · <?= (int)$j['nprinted'] ?> printed · <?= h(date('d M, h:i A', strtotime($j['created_at']))) ?><?= $j['status'] === 'done' ? ' · ' . h(money((float)$j['amount'])) : '' ?></small>
       <?php if ($j['note']): ?><small class="note">📝 <?= h($j['note']) ?></small><?php endif; ?>
     </span>
-    <span class="badge"><?= h($j['status']) ?></span>
+    <span class="badge"><?= !$j['verified'] ? '🔒 PIN' : h($j['status']) ?></span>
   </a>
 <?php endforeach; ?>
 </div>

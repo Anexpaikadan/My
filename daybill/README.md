@@ -72,6 +72,16 @@ Copy `DAYbill-PC-Setup-<shop>.bat` to the shop PC (Windows 10/11) and double-cli
 Run it again any time to update or repair. If Windows SmartScreen says "Windows protected your PC", click
 **More info → Run anyway**. Only shop admins / super admins can download it, because it contains the shop's agent key.
 
+## Order check (per shop)
+
+Settings → **🔐 Order check** – how an upload reaches the printer:
+
+| Mode | What happens |
+|---|---|
+| 👤 **Staff check** (standard) | The order waits until an employee opens it and presses Print. |
+| 🔐 **Customer PIN** | After uploading, the customer's phone shows a **4-digit PIN** next to the order code. The order is locked 🔒 in the staff list; the employee types the customer's PIN to unlock it, then prints. 5 wrong tries lock the PIN; an admin can unlock without PIN. |
+| ⚡ **No check** | Uploads print immediately (print agent or local printing) and complete themselves. Anyone with the QR link can print. |
+
 ## Photo print tool
 
 Settings → **📷 Photo print** (per shop): switch it on, choose the **photo paper** (A4, A5, A6, Letter, 10 × 15 cm,

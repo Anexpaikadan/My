@@ -6,7 +6,7 @@ require __DIR__ . '/printer.php';
 $admin = require_admin();
 
 $sections = ['employees' => 'Employees', 'options' => 'Customer options', 'prices' => 'Prices',
-    'printing' => 'Printing', 'shop' => 'Shop settings', 'colors' => 'App colour', 'layouts' => 'Layouts', 'photo' => 'Photo print'];
+    'printing' => 'Printing', 'shop' => 'Shop settings', 'colors' => 'App colour', 'layouts' => 'Layouts', 'photo' => 'Photo print', 'verify' => 'Order check'];
 $themes = [
     'DAYbill' => ['#360dd9', '#7ed957'], 'Ocean' => ['#1f6feb', '#14b8a6'], 'Emerald' => ['#047857', '#f59e0b'],
     'Royal' => ['#6d28d9', '#ec4899'], 'Rose' => ['#be123c', '#0ea5e9'], 'Sunset' => ['#c2410c', '#2563eb'],
@@ -69,6 +69,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $price = trim(str_replace(',', '.', (string)($_POST['photo_price'] ?? '')));
         save_setting('photo_price', $price === '' ? '' : (string)max(0, round((float)$price, 2)));
         flash(photo_enabled() ? 'Photo print is ON for customers.' : 'Photo print saved (off for customers – tick "on" and at least one size).');
+    } elseif ($action === 'verify') {
+        $m = (string)($_POST['verify_mode'] ?? '');
+        save_setting('verify_mode', in_array($m, VERIFY_MODES, true) ? $m : 'staff');
+        flash('Order check saved.');
     } elseif ($action === 'layouts') {
         $lines = [];
         foreach (preg_split('/\R/', (string)($_POST['layouts_custom'] ?? '')) as $line) {
@@ -448,6 +452,26 @@ echo flash();
     </label>
     <div class="actions wide"><button class="btn primary block" name="action" value="photo">Save photo print</button></div>
   </div>
+</form>
+
+<?php elseif ($sec === 'verify'): $vm = verify_mode(); ?>
+<form method="post">
+  <?= csrf_field() ?>
+  <p class="muted">How an uploaded order gets to the printer.</p>
+  <?php foreach ([
+      'staff' => ['👤', 'Staff check', 'The order waits until an employee opens it, checks it and presses Print. (Standard)'],
+      'pin'   => ['🔐', 'Customer PIN', 'After uploading, the customer\'s phone shows a 4-digit PIN. The order is locked 🔒 until an employee types that PIN – so only the customer at the counter gets the prints.'],
+      'auto'  => ['⚡', 'No check – print at once', 'Uploads are printed immediately, without staff. Anyone with the QR link can print – use only where that is OK.'],
+  ] as $k => [$ic, $title, $text]): ?>
+    <label class="mode-card<?= $vm === $k ? ' on' : '' ?>">
+      <input type="radio" name="verify_mode" value="<?= $k ?>" <?= $vm === $k ? 'checked' : '' ?>>
+      <span class="mc-ic"><?= $ic ?></span><span><b><?= h($title) ?></b><small><?= h($text) ?></small></span>
+    </label>
+  <?php endforeach; ?>
+  <?php if (setting('print_mode', 'local') === 'browser'): ?>
+    <div class="alert err">Print mode is "Browser": orders cannot print by themselves, so "No check" works like "Staff check".</div>
+  <?php endif; ?>
+  <div class="actions"><button class="btn primary block" name="action" value="verify">Save</button></div>
 </form>
 
 <?php elseif ($sec === 'layouts'): $on = enabled_layouts(); $lp = json_decode(setting('layout_prices', '{}'), true) ?: []; ?>

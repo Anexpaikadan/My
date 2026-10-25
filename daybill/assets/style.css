@@ -354,3 +354,19 @@ dialog.sheet.full { max-height: none; height: 100vh; height: 100dvh; border-radi
 .pv-hint { flex: none; font-weight: 600; color: var(--primary); font-size: .9rem; }
 #ptPreviewBtn { margin: 4px 0 12px; }
 .sheet.dark .sheet-body { background: #3a3f4a; }
+
+/* ---- v13: order check ---- */
+.pin-box { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0 0 14px; padding: 14px; border-radius: var(--radius);
+  background: #fff7e0; border: 2px dashed #e0a800; color: #6b4e00; }
+.pin-box b { font: 700 2.8rem/1 ui-monospace, Consolas, monospace; letter-spacing: .35em; margin-inline-start: .35em; color: #3d2c00; }
+.pin-box small { font-size: .85rem; max-width: 300px; }
+.pin-check { margin-top: 12px; padding: 14px; border-radius: var(--radius); background: #fff7e0; border: 2px solid #e0a800; }
+.pin-inputs { display: flex; gap: 10px; margin: 10px 0; }
+.pin-inputs input { margin: 0; flex: 1; font: 700 1.8rem ui-monospace, Consolas, monospace; letter-spacing: .4em; text-align: center; }
+.mode-card { display: flex; gap: 12px; align-items: flex-start; padding: 14px; margin-bottom: 10px; border: 2px solid var(--line); border-radius: var(--radius);
+  background: #fff; color: var(--text); cursor: pointer; }
+.mode-card.on, .mode-card:has(input:checked) { border-color: var(--primary); background: var(--p-50); }
+.mode-card input { width: auto; margin: 4px 0 0; }
+.mode-card .mc-ic { font-size: 1.6rem; }
+.mode-card small { display: block; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+.pin-box b, .bigcode, .pin-inputs input { direction: ltr; unicode-bidi: isolate; }

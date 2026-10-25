@@ -27,6 +27,9 @@ CREATE TABLE IF NOT EXISTS jobs (
   customer_name VARCHAR(100) NOT NULL DEFAULT '',
   phone         VARCHAR(30)  NOT NULL DEFAULT '',
   note          VARCHAR(500) NOT NULL DEFAULT '',
+  pin           VARCHAR(4)   NOT NULL DEFAULT '',
+  verified      TINYINT(1)   NOT NULL DEFAULT 1,
+  pin_tries     TINYINT UNSIGNED NOT NULL DEFAULT 0,
   status        ENUM('new','printing','done','cancelled') NOT NULL DEFAULT 'new',
   handled_by    INT UNSIGNED NULL,
   amount        DECIMAL(10,2) NOT NULL DEFAULT 0,
@@ -76,4 +79,4 @@ CREATE TABLE IF NOT EXISTS settings (
   PRIMARY KEY (shop_id, k)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT IGNORE INTO settings (shop_id, k, v) VALUES (0, 'schema_version', '7');
+INSERT IGNORE INTO settings (shop_id, k, v) VALUES (0, 'schema_version', '8');
