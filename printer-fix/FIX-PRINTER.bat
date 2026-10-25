@@ -8,7 +8,7 @@
 ::          0x0000007c / access denied / printer offline on the network
 ::
 ::  Double-click it, or run from CMD:
-::     FIX-PRINTER.bat                 menu
+::     FIX-PRINTER.bat                 menu: [1] Main PC  [2] Client PC
 ::     FIX-PRINTER.bat all             fix host + client settings
 ::     FIX-PRINTER.bat host            fix the PC the printer is plugged into
 ::     FIX-PRINTER.bat client          fix a PC that prints over the network
@@ -51,37 +51,74 @@ if /i "%~1"=="add"    (set "AUTO=1" & set "PRN=%~2" & call :add_printer & goto :
 cls
 echo.
 echo  ==================================================================
-echo     NETWORK SHARED PRINTER FIX     0x0000011b / 0x00000709 / 0x00000bcb
+echo     NETWORK PRINTER FIX        This PC: %COMPUTERNAME%
 echo  ==================================================================
-echo     This PC: %COMPUTERNAME%
 echo.
-echo     [1] FIX ALL  - run on EVERY PC (host and clients)   ^<-- start here
-echo     [2] Fix HOST only   - the PC with the printer USB cable
-echo     [3] Fix CLIENT only - a PC that prints over the network
+echo     [1] MAIN PC     - the printer cable is in THIS PC
+echo     [2] CLIENT PC   - this PC prints to the Main PC's printer
 echo.
-echo     [4] Connect shared printer      \\PCNAME\PrinterShare
-echo     [5] Connect via LOCAL PORT      workaround if [4] still fails
-echo     [6] Share a printer on THIS PC  host side
-echo     [7] Save login for the host PC  fixes access denied / password
-echo     [8] Set network to Private      sharing is blocked on Public
-echo     [9] Diagnostics report
+echo     [3] Connect printer on Client PC   after restart
+echo     [4] More tools
 echo     [0] Exit
 echo.
-choice /c 1234567890 /n /m "  Select option: "
+echo     Do [1] on the Main PC, [2] on every Client PC, restart all PCs,
+echo     then do [3] on each Client PC.
+echo.
+choice /c 12340 /n /m "  Select: "
 set "OPT=%errorlevel%"
-if "%OPT%"=="10" goto :end
-if "%OPT%"=="1" (call :fix_host & call :fix_client & call :restart_spooler)
-if "%OPT%"=="2" (call :fix_host & call :restart_spooler)
-if "%OPT%"=="3" (call :fix_client & call :restart_spooler)
-if "%OPT%"=="4" (set "PRN=" & call :add_printer)
-if "%OPT%"=="5" call :add_localport
-if "%OPT%"=="6" call :share_printer
-if "%OPT%"=="7" call :save_login
-if "%OPT%"=="8" call :set_private
-if "%OPT%"=="9" (set "DHOST=" & call :diag_report)
+if "%OPT%"=="5" goto :end
+if "%OPT%"=="1" call :main_pc
+if "%OPT%"=="2" call :client_pc
+if "%OPT%"=="3" (set "PRN=" & call :add_printer)
+if "%OPT%"=="4" goto :tools
 echo.
 pause
 goto :menu
+
+:tools
+cls
+echo.
+echo  ==================================================================
+echo     MORE TOOLS                 This PC: %COMPUTERNAME%
+echo  ==================================================================
+echo.
+echo     [1] Connect via LOCAL PORT     Client PC - if [3] still fails
+echo     [2] Share a printer            Main PC
+echo     [3] Save Main PC login         Client PC - access denied / password
+echo     [4] Set network to Private     both - sharing is blocked on Public
+echo     [5] Diagnostics report         both
+echo     [0] Back
+echo.
+choice /c 123450 /n /m "  Select: "
+set "OPT=%errorlevel%"
+if "%OPT%"=="6" goto :menu
+if "%OPT%"=="1" call :add_localport
+if "%OPT%"=="2" call :share_printer
+if "%OPT%"=="3" call :save_login
+if "%OPT%"=="4" call :set_private
+if "%OPT%"=="5" (set "DHOST=" & call :diag_report)
+echo.
+pause
+goto :tools
+
+:: ==========================================================================
+:main_pc
+call :fix_host
+call :fix_client
+call :restart_spooler
+echo.
+choice /c YN /n /m "  Share a printer on this PC now? [Y/N] "
+if not errorlevel 2 call :share_printer
+echo.
+echo  MAIN PC DONE. Now run [2] on every Client PC, then restart all PCs.
+exit /b
+
+:client_pc
+call :fix_client
+call :restart_spooler
+echo.
+echo  CLIENT PC DONE. Restart this PC, open this file again and press [3].
+exit /b
 
 :: ==========================================================================
 :fix_host
@@ -96,7 +133,7 @@ echo  [*] Services needed for sharing
 for %%s in (Spooler LanmanServer LanmanWorkstation FDResPub fdPHost SSDPSRV upnphost) do call :svc %%s
 call :firewall
 echo  [*] Shared printers on this PC:
-powershell -NoProfile -Command "$s=Get-Printer | Where-Object Shared; if($s){$s | ForEach-Object { '      \\' + $env:COMPUTERNAME + '\' + $_.ShareName + '   (' + $_.Name + ', ' + $_.PrinterStatus + ')' }} else {'      NONE - use option [6] to share the printer'}"
+powershell -NoProfile -Command "$s=Get-Printer | Where-Object Shared; if($s){$s | ForEach-Object { '      \\' + $env:COMPUTERNAME + '\' + $_.ShareName + '   (' + $_.Name + ', ' + $_.PrinterStatus + ')' }} else {'      NONE - the next step shares the printer'}"
 exit /b
 
 :: ==========================================================================
@@ -127,9 +164,6 @@ net start spooler >nul 2>&1
 sc query spooler | find "RUNNING" >nul
 if errorlevel 1 (echo  [FAIL] Print Spooler did not start) else (echo  [ OK ] Print Spooler running)
 call :log "spooler restarted"
-echo.
-echo  DONE. Run this on the HOST and every CLIENT, then use option [4].
-echo  If it still fails: restart both PCs once and try again.
 exit /b
 
 :: ==========================================================================
@@ -150,8 +184,8 @@ rundll32 printui.dll,PrintUIEntry /in /n "%PRN%"
 timeout /t 3 /nobreak >nul
 powershell -NoProfile -Command "if(Get-Printer -Name '%PRN%' -ErrorAction SilentlyContinue){exit 0}else{exit 1}"
 if errorlevel 1 (
-    echo  [FAIL] Not connected. Try:  [1] on BOTH PCs, restart both, then [4] again.
-    echo         Still failing?  use option [5] Connect via LOCAL PORT.
+    echo  [FAIL] Not connected. Do [1] on Main PC, [2] here, restart both, try again.
+    echo         Still failing?  More tools - [1] Connect via LOCAL PORT.
     call :log "add FAILED %PRN%"
     set "PRN="
     exit /b
@@ -197,7 +231,7 @@ set /p "PNAME=  Name for the printer on this PC [Network Printer]: "
 if not defined PNAME set "PNAME=Network Printer"
 powershell -NoProfile -Command "$p='%LP%'; if(-not (Get-PrinterPort -Name $p -ErrorAction SilentlyContinue)){Add-PrinterPort -Name $p}; Add-Printer -Name '%PNAME%' -DriverName '%DRV%' -PortName $p -ErrorAction Stop"
 if errorlevel 1 (
-    echo  [FAIL] Could not add the printer. Use option [7] to save the host login,
+    echo  [FAIL] Could not add the printer. More tools - [3] Save Main PC login,
     echo         then try again.
     call :log "localport FAILED %LP%"
     exit /b

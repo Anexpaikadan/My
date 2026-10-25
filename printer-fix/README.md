@@ -16,35 +16,44 @@ File: [`FIX-PRINTER.bat`](FIX-PRINTER.bat)
 | Host not found / offline | Sharing services stopped, firewall blocks File and Printer Sharing, network set to **Public**. | Starts the services, enables firewall rules, option to set network to Private |
 | Stuck queue | Old jobs in the spooler. | Restarts Print Spooler and clears `spool\PRINTERS` |
 
-## How to use (2 minutes)
+## How to use
 
-1. Copy `FIX-PRINTER.bat` to a USB stick or download it on each PC.
-2. **On the HOST PC** (the one with the printer's USB cable – `MYPC` in the screenshot):
-   double-click `FIX-PRINTER.bat` → **Yes** on the admin prompt → press **1** (Fix all).
-   Not shared yet? Press **6** and type the printer name to share it.
-3. **On every CLIENT PC**: double-click → **Yes** → press **1**.
-4. **Restart both PCs** (the spooler and RPC settings are fully read at start-up).
-5. On the client: run it again → press **4** → type `\\MYPC\PrinterShareName` → Y for default / test page.
+**Main PC** (the printer cable is plugged into this PC – `MYPC` in the screenshot)
 
-Still `0x0000011b`? → press **5 – Connect via LOCAL PORT**. This prints to `\\MYPC\Share` over normal file sharing,
-without the RPC connection that causes the error (the printer driver must be installed on the client –
+1. Double-click `FIX-PRINTER.bat` → **Yes**.
+2. Press **1** (Main PC).
+3. Press **Y** to share the printer and type its name. Write down the path it shows, e.g. `\\MYPC\EPSONTM-T20II`.
+4. Restart the PC.
+
+**Client PC** (prints to the Main PC's printer)
+
+1. Double-click `FIX-PRINTER.bat` → **Yes**.
+2. Press **2** (Client PC).
+3. Restart the PC.
+4. Open the file again → **Yes** → press **3** → type the path from the Main PC.
+5. **Y** for default printer, **Y** for a test page.
+
+Still `0x0000011b`? → **4 More tools → 1 Connect via LOCAL PORT**. This prints to `\\MYPC\Share` over normal file
+sharing, without the RPC connection that causes the error (the printer driver must be installed on the Client PC –
 for EPSON TM-T20II install the *Epson Advanced Printer Driver (APD)*). This works on every Windows version.
 
-Asked for a password / *access denied*? → press **7** and enter the host PC's Windows user name and password
-(the host user must have a password).
+Asked for a password / *access denied*? → **4 More tools → 3 Save Main PC login** and enter the Main PC's Windows
+user name and password (that user must have a password).
+
+Windows blocks the file after download? Right-click → **Properties** → tick **Unblock** → **OK**.
 
 ## Menu
 
 ```
-[1] FIX ALL  - run on EVERY PC (host and clients)   <-- start here
-[2] Fix HOST only   - the PC with the printer USB cable
-[3] Fix CLIENT only - a PC that prints over the network
-[4] Connect shared printer      \\PCNAME\PrinterShare
-[5] Connect via LOCAL PORT      workaround if [4] still fails
-[6] Share a printer on THIS PC  host side
-[7] Save login for the host PC  fixes access denied / password
-[8] Set network to Private      sharing is blocked on Public
-[9] Diagnostics report
+[1] MAIN PC     - the printer cable is in THIS PC
+[2] CLIENT PC   - this PC prints to the Main PC's printer
+[3] Connect printer on Client PC   after restart
+[4] More tools
+      [1] Connect via LOCAL PORT     Client PC - if [3] still fails
+      [2] Share a printer            Main PC
+      [3] Save Main PC login         Client PC - access denied / password
+      [4] Set network to Private     both - sharing is blocked on Public
+      [5] Diagnostics report         both
 [0] Exit
 ```
 
@@ -98,4 +107,4 @@ net stop spooler /y & net start spooler
 
 These settings turn off protections Microsoft added in 2021 (CVE-2021-1678, PrintNightmare). That is normal for a
 small shop or home network where you trust all PCs, but don't use them on public or untrusted networks.
-Option **5 (local port)** needs none of these changes and is the safest way if you prefer to keep them on.
+**Connect via LOCAL PORT** needs none of these changes and is the safest way if you prefer to keep them on.
