@@ -506,7 +506,7 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
     <script src="assets/pdf-lib.min.js" defer></script>
     <script src="assets/layout.js?v=4" defer></script>
   <?php endif; ?>
-  <?php if ($photoJs): ?><script src="assets/photo-studio.js?v=1" defer></script><?php endif; ?>
+  <?php if ($photoJs): ?><script src="assets/photo-studio.js?v=2" defer></script><?php endif; ?>
   <script>
   (function () {
     var maxFiles = <?= (int)cfg('max_files') ?>, maxMb = <?= (int)cfg('max_file_mb') ?>, SELF = <?= json_encode($self) ?>;
@@ -723,7 +723,7 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
       node.querySelector('.fname').textContent = '📄 ' + file.name;
       node.querySelector('.sheet-fname').textContent = file.name;
       var sheet = node.querySelector('.file-sheet');
-      node.querySelector('.opt-open').onclick = function () { window.DaybillSheet ? DaybillSheet.open(sheet) : sheet.show(); };
+      node.querySelector('.opt-open').onclick = function () { DaybillSheet.open(sheet); };
       sheet.addEventListener('sheetclosed', refresh);
       var item = { file: file, node: node, pages: 0 };
       node.querySelector('.x').onclick = function () {
@@ -750,7 +750,7 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
       var d = document.getElementById('pinSheet');
       if (!d) return;
       pinCode = code; pinVal = ''; paintPin(''); document.getElementById('pinMsg').textContent = '';
-      window.DaybillSheet ? DaybillSheet.open(d) : d.showModal();
+      DaybillSheet.open(d);
     }
     function paintPin(cls) {
       var dots = document.getElementById('pinDots');

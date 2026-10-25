@@ -44,6 +44,8 @@
 // ---- Sheets: pages and options that slide up from the bottom, like a phone app ----------
 //   <button data-sheet="#id">       opens <dialog class="sheet" id="id"> on this page
 //   <a data-sheet-url="page.php">  opens that page inside a sheet (the page shows without its own bars)
+// The sheets are shown by this code (open attribute + own dark backdrop), not by the browser's
+// dialog.showModal(): that works the same on iPhone/iPad Safari (all versions), Android and PC.
 (function () {
   var inFrame = window.self !== window.top;
   // A page opened inside a sheet that is not a sheet page (e.g. after "Open shop" or a new login): show it full screen.
@@ -51,41 +53,75 @@
     try { window.top.location.href = location.href; } catch (e) {}
     return;
   }
-  if (!window.HTMLDialogElement) return; // very old browser: links/forms keep working as normal pages
 
-  var stack = [], skipPop = 0;
+  var stack = [], skipPop = 0, shade = null, lockY = 0, root = document.documentElement;
+
+  // Dark layer behind the top sheet; tapping it closes that sheet.
+  function paintShade() {
+    if (!shade) {
+      shade = document.createElement('div');
+      shade.className = 'sheet-shade';
+      document.body.appendChild(shade);
+      shade.addEventListener('click', function () { if (stack.length) close(stack[stack.length - 1]); });
+    }
+    var top = stack[stack.length - 1];
+    if (top) shade.style.zIndex = parseInt(top.style.zIndex, 10) - 1;
+    shade.classList.toggle('on', !!top);
+  }
+
+  // The page behind must not scroll (iPhone ignores overflow:hidden on the page).
+  function lock(on) {
+    var b = document.body;
+    if (on && !root.classList.contains('sheet-open')) {
+      lockY = window.scrollY || window.pageYOffset || 0;
+      root.classList.add('sheet-open');
+      b.style.top = -lockY + 'px';
+    } else if (!on && root.classList.contains('sheet-open')) {
+      root.classList.remove('sheet-open');
+      b.style.top = '';
+      window.scrollTo(0, lockY);
+    }
+  }
 
   function open(d) {
-    if (d.open) return;
-    d.showModal();
-    d.classList.remove('out');
-    requestAnimationFrame(function () { d.classList.add('in'); });
+    if (d.hasAttribute('open') && !d.classList.contains('out')) return;
+    wire(d);
+    clearTimeout(d._closing);
+    d.style.zIndex = 1001 + stack.length * 2;
+    d.classList.remove('out', 'in');
+    d.setAttribute('open', '');
+    d.getBoundingClientRect(); // start below the screen, then slide up
+    requestAnimationFrame(function () { requestAnimationFrame(function () { d.classList.add('in'); }); });
     stack.push(d);
-    history.pushState({ sheet: stack.length }, '');
-    document.documentElement.classList.add('sheet-open');
+    paintShade();
+    lock(true);
+    try { history.pushState({ sheet: stack.length }, ''); } catch (e) {}
   }
 
   function close(d, fromBack) {
-    if (!d || !d.open || d.classList.contains('out')) return;
+    if (!d || !d.hasAttribute('open') || d.classList.contains('out')) return;
     d.classList.remove('in'); d.classList.add('out');
     var i = stack.indexOf(d); if (i >= 0) stack.splice(i, 1);
+    paintShade();
     if (!fromBack) { skipPop++; history.back(); }
-    setTimeout(function () {
-      d.close(); d.classList.remove('out'); d.style.transform = '';
-      if (!stack.length) document.documentElement.classList.remove('sheet-open');
+    d._closing = setTimeout(function () {
+      d.removeAttribute('open'); d.classList.remove('out'); d.style.transform = '';
+      if (!stack.length) lock(false);
       d.dispatchEvent(new Event('sheetclosed'));
-    }, 220);
+    }, 260);
   }
 
   window.addEventListener('popstate', function () {
     if (skipPop) { skipPop--; return; }
     if (stack.length) close(stack[stack.length - 1], true);
   });
+  document.addEventListener('keydown', function (e) {
+    if ((e.key === 'Escape' || e.key === 'Esc') && stack.length) { e.preventDefault(); close(stack[stack.length - 1]); }
+  });
 
   function wire(d) {
     if (d._wired) return; d._wired = true;
-    d.addEventListener('cancel', function (e) { e.preventDefault(); close(d); });           // Esc key
-    d.addEventListener('click', function (e) { if (e.target === d) close(d); });           // tap outside
+    d.addEventListener('cancel', function (e) { e.preventDefault(); close(d); });
     d.querySelectorAll('.sheet-x, [data-sheet-close]').forEach(function (b) {
       b.addEventListener('click', function (e) { e.preventDefault(); close(d); });
     });
@@ -109,9 +145,9 @@
       frameSheet = document.createElement('dialog');
       frameSheet.className = 'sheet sheet-frame';
       frameSheet.innerHTML = '<div class="sheet-head"><span class="grip"></span><b class="sheet-title"></b>' +
-        '<button type="button" class="sheet-x" aria-label="Close">✕</button></div><div class="sheet-load"></div><iframe title=""></iframe>';
+        '<button type="button" class="sheet-x" aria-label="Close">✕</button></div><div class="sheet-load"></div>' +
+        '<div class="sheet-frame-box"><iframe title=""></iframe></div>';
       document.body.appendChild(frameSheet);
-      wire(frameSheet);
       var fr = frameSheet.querySelector('iframe');
       fr.addEventListener('load', function () {
         frameSheet.classList.add('loaded');
@@ -136,10 +172,10 @@
     e.preventDefault();
     if (t.dataset.sheetUrl) return openUrl(t.dataset.sheetUrl, t.dataset.sheetTitle || t.textContent.trim());
     var d = document.querySelector(t.dataset.sheet);
-    if (d) { wire(d); open(d); }
+    if (d) open(d);
   });
 
-  window.DaybillSheet = { open: function (d) { wire(d); open(d); }, close: close, openUrl: openUrl };
+  window.DaybillSheet = { open: open, close: close, openUrl: openUrl };
 })();
 
 

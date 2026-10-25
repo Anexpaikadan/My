@@ -238,7 +238,7 @@
     var S = def(edit.size), max = orient(S).max;
     sizeBox.querySelectorAll('.st-size').forEach(function (b) {
       b.classList.toggle('on', b.dataset.id === edit.size);
-      if (b.dataset.id === edit.size && b.scrollIntoView && editor.open) b.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      if (b.dataset.id === edit.size && b.scrollIntoView && editor.hasAttribute('open')) b.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     });
     $('stZoom').value = edit.zoom; $('stBright').value = edit.bright; $('stContrast').value = edit.contrast; $('stSat').value = edit.sat;
     editor.querySelector('[data-t=fit]').classList.toggle('on', edit.fit);
@@ -267,7 +267,7 @@
     requestAnimationFrame(function () { queued = false; drawStage(); });
   }
   function drawStage() {
-    if (!edit || !editor.open) return;
+    if (!edit || !editor.hasAttribute('open')) return;
     var wrap = stage.parentNode, cssW = wrap.clientWidth || 320;
     var cssH = Math.round(Math.max(220, Math.min(window.innerHeight * 0.46, cssW * 1.1)));
     var dpr = window.devicePixelRatio || 1, S = def(edit.size), pad = 30, aspect = S.w / S.h;

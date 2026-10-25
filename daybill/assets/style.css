@@ -105,7 +105,11 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 input[type=checkbox], input[type=radio] { width: 20px; height: 20px; margin: 0; padding: 0; accent-color: var(--primary); flex: none; }
 input[type=color] { height: 48px; padding: 4px; cursor: pointer; }
 input[type=range] { padding: 0; margin: 0; background: transparent; border: 0; accent-color: var(--primary); }
-input[type=file][hidden], .pt-change input[type=file] { display: none !important; }
+/* Hidden photo/file pickers inside buttons: invisible but not display:none, so iPhone Safari opens them */
+input[type=file][hidden], .pt-change input[type=file] { display: block !important; position: absolute !important; width: 1px; height: 1px; margin: 0; padding: 0;
+  opacity: 0; overflow: hidden; clip: rect(0 0 0 0); pointer-events: none; }
+.st-pick, .st-add, .st-tools label { position: relative; }
+[data-sheet], [data-sheet-url] { cursor: pointer; } /* iPhone only sends taps on such elements */
 .fixed { display: block; margin-top: 6px; padding: 12px 14px; border-radius: var(--r-sm); background: var(--soft); color: var(--text); font-weight: 600; }
 .opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0 12px; }
 .opts .wide, .opts .price { grid-column: 1 / -1; }
@@ -330,14 +334,16 @@ button.chip { cursor: pointer; }
 .poster ol { display: inline-block; text-align: start; font-size: 1.1rem; }
 
 /* ---------- sheets (panels sliding up) ---------- */
-dialog.sheet { position: fixed; inset: auto 0 0 0; margin: 0 auto; width: 100%; max-width: 640px; max-height: 92vh; max-height: 92dvh;
+dialog.sheet { position: fixed; inset: auto 0 0 0; z-index: 1001; margin: 0 auto; width: 100%; max-width: 640px; max-height: 92vh; max-height: 92dvh;
   padding: 0; border: 0; border-radius: 24px 24px 0 0; background: var(--bg); color: var(--text); box-shadow: var(--shadow-lg);
   transform: translateY(100%); transition: transform .28s cubic-bezier(.2,.8,.2,1); overflow: hidden; display: none; flex-direction: column; }
 dialog.sheet[open] { display: flex; }
 dialog.sheet.in { transform: translateY(0); }
 dialog.sheet.out { transform: translateY(100%); }
-dialog.sheet::backdrop { background: rgba(10,14,25,.5); opacity: 0; transition: opacity .28s; }
-dialog.sheet.in::backdrop { opacity: 1; }
+/* Dark layer behind the open sheet (made by assets/app.js; works on every browser incl. iPhone Safari) */
+.sheet-shade { position: fixed; inset: 0; z-index: 1000; background: rgba(10,14,25,.5); opacity: 0; visibility: hidden;
+  transition: opacity .26s, visibility 0s .26s; -webkit-tap-highlight-color: transparent; }
+.sheet-shade.on { opacity: 1; visibility: visible; transition: opacity .26s; }
 .sheet-head { position: relative; flex: none; display: flex; align-items: center; justify-content: center; min-height: 58px; padding: 16px 56px 10px;
   background: var(--card); border-bottom: 1px solid var(--line); touch-action: none; }
 .sheet-head b { font-size: 1.05rem; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -345,20 +351,22 @@ dialog.sheet.in::backdrop { opacity: 1; }
 .sheet-x { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 34px; height: 34px; border: 0; border-radius: 50%;
   background: var(--soft); color: var(--muted); font-size: 14px; cursor: pointer; }
 [dir=rtl] .sheet-x { right: auto; left: 12px; }
-.sheet-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 16px 16px calc(22px + env(safe-area-inset-bottom)); }
+.sheet-body { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 16px 16px calc(22px + env(safe-area-inset-bottom)); }
 .sheet-body > .card:last-child { margin-bottom: 0; }
 .sheet-foot { flex: none; display: flex; align-items: center; gap: 12px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
   background: var(--card); border-top: 1px solid var(--line); }
 .sheet-foot .btn.big { flex: 1; }
 .sheet-body:has(+ .sheet-foot:not(.hidden)) { padding-bottom: 18px; }
 .sheet-frame { height: 92vh; height: 92dvh; }
-.sheet-frame iframe { flex: 1; width: 100%; border: 0; background: var(--bg); opacity: 0; transition: opacity .15s; }
+.sheet-frame-box { position: relative; flex: 1; min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch; }
+.sheet-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--bg); opacity: 0; transition: opacity .15s; }
 .sheet-frame.loaded iframe { opacity: 1; }
 .sheet-load { position: absolute; top: 90px; left: 50%; width: 28px; height: 28px; margin-left: -14px; border-radius: 50%;
   border: 3px solid var(--p-200); border-top-color: var(--primary); animation: spin .8s linear infinite; }
 .sheet-frame.loaded .sheet-load { display: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 html.sheet-open, html.sheet-open body { overflow: hidden; }
+html.sheet-open body { position: fixed; left: 0; right: 0; width: 100%; } /* page stays still behind a sheet (iPhone) */
 dialog.sheet.full { max-height: none; height: 100vh; height: 100dvh; border-radius: 0; max-width: 720px; }
 .sheet.dark { background: #22262f; color: #e8ebf2; }
 .sheet.dark .sheet-head { background: #2b303b; border-color: #383e4b; color: #fff; }
