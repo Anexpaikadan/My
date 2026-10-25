@@ -277,21 +277,26 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
       </div>
     </noscript>
 
-    <details class="more">
-      <summary><?= h(t('prices')) ?></summary>
+    <div class="icon-btns">
+      <button type="button" class="btn" data-sheet="#pricesSheet">💰 <?= h(t('prices')) ?></button>
+      <button type="button" class="btn" data-sheet="#meSheet" id="meBtn">👤 <?= h(t('details')) ?></button>
+    </div>
+    <?= sheet_start('pricesSheet', t('prices')) ?>
       <table class="tbl prices">
         <?php foreach ($rules as $p => $byColor): foreach ($byColor as $c => $bySides): foreach ($bySides as $s => $r): ?>
           <tr><td><b><?= h($p) ?></b> · <?= h(t($c)) ?> · <?= h(t($s)) ?></td><td><?= h(rule_text($r)) ?></td></tr>
         <?php endforeach; endforeach; endforeach; ?>
+        <?php foreach ($layoutsJs as $L): if (isset($layoutPrices[$L['id']])): ?>
+          <tr><td><b><?= h($L['name']) ?></b></td><td><?= h(money($layoutPrices[$L['id']])) ?></td></tr>
+        <?php endif; endforeach; ?>
       </table>
-    </details>
-
-    <details class="more">
-      <summary><?= h(t('optional')) ?></summary>
+    <?= sheet_end() ?>
+    <?= sheet_start('meSheet', t('optional')) ?>
       <label><?= h(t('name')) ?><input name="customer_name" maxlength="100" autocomplete="name"></label>
       <label><?= h(t('phone')) ?><input name="phone" maxlength="30" inputmode="tel" autocomplete="tel"></label>
       <label><?= h(t('note')) ?><input name="note" maxlength="500" placeholder="<?= h(t('note_ph')) ?>"></label>
-    </details>
+      <button type="button" class="btn primary block" data-sheet-close><?= h(t('done')) ?></button>
+    <?= sheet_end() ?>
 
     <div id="err" class="alert err hidden"></div>
     <div id="progress" class="progress hidden"><div></div></div>
@@ -302,25 +307,34 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
   <template id="tpl">
     <div class="file">
       <div class="file-head"><span class="fname"></span><button type="button" class="x" aria-label="<?= h(t('remove')) ?>">✕</button></div>
-      <div class="opts">
-        <label><?= h(t('copies')) ?>
-          <span class="stepper"><button type="button" data-step="-1">−</button><input type="number" data-k="copies" value="1" min="1" max="999"><button type="button" data-step="1">+</button></span>
-        </label>
-        <?= choice('paper', 'paper', $papers, false) ?>
-        <?= choice('color', 'colour', $colors, true) ?>
-        <?= choice('sides', 'sides', $sides, true) ?>
-        <?= choice('orientation', 'layout', ['portrait', 'landscape'], true) ?>
-        <label><?= h(t('pages')) ?>
-          <input data-k="page_range" placeholder="<?= h(t('pages_ph')) ?>" inputmode="numeric" pattern="[0-9,\- ]*">
-        </label>
-        <label class="layout-pick wide hidden"><?= h(t('print_layout')) ?>
-          <select data-l="id"><option value=""><?= h(t('layout_normal')) ?></option></select>
-        </label>
-        <label class="pieces-pick hidden"><?= h(t('pieces')) ?>
-          <select data-l="pieces"></select>
-        </label>
-        <div class="price wide muted"></div>
-      </div>
+      <div class="chips"></div>
+      <div class="price muted"></div>
+      <button type="button" class="btn block opt-open">⚙️ <?= h(t('options')) ?></button>
+      <dialog class="sheet file-sheet">
+        <div class="sheet-head"><span class="grip"></span><b class="sheet-fname"></b><button type="button" class="sheet-x" aria-label="Close">✕</button></div>
+        <div class="sheet-body">
+          <div class="opts">
+            <label><?= h(t('copies')) ?>
+              <span class="stepper"><button type="button" data-step="-1">−</button><input type="number" data-k="copies" value="1" min="1" max="999"><button type="button" data-step="1">+</button></span>
+            </label>
+            <?= choice('paper', 'paper', $papers, false) ?>
+            <?= choice('color', 'colour', $colors, true) ?>
+            <?= choice('sides', 'sides', $sides, true) ?>
+            <?= choice('orientation', 'layout', ['portrait', 'landscape'], true) ?>
+            <label><?= h(t('pages')) ?>
+              <input data-k="page_range" placeholder="<?= h(t('pages_ph')) ?>" inputmode="numeric" pattern="[0-9,\- ]*">
+            </label>
+            <label class="layout-pick wide hidden"><?= h(t('print_layout')) ?>
+              <select data-l="id"><option value=""><?= h(t('layout_normal')) ?></option></select>
+            </label>
+            <label class="pieces-pick hidden"><?= h(t('pieces')) ?>
+              <select data-l="pieces"></select>
+            </label>
+          </div>
+          <div class="pay-box sheet-pay"></div>
+          <button type="button" class="btn primary block big" data-sheet-close><?= h(t('done')) ?></button>
+        </div>
+      </dialog>
     </div>
   </template>
 
@@ -335,7 +349,7 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
     var LAYOUTS = <?= json_encode($layoutsJs, JSON_UNESCAPED_UNICODE) ?>, LPRICE = <?= json_encode((object)$layoutPrices) ?>, LDEFS = {};
     LAYOUTS.forEach(function (L) { LDEFS[L.id] = L; });
     var T = <?php $keys = ['err_none', 'err_server', 'err_net', 'estimate', 'estimate_ph', 'pages_count', 'counting',
-                'full_sheet', 'preparing', 'layout_fail', 'sheets_count', 'send'];
+                'full_sheet', 'preparing', 'layout_fail', 'sheets_count', 'send', 'pieces', 'pages'];
                 echo json_encode(array_combine($keys, array_map('t', $keys))); ?>;
     var Terr = { max: <?= json_encode(t('err_max', cfg('max_files'))) ?>, big: <?= json_encode(t('err_big', '%s', cfg('max_file_mb'))) ?> };
     var picker = document.getElementById('picker'), list = document.getElementById('list'),
@@ -346,8 +360,11 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
 
     picker.removeAttribute('name'); // files are sent by JavaScript instead
     picker.addEventListener('change', function () {
-      for (var i = 0; i < picker.files.length; i++) addFile(picker.files[i]);
+      var n = picker.files.length;
+      for (var i = 0; i < n; i++) addFile(picker.files[i]);
       picker.value = '';
+      // One file chosen: show its options right away, like an app.
+      if (n === 1 && items.length && window.DaybillSheet) DaybillSheet.open(items[items.length - 1].node.querySelector('.file-sheet'));
     });
 
     function showErr(m) { err.textContent = m; err.classList.toggle('hidden', !m); }
@@ -415,13 +432,37 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
       it.node.querySelector('[data-k=paper]').addEventListener('change', pieces);
     }
 
+    // Short summary on the card: "2 × · A4 · Black & white · One side · 4 pages on one sheet"
+    function chips(it) {
+      var box = it.node.querySelector('.chips'), parts = [];
+      var copies = Math.max(1, parseInt(val(it.node, 'copies'), 10) || 1);
+      parts.push(copies + ' ×');
+      ['paper', 'color', 'sides'].forEach(function (k) {
+        var el = it.node.querySelector('[data-k=' + k + ']');
+        parts.push(el.tagName === 'SELECT' ? el.selectedOptions[0].textContent : el.parentNode.querySelector('.fixed').textContent);
+      });
+      var ls = it.node.querySelector('[data-l=id]');
+      if (ls.value) {
+        var pc = it.node.querySelector('[data-l=pieces]');
+        parts.push('🗂️ ' + ls.selectedOptions[0].textContent + (LDEFS[ls.value].type === 'size' && pc.value !== '' ? ' · ' + pc.selectedOptions[0].textContent + ' ' + T.pieces : ''));
+      }
+      var pr = val(it.node, 'page_range');
+      if (pr) parts.push(T.pages + ' ' + pr);
+      box.innerHTML = '';
+      parts.forEach(function (t) { var c = document.createElement('span'); c.className = 'chip'; c.textContent = t; box.appendChild(c); });
+    }
+
     function refresh() {
       var sum = 0, known = items.length > 0;
       items.forEach(function (it) {
-        var p = price(it), el = it.node.querySelector('.price');
+        var p = price(it), el = it.node.querySelector('.price'), pay = it.node.querySelector('.sheet-pay');
         el.textContent = it.counting ? T.counting
           : (it.pages ? T.pages_count.replace('%d', it.pages) + ' · ' : '')
             + (p === null ? T.estimate_ph : T.estimate + ': ' + money(p));
+        pay.innerHTML = '';
+        pay.appendChild(document.createTextNode(p === null ? T.estimate_ph : T.estimate));
+        if (p !== null) { var pb = document.createElement('b'); pb.textContent = money(p); pay.appendChild(pb); }
+        chips(it);
         if (p === null) known = false; else sum += p;
       });
       totalEl.innerHTML = '';
@@ -491,7 +532,11 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
       if (file.size > maxMb * 1048576) return showErr(Terr.big.replace('%s', file.name));
       showErr('');
       var node = tpl.content.firstElementChild.cloneNode(true);
-      node.querySelector('.fname').textContent = file.name;
+      node.querySelector('.fname').textContent = '📄 ' + file.name;
+      node.querySelector('.sheet-fname').textContent = file.name;
+      var sheet = node.querySelector('.file-sheet');
+      node.querySelector('.opt-open').onclick = function () { window.DaybillSheet ? DaybillSheet.open(sheet) : sheet.show(); };
+      sheet.addEventListener('sheetclosed', refresh);
       var item = { file: file, node: node, pages: 0 };
       node.querySelector('.x').onclick = function () {
         items.splice(items.indexOf(item), 1); node.remove(); refresh();

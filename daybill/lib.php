@@ -93,10 +93,38 @@ function h($s): string
     return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
 }
 
+// Settings pages can be shown inside a sheet (a panel sliding up, ?sheet=1): no app bars there.
+function in_sheet(): bool
+{
+    return ($_GET['sheet'] ?? '') === '1';
+}
+
+// Hidden field that keeps a GET form inside its sheet.
+function sheet_field(): string
+{
+    return in_sheet() ? '<input type="hidden" name="sheet" value="1">' : '';
+}
+
 function redirect(string $url): void
 {
+    // Stay inside the sheet after saving a settings page.
+    if (in_sheet() && preg_match('/^(admin|account|shops|qr)\.php/', $url)) {
+        $url .= (strpos($url, '?') === false ? '?' : '&') . 'sheet=1';
+    }
     header('Location: ' . $url);
     exit;
+}
+
+// Popup (bottom sheet) on the same page: sheet_start('opt1', 'Options') … sheet_end()
+function sheet_start(string $id, string $title, string $class = ''): string
+{
+    return '<dialog class="sheet ' . h($class) . '" id="' . h($id) . '"><div class="sheet-head"><span class="grip"></span><b>' . h($title)
+        . '</b><button type="button" class="sheet-x" aria-label="Close">✕</button></div><div class="sheet-body">';
+}
+
+function sheet_end(): string
+{
+    return '</div></dialog>';
 }
 
 function base_url(): string
@@ -709,7 +737,8 @@ function page_header(string $title, bool $staff = false, string $lang = 'en', st
     $shop = setting('shop_name', 'Daybill Print');
     $u = $staff ? current_user() : null;
     $rtl = $lang === 'ar';
-    echo '<!doctype html><html lang="' . h($lang) . '" dir="' . ($rtl ? 'rtl' : 'ltr') . '"><head><meta charset="utf-8">'
+    $sheet = in_sheet();
+    echo '<!doctype html><html lang="' . h($lang) . '" dir="' . ($rtl ? 'rtl' : 'ltr') . '"' . ($sheet ? ' class="in-sheet"' : '') . '><head><meta charset="utf-8">'
         . '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'
         . '<title>' . h($title) . ' – ' . h($shop) . '</title>'
         . '<meta name="theme-color" content="#ffffff">'
@@ -720,10 +749,15 @@ function page_header(string $title, bool $staff = false, string $lang = 'en', st
         . '<meta name="mobile-web-app-capable" content="yes">'
         . '<meta name="apple-mobile-web-app-status-bar-style" content="default">'
         . '<meta name="apple-mobile-web-app-title" content="' . h($staff ? 'Print Staff' : $shop) . '">'
-        . '<link rel="stylesheet" href="assets/style.css?v=9">'
+        . '<link rel="stylesheet" href="assets/style.css?v=10">'
         . '<style>' . theme_css() . '</style>'
-        . '<script src="assets/app.js?v=6" defer></script></head>'
-        . '<body class="' . ($u ? 'has-tabs' : '') . '">';
+        . '<script>addEventListener("pagereveal",function(e){var v=e.viewTransition;if(v){v.ready.catch(function(){});v.finished.catch(function(){});}});</script>'
+        . '<script src="assets/app.js?v=8" defer></script></head>'
+        . '<body class="' . ($u && !$sheet ? 'has-tabs' : '') . '">';
+    if ($sheet) { // inside a sheet: the sheet shows the title and the close button
+        echo '<main class="wrap">';
+        return;
+    }
     echo '<header class="top"><div class="wrap">';
     if ($back !== '') {
         echo '<a class="back-btn" href="' . h($back) . '" aria-label="Back">' . ($rtl ? '›' : '‹') . '</a>'
@@ -758,7 +792,7 @@ function page_footer(): void
     global $LAYOUT_STAFF;
     echo '</main>';
     $u = $LAYOUT_STAFF ? current_user() : null;
-    if ($u) {
+    if ($u && !in_sheet()) {
         $page = basename($_SERVER['SCRIPT_NAME'] ?? '');
         $tab = fn(string $href, array $pages, string $icon, string $label) =>
             '<a href="' . $href . '" class="' . (in_array($page, $pages, true) ? 'on' : '') . '"><span>' . $icon . '</span>' . $label . '</a>';

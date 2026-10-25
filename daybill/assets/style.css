@@ -232,3 +232,57 @@ textarea { display: block; width: 100%; margin-top: 4px; padding: 10px 12px; fon
 .relayout summary { cursor: pointer; color: var(--primary); font-weight: 600; }
 .pctool { background: var(--p-50); border: 1px solid var(--p-200); border-radius: var(--radius); padding: 14px; margin: 12px 0; }
 .pctool .btn { margin-bottom: 8px; }
+
+/* ---- v10: app-like sheets (bottom panels) and page transitions ---- */
+dialog.sheet { position: fixed; inset: auto 0 0 0; margin: 0 auto; width: 100%; max-width: 640px; max-height: 92vh; max-height: 92dvh;
+  padding: 0; border: 0; border-radius: 18px 18px 0 0; background: var(--bg); color: var(--text); box-shadow: 0 -8px 30px rgba(0,0,0,.18);
+  transform: translateY(100%); transition: transform .24s cubic-bezier(.2,.8,.2,1); overflow: hidden; display: none; flex-direction: column; }
+dialog.sheet[open] { display: flex; }
+dialog.sheet.in { transform: translateY(0); }
+dialog.sheet.out { transform: translateY(100%); }
+dialog.sheet::backdrop { background: rgba(10,15,30,.45); opacity: 0; transition: opacity .24s; }
+dialog.sheet.in::backdrop { opacity: 1; }
+.sheet-head { position: relative; flex: none; display: flex; align-items: center; justify-content: center; min-height: 54px; padding: 14px 52px 10px;
+  background: #fff; border-bottom: 1px solid var(--line); touch-action: none; }
+.sheet-head b { font-size: 1.05rem; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sheet-head .grip { position: absolute; top: 6px; left: 50%; width: 40px; height: 5px; margin-left: -20px; border-radius: 3px; background: #d3d8e2; }
+.sheet-x { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 34px; height: 34px; border: 0; border-radius: 50%;
+  background: #eef1f6; color: var(--muted); font-size: 15px; cursor: pointer; }
+[dir=rtl] .sheet-x { right: auto; left: 10px; }
+.sheet-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 16px 16px calc(20px + env(safe-area-inset-bottom)); }
+.sheet-body > .card:last-child { margin-bottom: 0; }
+.sheet-frame { height: 92vh; height: 92dvh; }
+.sheet-frame iframe { flex: 1; width: 100%; border: 0; background: var(--bg); opacity: 0; transition: opacity .15s; }
+.sheet-frame.loaded iframe { opacity: 1; }
+.sheet-load { position: absolute; top: 90px; left: 50%; width: 28px; height: 28px; margin-left: -14px; border-radius: 50%;
+  border: 3px solid var(--p-200); border-top-color: var(--primary); animation: spin .8s linear infinite; }
+.sheet-frame.loaded .sheet-load { display: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+html.sheet-open, html.sheet-open body { overflow: hidden; }
+@media (min-width: 700px) { dialog.sheet { bottom: 4vh; border-radius: 18px; max-height: 88vh; } .sheet-frame { height: 88vh; } }
+
+/* Page shown inside a sheet */
+html.in-sheet body { background: var(--bg); }
+html.in-sheet main.wrap { padding-top: 14px; padding-bottom: 30px; }
+
+/* Smooth page changes (Chrome/Edge/Safari 18+); bars stay still */
+@view-transition { navigation: auto; }
+.top { view-transition-name: appbar; }
+.tabbar { view-transition-name: tabbar; }
+::view-transition-old(root) { animation: vt-out .18s ease both; }
+::view-transition-new(root) { animation: vt-in .22s ease both; }
+@keyframes vt-out { to { opacity: 0; transform: translateX(-24px); } }
+@keyframes vt-in { from { opacity: 0; transform: translateX(24px); } }
+@media (prefers-reduced-motion: reduce) { ::view-transition-old(root), ::view-transition-new(root) { animation: none; } dialog.sheet { transition: none; } }
+
+/* Tap feedback like native buttons */
+.btn, .menu-item, .job, .tabbar a, .swatch, .check { -webkit-user-select: none; user-select: none; }
+.btn:active { transform: scale(.97); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 4px; }
+.chip { display: inline-block; padding: 4px 10px; border-radius: 14px; background: var(--p-100); color: var(--p-dark); font-size: .82rem; font-weight: 600; }
+.chip.warn { background: #fdf0dc; color: #8a5a10; }
+.card-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.card-actions .btn { flex: 1 1 auto; }
+.icon-btns { display: flex; gap: 8px; }
+.icon-btns .btn { flex: 1; padding: 12px 8px; }
+.sheet-list { display: grid; gap: 8px; }

@@ -33,6 +33,7 @@ page_header('QR code', true);
   <h2>Upload QR code</h2>
   <p class="muted">Customers scan this to open the upload page. Use your PC's Wi‑Fi/LAN address (e.g. <code>https://192.168.1.10/daybill/</code>), not <code>localhost</code>. Customers' phones must be on the shop Wi‑Fi.</p>
   <form method="get" class="search">
+    <?= sheet_field() ?>
     <input name="url" value="<?= h($url) ?>">
     <button class="btn">Update</button>
   </form>

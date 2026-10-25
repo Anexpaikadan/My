@@ -248,12 +248,30 @@ echo flash();
     <?php if ($gone): ?>
       <p class="muted">File removed from server (older than retention period).</p>
     <?php else: ?>
+      <?php $fid = (int)$f['id']; ?>
+      <div class="chips">
+        <span class="chip"><?= (int)$f['copies'] ?> ×</span><span class="chip"><?= h($f['paper']) ?></span>
+        <span class="chip"><?= h($labels[$f['color']] ?? $f['color']) ?></span><span class="chip"><?= h($labels[$f['sides']] ?? $f['sides']) ?></span>
+        <?php if ($f['page_range'] !== ''): ?><span class="chip">pages <?= h($f['page_range']) ?></span><?php endif; ?>
+        <?php if ($mode !== 'browser'): ?><span class="chip">🖨 <?= h(printer_for($f) ?: 'default printer') ?></span><?php endif; ?>
+        <span class="chip"><?= h(money(file_price($f))) ?></span>
+      </div>
+      <div class="card-actions">
+        <?php if ($mode === 'browser'): ?>
+          <button class="btn primary big" form="f<?= $fid ?>" name="action" value="print" formtarget="_blank" data-reload>🖨 OK – Open &amp; print</button>
+        <?php else: ?>
+          <button class="btn primary big" form="f<?= $fid ?>" name="action" value="print">🖨 OK – Print</button>
+        <?php endif; ?>
+        <button type="button" class="btn big" data-sheet="#opt<?= $fid ?>">⚙️ Options</button>
+        <a class="btn big" href="file.php?id=<?= $fid ?>" target="_blank">👁 Open</a>
+      </div>
+      <?= sheet_start('opt' . $fid, $f['original_name']) ?>
       <div class="actions">
         <a class="btn" href="file.php?id=<?= (int)$f['id'] ?>" target="_blank">👁 Open / preview</a>
         <a class="btn" href="file.php?id=<?= (int)$f['id'] ?>&amp;dl=1">⬇ Download</a>
         <?php if ($f['orig_name'] !== ''): ?><a class="btn" href="file.php?id=<?= (int)$f['id'] ?>&amp;orig=1" target="_blank">📄 Original</a><?php endif; ?>
       </div>
-      <form method="post" class="opts">
+      <form method="post" class="opts" id="f<?= $fid ?>">
         <?= csrf_field() ?>
         <input type="hidden" name="id" value="<?= (int)$job['id'] ?>">
         <input type="hidden" name="file_id" value="<?= (int)$f['id'] ?>">
@@ -316,6 +334,7 @@ echo flash();
           </div>
         </details>
       <?php endif; ?>
+      <?= sheet_end() ?>
     <?php endif; ?>
   </div>
 <?php endforeach; ?>

@@ -5,9 +5,11 @@ require __DIR__ . '/lib.php';
 $user = require_login();
 $admin = in_array($user['role'], ['admin', 'super'], true);
 
-function item(string $href, string $icon, string $label, string $hint = ''): string
+// Settings pages open as a sheet sliding up (the link still works as a normal page without JavaScript).
+function item(string $href, string $icon, string $label, string $hint = '', bool $sheet = true): string
 {
-    return '<a class="menu-item" href="' . h($href) . '"><span class="ic">' . $icon . '</span>'
+    return '<a class="menu-item" href="' . h($href) . '"' . ($sheet ? ' data-sheet-url="' . h($href) . '" data-sheet-title="' . h($label) . '"' : '')
+        . '><span class="ic">' . $icon . '</span>'
         . '<span class="txt"><b>' . h($label) . '</b>' . ($hint !== '' ? '<small>' . h($hint) . '</small>' : '') . '</span>'
         . '<span class="chev">›</span></a>';
 }
@@ -46,7 +48,7 @@ echo flash();
 <h3 class="menu-title">App</h3>
 <div class="menu card">
   <?= item('account.php', '🔑', 'My account', 'Change your password') ?>
-  <?= item('index.php', '📤', 'Customer upload page', 'What customers see after scanning') ?>
+  <?= item(shop() ? shop_url('index.php') : 'index.php', '📤', 'Customer upload page', 'What customers see after scanning', false) ?>
 </div>
 
 <h3 class="menu-title">Install on this device</h3>
