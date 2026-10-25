@@ -58,6 +58,7 @@ function print_file(array $f): string
         throw new RuntimeException('This server cannot print directly (exec disabled). Use print mode "agent" or "browser" in Admin.');
     }
     $printer = printer_for($f);
+    $f['scale'] = print_scale($f);
     print_with_options($f, cfg('upload_dir') . '/' . $f['stored_name'], $f['ext'], $printer, [
         'sumatra' => sumatra_path(),
         'soffice' => (string)cfg('soffice_path'),

@@ -113,21 +113,41 @@ function handle_upload(): array
         }
 
         $ins = $pdo->prepare('INSERT INTO job_files
-            (job_id, original_name, stored_name, ext, size_bytes, pages_total, copies, paper, color, sides, orientation, page_range)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            (job_id, original_name, stored_name, orig_name, orig_ext, ext, size_bytes, pages_total,
+             copies, paper, color, sides, orientation, page_range, layout)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         $opts = $_POST['opt'] ?? [];
+        $prints = $_FILES['print'] ?? null;
         foreach ($accepted as $f) {
             $stored = bin2hex(random_bytes(16)) . '.' . $f['ext'];
             if (!move_uploaded_file($f['tmp'], $dir . '/' . $stored)) {
                 throw new RuntimeException('Could not save file');
             }
             $saved[] = $dir . '/' . $stored;
-            $pages = $f['ext'] === 'pdf' ? pdf_page_count($dir . '/' . $stored)
-                : (in_array($f['ext'], ['jpg', 'jpeg', 'png'], true) ? 1 : 0);
+            $ext = $f['ext'];
+            $origName = $origExt = '';
             $o = clean_options(is_array($opts[$f['i']] ?? null) ? $opts[$f['i']] : []);
-            $ins->execute([$jobId, mb_substr(basename($f['name']), 0, 255), $stored, $f['ext'], $f['size'], $pages,
-                $o['copies'], $o['paper'], $o['color'], $o['sides'], $o['orientation'], $o['page_range']]);
-            $total += auto_price($o + ['pages_total' => $pages]);
+            // Layout (pages per sheet, photo sheet): the browser sent a print-ready PDF as print[i].
+            $layout = clean_layout((string)($opts[$f['i']]['layout'] ?? ''));
+            $ptmp = $prints['tmp_name'][$f['i']] ?? '';
+            if ($layout !== '' && $ptmp !== '' && ($prints['error'][$f['i']] ?? 1) === UPLOAD_ERR_OK
+                && $prints['size'][$f['i']] <= cfg('max_file_mb') * 1048576 * 2
+                && strncmp((string)file_get_contents($ptmp, false, null, 0, 4), '%PDF', 4) === 0) {
+                $printName = bin2hex(random_bytes(16)) . '.pdf';
+                if (!move_uploaded_file($ptmp, $dir . '/' . $printName)) {
+                    throw new RuntimeException('Could not save file');
+                }
+                $saved[] = $dir . '/' . $printName;
+                [$origName, $origExt, $stored, $ext] = [$stored, $f['ext'], $printName, 'pdf'];
+                $o['page_range'] = ''; // already applied in the layout
+            } else {
+                $layout = '';
+            }
+            $pages = $ext === 'pdf' ? pdf_page_count($dir . '/' . $stored)
+                : (in_array($ext, ['jpg', 'jpeg', 'png'], true) ? 1 : 0);
+            $ins->execute([$jobId, mb_substr(basename($f['name']), 0, 255), $stored, $origName, $origExt, $ext, $f['size'], $pages,
+                $o['copies'], $o['paper'], $o['color'], $o['sides'], $o['orientation'], $o['page_range'], $layout]);
+            $total += auto_price($o + ['pages_total' => $pages, 'layout' => $layout]);
             $unknown = $unknown || $pages === 0;
         }
         $pdo->commit();
@@ -176,6 +196,16 @@ foreach ($papers as $p) {
         foreach ($sides as $s) {
             $rules[$p][$c][$s] = price_rule($p, $c, $s);
         }
+    }
+}
+
+// Layouts this shop offers, with names in the customer's language; optional fixed sheet prices.
+$layoutsJs = [];
+$layoutPrices = [];
+foreach (enabled_layouts() as $id => $L) {
+    $layoutsJs[] = $L + ['id' => $id, 'name' => t('L_' . $id) !== 'L_' . $id ? t('L_' . $id) : $L['label']];
+    if (($lp = layout_price($id)) !== null) {
+        $layoutPrices[$id] = $lp;
     }
 }
 
@@ -283,16 +313,29 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
         <label><?= h(t('pages')) ?>
           <input data-k="page_range" placeholder="<?= h(t('pages_ph')) ?>" inputmode="numeric" pattern="[0-9,\- ]*">
         </label>
+        <label class="layout-pick wide hidden"><?= h(t('print_layout')) ?>
+          <select data-l="id"><option value=""><?= h(t('layout_normal')) ?></option></select>
+        </label>
+        <label class="pieces-pick hidden"><?= h(t('pieces')) ?>
+          <select data-l="pieces"></select>
+        </label>
         <div class="price wide muted"></div>
       </div>
     </div>
   </template>
 
+  <?php if ($layoutsJs): ?>
+    <script src="assets/pdf-lib.min.js" defer></script>
+    <script src="assets/layout.js?v=1" defer></script>
+  <?php endif; ?>
   <script>
   (function () {
     var maxFiles = <?= (int)cfg('max_files') ?>, maxMb = <?= (int)cfg('max_file_mb') ?>, SELF = <?= json_encode($self) ?>;
     var rules = <?= json_encode($rules) ?>, currency = <?= json_encode(setting('currency', 'SR')) ?>;
-    var T = <?php $keys = ['err_none', 'err_server', 'err_net', 'estimate', 'estimate_ph', 'pages_count', 'counting'];
+    var LAYOUTS = <?= json_encode($layoutsJs, JSON_UNESCAPED_UNICODE) ?>, LPRICE = <?= json_encode((object)$layoutPrices) ?>, LDEFS = {};
+    LAYOUTS.forEach(function (L) { LDEFS[L.id] = L; });
+    var T = <?php $keys = ['err_none', 'err_server', 'err_net', 'estimate', 'estimate_ph', 'pages_count', 'counting',
+                'full_sheet', 'preparing', 'layout_fail', 'sheets_count', 'send'];
                 echo json_encode(array_combine($keys, array_map('t', $keys))); ?>;
     var Terr = { max: <?= json_encode(t('err_max', cfg('max_files'))) ?>, big: <?= json_encode(t('err_big', '%s', cfg('max_file_mb'))) ?> };
     var picker = document.getElementById('picker'), list = document.getElementById('list'),
@@ -325,12 +368,51 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
       return Math.max(1, Object.keys(pages).length);
     }
 
+    // Layout code of a file: "" (normal), "nup4", "passport:8" …
+    function layoutCode(it) {
+      var id = it.node.querySelector('[data-l=id]').value, L = LDEFS[id];
+      if (!L) return '';
+      return L.type === 'size' ? id + ':' + it.node.querySelector('[data-l=pieces]').value : id;
+    }
+
     function price(it) {
       if (!it.pages) return null;
       var r = ((rules[val(it.node, 'paper')] || {})[val(it.node, 'color')] || {})[val(it.node, 'sides')];
+      var copies = Math.max(1, parseInt(val(it.node, 'copies'), 10) || 1), code = layoutCode(it);
+      var sheets = code ? window.DaybillLayout.sheets(code, LDEFS, it.pages, val(it.node, 'page_range')) : null;
+      if (code && LPRICE[code.split(':')[0]] !== undefined) return sheets * copies * LPRICE[code.split(':')[0]];
       if (!r) return null;
-      var n = selected(it.pages, val(it.node, 'page_range')) * Math.max(1, parseInt(val(it.node, 'copies'), 10) || 1);
+      var n = (code ? sheets : selected(it.pages, val(it.node, 'page_range'))) * copies;
       return r[1] + Math.max(0, n - r[0]) * r[2];
+    }
+
+    // Offers the layouts that fit this file: pages per sheet for PDFs, photo sheets for photos (and PDFs).
+    function setupLayout(it) {
+      var ext = it.file.name.split('.').pop().toLowerCase(), isPdf = ext === 'pdf';
+      var isImg = ['jpg', 'jpeg', 'png'].indexOf(ext) >= 0;
+      var sel = it.node.querySelector('[data-l=id]'), pick = it.node.querySelector('.layout-pick');
+      var pcs = it.node.querySelector('[data-l=pieces]'), pcsPick = it.node.querySelector('.pieces-pick');
+      if (!window.DaybillLayout || !window.PDFLib || !(isPdf || isImg)) return;
+      LAYOUTS.forEach(function (L) {
+        if (L.type === 'nup' && !isPdf) return;
+        var o = document.createElement('option'); o.value = L.id; o.textContent = L.name; sel.appendChild(o);
+      });
+      if (sel.options.length < 2) return;
+      pick.classList.remove('hidden');
+      function pieces() {
+        var L = LDEFS[sel.value];
+        pcsPick.classList.toggle('hidden', !L || L.type !== 'size');
+        if (!L || L.type !== 'size') return;
+        var max = window.DaybillLayout.sizeFit(L.w, L.h, val(it.node, 'paper')).max, keep = pcs.value;
+        pcs.innerHTML = '';
+        [1, 2, 4, 6, 8, 10, 12, 16, 20].filter(function (n) { return n < max; }).concat([0]).forEach(function (n) {
+          var o = document.createElement('option');
+          o.value = n; o.textContent = n ? n : T.full_sheet + ' (' + max + ')'; pcs.appendChild(o);
+        });
+        pcs.value = keep && pcs.querySelector('option[value="' + keep + '"]') ? keep : (max > 8 ? '8' : '0');
+      }
+      sel.addEventListener('change', pieces);
+      it.node.querySelector('[data-k=paper]').addEventListener('change', pieces);
     }
 
     function refresh() {
@@ -425,22 +507,39 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
       node.addEventListener('change', refresh);
       items.push(item);
       list.appendChild(node);
+      setupLayout(item);
       countPages(item);
     }
 
-    form.addEventListener('submit', function (e) {
+    form.addEventListener('submit', async function (e) {
       e.preventDefault();
       if (!items.length) return showErr(T.err_none);
       showErr('');
       var fd = new FormData();
       fd.append('ajax', '1');
       ['customer_name', 'phone', 'note'].forEach(function (n) { fd.append(n, form.elements[n].value); });
-      items.forEach(function (it, i) {
+      btn.disabled = true;
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i], code = layoutCode(it);
         fd.append('files[]', it.file, it.file.name);
         it.node.querySelectorAll('[data-k]').forEach(function (el) {
           fd.append('opt[' + i + '][' + el.dataset.k + ']', el.value);
         });
-      });
+        if (code) {
+          // Build the print-ready sheet(s) on the phone, sent next to the original.
+          btn.textContent = T.preparing;
+          try {
+            var res = await window.DaybillLayout.build(it.file, code, LDEFS, val(it.node, 'paper'), val(it.node, 'page_range'));
+            fd.append('print[' + i + ']', res.blob, 'layout.pdf');
+            fd.append('opt[' + i + '][layout]', code);
+            fd.set('opt[' + i + '][orientation]', res.landscape ? 'landscape' : 'portrait');
+          } catch (x) {
+            btn.disabled = false; btn.textContent = T.send;
+            return showErr(T.layout_fail.replace('%s', it.file.name) + ' (' + x.message + ')');
+          }
+        }
+      }
+      btn.textContent = T.send;
       var xhr = new XMLHttpRequest();
       xhr.open('POST', SELF);
       btn.disabled = true; prog.classList.remove('hidden');

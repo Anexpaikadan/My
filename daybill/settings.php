@@ -35,6 +35,7 @@ echo flash();
     <?= item('admin.php?s=employees', '👥', 'Employees', 'Add staff, passwords, disable') ?>
     <?= item('admin.php?s=options', '📄', 'Customer options', 'Paper sizes, colour, sides: ' . implode(', ', enabled_papers())) ?>
     <?= item('admin.php?s=prices', '💰', 'Prices', 'Price rules in ' . setting('currency', 'SR')) ?>
+    <?= item('admin.php?s=layouts', '🗂️', 'Layouts', count(enabled_layouts()) ? count(enabled_layouts()) . ' on: pages per sheet, photo sheets, passport' : 'Off – pages per sheet, photo sheets, passport') ?>
     <?= item('admin.php?s=printing', '🖨️', 'Printing', $modes[setting('print_mode', 'local')] ?? '') ?>
     <?= item('admin.php?s=shop', '🏪', 'Shop settings', setting('shop_name') . ' · language · file cleanup') ?>
     <?= item('admin.php?s=colors', '🎨', 'App colour', 'Theme colours for customers and staff') ?>

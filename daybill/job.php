@@ -113,6 +113,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ->execute([$user['id'], $id]);
         $verb = $mode === 'agent' ? 'Queued' : 'Printed';
         flash($errors ? "$verb $ok file(s). Problems: " . implode(' | ', $errors) : "$verb $ok file(s).", $errors ? 'err' : 'ok');
+    } elseif ($action === 'relayout') {
+        // Staff changed the layout: the browser sent a new print-ready PDF (or '' = print the original again).
+        $f = load_file($id, (int)($_POST['file_id'] ?? 0));
+        $layout = clean_layout((string)($_POST['layout'] ?? ''));
+        $dir = cfg('upload_dir');
+        $tmp = $_FILES['print']['tmp_name'] ?? '';
+        if ($f && $f['stored_name'] !== '') {
+            if ($layout === '' && $f['orig_name'] !== '') {
+                @unlink($dir . '/' . $f['stored_name']);
+                $pages = $f['orig_ext'] === 'pdf' ? pdf_page_count($dir . '/' . $f['orig_name']) : (int)in_array($f['orig_ext'], ['jpg', 'jpeg', 'png'], true);
+                $pdo->prepare("UPDATE job_files SET stored_name = orig_name, ext = orig_ext, orig_name = '', orig_ext = '', layout = '',
+                               pages_total = ?, orientation = 'portrait', price = NULL WHERE id = ?")->execute([$pages, $f['id']]);
+                flash('Layout removed – the original file will be printed.');
+            } elseif ($layout !== '' && $tmp !== '' && ($_FILES['print']['error'] ?? 1) === UPLOAD_ERR_OK
+                && strncmp((string)file_get_contents($tmp, false, null, 0, 4), '%PDF', 4) === 0) {
+                $new = bin2hex(random_bytes(16)) . '.pdf';
+                move_uploaded_file($tmp, $dir . '/' . $new);
+                if ($f['orig_name'] === '') {
+                    [$origName, $origExt] = [$f['stored_name'], $f['ext']];
+                } else {
+                    [$origName, $origExt] = [$f['orig_name'], $f['orig_ext']];
+                    @unlink($dir . '/' . $f['stored_name']);
+                }
+                $orient = ($_POST['orientation'] ?? '') === 'landscape' ? 'landscape' : 'portrait';
+                $pdo->prepare("UPDATE job_files SET stored_name = ?, ext = 'pdf', orig_name = ?, orig_ext = ?, layout = ?, pages_total = ?,
+                               page_range = '', orientation = ?, price = NULL WHERE id = ?")
+                    ->execute([$new, $origName, $origExt, $layout, pdf_page_count($dir . '/' . $new), $orient, $f['id']]);
+                flash('Layout changed: ' . layout_label($layout) . '.');
+            }
+        }
     } elseif ($action === 'mark_printed') {
         $f = load_file($id, (int)($_POST['file_id'] ?? 0));
         if ($f) {
@@ -209,7 +239,8 @@ echo flash();
     </div>
     <div class="muted">
       <?= strtoupper(h($f['ext'])) ?> · <?= format_bytes((int)$f['size_bytes']) ?>
-      · <?= $f['pages_total'] ? (int)$f['pages_total'] . ' page(s)' : '<b class="warn">pages unknown – check price</b>' ?>
+      · <?= $f['pages_total'] ? (int)$f['pages_total'] . ($f['layout'] !== '' ? ' sheet(s)' : ' page(s)') : '<b class="warn">pages unknown – check price</b>' ?>
+      <?php if ($f['layout'] !== ''): ?><div class="layout-info">🗂️ <?= h(layout_label($f['layout'])) ?></div><?php endif; ?>
       <?php if ($f['printed_at']): ?> · printed <?= h(date('h:i A', strtotime($f['printed_at']))) ?> by <?= h($f['printer_user'] ?? '?') ?><?php endif; ?>
     </div>
     <?php if ($f['last_error'] && $f['status'] === 'failed'): ?><div class="alert err"><?= h($f['last_error']) ?></div><?php endif; ?>
@@ -220,6 +251,7 @@ echo flash();
       <div class="actions">
         <a class="btn" href="file.php?id=<?= (int)$f['id'] ?>" target="_blank">👁 Open / preview</a>
         <a class="btn" href="file.php?id=<?= (int)$f['id'] ?>&amp;dl=1">⬇ Download</a>
+        <?php if ($f['orig_name'] !== ''): ?><a class="btn" href="file.php?id=<?= (int)$f['id'] ?>&amp;orig=1" target="_blank">📄 Original</a><?php endif; ?>
       </div>
       <form method="post" class="opts">
         <?= csrf_field() ?>
@@ -265,6 +297,25 @@ echo flash();
           <?php endif; ?>
         </div>
       </form>
+      <?php $srcExt = $f['orig_name'] !== '' ? $f['orig_ext'] : $f['ext'];
+      if (enabled_layouts() && in_array($srcExt, ['pdf', 'jpg', 'jpeg', 'png'], true)): ?>
+        <details class="relayout" data-file="<?= (int)$f['id'] ?>" data-ext="<?= h($srcExt) ?>"
+                 data-src="file.php?id=<?= (int)$f['id'] ?><?= $f['orig_name'] !== '' ? '&amp;orig=1' : '' ?>">
+          <summary>🗂️ Change layout</summary>
+          <div class="opts">
+            <label class="wide">Layout
+              <select data-l="id">
+                <option value="">Normal – 1 page per sheet</option>
+                <?php foreach (enabled_layouts() as $lid => $L): if ($L['type'] === 'nup' && $srcExt !== 'pdf') continue; ?>
+                  <option value="<?= h($lid) ?>" <?= explode(':', $f['layout'])[0] === $lid ? 'selected' : '' ?>><?= h($L['label']) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </label>
+            <label class="pieces-pick hidden">Pieces<select data-l="pieces" data-current="<?= (int)(explode(':', $f['layout'])[1] ?? 0) ?>"></select></label>
+            <div class="actions wide"><button type="button" class="btn primary" data-apply>Apply layout</button> <span class="muted" data-msg></span></div>
+          </div>
+        </details>
+      <?php endif; ?>
     <?php endif; ?>
   </div>
 <?php endforeach; ?>
@@ -305,6 +356,50 @@ echo flash();
   <?php endif; ?>
 </div>
 
+<?php if (enabled_layouts()): ?>
+<script src="assets/pdf-lib.min.js"></script>
+<script src="assets/layout.js?v=1"></script>
+<script>
+// Staff can change a file's layout: the print-ready PDF is built here in the browser and uploaded.
+(function () {
+  var LDEFS = <?= json_encode((object)enabled_layouts(), JSON_UNESCAPED_UNICODE) ?>;
+  document.querySelectorAll('.relayout').forEach(function (box) {
+    var card = box.closest('.file-card'), sel = box.querySelector('[data-l=id]'), pcs = box.querySelector('[data-l=pieces]');
+    var pcsPick = box.querySelector('.pieces-pick'), msg = box.querySelector('[data-msg]'), btn = box.querySelector('[data-apply]');
+    var paper = function () { return card.querySelector('select[name=paper]').value; };
+    function pieces() {
+      var L = LDEFS[sel.value];
+      pcsPick.classList.toggle('hidden', !L || L.type !== 'size');
+      if (!L || L.type !== 'size') return;
+      var max = DaybillLayout.sizeFit(L.w, L.h, paper()).max, keep = pcs.value || pcs.dataset.current;
+      pcs.innerHTML = '';
+      [1, 2, 4, 6, 8, 10, 12, 16, 20].filter(function (n) { return n < max; }).concat([0]).forEach(function (n) {
+        var o = document.createElement('option'); o.value = n; o.textContent = n ? n : 'Full sheet (' + max + ')'; pcs.appendChild(o);
+      });
+      pcs.value = pcs.querySelector('option[value="' + keep + '"]') ? keep : '0';
+    }
+    sel.addEventListener('change', pieces); pieces();
+    btn.addEventListener('click', async function () {
+      var L = LDEFS[sel.value], code = L ? (L.type === 'size' ? sel.value + ':' + pcs.value : sel.value) : '';
+      var fd = new FormData();
+      fd.append('csrf', <?= json_encode(csrf_token()) ?>); fd.append('id', <?= (int)$job['id'] ?>);
+      fd.append('file_id', box.dataset.file); fd.append('action', 'relayout'); fd.append('layout', code);
+      btn.disabled = true; msg.textContent = code ? 'Preparing…' : 'Saving…';
+      try {
+        if (code) {
+          var blob = await (await fetch(box.dataset.src, { credentials: 'same-origin' })).blob();
+          var file = new File([blob], 'source.' + box.dataset.ext, { type: blob.type });
+          var res = await DaybillLayout.build(file, code, LDEFS, paper(), '');
+          fd.append('print', res.blob, 'layout.pdf'); fd.append('orientation', res.landscape ? 'landscape' : 'portrait');
+        }
+        await fetch('job.php', { method: 'POST', body: fd, credentials: 'same-origin' });
+        location.reload();
+      } catch (e) { btn.disabled = false; msg.textContent = 'Could not make this layout: ' + e.message; }
+    });
+  });
+})();
+</script>
+<?php endif; ?>
 <script>
 document.querySelectorAll('.stepper [data-step]').forEach(function (b) {
   b.onclick = function () {

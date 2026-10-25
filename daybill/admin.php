@@ -6,7 +6,7 @@ require __DIR__ . '/printer.php';
 $admin = require_admin();
 
 $sections = ['employees' => 'Employees', 'options' => 'Customer options', 'prices' => 'Prices',
-    'printing' => 'Printing', 'shop' => 'Shop settings', 'colors' => 'App colour'];
+    'printing' => 'Printing', 'shop' => 'Shop settings', 'colors' => 'App colour', 'layouts' => 'Layouts'];
 $themes = [
     'DAYbill' => ['#360dd9', '#7ed957'], 'Ocean' => ['#1f6feb', '#14b8a6'], 'Emerald' => ['#047857', '#f59e0b'],
     'Royal' => ['#6d28d9', '#ec4899'], 'Rose' => ['#be123c', '#0ea5e9'], 'Sunset' => ['#c2410c', '#2563eb'],
@@ -59,6 +59,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'delete_user' && $ownUser && $uid !== (int)$admin['id']) {
         $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$uid]);
         flash('User deleted.');
+    } elseif ($action === 'layouts') {
+        $lines = [];
+        foreach (preg_split('/\R/', (string)($_POST['layouts_custom'] ?? '')) as $line) {
+            if (trim($line) !== '') {
+                $lines[] = mb_substr(trim($line), 0, 60);
+            }
+        }
+        save_setting('layouts_custom', implode("\n", array_slice($lines, 0, 20)));
+        save_setting('layouts_enabled', implode(',', array_intersect(array_keys(all_layouts()), (array)($_POST['layouts'] ?? []))));
+        $prices = [];
+        foreach ((array)($_POST['lprice'] ?? []) as $id => $v) {
+            $v = trim(str_replace(',', '.', (string)$v));
+            if ($v !== '' && isset(all_layouts()[$id])) {
+                $prices[$id] = max(0, round((float)$v, 2));
+            }
+        }
+        save_setting('layout_prices', json_encode((object)$prices));
+        flash('Layouts saved.');
     } elseif ($action === 'colors') {
         foreach (['color_primary' => 0, 'color_accent' => 1] as $k => $i) {
             $c = strtolower(trim((string)($_POST[$k] ?? '')));
@@ -363,6 +381,33 @@ echo flash();
   paint();
 })();
 </script>
+
+<?php elseif ($sec === 'layouts'): $on = enabled_layouts(); $lp = json_decode(setting('layout_prices', '{}'), true) ?: []; ?>
+<form method="post">
+  <?= csrf_field() ?>
+  <div class="card">
+    <p class="muted">Ticked layouts are offered to customers for each file. The phone arranges the pages or photos
+      into a print-ready PDF, so it prints the same on every printer. Leave the price empty to use the normal page prices
+      (per printed sheet); or enter a fixed price per sheet, e.g. for photo sheets.</p>
+    <?php foreach (['nup' => 'Documents – pages per sheet (PDF files)', 'grid' => 'Photos – same photo several times on a sheet',
+                    'size' => 'Photo sizes – exact size, customer chooses the number of pieces'] as $type => $title): ?>
+      <h3><?= h($title) ?></h3>
+      <?php foreach (all_layouts() as $id => $L): if ($L['type'] !== $type) continue; ?>
+        <div class="layout-row">
+          <label class="check"><input type="checkbox" name="layouts[]" value="<?= h($id) ?>" <?= isset($on[$id]) ? 'checked' : '' ?>> <?= h($L['label']) ?></label>
+          <label class="lprice">Price / sheet (<?= h(setting('currency', 'SR')) ?>)
+            <input name="lprice[<?= h($id) ?>]" inputmode="decimal" value="<?= h(isset($lp[$id]) ? (string)$lp[$id] : '') ?>" placeholder="normal"></label>
+        </div>
+      <?php endforeach; ?>
+    <?php endforeach; ?>
+    <h3>Your own photo sizes</h3>
+    <label>One per line: <code>Name = width x height</code> in millimetres
+      <textarea name="layouts_custom" rows="4" placeholder="Visa photo = 30x40&#10;Stamp size = 25x30"><?= h(setting('layouts_custom')) ?></textarea>
+      <small>After saving, tick the new sizes above to offer them.</small>
+    </label>
+    <div class="actions"><button class="btn primary" name="action" value="layouts">Save layouts</button></div>
+  </div>
+</form>
 
 <?php else: ?>
 <div class="card">

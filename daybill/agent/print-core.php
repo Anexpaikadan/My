@@ -52,7 +52,7 @@ function build_print_command(array $f, string $path, string $printer, array $too
         }
         $settings = [(int)$f['copies'] . 'x', $f['orientation'],
             $f['color'] === 'color' ? 'color' : 'monochrome',
-            $f['sides'] === 'double' ? 'duplexlong' : 'simplex', 'fit'];
+            $f['sides'] === 'double' ? 'duplexlong' : 'simplex', ($f['scale'] ?? 'fit') === 'noscale' ? 'noscale' : 'fit'];
         if (in_array($f['paper'], SUMATRA_PAPERS, true)) {
             $settings[] = 'paper=' . $f['paper'];
         }
@@ -71,7 +71,7 @@ function build_print_command(array $f, string $path, string $printer, array $too
         . ' -o sides=' . ($f['sides'] === 'double' ? 'two-sided-long-edge' : 'one-sided')
         . ($f['orientation'] === 'landscape' ? ' -o landscape' : '')
         . ($f['color'] === 'color' ? '' : ' -o ColorModel=Gray -o print-color-mode=monochrome')
-        . ' -o fit-to-page'
+        . (($f['scale'] ?? 'fit') === 'noscale' ? '' : ' -o fit-to-page')
         . ($f['page_range'] !== '' ? ' -o page-ranges=' . escapeshellarg($f['page_range']) : '')
         . ' ' . escapeshellarg($path);
 }

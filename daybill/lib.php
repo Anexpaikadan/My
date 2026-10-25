@@ -385,6 +385,84 @@ function pages_selected(int $total, string $range): int
     return max(1, count($pages));
 }
 
+// ---- Layouts (Settings → Layouts) -----------------------------------
+// The print-ready PDF is made in the browser by assets/layout.js; these are the choices.
+
+const BUILTIN_LAYOUTS = [
+    'nup2'     => ['type' => 'nup', 'n' => 2, 'label' => '2 pages on one sheet'],
+    'nup4'     => ['type' => 'nup', 'n' => 4, 'label' => '4 pages on one sheet'],
+    'nup8'     => ['type' => 'nup', 'n' => 8, 'label' => '8 pages on one sheet'],
+    'photo2'   => ['type' => 'grid', 'n' => 2, 'label' => '2 photos on one sheet'],
+    'photo4'   => ['type' => 'grid', 'n' => 4, 'label' => '4 photos on one sheet'],
+    'photo8'   => ['type' => 'grid', 'n' => 8, 'label' => '8 photos on one sheet'],
+    'passport' => ['type' => 'size', 'w' => 35, 'h' => 45, 'label' => 'Passport photo 3.5 × 4.5 cm'],
+    'photo4x6' => ['type' => 'size', 'w' => 40, 'h' => 60, 'label' => 'Photo 4 × 6 cm'],
+    'photo5x5' => ['type' => 'size', 'w' => 51, 'h' => 51, 'label' => 'Photo 5 × 5 cm (2 × 2 in)'],
+];
+
+// Built-in layouts plus the shop's own photo sizes ("Visa photo = 30x40", one per line).
+function all_layouts(): array
+{
+    $all = BUILTIN_LAYOUTS;
+    foreach (preg_split('/\R/', setting('layouts_custom', '')) as $line) {
+        if (preg_match('/^\s*(.{1,40}?)\s*=\s*(\d{1,3}(?:\.\d)?)\s*[x×*]\s*(\d{1,3}(?:\.\d)?)\s*$/u', $line, $m)) {
+            $w = (float)$m[2];
+            $h = (float)$m[3];
+            if ($w >= 10 && $h >= 10 && $w <= 280 && $h <= 400) {
+                $id = 'sz' . str_replace('.', '_', $m[2] . 'x' . $m[3]);
+                $all[$id] = ['type' => 'size', 'w' => $w, 'h' => $h, 'label' => $m[1] . ' ' . $m[2] . ' × ' . $m[3] . ' mm'];
+            }
+        }
+    }
+    return $all;
+}
+
+function enabled_layouts(): array
+{
+    $all = all_layouts();
+    return array_intersect_key($all, array_flip(csv_setting('layouts_enabled', '')));
+}
+
+// Validates a layout code ("nup4", "passport:8"); '' = normal printing.
+function clean_layout(string $code): string
+{
+    [$id, $pieces] = array_pad(explode(':', $code, 2), 2, '');
+    $L = enabled_layouts()[$id] ?? null;
+    if (!$L) {
+        return '';
+    }
+    return $L['type'] === 'size' ? $id . ':' . max(0, min(200, (int)$pieces)) : $id;
+}
+
+function layout_def(string $code): ?array
+{
+    return all_layouts()[explode(':', $code)[0]] ?? null;
+}
+
+function layout_label(string $code): string
+{
+    $L = layout_def($code);
+    if (!$L) {
+        return '';
+    }
+    $pieces = (int)(explode(':', $code)[1] ?? 0);
+    return $L['label'] . ($L['type'] === 'size' ? ' – ' . ($pieces ? $pieces . ' pcs' : 'full sheet') : '');
+}
+
+// Exact-size photos must not be shrunk by the printer driver.
+function print_scale(array $f): string
+{
+    return (layout_def((string)($f['layout'] ?? ''))['type'] ?? '') === 'size' ? 'noscale' : 'fit';
+}
+
+// Optional fixed price per sheet for a layout (photo sheets); null = normal page prices.
+function layout_price(string $code): ?float
+{
+    $prices = json_decode(setting('layout_prices', '{}'), true);
+    $v = is_array($prices) ? ($prices[explode(':', $code)[0]] ?? '') : '';
+    return $v === '' || $v === null ? null : max(0, (float)$v);
+}
+
 // ---- Pricing ------------------------------------------------------
 // Each paper/colour/sides combination has a rule:
 //   [first N pages, fixed price for those N pages, price for each extra page]
@@ -416,6 +494,10 @@ function rule_price(array $rule, int $pages): float
 // Price calculated from the rules (ignores a staff override).
 function auto_price(array $f): float
 {
+    $lp = ($f['layout'] ?? '') !== '' ? layout_price((string)$f['layout']) : null;
+    if ($lp !== null) {
+        return round(max(1, (int)$f['pages_total']) * (int)$f['copies'] * $lp, 2);
+    }
     $pages = pages_selected((int)$f['pages_total'], (string)$f['page_range']) * (int)$f['copies'];
     return rule_price(price_rule($f['paper'], $f['color'], $f['sides']), $pages);
 }
@@ -638,7 +720,7 @@ function page_header(string $title, bool $staff = false, string $lang = 'en', st
         . '<meta name="mobile-web-app-capable" content="yes">'
         . '<meta name="apple-mobile-web-app-status-bar-style" content="default">'
         . '<meta name="apple-mobile-web-app-title" content="' . h($staff ? 'Print Staff' : $shop) . '">'
-        . '<link rel="stylesheet" href="assets/style.css?v=8">'
+        . '<link rel="stylesheet" href="assets/style.css?v=9">'
         . '<style>' . theme_css() . '</style>'
         . '<script src="assets/app.js?v=6" defer></script></head>'
         . '<body class="' . ($u ? 'has-tabs' : '') . '">';

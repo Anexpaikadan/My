@@ -222,3 +222,11 @@ input[type=color] { height: 46px; padding: 4px; cursor: pointer; }
 .shop-card details { margin-top: 6px; }
 .shop-card summary { cursor: pointer; color: var(--primary); font-weight: 600; }
 .small-link { font-size: .78rem; word-break: break-all; }
+.layout-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.layout-row .check { flex: 1 1 240px; border: 0; padding: 4px 0; }
+.layout-row .lprice { flex: 0 1 170px; margin: 0; font-size: .8rem; }
+.layout-row .lprice input { padding: 6px 8px; }
+textarea { display: block; width: 100%; margin-top: 4px; padding: 10px 12px; font: inherit; border: 1px solid var(--line); border-radius: 8px; }
+.layout-info { color: var(--p-dark); font-weight: 600; }
+.relayout { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.relayout summary { cursor: pointer; color: var(--primary); font-weight: 600; }

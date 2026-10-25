@@ -63,6 +63,7 @@ if ($action === 'next') {
                     'id' => (int)$f['id'], 'name' => $f['original_name'], 'ext' => $f['ext'],
                     'copies' => (int)$f['copies'], 'paper' => $f['paper'], 'color' => $f['color'], 'sides' => $f['sides'],
                     'orientation' => $f['orientation'], 'page_range' => $f['page_range'], 'printer' => printer_for($f),
+                    'scale' => print_scale($f),
                 ]]);
             }
         }
