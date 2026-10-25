@@ -960,7 +960,8 @@ function page_header(string $title, bool $staff = false, string $lang = 'en', st
         echo '<a class="back-btn" href="' . h($back) . '" aria-label="Back">' . icon('back') . '</a>'
             . '<span class="title">' . h($title) . '</span>';
     } else {
-        echo '<a class="brand" href="' . ($staff ? 'staff.php' : 'index.php') . '">'
+        // Customer pages: the app name opens the staff login (logged-in staff go straight to their orders).
+        echo '<a class="brand" href="' . ($staff ? 'staff.php' : 'login.php') . '"' . ($staff ? '' : ' title="Staff login"') . '>'
             . '<img class="logo" src="assets/logo.png" alt="' . h($shop) . '" width="120" height="38"></a>';
     }
     if (!$staff && basename($_SERVER['SCRIPT_NAME'] ?? '') === 'index.php') {
