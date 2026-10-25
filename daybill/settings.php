@@ -37,7 +37,7 @@ echo flash();
     <?= item('admin.php?s=employees', '👥', 'Employees', 'Add staff, passwords, disable') ?>
     <?= item('admin.php?s=options', '📄', 'Customer options', 'Paper sizes, colour, sides: ' . implode(', ', enabled_papers())) ?>
     <?= item('admin.php?s=prices', '💰', 'Prices', 'Price rules in ' . setting('currency', 'SR')) ?>
-    <?= item('admin.php?s=verify', '🔐', 'Order check', ['staff' => 'Staff check before printing', 'pin' => 'Customer PIN – staff enter it to print',
+    <?= item('admin.php?s=verify', '🔐', 'Order check', ['staff' => 'Staff check before printing', 'pin' => 'Shop PIN – employee approves each order',
         'auto' => 'No check – uploads print at once'][verify_mode()]) ?>
     <?= item('admin.php?s=photo', '📷', 'Photo print', !photo_allowed() ? 'Not allowed for this shop (super admin)'
         : (photo_enabled() ? 'On · ' . photo_paper() . ' · ' . count(photo_sizes()) . ' size(s)' : 'Off – passport and photo sizes for customers')) ?>

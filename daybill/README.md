@@ -79,7 +79,7 @@ Settings → **🔐 Order check** – how an upload reaches the printer:
 | Mode | What happens |
 |---|---|
 | 👤 **Staff check** (standard) | The order waits until an employee opens it and presses Print. |
-| 🔐 **Customer PIN** | After uploading, the customer's phone shows a **4-digit PIN** next to the order code. The order is locked 🔒 in the staff list; the employee types the customer's PIN to unlock it, then prints. 5 wrong tries lock the PIN; an admin can unlock without PIN. |
+| 🔐 **Shop PIN** | The shop admin sets **one 4-digit shop PIN** (only admins can change it; stored encrypted). After uploading, the customer's phone shows a PIN keypad; the employee types the shop PIN on the phone → the order is approved and prints. Without it the order stays locked 🔒; staff can also approve it on the order page with the shop PIN. Wrong tries are limited (10 per phone / 30 per shop in 15 minutes); an admin can unlock without PIN. |
 | ⚡ **No check** | Uploads print immediately (print agent or local printing) and complete themselves. Anyone with the QR link can print. |
 
 ## Photo print tool

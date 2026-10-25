@@ -71,8 +71,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         flash(photo_enabled() ? 'Photo print is ON for customers.' : 'Photo print saved (off for customers – tick "on" and at least one size).');
     } elseif ($action === 'verify') {
         $m = (string)($_POST['verify_mode'] ?? '');
-        save_setting('verify_mode', in_array($m, VERIFY_MODES, true) ? $m : 'staff');
-        flash('Order check saved.');
+        $m = in_array($m, VERIFY_MODES, true) ? $m : 'staff';
+        $new = trim((string)($_POST['shop_pin'] ?? ''));
+        if ($new !== '') { // set / change the shop PIN (shop admin only)
+            if (!preg_match('/^\d{4}$/', $new) || $new !== trim((string)($_POST['shop_pin2'] ?? ''))) {
+                flash('The PIN must be 4 digits, typed the same twice.', 'err');
+                redirect('admin.php?s=verify');
+            }
+            save_setting('shop_pin_hash', password_hash($new, PASSWORD_DEFAULT));
+            save_setting('shop_pin_changed', date('Y-m-d H:i'));
+            save_setting('pin_fails', '');
+        }
+        if ($m === 'pin' && !shop_pin_set()) {
+            flash('Set a 4-digit shop PIN first.', 'err');
+            redirect('admin.php?s=verify');
+        }
+        save_setting('verify_mode', $m);
+        flash('Order check saved.' . ($new !== '' ? ' New shop PIN is active.' : ''));
     } elseif ($action === 'layouts') {
         $lines = [];
         foreach (preg_split('/\R/', (string)($_POST['layouts_custom'] ?? '')) as $line) {
@@ -460,7 +475,7 @@ echo flash();
   <p class="muted">How an uploaded order gets to the printer.</p>
   <?php foreach ([
       'staff' => ['👤', 'Staff check', 'The order waits until an employee opens it, checks it and presses Print. (Standard)'],
-      'pin'   => ['🔐', 'Customer PIN', 'After uploading, the customer\'s phone shows a 4-digit PIN. The order is locked 🔒 until an employee types that PIN – so only the customer at the counter gets the prints.'],
+      'pin'   => ['🔐', 'Shop PIN', 'After uploading, the customer\'s phone shows a PIN keypad. An employee types the shop PIN on the phone (or on the order page) – then the order prints. Without the PIN it stays locked 🔒.'],
       'auto'  => ['⚡', 'No check – print at once', 'Uploads are printed immediately, without staff. Anyone with the QR link can print – use only where that is OK.'],
   ] as $k => [$ic, $title, $text]): ?>
     <label class="mode-card<?= $vm === $k ? ' on' : '' ?>">
@@ -468,8 +483,17 @@ echo flash();
       <span class="mc-ic"><?= $ic ?></span><span><b><?= h($title) ?></b><small><?= h($text) ?></small></span>
     </label>
   <?php endforeach; ?>
+  <div class="card">
+    <h3>🔐 Shop PIN</h3>
+    <p class="muted"><?= shop_pin_set() ? '✅ A shop PIN is set (changed ' . h(setting('shop_pin_changed', '–')) . '). Enter a new one to change it.'
+        : 'No shop PIN yet – set one to use "Shop PIN".' ?> Only shop admins can change it; tell it to your employees.</p>
+    <div class="opts">
+      <label>New PIN (4 digits)<input name="shop_pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="new-password"></label>
+      <label>Repeat new PIN<input name="shop_pin2" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="new-password"></label>
+    </div>
+  </div>
   <?php if (setting('print_mode', 'local') === 'browser'): ?>
-    <div class="alert err">Print mode is "Browser": orders cannot print by themselves, so "No check" works like "Staff check".</div>
+    <div class="alert err">Print mode is "Browser": orders cannot print by themselves – after the PIN, staff press Print.</div>
   <?php endif; ?>
   <div class="actions"><button class="btn primary block" name="action" value="verify">Save</button></div>
 </form>

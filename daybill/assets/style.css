@@ -370,3 +370,19 @@ dialog.sheet.full { max-height: none; height: 100vh; height: 100dvh; border-radi
 .mode-card .mc-ic { font-size: 1.6rem; }
 .mode-card small { display: block; color: var(--muted); margin-top: 3px; line-height: 1.4; }
 .pin-box b, .bigcode, .pin-inputs input { direction: ltr; unicode-bidi: isolate; }
+
+/* ---- v14: shop PIN keypad ---- */
+.pin-pad { text-align: center; }
+.pin-dots { display: flex; justify-content: center; gap: 16px; margin: 14px 0 6px; }
+.pin-dots i { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--primary); transition: background .1s; }
+.pin-dots i.on { background: var(--primary); }
+.pin-dots.ok i { background: var(--ok); border-color: var(--ok); }
+.pin-dots.bad { animation: shake .35s; }
+.pin-dots.bad i { border-color: var(--danger); }
+@keyframes shake { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+.pin-msg { min-height: 1.4em; color: var(--danger); font-weight: 600; margin: 4px 0 10px; }
+.keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 300px; margin: 0 auto; }
+.keys button { height: 62px; border: 0; border-radius: 14px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.12); font: 600 1.6rem system-ui, sans-serif; color: var(--text); cursor: pointer; }
+.keys button:active { background: var(--p-100); }
+.keys .k-later { font-size: .95rem; color: var(--muted); background: transparent; box-shadow: none; }
+#donePin .btn { margin-top: 10px; }

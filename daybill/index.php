@@ -84,8 +84,8 @@ function handle_upload(): array
     }
 
     $pdo = db();
-    // Order check "pin": the customer gets a 4-digit PIN that staff must type before printing.
-    $pin = verify_mode() === 'pin' ? str_pad((string)random_int(0, 9999), 4, '0', STR_PAD_LEFT) : '';
+    // Order check "pin": the order stays locked until an employee enters the shop PIN.
+    $needPin = verify_mode() === 'pin';
     $pdo->beginTransaction();
     $saved = [];
     $total = 0.0;
@@ -102,8 +102,8 @@ function handle_upload(): array
                     mb_substr(trim((string)($_POST['customer_name'] ?? '')), 0, 100),
                     mb_substr(trim((string)($_POST['phone'] ?? '')), 0, 30),
                     mb_substr(trim((string)($_POST['note'] ?? '')), 0, 500),
-                    $pin,
-                    $pin === '' ? 1 : 0,
+                    '',
+                    $needPin ? 0 : 1,
                 ]);
                 $jobId = (int)$pdo->lastInsertId();
             } catch (PDOException $e) {
@@ -183,7 +183,10 @@ function handle_upload(): array
     if (verify_mode() === 'auto') {
         auto_print_job($jobId); // no check: print straight away
     }
-    return ['ok' => true, 'code' => $code, 'files' => count($accepted), 'pin' => $pin,
+    if ($needPin) {
+        $_SESSION['my_jobs'][] = $jobId; // this phone may ask for approval of this order
+    }
+    return ['ok' => true, 'code' => $code, 'files' => count($accepted), 'need_pin' => $needPin,
         'auto' => verify_mode() === 'auto' && setting('print_mode', 'local') !== 'browser',
         'price' => $unknown ? '' : money($total)];
 }
@@ -198,6 +201,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['ajax'] ?? '') === 'count')
         && strncmp((string)file_get_contents($tmp, false, null, 0, 4), '%PDF', 4) === 0;
     header('Content-Type: application/json');
     echo json_encode(['pages' => $ok ? pdf_page_count($tmp) : 0]);
+    exit;
+}
+
+// Shop PIN typed on the customer's phone by an employee: approves the order, which then prints.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['ajax'] ?? '') === 'verify') {
+    header('Content-Type: application/json');
+    $st = db()->prepare('SELECT id, verified FROM jobs WHERE code = ? AND shop_id = ?');
+    $st->execute([(string)($_POST['code'] ?? ''), shop_id()]);
+    $job = $st->fetch();
+    if (!$job || !in_array((int)$job['id'], array_map('intval', $_SESSION['my_jobs'] ?? []), true)) {
+        echo json_encode(['ok' => false, 'error' => t('err_server')]);
+        exit;
+    }
+    if ($job['verified']) {
+        echo json_encode(['ok' => true]);
+        exit;
+    }
+    $r = check_shop_pin((string)($_POST['pin'] ?? ''));
+    if ($r === 'ok') {
+        approve_job((int)$job['id']);
+        echo json_encode(['ok' => true, 'auto' => setting('print_mode', 'local') !== 'browser']);
+    } else {
+        echo json_encode(['ok' => false, 'error' => t($r === 'locked' ? 'pin_locked' : 'pin_wrong')]);
+    }
     exit;
 }
 
@@ -279,8 +306,8 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
     <h1><?= h(t('sent')) ?></h1>
     <p><?= h(t('show_code')) ?></p>
     <div class="bigcode"><?= h($result['code']) ?></div>
-    <?php if ($result['pin'] !== ''): ?>
-      <div class="pin-box"><span><?= h(t('pin_title')) ?></span><b><?= h($result['pin']) ?></b><small><?= h(t('pin_tell')) ?></small></div>
+    <?php if ($result['need_pin']): ?>
+      <div class="alert info">🔒 <?= h(t('pin_wait')) ?></div>
     <?php elseif ($result['auto']): ?>
       <div class="alert ok">🖨 <?= h(t('auto_printing')) ?></div>
     <?php endif; ?>
@@ -295,12 +322,30 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
     <h1><?= h(t('sent')) ?></h1>
     <p><?= h(t('show_code')) ?></p>
     <div class="bigcode" id="doneCode"></div>
-    <div class="pin-box hidden" id="donePin"><span><?= h(t('pin_title')) ?></span><b></b><small><?= h(t('pin_tell')) ?></small></div>
+    <div class="alert info hidden" id="donePin">🔒 <?= h(t('pin_wait')) ?>
+      <button type="button" class="btn primary block" id="pinAgain">🔐 <?= h(t('pin_enter_btn')) ?></button></div>
     <div class="alert ok hidden" id="doneAuto">🖨 <?= h(t('auto_printing')) ?></div>
     <p id="donePrice" class="pay-box"></p>
     <p class="muted"><?= h(t('final_note')) ?></p>
     <a class="btn block" href="<?= h($self) ?>"><?= h(t('send_more')) ?></a>
   </div>
+
+  <?php if (verify_mode() === 'pin'): ?>
+  <dialog class="sheet" id="pinSheet">
+    <div class="sheet-head"><span class="grip"></span><b>🔐 <?= h(t('pin_title')) ?></b><button type="button" class="sheet-x" aria-label="Close">✕</button></div>
+    <div class="sheet-body pin-pad">
+      <p class="center"><?= h(t('pin_tell')) ?></p>
+      <div class="pin-dots" id="pinDots"><i></i><i></i><i></i><i></i></div>
+      <p class="pin-msg" id="pinMsg"></p>
+      <div class="keys">
+        <?php foreach ([1, 2, 3, 4, 5, 6, 7, 8, 9] as $k): ?><button type="button" data-key="<?= $k ?>"><?= $k ?></button><?php endforeach; ?>
+        <button type="button" data-sheet-close class="k-later"><?= h(t('pin_later')) ?></button>
+        <button type="button" data-key="0">0</button>
+        <button type="button" data-key="del" aria-label="Delete">⌫</button>
+      </div>
+    </div>
+  </dialog>
+  <?php endif; ?>
 
   <form id="upForm" method="post" enctype="multipart/form-data" class="card">
     <h1><?= h(t('title')) ?></h1>
@@ -682,6 +727,47 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
       countPages(item);
     }
 
+    // ---- Shop PIN keypad (order check "pin"): an employee types the shop PIN on this phone ----
+    var pinCode = '', pinVal = '';
+    function openPin(code) {
+      var d = document.getElementById('pinSheet');
+      if (!d) return;
+      pinCode = code; pinVal = ''; paintPin(''); document.getElementById('pinMsg').textContent = '';
+      window.DaybillSheet ? DaybillSheet.open(d) : d.showModal();
+    }
+    function paintPin(cls) {
+      var dots = document.getElementById('pinDots');
+      dots.className = 'pin-dots ' + cls;
+      dots.querySelectorAll('i').forEach(function (i, n) { i.classList.toggle('on', n < pinVal.length); });
+    }
+    if (document.getElementById('pinSheet')) {
+      document.querySelectorAll('#pinSheet [data-key]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          if (b.dataset.key === 'del') pinVal = pinVal.slice(0, -1);
+          else if (pinVal.length < 4) pinVal += b.dataset.key;
+          paintPin('');
+          if (pinVal.length === 4) sendPin();
+        });
+      });
+      document.getElementById('pinAgain').addEventListener('click', function () { openPin(pinCode); });
+    }
+    function sendPin() {
+      var fd = new FormData(); fd.append('ajax', 'verify'); fd.append('code', pinCode); fd.append('pin', pinVal);
+      fetch(SELF, { method: 'POST', body: fd, credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (r) {
+        if (r.ok) {
+          paintPin('ok');
+          setTimeout(function () {
+            DaybillSheet.close(document.getElementById('pinSheet'));
+            document.getElementById('donePin').classList.add('hidden');
+            document.getElementById('doneAuto').classList.toggle('hidden', !r.auto);
+          }, 500);
+        } else {
+          paintPin('bad'); document.getElementById('pinMsg').textContent = r.error;
+          setTimeout(function () { pinVal = ''; paintPin(''); }, 600);
+        }
+      }).catch(function () { document.getElementById('pinMsg').textContent = T.err_net; pinVal = ''; paintPin(''); });
+    }
+
     // Used by assets/photo-tool.js
     window.DaybillOrder = { items: items, list: list, refresh: refresh, showErr: showErr, money: money,
       maxFiles: maxFiles, maxMb: maxMb, PHOTO: PHOTO, PDEFS: PDEFS, photoPrice: photoPrice,
@@ -745,8 +831,8 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
         if (!r.ok) return showErr(r.error);
         form.classList.add('hidden');
         document.getElementById('doneCode').textContent = r.code;
-        var dpin = document.getElementById('donePin');
-        if (r.pin) { dpin.querySelector('b').textContent = r.pin; dpin.classList.remove('hidden'); }
+        document.getElementById('donePin').classList.toggle('hidden', !r.need_pin);
+        if (r.need_pin) openPin(r.code);
         document.getElementById('doneAuto').classList.toggle('hidden', !r.auto);
         var dp = document.getElementById('donePrice');
         dp.textContent = r.price ? T.estimate : T.estimate_ph;

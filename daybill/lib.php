@@ -453,14 +453,50 @@ const PHOTO_PAPERS = ['A4', 'A5', 'A6', 'Letter', '10x15 cm', '13x18 cm'];
 
 // ---- Order check (Settings → Order check) ---------------------------
 //   staff – staff open the order and press Print (default)
-//   pin   – the customer gets a 4-digit PIN; staff must type it before the order can be printed
+//   pin   – the shop has ONE 4-digit PIN (set by the shop admin); an employee types it on the customer's
+//           phone (or on the order page) to approve each order, which then prints
 //   auto  – no check: uploads are printed straight away
 const VERIFY_MODES = ['staff', 'pin', 'auto'];
 
 function verify_mode(): string
 {
     $m = setting('verify_mode', 'staff');
+    if ($m === 'pin' && !shop_pin_set()) {
+        return 'staff'; // PIN mode needs a shop PIN first
+    }
     return in_array($m, VERIFY_MODES, true) ? $m : 'staff';
+}
+
+function shop_pin_set(): bool
+{
+    return setting('shop_pin_hash', '') !== '';
+}
+
+// Checks the shop PIN. Wrong tries are limited per browser session (10 per 15 minutes)
+// and per shop (30 per 15 minutes) so the PIN cannot be guessed. Returns 'ok', 'wrong' or 'locked'.
+function check_shop_pin(string $pin): string
+{
+    $now = time();
+    $sess = array_filter($_SESSION['pin_fails'] ?? [], fn($t) => $t > $now - 900);
+    $shopFails = array_filter(array_map('intval', explode(',', setting('pin_fails', ''))), fn($t) => $t > $now - 900);
+    if (count($sess) >= 10 || count($shopFails) >= 30) {
+        return 'locked';
+    }
+    if (preg_match('/^\d{4}$/', $pin) && password_verify($pin, setting('shop_pin_hash', ''))) {
+        return 'ok';
+    }
+    $sess[] = $now;
+    $shopFails[] = $now;
+    $_SESSION['pin_fails'] = array_values($sess);
+    save_setting('pin_fails', implode(',', array_slice($shopFails, -40)));
+    return 'wrong';
+}
+
+// Approves an order (shop PIN correct): unlocked and printed straight away where possible.
+function approve_job(int $jobId, ?int $userId = null): void
+{
+    db()->prepare('UPDATE jobs SET verified = 1, handled_by = COALESCE(?, handled_by) WHERE id = ?')->execute([$userId, $jobId]);
+    auto_print_job($jobId);
 }
 
 // Sends every file of an order to the printer without staff (verify mode "auto").
@@ -867,7 +903,7 @@ function page_header(string $title, bool $staff = false, string $lang = 'en', st
         . '<meta name="mobile-web-app-capable" content="yes">'
         . '<meta name="apple-mobile-web-app-status-bar-style" content="default">'
         . '<meta name="apple-mobile-web-app-title" content="' . h($staff ? 'Print Staff' : $shop) . '">'
-        . '<link rel="stylesheet" href="assets/style.css?v=13">'
+        . '<link rel="stylesheet" href="assets/style.css?v=14">'
         . '<style>' . theme_css() . '</style>'
         . '<script>addEventListener("pagereveal",function(e){var v=e.viewTransition;if(v){v.ready.catch(function(){});v.finished.catch(function(){});}});</script>'
         . '<script src="assets/app.js?v=8" defer></script></head>'
