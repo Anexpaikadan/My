@@ -2,7 +2,8 @@
 REM Starts the Daybill print agent. Put a shortcut to this file in shell:startup to run it at login.
 title Daybill print agent
 cd /d "%~dp0"
-set "PHP=C:\xampp\php\php.exe"
+set "PHP=%~dp0php\php.exe"
+if not exist "%PHP%" set "PHP=C:\xampp\php\php.exe"
 if not exist "%PHP%" set "PHP=php"
 "%PHP%" -v >nul 2>&1
 if errorlevel 1 (

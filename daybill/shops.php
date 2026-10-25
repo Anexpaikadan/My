@@ -110,6 +110,7 @@ echo flash();
     <div class="actions">
       <form method="post"><?= csrf_field() ?><input type="hidden" name="shop" value="<?= (int)$s['id'] ?>">
         <button class="btn primary" name="action" value="open">Open shop</button></form>
+      <a class="btn" href="pctool.php?shop=<?= (int)$s['id'] ?>" title="One file that sets up this shop's PC for printing">⬇ PC tool</a>
       <form method="post"><?= csrf_field() ?><input type="hidden" name="shop" value="<?= (int)$s['id'] ?>">
         <button class="btn" name="action" value="toggle_shop"><?= $s['active'] ? 'Disable' : 'Enable' ?></button></form>
     </div>

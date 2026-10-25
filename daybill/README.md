@@ -47,6 +47,48 @@ language is set in Settings → Shop settings.
 
 ---
 
+## Multiple shops, super admin and the one-file PC tool
+
+**Roles**
+
+| Role | Can do |
+|---|---|
+| **Super admin** | Everything in every shop: Settings → **Shops** – create shops (each with its own admin), open/rename/disable shops, add super admins, reset passwords, download any shop's PC tool. The 🏬 chip at the top shows and changes the shop you work in. |
+| **Shop admin** | Their own shop: orders, employees, prices, layouts, printing, QR code, colours. |
+| **Employee** | Their shop's orders and printing; change own password (Settings → My account). |
+
+The person who runs `install.php` becomes the first super admin. When upgrading from an older version, the first
+admin becomes super admin and the existing shop becomes shop 1 (link name `main`).
+
+**Customer links:** each shop has its own upload page `https://your-site/…/index.php?shop=<link name>`; its QR code
+(QR code tab) already contains it. With several shops and no link name, customers see a list of shops.
+
+**PC tool (one file per shop):** Settings → Printing → **⬇ Download PC tool** (or ⬇ PC tool on the Shops page).
+Copy `DAYbill-PC-Setup-<shop>.bat` to the shop PC (Windows 10/11) and double-click it. It:
+1. writes the print agent with this shop's website address and key to `C:\DAYbill-Agent`,
+2. downloads PHP (portable, only for the agent; installs the Microsoft VC++ runtime if missing), SumatraPDF and the certificate list,
+3. tests the connection, starts the agent hidden and adds it to Windows start.
+
+Run it again any time to update or repair. If Windows SmartScreen says "Windows protected your PC", click
+**More info → Run anyway**. Only shop admins / super admins can download it, because it contains the shop's agent key.
+
+## Print layouts
+
+Settings → **Layouts** (per shop, each one on/off):
+
+| Layout | What the customer gets |
+|---|---|
+| 2 / 4 / 8 pages on one sheet | PDF pages side by side (8 = landscape 4 × 2) |
+| 2 / 4 / 8 photos on one sheet | the same photo repeated, cropped to fill, rotated when it fits better |
+| Passport 3.5 × 4.5 cm, 4 × 6 cm, 5 × 5 cm, own sizes | exact-size photos, customer chooses 1–20 pieces or a full sheet, thin cutting lines |
+
+Own sizes: one per line, `Name = width x height` in mm (e.g. `Visa photo = 30x40`), then tick them.
+Price: normal page prices per printed sheet, or a fixed price per sheet for each layout.
+The customer's phone builds a print-ready PDF (pdf-lib, bundled); the original file is kept and staff can change the
+layout on the order page (🗂️ Change layout). Exact-size photos are printed without scaling.
+New shops start with 2 and 4 pages per sheet, 4 photos and passport photos switched on; upgraded shops start with
+all layouts off.
+
 ## 1. Install on XAMPP (Windows)
 
 1. Install [XAMPP](https://www.apachefriends.org/) and start **Apache** and **MySQL** from the XAMPP Control Panel.
@@ -214,6 +256,9 @@ their own password), Install app and Log out.
 | `job.php` | Order details: preview, change options, print, complete |
 | `file.php` | Secure file preview/download (staff only) |
 | `settings.php` | Settings menu |
+| `shops.php` | Shops and super admins (super admin only) |
+| `pctool.php` | One-file PC setup for a shop |
+| `assets/layout.js`, `assets/pdf-lib.min.js` | Print layouts (pdf-lib, MIT licence) |
 | `admin.php` | Settings pages: `?s=employees`, `options`, `prices`, `printing`, `shop` (admin only) |
 | `account.php` | Change your own password |
 | `manifest.php`, `sw.js`, `offline.html`, `assets/app.js`, `assets/icons/` | Installable app (PWA) |

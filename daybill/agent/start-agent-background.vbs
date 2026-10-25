@@ -5,7 +5,8 @@ Dim sh, fso, dir, php
 Set sh = CreateObject("WScript.Shell")
 Set fso = CreateObject("Scripting.FileSystemObject")
 dir = fso.GetParentFolderName(WScript.ScriptFullName)
-php = "C:\xampp\php\php.exe"
+php = dir & "\php\php.exe"
+If Not fso.FileExists(php) Then php = "C:\xampp\php\php.exe"
 If Not fso.FileExists(php) Then php = "php"
 sh.CurrentDirectory = dir
 Do

@@ -43,5 +43,5 @@ return [
 
     // Set to true to only log print commands instead of running them
     // (useful for testing without a printer).
-    'print_dry_run' => true,
+    'print_dry_run' => false,
 ];

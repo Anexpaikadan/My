@@ -313,12 +313,20 @@ echo flash();
     <div class="alert <?= time() - $seen < 60 ? 'ok' : 'err' ?>">
       Print agent: <?= $seen ? (time() - $seen < 60 ? 'connected' : 'last seen ' . h(date('d M, h:i A', $seen))) : 'never connected' ?>
     </div>
+    <div class="pctool">
+      <a class="btn primary big" href="pctool.php">⬇ Download PC tool (one file)</a>
+      <p class="muted">Run it on the shop PC (double-click, Windows 10/11). It installs everything – print agent with this
+        shop's key, PHP, SumatraPDF – and starts printing in the background, also after restarting the PC.
+        If Windows says "protected your PC": <b>More info → Run anyway</b>.</p>
+    </div>
+    <details><summary>Manual setup (advanced)</summary>
     <p>Agent key (put in <code>agent/agent-config.php</code> on the shop PC):</p>
     <p><code class="key"><?= h(setting('agent_key')) ?></code></p>
     <p class="muted">Server URL for the agent: <code><?= h(base_url()) ?></code></p>
     <form method="post"><?= csrf_field() ?>
       <button class="btn small danger" name="action" value="new_agent_key" onclick="return confirm('The old key stops working. Continue?')">Create new key</button>
     </form>
+    </details>
   <?php endif; ?>
 </div>
 

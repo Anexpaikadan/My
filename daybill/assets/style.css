@@ -230,3 +230,5 @@ textarea { display: block; width: 100%; margin-top: 4px; padding: 10px 12px; fon
 .layout-info { color: var(--p-dark); font-weight: 600; }
 .relayout { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 8px; }
 .relayout summary { cursor: pointer; color: var(--primary); font-weight: 600; }
+.pctool { background: var(--p-50); border: 1px solid var(--p-200); border-radius: var(--radius); padding: 14px; margin: 12px 0; }
+.pctool .btn { margin-bottom: 8px; }
