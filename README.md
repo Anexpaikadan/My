@@ -4,6 +4,7 @@
 |---|---|
 | [`daybill/`](daybill/) | **Daybill Print** – print shop app (PHP + MySQL) |
 | `sales-pos.html` | Sales POS page |
+| [`printer-fix/`](printer-fix/) | One-click fix for shared printer error **0x0000011b** (Windows `.bat`) |
 
 ## Daybill Print
 
