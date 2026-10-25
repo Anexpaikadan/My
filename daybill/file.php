@@ -5,11 +5,16 @@
 require __DIR__ . '/lib.php';
 require_login();
 
-$st = db()->prepare('SELECT f.original_name, f.stored_name, f.ext, f.orig_name, f.orig_ext FROM job_files f
+$st = db()->prepare('SELECT f.original_name, f.stored_name, f.ext, f.orig_name, f.orig_ext, f.previews FROM job_files f
                      JOIN jobs j ON j.id = f.job_id WHERE f.id = ? AND j.shop_id = ?');
 $st->execute([(int)($_GET['id'] ?? 0), shop_id()]);
 $f = $st->fetch();
-if ($f && isset($_GET['orig']) && $f['orig_name'] !== '') {
+// ?pv=N: picture of sheet N (photo items)
+if ($f && isset($_GET['pv']) && (int)$_GET['pv'] >= 0 && (int)$_GET['pv'] < (int)$f['previews'] && $f['stored_name'] !== '') {
+    $f['stored_name'] .= '.p' . (int)$_GET['pv'] . '.jpg';
+    $f['ext'] = 'jpg';
+    $f['original_name'] = 'sheet-' . ((int)$_GET['pv'] + 1) . '.jpg';
+} elseif ($f && isset($_GET['orig']) && $f['orig_name'] !== '') {
     $f['stored_name'] = $f['orig_name'];
     $f['ext'] = $f['orig_ext'];
 }

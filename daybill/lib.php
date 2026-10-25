@@ -91,6 +91,11 @@ function migrate(PDO $pdo): void
         $pdo->exec("ALTER TABLE job_files ADD COLUMN kind VARCHAR(10) NOT NULL DEFAULT '' AFTER layout");
         $pdo->exec("UPDATE settings SET v = '6' WHERE shop_id = 0 AND k = 'schema_version'");
     }
+    if ($v < 7) {
+        // Photo items: sheet preview pictures for the shop staff (<stored_name>.p0.jpg …).
+        $pdo->exec("ALTER TABLE job_files ADD COLUMN previews TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER kind");
+        $pdo->exec("UPDATE settings SET v = '7' WHERE shop_id = 0 AND k = 'schema_version'");
+    }
 }
 
 function h($s): string
@@ -439,9 +444,29 @@ const BUILTIN_LAYOUTS = [
 // ---- Photo print tool (Settings → Photo print) -----------------------
 const PHOTO_PAPERS = ['A4', 'A5', 'A6', 'Letter', '10x15 cm', '13x18 cm'];
 
+// Super admin decides per shop whether photo print may be used (Shops page); the shop admin switches it on.
+function photo_allowed(): bool
+{
+    return setting('photo_allowed', '1') === '1';
+}
+
 function photo_enabled(): bool
 {
-    return setting('photo_enabled', '0') === '1' && photo_sizes();
+    return photo_allowed() && setting('photo_enabled', '0') === '1' && photo_sizes();
+}
+
+// Deletes an uploaded file with its converted PDF and sheet previews.
+function delete_upload(string $name): void
+{
+    if ($name === '' || strpbrk($name, '/\\') !== false) {
+        return;
+    }
+    $dir = cfg('upload_dir');
+    @unlink($dir . '/' . $name);
+    @unlink($dir . '/' . $name . '.pdf');
+    foreach (glob($dir . '/' . $name . '.p*.jpg') ?: [] as $pv) {
+        @unlink($pv);
+    }
 }
 
 function photo_paper(): string
@@ -686,14 +711,10 @@ function cleanup_old_files(): void
     $st = db()->prepare('SELECT f.id, f.stored_name, f.orig_name FROM job_files f JOIN jobs j ON j.id = f.job_id
                          WHERE j.shop_id = ? AND j.created_at < (NOW() - INTERVAL ? DAY) AND f.stored_name <> \'\'');
     $st->execute([shop_id(), $days]);
-    $upd = db()->prepare('UPDATE job_files SET stored_name = \'\', orig_name = \'\' WHERE id = ?');
+    $upd = db()->prepare('UPDATE job_files SET stored_name = \'\', orig_name = \'\', previews = 0 WHERE id = ?');
     foreach ($st as $row) {
-        foreach ([$row['stored_name'], $row['orig_name']] as $name) {
-            if ($name !== '') {
-                @unlink(cfg('upload_dir') . '/' . $name);
-                @unlink(cfg('upload_dir') . '/' . $name . '.pdf');
-            }
-        }
+        delete_upload($row['stored_name']);
+        delete_upload($row['orig_name']);
         $upd->execute([$row['id']]);
     }
 }
@@ -801,7 +822,7 @@ function page_header(string $title, bool $staff = false, string $lang = 'en', st
         . '<meta name="mobile-web-app-capable" content="yes">'
         . '<meta name="apple-mobile-web-app-status-bar-style" content="default">'
         . '<meta name="apple-mobile-web-app-title" content="' . h($staff ? 'Print Staff' : $shop) . '">'
-        . '<link rel="stylesheet" href="assets/style.css?v=11">'
+        . '<link rel="stylesheet" href="assets/style.css?v=12">'
         . '<style>' . theme_css() . '</style>'
         . '<script>addEventListener("pagereveal",function(e){var v=e.viewTransition;if(v){v.ready.catch(function(){});v.finished.catch(function(){});}});</script>'
         . '<script src="assets/app.js?v=8" defer></script></head>'

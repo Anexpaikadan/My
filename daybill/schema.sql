@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS job_files (
   page_range    VARCHAR(100) NOT NULL DEFAULT '',
   layout        VARCHAR(40)  NOT NULL DEFAULT '',
   kind          VARCHAR(10)  NOT NULL DEFAULT '',
+  previews      TINYINT UNSIGNED NOT NULL DEFAULT 0,
   price         DECIMAL(10,2) NULL,
   printer       VARCHAR(200) NOT NULL DEFAULT '',
   status        ENUM('pending','queued','sending','printed','failed') NOT NULL DEFAULT 'pending',
@@ -75,4 +76,4 @@ CREATE TABLE IF NOT EXISTS settings (
   PRIMARY KEY (shop_id, k)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT IGNORE INTO settings (shop_id, k, v) VALUES (0, 'schema_version', '6');
+INSERT IGNORE INTO settings (shop_id, k, v) VALUES (0, 'schema_version', '7');

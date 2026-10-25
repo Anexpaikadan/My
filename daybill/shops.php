@@ -50,6 +50,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 flash('That link name is already used.', 'err');
             }
         }
+    } elseif ($action === 'toggle_photo') {
+        // Right of the shop to use photo print (the shop admin then switches it on in Settings → Photo print).
+        $cur = $pdo->prepare("SELECT v FROM settings WHERE shop_id = ? AND k = 'photo_allowed'");
+        $cur->execute([$sid]);
+        $v = $cur->fetchColumn();
+        $allowed = $v === false || $v === '1'; // not set yet = allowed
+        $pdo->prepare("INSERT INTO settings (shop_id, k, v) VALUES (?, 'photo_allowed', ?) ON DUPLICATE KEY UPDATE v = VALUES(v)")
+            ->execute([$sid, $allowed ? '0' : '1']);
+        flash($allowed ? 'Photo print blocked for this shop.' : 'Photo print allowed – the shop admin can switch it on in Settings → Photo print.');
     } elseif ($action === 'toggle_shop') {
         $pdo->prepare('UPDATE shops SET active = 1 - active WHERE id = ?')->execute([$sid]);
         flash('Shop updated. A disabled shop takes no orders and its staff cannot log in.');
@@ -87,7 +96,9 @@ $shops = db()->query("SELECT s.*,
         (SELECT COUNT(*) FROM users u WHERE u.shop_id = s.id) AS staff,
         (SELECT COUNT(*) FROM jobs j WHERE j.shop_id = s.id AND j.created_at >= CURDATE()) AS today,
         (SELECT COALESCE(SUM(j.amount), 0) FROM jobs j WHERE j.shop_id = s.id AND j.status = 'done' AND j.updated_at >= CURDATE()) AS bill,
-        (SELECT v FROM settings t WHERE t.shop_id = s.id AND t.k = 'agent_seen') AS seen
+        (SELECT v FROM settings t WHERE t.shop_id = s.id AND t.k = 'agent_seen') AS seen,
+        COALESCE((SELECT v FROM settings t WHERE t.shop_id = s.id AND t.k = 'photo_allowed'), '1') AS photo_allowed,
+        COALESCE((SELECT v FROM settings t WHERE t.shop_id = s.id AND t.k = 'photo_enabled'), '0') AS photo_on
     FROM shops s ORDER BY s.name")->fetchAll();
 $supers = db()->query("SELECT id, username, full_name, active FROM users WHERE role = 'super' ORDER BY username")->fetchAll();
 
@@ -104,12 +115,15 @@ echo flash();
       <div class="grow"><b><?= h($s['name']) ?></b><?= $on ? ' <span class="badge">current</span>' : '' ?><?= $s['active'] ? '' : ' <span class="badge">disabled</span>' ?>
         <div class="muted"><?= (int)$s['staff'] ?> staff · <?= (int)$s['today'] ?> orders today · <?= h(money((float)$s['bill'])) ?> ·
           printer <?= $agentOk ? '🟢 connected' : '⚪ offline' ?></div>
+        <div class="muted">📷 Photo print: <?= $s['photo_allowed'] !== '1' ? '⛔ blocked' : ($s['photo_on'] === '1' ? '🟢 on' : 'allowed, off') ?></div>
         <div class="muted small-link"><?= h(base_url()) ?>index.php?shop=<?= h($s['slug']) ?></div>
       </div>
     </div>
     <div class="actions">
       <form method="post"><?= csrf_field() ?><input type="hidden" name="shop" value="<?= (int)$s['id'] ?>">
         <button class="btn primary" name="action" value="open">Open shop</button></form>
+      <form method="post"><?= csrf_field() ?><input type="hidden" name="shop" value="<?= (int)$s['id'] ?>">
+        <button class="btn" name="action" value="toggle_photo"><?= $s['photo_allowed'] !== '1' ? '📷 Allow photo print' : '📷 Block photo print' ?></button></form>
       <a class="btn" href="pctool.php?shop=<?= (int)$s['id'] ?>" title="One file that sets up this shop's PC for printing">⬇ PC tool</a>
       <form method="post"><?= csrf_field() ?><input type="hidden" name="shop" value="<?= (int)$s['id'] ?>">
         <button class="btn" name="action" value="toggle_shop"><?= $s['active'] ? 'Disable' : 'Enable' ?></button></form>

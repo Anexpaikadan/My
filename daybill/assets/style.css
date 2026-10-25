@@ -329,3 +329,28 @@ dialog.sheet.full { max-height: none; height: 100vh; height: 100dvh; border-radi
 .big-check { font-size: 1.05rem; padding: 12px; }
 .pt-change input[type=file], input[type=file][hidden] { display: none !important; }
 .pt-change { cursor: pointer; }
+
+/* ---- v12: photo editor ---- */
+.pt-pick small { display: block; margin-top: 6px; font-size: .85rem; font-weight: 400; color: var(--muted); }
+.pt-sizes { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; grid-template-columns: none; }
+.pt-sizes .pt-size { flex: 0 0 auto; max-width: 170px; }
+.pt-editor { margin-top: 10px; background: #2f3440; border-radius: var(--radius); padding: 16px 12px 12px; }
+.pt-frame { position: relative; width: max-content; margin: 0 auto; touch-action: none; }
+.pt-frame canvas { display: block; background: #fff; border-radius: 2px; box-shadow: 0 0 0 2px #fff, 0 4px 16px rgba(0,0,0,.5); cursor: grab; touch-action: none; }
+.pt-frame canvas:active { cursor: grabbing; }
+.pt-guide { position: absolute; left: 0; top: 0; pointer-events: none; fill: none; stroke: rgba(255,255,255,.85); stroke-width: .7; stroke-dasharray: 2 1.5; vector-effect: non-scaling-stroke; }
+.pt-guide ellipse, .pt-guide line { vector-effect: non-scaling-stroke; stroke-width: 1.5; }
+.pt-tip { color: #c9cfdb; margin: 10px 0 8px; font-size: .82rem; }
+.pt-tools { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.pt-tools .btn { background: #444b59; color: #fff; border-color: #555d6d; padding: 8px 12px; font-size: .88rem; }
+.pt-tools .pt-change { position: static; }
+.pt-sliders { display: grid; gap: 4px; margin-top: 10px; }
+.pt-sliders label { display: flex; align-items: center; gap: 10px; color: #dde2ea; margin: 0; font-size: .85rem; }
+.pt-sliders input[type=range] { flex: 1; margin: 0; padding: 0; accent-color: var(--accent); background: transparent; border: 0; }
+.pt-cap { color: #e8ebf2; margin: 4px 0 14px; font-size: .9rem; text-align: center; font-weight: 600; }
+.pt-big img { max-width: 100%; height: auto; box-shadow: 0 4px 18px rgba(0,0,0,.4); background: #fff; }
+.pv-row { display: flex; gap: 8px; align-items: center; margin: 8px 0 4px; overflow-x: auto; cursor: zoom-in; }
+.pv-row img { height: 110px; width: auto; border-radius: 3px; box-shadow: 0 1px 6px rgba(0,0,0,.25); background: #fff; }
+.pv-hint { flex: none; font-weight: 600; color: var(--primary); font-size: .9rem; }
+#ptPreviewBtn { margin: 4px 0 12px; }
+.sheet.dark .sheet-body { background: #3a3f4a; }

@@ -114,8 +114,8 @@ function handle_upload(): array
 
         $ins = $pdo->prepare('INSERT INTO job_files
             (job_id, original_name, stored_name, orig_name, orig_ext, ext, size_bytes, pages_total,
-             copies, paper, color, sides, orientation, page_range, layout, kind)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+             copies, paper, color, sides, orientation, page_range, layout, kind, previews)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         $opts = $_POST['opt'] ?? [];
         $prints = $_FILES['print'] ?? null;
         foreach ($accepted as $f) {
@@ -149,10 +149,23 @@ function handle_upload(): array
             } else {
                 $layout = $kind = '';
             }
+            // Photo items: pictures of the sheets for the shop staff (JPEG only).
+            $previews = 0;
+            if ($kind === 'photo') {
+                $pv = $_FILES['preview'] ?? null;
+                foreach ((array)($pv['tmp_name'][$f['i']] ?? []) as $k => $ptmp2) {
+                    if ($previews < 6 && ($pv['error'][$f['i']][$k] ?? 1) === UPLOAD_ERR_OK && $pv['size'][$f['i']][$k] < 5242880
+                        && (@getimagesize($ptmp2)[2] ?? 0) === IMAGETYPE_JPEG
+                        && move_uploaded_file($ptmp2, $dir . '/' . $stored . '.p' . $previews . '.jpg')) {
+                        $saved[] = $dir . '/' . $stored . '.p' . $previews . '.jpg';
+                        $previews++;
+                    }
+                }
+            }
             $pages = $ext === 'pdf' ? pdf_page_count($dir . '/' . $stored)
                 : (in_array($ext, ['jpg', 'jpeg', 'png'], true) ? 1 : 0);
             $ins->execute([$jobId, mb_substr(basename($f['name']), 0, 255), $stored, $origName, $origExt, $ext, $f['size'], $pages,
-                $o['copies'], $o['paper'], $o['color'], $o['sides'], $o['orientation'], $o['page_range'], $layout, $kind]);
+                $o['copies'], $o['paper'], $o['color'], $o['sides'], $o['orientation'], $o['page_range'], $layout, $kind, $previews]);
             $total += auto_price($o + ['pages_total' => $pages, 'layout' => $layout, 'kind' => $kind]);
             $unknown = $unknown || $pages === 0;
         }
@@ -327,36 +340,50 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
   <div class="card install-card hidden"><?= install_box(false) ?></div>
 
   <?php if ($photoJs): ?>
-  <!-- Photo print tool (full screen) -->
+  <!-- Photo print tool (full screen) – logic in assets/photo-tool.js -->
   <dialog class="sheet full" id="photoTool">
     <div class="sheet-head"><span class="grip"></span><b>📷 <?= h(t('photo_print')) ?></b><button type="button" class="sheet-x" aria-label="Close">✕</button></div>
     <div class="sheet-body">
       <label class="drop pt-pick" id="ptPick">
-        <input type="file" id="ptFile" accept="image/jpeg,image/png">
-        <span>🖼️ <?= h(t('photo_choose')) ?></span>
+        <input type="file" id="ptFile" accept="image/*">
+        <span>🖼️ <?= h(t('photo_choose')) ?><small><?= h(t('photo_any')) ?></small></span>
       </label>
       <div class="pt-main hidden" id="ptMain">
-        <div class="pt-photo">
-          <img id="ptImg" alt="">
-          <label class="btn small pt-change"><input type="file" id="ptFile2" accept="image/jpeg,image/png" hidden>🔄 <?= h(t('photo_change')) ?></label>
-        </div>
-        <h4><?= h(t('photo_size')) ?></h4>
         <div class="pt-sizes" id="ptSizes"></div>
+        <div class="pt-editor">
+          <div class="pt-frame">
+            <canvas id="ptStage"></canvas>
+            <svg id="ptGuide" class="pt-guide hidden" viewBox="0 0 100 128" preserveAspectRatio="none" aria-hidden="true">
+              <ellipse cx="50" cy="52" rx="27" ry="34"/><line x1="0" y1="14" x2="100" y2="14"/><line x1="0" y1="96" x2="100" y2="96"/>
+            </svg>
+          </div>
+          <p class="muted center pt-tip">✋ <?= h(t('photo_move')) ?></p>
+          <div class="pt-tools">
+            <button type="button" class="btn" id="ptRotate">⟳ <?= h(t('photo_rotate')) ?></button>
+            <label class="btn pt-change"><input type="file" id="ptFile2" accept="image/*" hidden>🔄 <?= h(t('photo_change')) ?></label>
+            <button type="button" class="btn" id="ptReset">↺ <?= h(t('photo_reset')) ?></button>
+          </div>
+          <div class="pt-sliders">
+            <label>🔍 <?= h(t('photo_zoom')) ?><input type="range" id="ptZoom" min="1" max="5" step="0.01" value="1"></label>
+            <label>☀️ <?= h(t('photo_bright')) ?><input type="range" id="ptBright" min="50" max="160" step="1" value="100"></label>
+            <label>◐ <?= h(t('photo_contrast')) ?><input type="range" id="ptContrast" min="50" max="160" step="1" value="100"></label>
+          </div>
+        </div>
         <h4><?= h(t('photo_count')) ?></h4>
         <div class="pt-count">
-          <span class="stepper"><button type="button" data-pt-step="-1">−</button><input type="number" id="ptCount" value="1" min="1" max="500"><button type="button" data-pt-step="1">+</button></span>
+          <span class="stepper"><button type="button" data-pt-step="-1">−</button><input type="number" id="ptCount" value="4" min="1" max="500"><button type="button" data-pt-step="1">+</button></span>
           <div class="pt-quick" id="ptQuick"></div>
         </div>
         <div class="pt-info" id="ptInfo"></div>
-        <div class="pt-sheets" id="ptSheets" role="button" tabindex="0" aria-label="<?= h(t('photo_preview')) ?>"></div>
-        <p class="muted center pt-hint">🔍 <?= h(t('photo_tap_preview')) ?></p>
+        <div class="pt-sheets" id="ptSheets" role="button" tabindex="0"></div>
+        <button type="button" class="btn block big" id="ptPreviewBtn">👁 <?= h(t('photo_preview')) ?></button>
         <div class="pay-box" id="ptPay"></div>
         <button type="button" class="btn primary block big" id="ptAdd">✓ <?= h(t('photo_add')) ?></button>
       </div>
     </div>
   </dialog>
   <dialog class="sheet full" id="ptPreview">
-    <div class="sheet-head"><span class="grip"></span><b>🔍 <?= h(t('photo_preview')) ?></b><button type="button" class="sheet-x" aria-label="Close">✕</button></div>
+    <div class="sheet-head"><span class="grip"></span><b>👁 <?= h(t('photo_preview')) ?></b><button type="button" class="sheet-x" aria-label="Close">✕</button></div>
     <div class="sheet-body pt-big" id="ptBig"></div>
   </dialog>
   <?php endif; ?>
@@ -397,8 +424,9 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
 
   <?php if ($layoutsJs || $photoJs): ?>
     <script src="assets/pdf-lib.min.js" defer></script>
-    <script src="assets/layout.js?v=2" defer></script>
+    <script src="assets/layout.js?v=3" defer></script>
   <?php endif; ?>
+  <?php if ($photoJs): ?><script src="assets/photo-tool.js?v=1" defer></script><?php endif; ?>
   <script>
   (function () {
     var maxFiles = <?= (int)cfg('max_files') ?>, maxMb = <?= (int)cfg('max_file_mb') ?>, SELF = <?= json_encode($self) ?>;
@@ -416,7 +444,7 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
     var items = [];
     var PHOTO = <?= json_encode($photoJs, JSON_UNESCAPED_UNICODE) ?>, PDEFS = {};
     if (PHOTO) PHOTO.sizes.forEach(function (L) { PDEFS[L.id] = L; });
-    var TP = <?php $pk = ['photo_info', 'photo_sheet_of', 'full_sheet', 'photo_sheets_n'];
+    var TP = <?php $pk = ['photo_info', 'photo_sheet_of', 'full_sheet', 'photo_edit', 'photo_bad', 'estimate'];
                 echo json_encode(array_combine($pk, array_map('t', $pk))); ?>;
 
     function photoSheets(it) {
@@ -430,125 +458,6 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
       return r[1] + Math.max(0, sheets - r[0]) * r[2];
     }
 
-    // ---- Photo print tool: choose a photo, a size and how many; arranged on the paper automatically ----
-    (function () {
-      if (!PHOTO) return;
-      var tool = document.getElementById('photoTool'), prev = document.getElementById('ptPreview');
-      var main = document.getElementById('ptMain'), pick = document.getElementById('ptPick'), img = document.getElementById('ptImg');
-      var count = document.getElementById('ptCount'), sizesBox = document.getElementById('ptSizes'), quick = document.getElementById('ptQuick');
-      var info = document.getElementById('ptInfo'), sheetsBox = document.getElementById('ptSheets'), pay = document.getElementById('ptPay');
-      var cur = null; // {file, url, id, pieces, item}
-
-      function fit(id) { var L = PDEFS[id]; return window.DaybillLayout.sizeFit(L.w, L.h, PHOTO.paper); }
-      function plan() { var L = PDEFS[cur.id]; return window.DaybillLayout.sizePlan(L.w, L.h, PHOTO.paper, cur.pieces); }
-
-      // Size buttons with a little picture of the shape
-      PHOTO.sizes.forEach(function (L) {
-        var b = document.createElement('button'), k = 34 / Math.max(L.w, L.h);
-        b.type = 'button'; b.className = 'pt-size'; b.dataset.id = L.id;
-        b.innerHTML = '<i style="width:' + Math.round(L.w * k) + 'px;height:' + Math.round(L.h * k) + 'px"></i><span></span>';
-        b.querySelector('span').textContent = L.name;
-        b.onclick = function () { cur.id = L.id; cur.pieces = Math.min(Math.max(1, cur.pieces), 500); render(); };
-        sizesBox.appendChild(b);
-      });
-
-      function setPieces(n) { cur.pieces = Math.max(1, Math.min(500, n || 1)); render(); }
-      count.addEventListener('input', function () { setPieces(parseInt(count.value, 10)); });
-      tool.querySelectorAll('[data-pt-step]').forEach(function (b) {
-        b.onclick = function () { setPieces(cur.pieces + parseInt(b.dataset.ptStep, 10)); };
-      });
-
-      function render() {
-        if (!cur || !cur.url) return;
-        sizesBox.querySelectorAll('.pt-size').forEach(function (b) { b.classList.toggle('on', b.dataset.id === cur.id); });
-        var f = fit(cur.id), p = plan();
-        if (document.activeElement !== count) count.value = cur.pieces;
-        quick.innerHTML = '';
-        [1, 2, 4, 6, 8].filter(function (n) { return n < f.max; }).map(function (n) { return [n, String(n)]; })
-          .concat([[f.max, TP.full_sheet + ' (' + f.max + ')'], [f.max * 2, TP.photo_sheets_n.replace('%d', 2) + ' (' + f.max * 2 + ')']])
-          .forEach(function (q) {
-            var c = document.createElement('button'); c.type = 'button'; c.className = 'chip' + (q[0] === cur.pieces ? ' on' : '');
-            c.textContent = q[1]; c.onclick = function () { setPieces(q[0]); }; quick.appendChild(c);
-          });
-        info.textContent = TP.photo_info.replace('%1$d', f.max).replace('%2$s', PHOTO.paper).replace('%3$d', p.sheets.length);
-        sheetsBox.innerHTML = '';
-        p.sheets.slice(0, 6).forEach(function (_, i) {
-          var cv = document.createElement('canvas');
-          window.DaybillLayout.drawPreview(cv, img, p, i, 220);
-          sheetsBox.appendChild(cv);
-        });
-        if (p.sheets.length > 6) { var more = document.createElement('span'); more.className = 'pt-more'; more.textContent = '+' + (p.sheets.length - 6); sheetsBox.appendChild(more); }
-        var pr = photoPrice({ photo: cur });
-        pay.innerHTML = ''; pay.appendChild(document.createTextNode(T.estimate));
-        var b = document.createElement('b'); b.textContent = money(pr); pay.appendChild(b);
-      }
-
-      // Full-screen preview of every sheet
-      function openPreview() {
-        var big = document.getElementById('ptBig'), p = plan(), w = Math.min(window.innerWidth - 40, 560);
-        big.innerHTML = '';
-        p.sheets.forEach(function (_, i) {
-          var fig = document.createElement('figure'), cv = document.createElement('canvas'), cap = document.createElement('figcaption');
-          window.DaybillLayout.drawPreview(cv, img, p, i, w * 2); cv.style.width = w + 'px';
-          cap.textContent = TP.photo_sheet_of.replace('%1$d', i + 1).replace('%2$d', p.sheets.length) + ' · ' + PHOTO.paper;
-          fig.appendChild(cv); fig.appendChild(cap); big.appendChild(fig);
-        });
-        DaybillSheet.open(prev);
-      }
-      sheetsBox.addEventListener('click', openPreview);
-
-      function load(file) {
-        if (!file) return;
-        if (!/\.(jpe?g|png)$/i.test(file.name)) return alert(<?= json_encode(t('err_img', '')) ?>);
-        if (file.size > maxMb * 1048576) return alert(Terr.big.replace('%s', file.name));
-        if (cur.url && (!cur.item || cur.item.url !== cur.url)) URL.revokeObjectURL(cur.url);
-        cur.file = file; cur.url = URL.createObjectURL(file);
-        img.onload = function () {
-          pick.classList.add('hidden'); main.classList.remove('hidden');
-          if (!cur.id) { cur.id = PHOTO.sizes[0].id; cur.pieces = Math.min(fit(cur.id).max, 8); }
-          render();
-        };
-        img.src = cur.url;
-      }
-      document.getElementById('ptFile').addEventListener('change', function () { load(this.files[0]); this.value = ''; });
-      document.getElementById('ptFile2').addEventListener('change', function () { load(this.files[0]); this.value = ''; });
-
-      function openTool(item) {
-        cur = item ? { file: item.file, url: item.url, id: item.photo.id, pieces: item.photo.pieces, item: item }
-                   : { file: null, url: '', id: '', pieces: 1, item: null };
-        pick.classList.toggle('hidden', !!item); main.classList.toggle('hidden', !item);
-        if (item) { img.onload = render; img.src = item.url; }
-        DaybillSheet.open(tool);
-      }
-      window.openPhotoTool = openTool;
-      document.getElementById('photoBtn').addEventListener('click', function () {
-        if (items.length >= maxFiles) return showErr(Terr.max);
-        openTool(null);
-      });
-
-      // Add the photo to the order (or update it when editing)
-      document.getElementById('ptAdd').addEventListener('click', function () {
-        if (!cur.file) return;
-        var it = cur.item;
-        if (!it) {
-          var node = document.createElement('div');
-          node.className = 'file photo-item';
-          node.innerHTML = '<div class="file-head"><span class="fname"></span><button type="button" class="x" aria-label="✕">✕</button></div>' +
-            '<div class="pi-row"><img class="pi-thumb" alt=""><div class="pi-txt"><div class="chips"></div><div class="price muted"></div></div></div>' +
-            '<button type="button" class="btn block pi-edit">✏️ ' + <?= json_encode(t('photo_edit')) ?> + '</button>';
-          it = { node: node, pages: 1 };
-          node.querySelector('.x').onclick = function () { items.splice(items.indexOf(it), 1); node.remove(); refresh(); };
-          node.querySelector('.pi-edit').onclick = function () { openTool(it); };
-          items.push(it); list.appendChild(node);
-        }
-        it.file = cur.file; it.url = cur.url; it.photo = { id: cur.id, pieces: cur.pieces };
-        it.node.querySelector('.fname').textContent = '📷 ' + cur.file.name;
-        it.node.querySelector('.pi-thumb').src = cur.url;
-        DaybillSheet.close(tool);
-        showErr('');
-        refresh();
-      });
-    })();
 
     picker.removeAttribute('name'); // files are sent by JavaScript instead
     picker.addEventListener('change', function () {
@@ -758,6 +667,11 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
       countPages(item);
     }
 
+    // Used by assets/photo-tool.js
+    window.DaybillOrder = { items: items, list: list, refresh: refresh, showErr: showErr, money: money,
+      maxFiles: maxFiles, maxMb: maxMb, PHOTO: PHOTO, PDEFS: PDEFS, photoPrice: photoPrice,
+      T: Object.assign({}, TP, { err_max: Terr.max, err_big: Terr.big }) };
+
     form.addEventListener('submit', async function (e) {
       e.preventDefault();
       if (!items.length) return showErr(T.err_none);
@@ -777,6 +691,7 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
             fd.append('print[' + i + ']', pr.blob, 'photo.pdf');
             fd.append('opt[' + i + '][layout]', pc);
             fd.append('opt[' + i + '][kind]', 'photo');
+            (it.previews || []).forEach(function (pv, k) { fd.append('preview[' + i + '][' + k + ']', pv, 'sheet' + k + '.jpg'); });
           } catch (x) {
             btn.disabled = false; btn.textContent = T.send;
             return showErr(T.layout_fail.replace('%s', it.file.name) + ' (' + x.message + ')');

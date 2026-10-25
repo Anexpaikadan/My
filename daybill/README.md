@@ -78,8 +78,13 @@ Settings → **📷 Photo print** (per shop): switch it on, choose the **photo p
 13 × 18 cm), the **photo printer**, the **photo sizes** offered (passport 3.5 × 4.5, 4 × 6, 5 × 5, 10 × 15, 13 × 18 cm and
 your own sizes from Settings → Layouts) and the **price per photo or per sheet** (empty = normal colour page price).
 
-Customers then see a **📷 Photo print** button. It opens a full-screen tool: choose a photo → tap a size → set how
-many (quick buttons 1–8, full sheet, 2 sheets). The photos are arranged on the paper automatically – turned 90° when
+**Rights:** the super admin allows or blocks photo print per shop (Shops page → 📷 Allow / Block photo print);
+the shop admin then switches it on and sets paper, printer, sizes and price.
+
+Customers then see a **📷 Photo print** button. It opens a full-screen tool: choose any photo (JPG, PNG, iPhone photos)
+→ tap a size → the photo appears in a frame of that size (face guide for passport sizes): drag to move, pinch or slide
+to zoom, rotate, brightness, contrast → set how many (quick buttons 1–8, full sheet). The order gets the edited photo;
+staff see pictures of the sheets on the order page (👁 Preview). The photos are arranged on the paper automatically – turned 90° when
 more fit, extra sheets added when needed – with live sheet previews; tap them for a big preview (close with ✕ or the
 back button). **Add to order** puts it in the order; ✏️ changes it later. Photo items print in colour, at exact size
 (no scaling), on the photo printer.

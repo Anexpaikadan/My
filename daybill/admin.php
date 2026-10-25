@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'delete_user' && $ownUser && $uid !== (int)$admin['id']) {
         $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$uid]);
         flash('User deleted.');
-    } elseif ($action === 'photo') {
+    } elseif ($action === 'photo' && (photo_allowed() || is_super())) {
         save_setting('photo_enabled', isset($_POST['photo_enabled']) ? '1' : '0');
         save_setting('photo_paper', in_array($_POST['photo_paper'] ?? '', PHOTO_PAPERS, true) ? $_POST['photo_paper'] : 'A4');
         save_setting('photo_printer', mb_substr(trim((string)($_POST['photo_printer'] ?? '')), 0, 200));
@@ -400,7 +400,15 @@ echo flash();
 })();
 </script>
 
+<?php elseif ($sec === 'photo' && !photo_allowed() && !is_super()): ?>
+<div class="card">
+  <p>⛔ Photo print is not allowed for this shop. Ask your super admin to allow it (Settings → Shops → Allow photo print).</p>
+</div>
+
 <?php elseif ($sec === 'photo'): require_once __DIR__ . '/printer.php'; $psz = photo_sizes(); ?>
+<?php if (!photo_allowed()): ?>
+  <div class="alert err">⛔ Photo print is blocked for this shop. As super admin, allow it on the Shops page first.</div>
+<?php endif; ?>
 <form method="post">
   <?= csrf_field() ?>
   <div class="card">

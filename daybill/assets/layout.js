@@ -64,8 +64,9 @@
       x.translate(dx + dw / 2, dy + dh / 2);
       if (plan.rot) x.rotate(Math.PI / 2);
       var bw = plan.rot ? dh : dw, bh = plan.rot ? dw : dh;           // box in the photo's own (upright) direction
-      var k = Math.max(bw / img.naturalWidth, bh / img.naturalHeight); // cover
-      x.drawImage(img, -img.naturalWidth * k / 2, -img.naturalHeight * k / 2, img.naturalWidth * k, img.naturalHeight * k);
+      var iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height; // <img> or <canvas>
+      var k = Math.max(bw / iw, bh / ih); // cover
+      x.drawImage(img, -iw * k / 2, -ih * k / 2, iw * k, ih * k);
       x.restore();
       x.strokeStyle = '#c8c8c8'; x.lineWidth = 1; x.strokeRect(dx + .5, dy + .5, dw - 1, dh - 1);
     });

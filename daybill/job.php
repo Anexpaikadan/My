@@ -168,13 +168,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'reopen') {
         $pdo->prepare("UPDATE jobs SET status = 'printing' WHERE id = ?")->execute([$id]);
     } elseif ($action === 'delete' && in_array($user['role'], ['admin', 'super'], true)) {
-        $files = $pdo->prepare('SELECT stored_name FROM job_files WHERE job_id = ?');
-        $files->execute([$id]);
+        $files = $pdo->prepare('SELECT stored_name FROM job_files WHERE job_id = ? UNION ALL SELECT orig_name FROM job_files WHERE job_id = ?');
+        $files->execute([$id, $id]);
         foreach ($files->fetchAll(PDO::FETCH_COLUMN) as $name) {
-            if ($name !== '') {
-                @unlink(cfg('upload_dir') . '/' . $name);
-                @unlink(cfg('upload_dir') . '/' . $name . '.pdf');
-            }
+            delete_upload((string)$name);
         }
         $pdo->prepare('DELETE FROM jobs WHERE id = ?')->execute([$id]);
         flash('Order deleted.');
@@ -259,6 +256,22 @@ echo flash();
         <?php if ($mode !== 'browser'): ?><span class="chip">🖨 <?= h(printer_for($f) ?: 'default printer') ?></span><?php endif; ?>
         <span class="chip"><?= h(money(file_price($f))) ?></span>
       </div>
+      <?php if ((int)$f['previews'] > 0): ?>
+        <div class="pv-row" data-sheet="#pv<?= $fid ?>" role="button" title="Preview">
+          <?php for ($k = 0; $k < (int)$f['previews']; $k++): ?>
+            <img src="file.php?id=<?= $fid ?>&amp;pv=<?= $k ?>" alt="Sheet <?= $k + 1 ?>" loading="lazy">
+          <?php endfor; ?>
+          <span class="pv-hint">👁 Preview</span>
+        </div>
+        <?= sheet_start('pv' . $fid, '👁 ' . layout_label($f['layout']) . ' · ' . $f['paper'], 'dark') ?>
+          <div class="pt-big">
+            <?php for ($k = 0; $k < (int)$f['previews']; $k++): ?>
+              <img src="file.php?id=<?= $fid ?>&amp;pv=<?= $k ?>" alt="">
+              <p class="pt-cap">Sheet <?= $k + 1 ?> of <?= max((int)$f['pages_total'], (int)$f['previews']) ?></p>
+            <?php endfor; ?>
+          </div>
+        <?= sheet_end() ?>
+      <?php endif; ?>
       <div class="card-actions">
         <?php if ($mode === 'browser'): ?>
           <button class="btn primary big" form="f<?= $fid ?>" name="action" value="print" formtarget="_blank" data-reload>🖨 OK – Open &amp; print</button>
@@ -380,7 +393,7 @@ echo flash();
 
 <?php if (enabled_layouts()): ?>
 <script src="assets/pdf-lib.min.js"></script>
-<script src="assets/layout.js?v=2"></script>
+<script src="assets/layout.js?v=3"></script>
 <script>
 // Staff can change a file's layout: the print-ready PDF is built here in the browser and uploaded.
 (function () {
