@@ -1,0 +1,1049 @@
+# ============================================================
+# DayBill ERP - Purchase Invoices Module
+# List + Create/Edit with line items | Input VAT tracking
+# ============================================================
+
+import tkinter as tk
+from tkinter import ttk, messagebox
+import sys, os
+from datetime import date, datetime
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from config import settings as cfg
+from config.language import t
+from config.database import db
+from modules.barcode_gen import sys_select     # v6.9.5: 5-digit system barcode
+from ui import close_guard
+
+
+class PurchaseInvoiceView:
+    def __init__(self, parent):
+        self.parent = parent
+        C = cfg.theme()
+        self._all = []
+        self.frame = tk.Frame(parent, bg=C["content_bg"])
+        self.frame.pack(fill="both", expand=True)
+        self._topbar(C)
+        self._stats(C)
+        self._search(C)
+        self._table(C)
+        self._load()
+
+    def _topbar(self, C):
+        bar = tk.Frame(self.frame, bg=C["content_bg"])
+        bar.pack(fill="x", padx=24, pady=(20, 0))
+        tk.Label(bar, text=f"🛒  {t('nav.purchases')}",
+                 font=("Segoe UI", 18, "bold"),
+                 bg=C["content_bg"], fg=C["text_primary"]).pack(side="left")
+        tk.Button(bar, text="＋  New Purchase", font=("Segoe UI", 10, "bold"),
+                  bg=C["primary"], fg="white", relief="flat",
+                  padx=16, pady=7, cursor="hand2",
+                  activebackground=C["primary_dark"],
+                  command=self._new).pack(side="right")
+        tk.Button(bar, text="📥  Export", font=("Segoe UI", 10),
+                  bg=C["card_bg"], fg=C["text_primary"], relief="flat",
+                  padx=14, pady=7, cursor="hand2",
+                  highlightbackground=C["border"], highlightthickness=1,
+                  command=self._export_excel).pack(side="right", padx=(0, 8))
+        tk.Button(bar, text="📊  Report", font=("Segoe UI", 10),
+                  bg=C["card_bg"], fg=C["text_primary"], relief="flat",
+                  padx=14, pady=7, cursor="hand2",
+                  highlightbackground=C["border"], highlightthickness=1,
+                  command=self._report_pdf).pack(side="right", padx=(0, 8))
+
+    def _stats(self, C):
+        self.stats = tk.Frame(self.frame, bg=C["content_bg"])
+        self.stats.pack(fill="x", padx=24, pady=(14, 0))
+
+    def _refresh_stats(self, data):
+        C = cfg.theme()
+        for w in self.stats.winfo_children():
+            w.destroy()
+        total = sum(float(r.get("total_amount", 0)) for r in data)
+        vat = sum(float(r.get("vat_amount", 0)) for r in data)
+        unpaid = sum(float(r.get("total_amount", 0)) - float(r.get("paid_amount", 0))
+                     for r in data if r.get("payment_status") != "paid")
+        items = [("🛒", "Purchases", str(len(data)), C["primary"]),
+                 ("💰", "Total", f"{total:,.0f}", C["info"]),
+                 ("📥", "Input VAT", f"{vat:,.0f}", C["success"]),
+                 ("⏳", "Unpaid", f"{unpaid:,.0f}", C["warning"])]
+        for icon, label, val, color in items:
+            card = tk.Frame(self.stats, bg=C["card_bg"],
+                            highlightbackground=C["border"], highlightthickness=1)
+            card.pack(side="left", padx=(0, 10), ipadx=12, ipady=6)
+            tk.Label(card, text=f"{icon}  {label}", font=("Segoe UI", 8),
+                     bg=C["card_bg"], fg=C["text_secondary"]).pack(anchor="w", padx=8, pady=(6, 0))
+            tk.Label(card, text=val, font=("Segoe UI", 15, "bold"),
+                     bg=C["card_bg"], fg=color).pack(anchor="w", padx=8, pady=(0, 6))
+
+    def _search(self, C):
+        bar = tk.Frame(self.frame, bg=C["content_bg"])
+        bar.pack(fill="x", padx=24, pady=(14, 0))
+        sf = tk.Frame(bar, bg="white", highlightbackground=C["border"], highlightthickness=1)
+        sf.pack(side="left")
+        tk.Label(sf, text="🔍", font=("Segoe UI Emoji", 11), bg="white",
+                 fg=C["text_secondary"]).pack(side="left", padx=(10, 4))
+        self.search_var = tk.StringVar()
+        self.search_var.trace("w", lambda *a: self._filter())
+        tk.Entry(sf, textvariable=self.search_var, font=("Segoe UI", 10), bg="white",
+                 relief="flat", width=28, fg=C["text_primary"]).pack(side="left", ipady=6, padx=(0, 10))
+        self.count_var = tk.StringVar()
+        tk.Label(bar, textvariable=self.count_var, font=("Segoe UI", 9),
+                 bg=C["content_bg"], fg=C["text_secondary"]).pack(side="right")
+
+    def _table(self, C):
+        wrapper = tk.Frame(self.frame, bg=C["content_bg"])
+        wrapper.pack(fill="both", expand=True, padx=24, pady=(10, 24))
+        card = tk.Frame(wrapper, bg=C["card_bg"],
+                        highlightbackground=C["border"], highlightthickness=1)
+        card.pack(fill="both", expand=True)
+        cols = ("number", "supplier_inv", "date", "supplier", "subtotal", "vat", "total", "status")
+        headers = {"number": ("Purchase #", 120, "center"),
+                   "supplier_inv": ("Supplier Inv#", 120, "center"),
+                   "date": ("Date", 95, "center"), "supplier": ("Supplier", 180, "w"),
+                   "subtotal": ("Subtotal", 100, "e"), "vat": ("VAT", 90, "e"),
+                   "total": ("Total SAR", 110, "e"), "status": ("Status", 90, "center")}
+        style = ttk.Style()
+        style.configure("Pur.Treeview", background="white", rowheight=32, font=("Segoe UI", 9))
+        style.configure("Pur.Treeview.Heading", font=("Segoe UI", 9, "bold"))
+        vsb = ttk.Scrollbar(card, orient="vertical")
+        vsb.pack(side="right", fill="y")
+        self.tree = ttk.Treeview(card, columns=cols, show="headings",
+                                 style="Pur.Treeview", yscrollcommand=vsb.set)
+        vsb.config(command=self.tree.yview)
+        for col in cols:
+            h, w, a = headers[col]
+            self.tree.heading(col, text=h)
+            self.tree.column(col, width=w, anchor=a)
+        self.tree.pack(fill="both", expand=True)
+        self.tree.tag_configure("even", background="#FAFAFA")
+        self.tree.bind("<Double-1>", lambda e: self._open())
+
+        bbar = tk.Frame(wrapper, bg=C["content_bg"])
+        bbar.pack(fill="x", pady=(6, 0))
+        tk.Button(bbar, text="✏  Open / Edit", font=("Segoe UI", 9), bg=C["card_bg"],
+                  fg=C["text_primary"], relief="flat", padx=12, pady=6, cursor="hand2",
+                  highlightbackground=C["border"], highlightthickness=1,
+                  command=self._open).pack(side="left", padx=(0, 6))
+        tk.Button(bbar, text="✅  Confirm", font=("Segoe UI", 9), bg="#F0FDF4",
+                  fg=C["success"], relief="flat", padx=12, pady=6, cursor="hand2",
+                  command=self._confirm).pack(side="left", padx=(0, 6))
+        tk.Button(bbar, text="💰  Pay Supplier", font=("Segoe UI", 9), bg=C["card_bg"],
+                  fg=C["text_primary"], relief="flat", padx=12, pady=6, cursor="hand2",
+                  highlightbackground=C["border"], highlightthickness=1,
+                  command=self._pay).pack(side="left", padx=(0, 6))
+        from ui import print_menu
+        pb = tk.Button(bbar, text="🖨  Print ▾", font=("Segoe UI", 9), bg=C["card_bg"],
+                       fg=C["text_primary"], relief="flat", padx=12, pady=6, cursor="hand2",
+                       highlightbackground=C["border"], highlightthickness=1)
+        pb.configure(command=lambda: print_menu.show_menu(
+            self.frame, "purchase", self._sel_quiet, widget=pb))
+        pb.pack(side="left", padx=(0, 6))
+        tk.Button(bbar, text="🏷  Labels", font=("Segoe UI", 9), bg=C["card_bg"],
+                  fg=C["text_primary"], relief="flat", padx=12, pady=6, cursor="hand2",
+                  highlightbackground=C["border"], highlightthickness=1,
+                  command=self._labels).pack(side="left", padx=(0, 6))
+        tk.Button(bbar, text="🗑  Delete", font=("Segoe UI", 9), bg="#FEF2F2",
+                  fg=C["danger"], relief="flat", padx=12, pady=6, cursor="hand2",
+                  command=self._delete).pack(side="left")
+        tk.Button(bbar, text="🔄  Refresh", font=("Segoe UI", 9), bg=C["card_bg"],
+                  fg=C["text_secondary"], relief="flat", padx=12, pady=6, cursor="hand2",
+                  highlightbackground=C["border"], highlightthickness=1,
+                  command=self._load).pack(side="right")
+
+    def _load(self):
+        try:
+            self._all = db.fetchall(
+                "SELECT purchase_id, invoice_number, supplier_invoice_no, invoice_date, "
+                "supplier_name_en, subtotal_amount, vat_amount, total_amount, "
+                "paid_amount, invoice_status, payment_status "
+                "FROM purchase_invoices ORDER BY created_at DESC")
+        except Exception as e:
+            self._all = []
+            messagebox.showerror("DB Error", str(e))
+        self._filter()
+
+    def _filter(self):
+        q = self.search_var.get().lower() if hasattr(self, "search_var") else ""
+        rows = []
+        for r in self._all:
+            if q:
+                s = (str(r.get("invoice_number", "")) + str(r.get("supplier_name_en", "")) +
+                     str(r.get("supplier_invoice_no", ""))).lower()
+                if q not in s:
+                    continue
+            rows.append(r)
+        self.tree.delete(*self.tree.get_children())
+        for i, r in enumerate(rows):
+            st = r.get("invoice_status", "draft")
+            self.tree.insert("", "end", iid=str(r["purchase_id"]), values=(
+                r.get("invoice_number", ""), r.get("supplier_invoice_no", "") or "—",
+                str(r.get("invoice_date", "")), r.get("supplier_name_en", ""),
+                f"{float(r.get('subtotal_amount', 0)):,.2f}",
+                f"{float(r.get('vat_amount', 0)):,.2f}",
+                f"{float(r.get('total_amount', 0)):,.2f}",
+                f"{'✅' if st=='confirmed' else '📝'} {st.title()}"),
+                tags=("even",) if i % 2 == 0 else ())
+        self._refresh_stats(self._all)
+        self.count_var.set(f"{len(rows)} invoice(s)")
+
+    def _sel(self):
+        s = self.tree.selection()
+        if not s:
+            messagebox.showwarning("Select", "Select a purchase invoice.")
+            return None
+        return int(s[0])
+
+    def _sel_quiet(self):
+        s = self.tree.selection()
+        return int(s[0]) if s else None
+
+    def _labels(self):
+        """🏷 Labels: barcode labels for the goods on this purchase
+        (each unit's own barcode + price, copies = quantity received)."""
+        from modules import permissions as _pm
+        if not _pm.allowed("products", "print"):
+            return False
+        pid = self._sel()
+        if pid:
+            try:
+                from ui.label_printer import open_for_purchase
+                open_for_purchase(self.frame, pid)
+            except Exception as e:
+                messagebox.showerror("Labels", str(e)[:200])
+
+    def _new(self):
+        from modules import permissions as _pm
+        if not _pm.allowed("purchase", "add"):
+            return False
+        PurchaseForm(self.frame, None, self._load)
+
+    def _open(self):
+        pid = self._sel()
+        if not pid:
+            return
+
+        def go():
+            from modules import doc_edit
+            why = doc_edit.block_reason("purchase", pid, "edit")
+            if why:           # still open it to look at — saving is refused
+                messagebox.showinfo("Purchase (view only)",
+                                    why + "\n\nIt opens for viewing / printing only.")
+            else:
+                q = doc_edit.ask_text("purchase", pid, "edit")
+                if q and not messagebox.askyesno("Edit Purchase", q):
+                    return
+            return PurchaseForm(self.frame, pid, self._load)
+        # the same purchase already open → bring that window to the front
+        close_guard.single(("purchase", pid), go,
+                           match=lambda f: getattr(f, "purchase_id", None) == pid)
+
+    def _confirm(self):
+        pid = self._sel()
+        if not pid:
+            return
+        from modules import permissions as _pm
+        if not _pm.allowed("purchase", "edit"):
+            return False
+        row = db.fetchone("SELECT invoice_number, invoice_status FROM purchase_invoices "
+                          "WHERE purchase_id=?", (pid,)) or {}
+        if (row.get("invoice_status") or "").lower() == "confirmed":
+            messagebox.showinfo("Confirm", "This purchase is already confirmed.")
+            return
+        try:
+            from modules import doc_posting
+            with db.transaction():       # status + stock + journal together (v5.27)
+                db.execute("UPDATE purchase_invoices SET invoice_status='confirmed', "
+                           "updated_at=GETDATE() WHERE purchase_id=?", (pid,))
+                # stock in + cost update + purchase journal (one engine)
+                try:
+                    doc_posting.sync("purchase", pid)
+                except Exception as e:
+                    doc_posting.last_warning = str(e)[:200]
+            self._load()
+            doc_posting.notify(self.frame)
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def _pay(self):
+        """Supplier payment for the selected purchase invoice."""
+        from modules import permissions as _pm
+        if not _pm.allowed("payment", "add"):
+            return False
+        pid = self._sel()
+        if not pid:
+            return
+        row = db.fetchone("SELECT supplier_id, invoice_status, payment_status, "
+                          "invoice_number FROM purchase_invoices WHERE purchase_id=?",
+                          (pid,)) or {}
+        if (row.get("invoice_status") or "") != "confirmed":
+            messagebox.showinfo("Pay Supplier", "Confirm the purchase first.")
+            return
+        if (row.get("payment_status") or "") == "paid":
+            messagebox.showinfo("Pay Supplier",
+                                f"Purchase {row.get('invoice_number')} is already paid.")
+            return
+        from ui.payments import PaymentForm
+        PaymentForm(self.frame, "disbursement", self._load,
+                    party_id=row.get("supplier_id"), doc_id=pid)
+
+    def _delete(self):
+        from modules import permissions as _pm
+        if not _pm.allowed("purchase", "delete"):
+            return False
+        pid = self._sel()
+        if not pid:
+            return
+        from modules import doc_edit
+        number, status, _d = doc_edit.info("purchase", pid)
+        why = doc_edit.block_reason("purchase", pid, "delete")
+        if why:
+            messagebox.showwarning("Delete Purchase", why)
+            return
+        # a confirmed purchase: type its number (v6.9.3); a draft: Yes / No
+        if doc_edit.confirm_delete("purchase", pid):
+            ok, msg = doc_edit.delete_document("purchase", pid)
+            if not ok:
+                messagebox.showerror(t("common.error"), msg)
+            self._load()
+
+    def _export_excel(self):
+        from modules import permissions as _pm
+        if not _pm.allowed("purchase", "export"):
+            return False
+        try:
+            from modules.doc_actions import export_tree_excel
+            headers = ["Purchase #", "Supplier Inv#", "Date", "Supplier",
+                       "Subtotal", "VAT", "Total", "Status"]
+            export_tree_excel(self.frame, self.tree, "Purchases", headers,
+                              title="Purchase Invoices")
+        except Exception as e:
+            messagebox.showerror("Export", str(e)[:300])
+
+    def _report_pdf(self):
+        from modules import permissions as _pm
+        if not _pm.allowed("purchase", "print"):
+            return False
+        try:
+            from modules.doc_actions import export_tree_pdf
+            headers = ["Purchase #", "Supplier Inv#", "Date", "Supplier",
+                       "Subtotal", "VAT", "Total", "Status"]
+            export_tree_pdf(self.frame, self.tree, "Purchase_Register", headers,
+                            title="Purchase Invoice Register",
+                            subtitle=f"{len(self.tree.get_children())} purchases")
+        except Exception as e:
+            messagebox.showerror("Report", str(e)[:300])
+
+
+class PurchaseForm:
+    """Polosys-style Purchase Invoice — minimal header, big grid,
+    bottom totals, prev/next nav, find-by-number. Mirrors Sales Invoice."""
+
+    def __init__(self, parent, purchase_id=None, on_save=None):
+        self.parent = parent
+        self.purchase_id = purchase_id
+        self.on_save = on_save
+        self._lines = []
+        self.suppliers = []
+        self.products = []
+        self._product_units = {}
+        self._warehouses = ["Main Warehouse"]
+        self._load_lookups()
+        self._build_window()
+        if purchase_id:
+            self._load_data()
+        else:
+            self._set_defaults()
+        try:      # v6.9 connector bar: New · Edit · Save · Delete (user rights)
+            from ui import txn_connector as _tc
+            _tc.attach(self, "purchase")
+        except Exception:
+            pass
+
+    def _load_lookups(self):
+        try:
+            self.suppliers = db.fetchall(
+                "SELECT supplier_id, supplier_code, supplier_name_en, "
+                "ISNULL(supplier_name_ar,'') AS supplier_name_ar, "
+                "ISNULL(vat_registration_no,'') AS vat_registration_no "
+                "FROM suppliers WHERE is_active=1 ORDER BY supplier_name_en") or []
+        except Exception:
+            self.suppliers = []
+        try:
+            # NOTE: alias purchase_price AS unit_price so the grid's Rate
+            # column defaults to COST price for purchases.
+            self.products = db.fetchall(
+                "SELECT p.product_id, p.product_code, p.product_name_en, "
+                "p.product_name_ar, ISNULL(p.purchase_price,0) AS unit_price, "
+                "p.unit_of_measure_en, p.vat_category_id, "
+                "ISNULL(p.alias_name,'') AS alias_name, "
+                "ISNULL(p.purchase_price,0) AS purchase_price, "
+                "ISNULL(p.stock_quantity,0) AS stock_quantity, "
+                "ISNULL(p.barcode,'') AS barcode, " + sys_select("p") + ", "
+                "vc.category_code AS vat_code, ISNULL(vc.vat_rate,15) AS vat_rate "
+                "FROM products p LEFT JOIN vat_categories vc "
+                "ON p.vat_category_id=vc.vat_category_id "
+                "WHERE p.is_active=1 AND ISNULL(p.list_in_purchase,1)=1 "
+                "ORDER BY p.product_name_en") or []
+        except Exception:
+            self.products = []
+        self._product_units = {}
+        try:
+            for u in db.fetchall("SELECT * FROM product_units WHERE is_active=1"):
+                self._product_units.setdefault(u["product_id"], []).append(u)
+        except Exception:
+            self._product_units = {}
+        try:                       # optional table — ask first, no DB error
+            if db.execute_scalar("SELECT OBJECT_ID('warehouses','U')"):
+                rows = db.fetchall("SELECT warehouse_name_en AS n FROM warehouses "
+                                   "WHERE is_active=1 ORDER BY warehouse_name_en")
+                wl = [r["n"] for r in (rows or []) if r.get("n")]
+                if wl:
+                    self._warehouses = wl
+        except Exception:
+            pass
+
+    def _build_window(self):
+        C = cfg.theme()
+        title = "Edit Purchase" if self.purchase_id else "New Purchase Invoice"
+        self.win = tk.Toplevel()
+        self.win._doc_window = True     # item grid: may fill the screen
+        self.win._form = self           # v6.7: compact header (ui/compact.py)
+        self.win.title(title)
+        w = min(1360, int(self.win.winfo_screenwidth() * 0.90))
+        h = min(840, int(self.win.winfo_screenheight() * 0.92))
+        self.win.geometry(f"{w}x{h}")
+        self.win.configure(bg=C["content_bg"])
+        self._center(w, h)
+        self.win.bind("<F9>", lambda e: self._save(confirm=False))
+        self.win.bind("<F10>", lambda e: self._save(confirm=True))
+        self.win.bind("<F6>", lambda e: self._focus_barcode())
+        close_guard.bind_escape(self.win)     # Esc = ✕ (asks if lines are unsaved)
+
+        hdr = tk.Frame(self.win, bg=C["primary"], height=40)
+        hdr.pack(fill="x"); hdr.pack_propagate(False)
+        tk.Label(hdr, text=f"🛒  {title}", font=("Segoe UI", 12, "bold"),
+                 bg=C["primary"], fg="white").pack(side="left", padx=16)
+
+        self.form_body = tk.Frame(self.win, bg=C["card_bg"],
+                                  highlightbackground=C["border"], highlightthickness=1)
+        self.form_body.pack(side="top", fill="x")
+        self.items_area = tk.Frame(self.win, bg=C["content_bg"])    # packed last (v6.9)
+
+        self._build_header(C)
+        self._build_grid(C)
+        self._build_footer(C)
+        self.bottom_bar = tk.Frame(self.win, bg=C["card_bg"],
+                                   highlightbackground=C["border"], highlightthickness=1)
+        self.bottom_bar.pack(side="bottom", fill="x")
+        self._build_totals(C)
+        self.items_area.pack(side="top", fill="both", expand=True)
+
+    def _build_header(self, C):
+        """v7.9: titled blocks (Purchase · Supplier · Supplier bill) and the
+        supplier's balance card — the same look as the Sales window."""
+        self.hdr = {}
+        from ui.doc_header import DocHeader
+        F10 = ("Segoe UI", 10)
+        H = DocHeader(self.form_body, C, pady=(4, 4))
+        self._doc_header = H
+
+        def ent(var, width=10, st="normal"):
+            return lambda p: tk.Entry(p, textvariable=var, width=width, font=F10, relief="solid",
+                                      bd=1, state=st)
+
+        # ── Purchase: number (▲▼) · date · find
+        b1 = H.block("Purchase", weight=2, minwidth=210)
+        self.hdr["number"] = tk.StringVar()
+
+        def nav_btns(p):
+            f = tk.Frame(p, bg=C["card_bg"])
+            for t_, cmd_ in (("▲", self._nav_prev), ("▼", self._nav_next)):
+                tk.Button(f, text=t_, font=("Segoe UI", 7), width=2, padx=1, pady=0, bd=0,
+                          bg=C["content_bg"], relief="flat", cursor="hand2",
+                          command=cmd_).pack(side="left", padx=(1, 0))
+            return f
+        b1.row("No.", ent(self.hdr["number"], 10, "disabled"), extra=nav_btns)
+        self.hdr["date"] = tk.StringVar()
+        de = b1.row("Date", ent(self.hdr["date"], 11), required=True)
+        try:
+            from ui.datepicker import attach_datepicker
+            attach_datepicker(de, self.hdr["date"])
+        except Exception:
+            pass
+        self.find_on = tk.BooleanVar(value=False)
+        self.find_var = tk.StringVar()
+
+        def find_box(p):
+            self.find_entry = tk.Entry(p, textvariable=self.find_var, width=8, font=("Segoe UI", 9),
+                                       relief="solid", bd=1, state="disabled")
+            self.find_entry.bind("<Return>", lambda e: self._find())
+            return self.find_entry
+        b1.row("Find", find_box, extra=lambda p: tk.Checkbutton(
+            p, variable=self.find_on, command=self._toggle_find, bg=C["card_bg"],
+            activebackground=C["card_bg"], highlightthickness=0))
+
+        # ── Supplier: list (+ load PO) · name · tax no. (a supplier not in the list)
+        b2 = H.block("Supplier", weight=4, minwidth=300)
+        self.sup_var = tk.StringVar()
+
+        def sup_box(p):
+            self.sup_cb = ttk.Combobox(p, textvariable=self.sup_var,
+                                       values=[f"{s['supplier_code']} — {s['supplier_name_en']}"
+                                               for s in self.suppliers],
+                                       state="readonly", font=F10, width=24)
+            return self.sup_cb
+        b2.row("Supplier", sup_box, required=True, extra=lambda p: tk.Button(
+            p, text="📥 PO", font=("Segoe UI", 8), relief="flat", bg=C["content_bg"], cursor="hand2",
+            command=self._load_order))
+        try:
+            from modules import country as _ctry0
+            _tax_lbl = _ctry0.tax_no_label()
+        except Exception:
+            _tax_lbl = "VAT No."
+        self.sup_name_var, self.sup_vat_var = tk.StringVar(), tk.StringVar()
+        b2.row("Name", ent(self.sup_name_var, 18))
+        b2.row(_tax_lbl, ent(self.sup_vat_var, 16))
+        self.sup_facts_var = tk.StringVar(value="")          # older callers / tests
+        self.sup_cb.bind("<<ComboboxSelected>>", lambda e: self._show_supplier_facts(), add="+")
+
+        # ── Supplier bill: their invoice no. · payment · store · notes
+        b3 = H.block("Supplier bill", weight=3, minwidth=250)
+        self.hdr["supinv"] = tk.StringVar()
+        b3.row("Their Inv #", ent(self.hdr["supinv"], 12))
+        self.hdr["payment"] = tk.StringVar(value="cash")
+        b3.row("Payment", lambda p: ttk.Combobox(
+            p, textvariable=self.hdr["payment"],
+            values=cfg.payment_methods(["cash", "credit", "card", "bank_transfer", "cheque"]),
+            state="readonly", font=F10, width=12))
+        self.hdr["warehouse"] = tk.StringVar(value=self._warehouses[0])
+        b3.row("Store", lambda p: ttk.Combobox(p, textvariable=self.hdr["warehouse"],
+                                               values=self._warehouses, font=F10, width=12))
+        self.hdr["notes"] = tk.StringVar()
+        b3.row("Notes", ent(self.hdr["notes"], 16))
+
+        # ── the supplier's balance card
+        self._bal_card = H.balance_card()
+
+    def _pay_values(self):
+        try:
+            return list(cfg.payment_methods(["cash", "credit", "card", "bank_transfer", "cheque"]))
+        except Exception:
+            return ["cash", "credit", "card", "bank_transfer", "cheque"]
+
+    # ── v7.8: supplier facts / typed supplier ─────────────────
+    def _cur_supplier(self):
+        code = (self.sup_var.get() or "").split(" — ")[0]
+        return next((x for x in self.suppliers if x["supplier_code"] == code), None)
+
+    def _show_supplier_facts(self):
+        s = self._cur_supplier() or {}
+        card = getattr(self, "_bal_card", None)
+        if card is not None and s:                 # v7.9: the balance card
+            txt = card.show("supplier", s.get("supplier_id"), exclude_id=self.purchase_id)
+        else:
+            try:
+                from modules import party_info as _PI
+                txt = _PI.text("supplier", s.get("supplier_id"), exclude_id=self.purchase_id) if s else ""
+            except Exception:
+                txt = ""
+        if hasattr(self, "sup_facts_var"):
+            self.sup_facts_var.set(txt)
+        return txt
+
+    def _save_supplier_snapshot(self, pid, s):
+        """The supplier's name / tax no. on the bill: the typed ones, else the card's."""
+        nm = self.sup_name_var.get().strip() if hasattr(self, "sup_name_var") else ""
+        vat = "".join((self.sup_vat_var.get() if hasattr(self, "sup_vat_var") else "").split()).upper()
+        same = not nm or nm == (s.get("supplier_name_en") or "")
+        db.execute("UPDATE purchase_invoices SET supplier_name_en=?, supplier_name_ar=?, supplier_vat_no=? "
+                   "WHERE purchase_id=?",
+                   ((nm or s.get("supplier_name_en") or "")[:200],
+                    ((s.get("supplier_name_ar") or "") if same else nm)[:200],
+                    (vat or s.get("vat_registration_no") or "")[:15], pid))
+
+    def _load_order(self):
+        """📥 Load a purchase order: pick it, pick its lines and quantities
+        (what is still left) → they go on this purchase invoice."""
+        from ui.quotes import load_order_into
+        return load_order_into(self, "purchase")
+
+    def _build_grid(self, C):
+        # v6.9: no title line above the grid — more rows for the items
+        try:
+            from ui.invoice_grid import InvoiceGrid
+            self.grid = InvoiceGrid(self.items_area, C, self.products,
+                                    self._product_units, on_change=self._on_change,
+                                    tax_mode=cfg.get("purchase_cost_tax_mode", "exclusive"),
+                                    doc_type="purchase")
+            self.grid.pack(fill="both", expand=True, padx=8, pady=(4, 0))
+            self._on_change()
+            self.grid.focus_first_product()
+        except Exception as e:
+            import traceback; traceback.print_exc()
+            tk.Label(self.items_area, text=f"⚠ Grid load error:\n{e}",
+                     bg=C["content_bg"], fg=C["danger"]).pack(padx=16, pady=20)
+
+    def _build_totals(self, C):
+        """v6.9: totals on one slim line (was a tall block)."""
+        from ui.ui_kit import total_strip
+        self.tvars = total_strip(self.bottom_bar,
+                                 [("Total Qty", "qty", None), ("Gross", "gross", None),
+                                  ("Discount", "disc", C["danger"]), ("Taxable", "taxable", None),
+                                  ("VAT", "vat", C["info"])],
+                                 ("NET TOTAL (SAR)", "total"), C)
+        # v7.9: paid from which cash / bank account(s); the rest on the supplier's account
+        from ui.pay_panel import PayPanel
+        self._cur_total = 0.0
+        self.pay = PayPanel(self.bottom_bar, C, lambda: self._cur_total, title="Paid from")
+        try:
+            self.hdr["payment"].trace_add("write", lambda *a: self.pay.set_auto(self.hdr["payment"].get()))
+            self.pay.set_auto(self.hdr["payment"].get())
+        except Exception:
+            pass
+
+    def _build_footer(self, C):
+        footer = tk.Frame(self.win, bg=C["card_bg"],
+                          highlightbackground=C["border"], highlightthickness=1)
+        footer.pack(fill="x", side="bottom")
+        inner = tk.Frame(footer, bg=C["card_bg"]); inner.pack(fill="x", padx=10, pady=3)
+        self.status_var = tk.StringVar()
+        tk.Label(inner, textvariable=self.status_var, font=("Segoe UI", 9),
+                 bg=C["card_bg"], fg=C["danger"]).pack(side="left")
+        tk.Button(inner, command=lambda: close_guard.request_close(self.win),
+                  **__import__("ui.ui_kit", fromlist=["x"]).slim_ghost_key_style("Esc", "Cancel")).pack(
+                      side="right", padx=(8, 0))
+        from ui import print_menu
+        print_menu.print_button(inner, "purchase", lambda: self.purchase_id,
+                                before=self._save_for_print, status=self.status_var,
+                                **__import__("ui.ui_kit", fromlist=["x"]).slim_key_style(
+                                    C.get("tile_purple", C["info"]), "🖨 ▾", "Print")).pack(side="right", padx=(8, 0))
+        tk.Button(inner, command=lambda: self._save(confirm=True),
+                  **__import__("ui.ui_kit", fromlist=["x"]).slim_key_style(
+                      C.get("tile_green", C["success"]), "F10", "Save & Confirm")).pack(side="right", padx=(8, 0))
+        # v6.0: batch no. + expiry date per line
+        tk.Button(inner, text="⏰ Expiry dates", font=("Segoe UI", 9), bg=C["card_bg"],
+                  relief="flat", padx=10, pady=2, cursor="hand2", highlightthickness=1,
+                  highlightbackground=C["border"], command=self._expiry_dates).pack(side="right", padx=(8, 0))
+        tk.Button(inner, command=lambda: self._save(confirm=False),
+                  **__import__("ui.ui_kit", fromlist=["x"]).slim_key_style(
+                      C.get("tile_blue", C["primary"]), "F9", "Save Draft")).pack(side="right")
+        try:                             # v7.0: Textiles size / colour grid (Ctrl+G)
+            from ui import textiles as _tx
+            _tx.attach_matrix(self.win, lambda: getattr(self, "grid", None), inner)
+        except Exception:
+            pass
+
+    def _focus_barcode(self):
+        try:
+            self.grid.focus_barcode()
+        except Exception:
+            pass
+
+    def _expiry_dates(self):
+        """v6.0: batch no. + expiry date for the lines (kept on the lines)."""
+        try:
+            from ui.expiry_dialog import ExpiryDialog
+            lines = self.grid.data_lines()
+            if not lines:
+                self.status_var.set("Add products first.")
+                return None
+            return ExpiryDialog(self.win, lines,
+                                on_done=lambda: self.status_var.set("Expiry dates kept — save the purchase."))
+        except Exception as e:
+            self.status_var.set("Expiry: %s" % str(e)[:80])
+            return None
+
+    def _save_for_print(self):
+        """Print needs a saved purchase: save it (as draft) if new."""
+        if self.purchase_id:
+            return True
+        return self._save(confirm=False, keep_open=True) is True
+
+    def _on_change(self):
+        grid = getattr(self, "grid", None)
+        if grid is None:
+            return
+        from modules.doc_math import doc_totals, round_lines
+        self._lines = round_lines(grid.data_lines())        # halalas (v6.9.2)
+        if not hasattr(self, "tvars"):
+            return
+        gross = sum(l.get("line_amount", 0) for l in self._lines)
+        disc = sum(l.get("discount_amount", 0) for l in self._lines)
+        T = doc_totals(self._lines, (getattr(getattr(self, "grid", None), "tax_mode", "exclusive") == "inclusive"))               # VAT once per rate
+        vat, total = T["vat"], T["total"]
+        qty = sum(l.get("quantity", 0) for l in self._lines)
+        self.tvars["qty"].set(f"{qty:g}")
+        self.tvars["gross"].set(f"{gross:,.2f}")
+        self.tvars["disc"].set(f"−{disc:,.2f}" if abs(disc) >= 0.005 else "0.00")
+        self.tvars["taxable"].set(f"{T['taxable']:,.2f}")
+        self.tvars["vat"].set(f"{vat:,.2f}")
+        self.tvars["total"].set(f"{total:,.2f}")
+        self._cur_total = total
+        if getattr(self, "pay", None) is not None:
+            self.pay.total_changed()
+
+    def _set_defaults(self):
+        self.hdr["date"].set(date.today().isoformat())
+        self.hdr["number"].set(self._next_number())
+        if getattr(self, "pay", None) is not None:       # v7.9: a new bill: the panel follows Payment
+            self.pay.manual = False
+            self.pay.set_auto(self.hdr["payment"].get())
+        # Default supplier = Cash ledger supplier, so a cash purchase
+        # (walk-in / spot-buy) doesn't require picking a supplier first —
+        # mirrors the Sales Invoice's default-to-Cash-customer behaviour.
+        cash = next((s for s in self.suppliers
+                     if str(s.get("supplier_code", "")).upper() in
+                     ("CASH", "WALKIN", "CASH-001", "WALK-IN")
+                     or "cash" in str(s.get("supplier_name_en", "")).lower()
+                     or "walk" in str(s.get("supplier_name_en", "")).lower()), None)
+        if cash:
+            self.sup_cb.set(f"{cash['supplier_code']} — {cash['supplier_name_en']}")
+        for _v in ("sup_name_var", "sup_vat_var"):        # v7.8
+            if hasattr(self, _v):
+                getattr(self, _v).set("")
+        if hasattr(self, "sup_facts_var"):
+            self.win.after_idle(self._show_supplier_facts)
+
+    def _next_number(self):
+        try:
+            from modules.doc_numbering import next_number
+            return next_number("purchase_invoices", "invoice_number",
+                               str(cfg.get("purchase_prefix") or "PI").strip() or "PI")
+        except Exception:
+            ym = datetime.now().strftime("%Y%m")
+            return f"PI-{ym}-000001"
+
+    # ── nav / find ────────────────────────────────────────────
+    def _toggle_find(self):
+        on = self.find_on.get()
+        self.find_entry.configure(state="normal" if on else "disabled")
+        if on:
+            self.find_entry.focus_set()
+
+    def _find(self):
+        num = self.find_var.get().strip()
+        if not num:
+            return
+        row = db.fetchone("SELECT purchase_id FROM purchase_invoices "
+                          "WHERE invoice_number=?", (num,))
+        if not row:
+            row = db.fetchone("SELECT TOP 1 purchase_id FROM purchase_invoices "
+                              "WHERE invoice_number LIKE ? ORDER BY purchase_id DESC",
+                              ("%" + num + "%",))
+        if row:
+            self._goto(row["purchase_id"])
+        else:
+            messagebox.showinfo("Not found", f"No purchase matching '{num}'.")
+
+    def _nav_prev(self):
+        cur = self.purchase_id
+        if cur:
+            row = db.fetchone("SELECT TOP 1 purchase_id FROM purchase_invoices "
+                              "WHERE purchase_id<? ORDER BY purchase_id DESC", (cur,))
+        else:
+            row = db.fetchone("SELECT TOP 1 purchase_id FROM purchase_invoices "
+                              "ORDER BY purchase_id DESC")
+        if row:
+            self._goto(row["purchase_id"])
+        else:
+            messagebox.showinfo("Navigation", "No earlier purchase.")
+
+    def _nav_next(self):
+        cur = self.purchase_id
+        if not cur:
+            messagebox.showinfo("Navigation", "Already on a new purchase.")
+            return
+        row = db.fetchone("SELECT TOP 1 purchase_id FROM purchase_invoices "
+                          "WHERE purchase_id>? ORDER BY purchase_id ASC", (cur,))
+        if row:
+            self._goto(row["purchase_id"])
+        else:
+            messagebox.showinfo("Navigation", "This is the latest purchase.")
+
+    def _goto(self, pid):
+        self.purchase_id = pid
+        try:
+            self.grid.set_lines([])
+        except Exception:
+            pass
+        self._load_data()
+
+    def _load_data(self):
+        inv = db.fetchone("SELECT * FROM purchase_invoices WHERE purchase_id=?",
+                          (self.purchase_id,))
+        if not inv:
+            return
+        self.hdr["number"].set(inv.get("invoice_number", ""))
+        self.hdr["date"].set(str(inv.get("invoice_date", "")))
+        self.hdr["supinv"].set(inv.get("supplier_invoice_no", "") or "")
+        self.hdr["payment"].set(inv.get("payment_method", "credit") or "credit")
+        sid = inv.get("supplier_id")
+        if sid:
+            s = next((x for x in self.suppliers if x["supplier_id"] == sid), None)
+            if s:
+                self.sup_cb.set(f"{s['supplier_code']} — {s['supplier_name_en']}")
+                if hasattr(self, "sup_name_var"):        # v7.8: a typed supplier name / tax no.
+                    nm = inv.get("supplier_name_en") or ""
+                    self.sup_name_var.set("" if nm == (s.get("supplier_name_en") or "") else nm)
+                    v = inv.get("supplier_vat_no") or ""
+                    self.sup_vat_var.set("" if v == (s.get("vat_registration_no") or "") else v)
+        self._show_supplier_facts()
+        lines = db.fetchall("SELECT * FROM purchase_invoice_lines WHERE purchase_id=? "
+                            "ORDER BY line_number", (self.purchase_id,))
+        try:
+            self.grid.set_lines([dict(l) for l in lines])
+        except Exception:
+            pass
+        self._on_change()
+        if getattr(self, "pay", None) is not None:       # v7.9: what it was paid with
+            try:
+                from modules import tenders as _td
+                rows = _td.lines_for("purchase", self.purchase_id)
+            except Exception:
+                rows = []
+            if rows:
+                self.pay.set_rows(rows)
+            else:
+                self.pay.manual = False
+                self.pay.set_auto(inv.get("payment_method") or "credit")
+        self._mark_clean()
+
+    # ── close guard: ask only when lines are not saved ────────
+    def _lines_sig(self):
+        try:
+            return close_guard.lines_sig(self.grid.data_lines())
+        except Exception:
+            return ()
+
+    def _mark_clean(self):
+        """The grid now matches the saved / loaded purchase."""
+        self._clean_sig = self._lines_sig()
+
+    def _is_dirty(self):
+        """✕ / Esc / Cancel ask first only while the grid has lines that
+        are not saved: a new purchase, or lines changed since load / save."""
+        sig = self._lines_sig()
+        if not sig:
+            return False
+        return not self.purchase_id or sig != getattr(self, "_clean_sig", None)
+
+    # ── save ──────────────────────────────────────────────────
+    def _save(self, confirm=False, keep_open=False):
+        from modules import permissions as _pm
+        if not _pm.allowed("purchase", "edit" if self.purchase_id else "add"):
+            return False
+        # v6.9.5: a CONFIRMED purchase stays confirmed when it is changed
+        # (F9 / Save Draft took its stock, books and payments back out)
+        if self.purchase_id and not confirm:
+            from modules import doc_edit
+            confirm = doc_edit.info("purchase", self.purchase_id)[1] == "confirmed"
+        try:
+            self._lines = self.grid.data_lines()
+        except Exception:
+            pass
+        if self.sup_cb.current() < 0:
+            self.status_var.set("⚠️  Select a supplier.")
+            return
+        if not self._lines:
+            self.status_var.set("⚠️  Add at least one item.")
+            return
+        pdate = self.hdr["date"].get().strip()
+        from modules.date_utils import validate_invoice_date
+        ok, iso_date, err = validate_invoice_date(pdate)
+        if not ok:
+            self.status_var.set(f"⚠️  {err}")
+            return
+        self.hdr["date"].set(iso_date)
+        try:
+            from modules import financial_year as fy
+            lock_msg = fy.guard_active(iso_date)
+            if not lock_msg and self.purchase_id:
+                from modules import doc_edit       # the saved document's own rules
+                lock_msg = doc_edit.block_reason("purchase", self.purchase_id, "edit")
+            if lock_msg:
+                self.status_var.set(f"⚠️  {lock_msg}")
+                return
+        except Exception:
+            pass
+        self.status_var.set("")
+        s = self.suppliers[self.sup_cb.current()]
+        try:                                       # v7.8: a typed tax number must be right
+            from modules import party_info as _PI
+            _why = _PI.check_tax_no(self.sup_vat_var.get() if hasattr(self, "sup_vat_var") else "")
+        except Exception:
+            _why = ""
+        if _why:
+            self.status_var.set("❌ " + _why)
+            return False
+        from modules.doc_math import doc_totals, round_lines
+        self._lines = round_lines(self._lines)
+        T = doc_totals(self._lines, (getattr(getattr(self, "grid", None), "tax_mode", "exclusive") == "inclusive"))     # v6.9.2: the ZATCA way
+        sub, vat, total = T["taxable"], T["vat"], T["total"]
+        status = "confirmed" if confirm else "draft"
+        # paid now (cash / bank / card / cheque) or on the supplier's account
+        method = str(self.hdr["payment"].get() or "credit").lower()
+        paid = total if method in ("cash", "bank_transfer", "bank", "card", "cheque") else 0
+        pp = getattr(self, "pay", None)
+        if pp is not None:                         # v7.9: the payment area decides
+            self._cur_total = total
+            if pp.manual:
+                try:
+                    from modules import party_info as _PI
+                    from ui.pay_panel import ok_for_party
+                    why = ok_for_party(_PI.has_no_account("supplier", s["supplier_id"]), total, pp.paid(), "supplier")
+                except Exception:
+                    why = ""
+                if why:
+                    self.status_var.set("⚠️  " + why)
+                    messagebox.showwarning("Payment", why, parent=self.win)
+                    return False
+                method = pp.method()
+                self.hdr["payment"].set(method) if method in (self._pay_values() or [method]) else None
+            else:
+                pp.set_auto(method)
+            paid = round(min(total, pp.paid()), 2)
+        pay_status = ("paid" if paid >= total - 0.005 else ("partial" if paid > 0.005 else "unpaid"))
+        _moved = False
+        if self.purchase_id:
+            try:   # supplier payments settled on this purchase stay counted
+                from modules import allocation
+                # v6.9.5: moved to another supplier → what was paid / returned
+                # to the old one stays on the old one's account (below)
+                _moved = allocation.party_moved("disbursement", self.purchase_id,
+                                                s["supplier_id"])
+                if not _moved:
+                    paid = min(total, paid + allocation.allocated_total(
+                        "disbursement", self.purchase_id))
+                pay_status = ("paid" if paid >= total - 0.005 else
+                              ("partial" if paid > 0.005 else "unpaid"))
+            except Exception:
+                pass
+        # v5.27: header, lines, stock, cost and journal are ONE transaction
+        _was_id, _tx = self.purchase_id, None
+        try:
+            _tx = db.begin()
+            if self.purchase_id:
+                if _moved:
+                    from modules import allocation
+                    allocation.unlink_document("disbursement", self.purchase_id)
+                db.execute("UPDATE purchase_invoices SET supplier_id=?, "
+                           "supplier_invoice_no=?, invoice_date=?, payment_method=?, "
+                           "subtotal_amount=?, taxable_amount=?, vat_amount=?, "
+                           "total_amount=?, invoice_status=?, payment_status=?, "
+                           "paid_amount=?, updated_at=GETDATE() "
+                           "WHERE purchase_id=?",
+                           (s["supplier_id"], self.hdr["supinv"].get() or None,
+                            self.hdr["date"].get(), self.hdr["payment"].get(),
+                            sub, sub, vat, total, status, pay_status, paid,
+                            self.purchase_id))
+                db.execute("DELETE FROM purchase_invoice_lines WHERE purchase_id=?",
+                           (self.purchase_id,))
+                pid = self.purchase_id
+            else:
+                pnum = self._next_number()
+                db.execute("INSERT INTO purchase_invoices (invoice_number, "
+                           "supplier_invoice_no, invoice_date, supplier_id, "
+                           "supplier_name_en, supplier_name_ar, supplier_vat_no, "
+                           "payment_method, subtotal_amount, taxable_amount, "
+                           "vat_amount, total_amount, invoice_status, payment_status, "
+                           "paid_amount) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                           (pnum, self.hdr["supinv"].get() or None,
+                            self.hdr["date"].get(), s["supplier_id"],
+                            s["supplier_name_en"], s.get("supplier_name_ar", ""),
+                            s.get("vat_registration_no", ""), self.hdr["payment"].get(),
+                            sub, sub, vat, total, status, pay_status, paid))
+                pid = db.last_identity("purchase_invoices", "purchase_id")
+            self.purchase_id = pid
+            self._save_supplier_snapshot(pid, s)
+            if getattr(self, "pay", None) is not None:      # v7.9: which accounts paid how much
+                self.pay.save("purchase", pid)
+            for i, ln in enumerate(self._lines, 1):
+                db.execute("INSERT INTO purchase_invoice_lines (purchase_id, "
+                           "line_number, product_id, product_code, product_name_en, "
+                           "quantity, unit_of_measure_en, unit_price, line_amount, "
+                           "vat_category_id, vat_rate, vat_amount, line_total) "
+                           "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                           (pid, i, ln.get("product_id"), ln.get("product_code", ""),
+                            ln.get("product_name_en", ""), ln.get("quantity", 0),
+                            ln.get("unit_of_measure_en", "Unit"), ln.get("unit_price", 0),
+                            ln.get("line_amount", 0), ln.get("vat_category_id"),
+                            ln.get("vat_rate", 15), ln.get("vat_amount", 0),
+                            ln.get("line_total", 0)))
+                if ln.get("batch_no") or ln.get("expiry_date"):     # v6.0 batches
+                    try:
+                        with db.savepoint():
+                            db.execute("UPDATE purchase_invoice_lines SET batch_no=?, expiry_date=? "
+                                       "WHERE purchase_id=? AND line_number=?",
+                                       (ln.get("batch_no"), ln.get("expiry_date"), pid, i))
+                    except Exception:
+                        pass
+            # ── Stock + cost + accounts (one engine for every document) ──
+            # Draft → nothing moves. Confirmed → stock in (base units),
+            # weighted-average cost, purchase journal. Editing re-syncs.
+            from modules import doc_posting
+            try:
+                doc_posting.sync("purchase", pid)
+            except Exception as e:
+                doc_posting.last_warning = str(e)[:200]
+            _tx.commit()            # kept together — or the except below undoes it all
+            self._mark_clean()      # close guard: nothing unsaved now
+            if keep_open:                         # saved on the way to printing
+                self.status_var.set(f"💾 Saved {self.hdr['number'].get()} "
+                                    f"({'confirmed' if confirm else 'draft'}).")
+            elif confirm:
+                messagebox.showinfo("Saved", f"Purchase invoice {self.hdr['number'].get()} "
+                                    f"confirmed.\nStock and accounts updated.")
+                doc_posting.notify(self.win)
+            if confirm:
+                self._cost_up_hint(pid)
+            else:
+                messagebox.showinfo("Saved", f"Purchase {self.hdr['number'].get()} saved "
+                                    f"as DRAFT.\nStock and accounts update when you "
+                                    f"confirm it (Save & Confirm or ✅ Confirm).")
+            try:                         # v7.5: a purchase order loaded here → received
+                from modules import doc_links as _DL
+                _DL.after_save(self, pid)
+            except Exception:
+                pass
+            if self.on_save:
+                try:
+                    self.on_save()
+                except Exception:
+                    pass
+            if not keep_open:
+                # v6.9.3: the window stays open (Settings ▸ General ▸ After saving)
+                from ui import after_save
+                parent, cb, num = self.parent, self.on_save, self.hdr['number'].get()
+                after_save.finish(self, num,
+                                  new=lambda: PurchaseForm(parent, on_save=cb),
+                                  keep=lambda: PurchaseForm(parent, purchase_id=pid, on_save=cb),
+                                  edited=bool(_was_id))
+            return True
+        except Exception as e:
+            if _tx is not None and not _tx.kept:
+                _tx.rollback()                       # nothing of a failed save is kept
+                self.purchase_id = _was_id
+                e = "Not saved — " + str(e)
+            self.status_var.set(f"❌ {str(e)[:90]}")
+
+    def _cost_up_hint(self, pid):
+        """v6.4: this purchase made some items cost more → say so once
+        (Inventory ▸ Price Updates suggests prices that keep the margin)."""
+        try:
+            from modules import price_update as PU
+            ids = [ln.get("product_id") for ln in (self._lines or []) if ln.get("product_id")]
+            rows = PU.suggestions(product_ids=ids) if ids else []
+            self.cost_up = rows
+            if rows:
+                from ui.ui_polish import toast
+                toast(self.win.winfo_toplevel() if self.win.winfo_exists() else self.win.master,
+                      "📈 Cost went up on %d item(s) — Inventory ▸ Price Updates" % len(rows))
+        except Exception:
+            pass
+
+    def _center(self, w, h):
+        self.win.update_idletasks()
+        sw = self.win.winfo_screenwidth(); sh = self.win.winfo_screenheight()
+        self.win.geometry(f"{w}x{h}+{(sw-w)//2}+{max(0,(sh-h)//2-20)}")
