@@ -1,0 +1,4 @@
+agent.log
+agent.log.old
+agent.lock
+cacert.pem
