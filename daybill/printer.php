@@ -13,6 +13,9 @@ function printer_map(): array
 // Printer chosen by the admin for these options ('' = Windows default printer).
 function auto_printer(array $f): string
 {
+    if (($f['kind'] ?? '') === 'photo' && setting('photo_printer', '') !== '') {
+        return setting('photo_printer');
+    }
     $mapped = (string)(printer_map()[$f['paper']][$f['color']] ?? '');
     if ($mapped !== '') {
         return $mapped;

@@ -62,6 +62,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $f = load_file($id, (int)($_POST['file_id'] ?? 0));
         if ($f) {
             $o = clean_options($_POST);
+            if ($f['kind'] === 'photo') { // photo items stay on the photo paper, in colour
+                $o['paper'] = $f['paper'];
+            }
             // Price: left as shown -> unchanged (an automatic price follows the new options);
             // empty or equal to the calculated price -> automatic; anything else -> staff override.
             $raw = trim(str_replace(',', '.', (string)($_POST['price'] ?? '')));
@@ -316,7 +319,7 @@ echo flash();
         </div>
       </form>
       <?php $srcExt = $f['orig_name'] !== '' ? $f['orig_ext'] : $f['ext'];
-      if (enabled_layouts() && in_array($srcExt, ['pdf', 'jpg', 'jpeg', 'png'], true)): ?>
+      if ($f['kind'] !== 'photo' && enabled_layouts() && in_array($srcExt, ['pdf', 'jpg', 'jpeg', 'png'], true)): ?>
         <details class="relayout" data-file="<?= (int)$f['id'] ?>" data-ext="<?= h($srcExt) ?>"
                  data-src="file.php?id=<?= (int)$f['id'] ?><?= $f['orig_name'] !== '' ? '&amp;orig=1' : '' ?>">
           <summary>🗂️ Change layout</summary>
@@ -377,7 +380,7 @@ echo flash();
 
 <?php if (enabled_layouts()): ?>
 <script src="assets/pdf-lib.min.js"></script>
-<script src="assets/layout.js?v=1"></script>
+<script src="assets/layout.js?v=2"></script>
 <script>
 // Staff can change a file's layout: the print-ready PDF is built here in the browser and uploaded.
 (function () {

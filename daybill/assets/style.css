@@ -286,3 +286,46 @@ html.in-sheet main.wrap { padding-top: 14px; padding-bottom: 30px; }
 .icon-btns { display: flex; gap: 8px; }
 .icon-btns .btn { flex: 1; padding: 12px 8px; }
 .sheet-list { display: grid; gap: 8px; }
+
+/* ---- v11: photo print tool ---- */
+.photo-entry { display: flex; align-items: center; gap: 12px; width: 100%; margin: 0 0 12px; padding: 14px 16px; border: 0; border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--primary), var(--p-dark)); color: var(--on-primary); text-align: start; cursor: pointer; font: inherit; }
+.photo-entry .pe-ic { font-size: 2rem; }
+.photo-entry b { display: block; font-size: 1.1rem; }
+.photo-entry small { display: block; opacity: .85; font-size: .85rem; }
+.photo-entry .chev { margin-inline-start: auto; font-size: 1.6rem; opacity: .8; }
+dialog.sheet.full { max-height: none; height: 100vh; height: 100dvh; border-radius: 0; max-width: 720px; }
+@media (min-width: 700px) { dialog.sheet.full { height: 92vh; border-radius: 18px; } }
+.pt-pick { padding: 60px 12px; font-size: 1.15rem; }
+.pt-photo { position: relative; display: flex; justify-content: center; background: #e9edf4; border-radius: var(--radius); padding: 10px; }
+.pt-photo img { max-height: 170px; max-width: 100%; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+.pt-change { position: absolute; bottom: 10px; inset-inline-end: 10px; background: #fff; }
+.pt-main h4 { margin: 16px 0 8px; font-size: .9rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.pt-sizes { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.pt-size { display: flex; align-items: center; gap: 10px; padding: 10px; border: 2px solid var(--line); border-radius: 10px; background: #fff;
+  color: var(--text); font: inherit; font-size: .88rem; font-weight: 600; text-align: start; cursor: pointer; }
+.pt-size i { flex: none; display: block; border: 2px solid var(--p-300); background: var(--p-50); border-radius: 3px; }
+.pt-size.on { border-color: var(--primary); background: var(--p-50); }
+.pt-size.on i { border-color: var(--primary); background: var(--p-200); }
+.pt-count { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.pt-count .stepper { width: 170px; margin: 0; }
+.pt-count .stepper input { margin: 0; }
+.pt-quick { display: flex; flex-wrap: wrap; gap: 6px; }
+.pt-quick .chip { border: 0; cursor: pointer; font: inherit; font-size: .85rem; font-weight: 600; padding: 7px 12px; }
+.pt-quick .chip.on { background: var(--primary); color: var(--on-primary); }
+.pt-info { margin: 14px 0 8px; font-weight: 600; color: var(--p-dark); }
+.pt-sheets { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 8px; cursor: zoom-in; align-items: flex-start; }
+.pt-sheets canvas { flex: none; width: 110px; height: auto; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,.15); background: #fff; }
+.pt-more { align-self: center; font-weight: 700; color: var(--muted); }
+.pt-hint { margin: 0 0 10px; font-size: .82rem; }
+.pt-big { display: flex; flex-direction: column; align-items: center; gap: 18px; background: #3a3f4a; }
+.pt-big figure { margin: 0; text-align: center; }
+.pt-big canvas { height: auto; box-shadow: 0 4px 18px rgba(0,0,0,.4); background: #fff; }
+.pt-big figcaption { color: #e8ebf2; margin-top: 6px; font-size: .9rem; }
+.pi-row { display: flex; gap: 12px; align-items: center; }
+.pi-thumb { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; flex: none; }
+.pi-txt { min-width: 0; }
+.photo-item .pi-edit { margin-top: 10px; }
+.big-check { font-size: 1.05rem; padding: 12px; }
+.pt-change input[type=file], input[type=file][hidden] { display: none !important; }
+.pt-change { cursor: pointer; }

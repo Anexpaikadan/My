@@ -86,6 +86,11 @@ function migrate(PDO $pdo): void
             ADD COLUMN orig_ext VARCHAR(10) NOT NULL DEFAULT '' AFTER orig_name");
         $pdo->exec("UPDATE settings SET v = '5' WHERE shop_id = 0 AND k = 'schema_version'");
     }
+    if ($v < 6) {
+        // Photo print tool: photo items are marked so they get photo prices and the photo printer.
+        $pdo->exec("ALTER TABLE job_files ADD COLUMN kind VARCHAR(10) NOT NULL DEFAULT '' AFTER layout");
+        $pdo->exec("UPDATE settings SET v = '6' WHERE shop_id = 0 AND k = 'schema_version'");
+    }
 }
 
 function h($s): string
@@ -209,6 +214,7 @@ const DEFAULT_SETTINGS = [
     'pricing' => '{"A4":{"bw":{"single":[1,2,1],"double":[1,2,1]},"color":{"single":[1,5,3],"double":[1,5,3]}},"A3":{"bw":{"single":[1,4,2],"double":[1,4,2]},"color":{"single":[1,10,6],"double":[1,10,6]}}}',
     'currency' => 'SR', 'default_lang' => 'en', 'retention_days' => '2', 'auto_complete' => '1',
     'layouts_enabled' => 'nup2,nup4,photo4,passport',
+    'photo_enabled' => '0', 'photo_paper' => 'A4', 'photo_sizes' => 'passport,photo4x6,photo10x15', 'photo_price_mode' => 'photo',
 ];
 
 // Creates a shop with default settings and its first admin. Returns the shop id.
@@ -426,7 +432,50 @@ const BUILTIN_LAYOUTS = [
     'passport' => ['type' => 'size', 'w' => 35, 'h' => 45, 'label' => 'Passport photo 3.5 × 4.5 cm'],
     'photo4x6' => ['type' => 'size', 'w' => 40, 'h' => 60, 'label' => 'Photo 4 × 6 cm'],
     'photo5x5' => ['type' => 'size', 'w' => 51, 'h' => 51, 'label' => 'Photo 5 × 5 cm (2 × 2 in)'],
+    'photo10x15' => ['type' => 'size', 'w' => 102, 'h' => 152, 'label' => 'Photo 10 × 15 cm (4 × 6 in)'],
+    'photo13x18' => ['type' => 'size', 'w' => 127, 'h' => 178, 'label' => 'Photo 13 × 18 cm (5 × 7 in)'],
 ];
+
+// ---- Photo print tool (Settings → Photo print) -----------------------
+const PHOTO_PAPERS = ['A4', 'A5', 'A6', 'Letter', '10x15 cm', '13x18 cm'];
+
+function photo_enabled(): bool
+{
+    return setting('photo_enabled', '0') === '1' && photo_sizes();
+}
+
+function photo_paper(): string
+{
+    $p = setting('photo_paper', 'A4');
+    return in_array($p, PHOTO_PAPERS, true) ? $p : 'A4';
+}
+
+// Exact photo sizes the tool offers (built-in sizes and the shop's own sizes).
+function photo_sizes(): array
+{
+    $sizes = array_filter(all_layouts(), fn($L) => $L['type'] === 'size');
+    return array_intersect_key($sizes, array_flip(csv_setting('photo_sizes', 'passport,photo4x6,photo10x15')));
+}
+
+// "passport:8" → valid code for the photo tool, or ''.
+function clean_photo_layout(string $code): string
+{
+    [$id, $pieces] = array_pad(explode(':', $code, 2), 2, '');
+    return isset(photo_sizes()[$id]) && (int)$pieces >= 1 ? $id . ':' . min(500, (int)$pieces) : '';
+}
+
+// Price of a photo item: per photo or per sheet (Settings → Photo print); null = normal colour page prices.
+function photo_price(array $f): ?float
+{
+    $price = setting('photo_price', '');
+    if ($price === '') {
+        return null;
+    }
+    $count = setting('photo_price_mode', 'photo') === 'sheet'
+        ? max(1, (int)$f['pages_total'])
+        : max(1, (int)(explode(':', (string)$f['layout'])[1] ?? 1));
+    return round($count * (int)$f['copies'] * max(0, (float)$price), 2);
+}
 
 // Built-in layouts plus the shop's own photo sizes ("Visa photo = 30x40", one per line).
 function all_layouts(): array
@@ -522,7 +571,10 @@ function rule_price(array $rule, int $pages): float
 // Price calculated from the rules (ignores a staff override).
 function auto_price(array $f): float
 {
-    $lp = ($f['layout'] ?? '') !== '' ? layout_price((string)$f['layout']) : null;
+    if (($f['kind'] ?? '') === 'photo' && ($pp = photo_price($f)) !== null) {
+        return $pp;
+    }
+    $lp = ($f['layout'] ?? '') !== '' && ($f['kind'] ?? '') !== 'photo' ? layout_price((string)$f['layout']) : null;
     if ($lp !== null) {
         return round(max(1, (int)$f['pages_total']) * (int)$f['copies'] * $lp, 2);
     }
@@ -749,7 +801,7 @@ function page_header(string $title, bool $staff = false, string $lang = 'en', st
         . '<meta name="mobile-web-app-capable" content="yes">'
         . '<meta name="apple-mobile-web-app-status-bar-style" content="default">'
         . '<meta name="apple-mobile-web-app-title" content="' . h($staff ? 'Print Staff' : $shop) . '">'
-        . '<link rel="stylesheet" href="assets/style.css?v=10">'
+        . '<link rel="stylesheet" href="assets/style.css?v=11">'
         . '<style>' . theme_css() . '</style>'
         . '<script>addEventListener("pagereveal",function(e){var v=e.viewTransition;if(v){v.ready.catch(function(){});v.finished.catch(function(){});}});</script>'
         . '<script src="assets/app.js?v=8" defer></script></head>'

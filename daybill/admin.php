@@ -6,7 +6,7 @@ require __DIR__ . '/printer.php';
 $admin = require_admin();
 
 $sections = ['employees' => 'Employees', 'options' => 'Customer options', 'prices' => 'Prices',
-    'printing' => 'Printing', 'shop' => 'Shop settings', 'colors' => 'App colour', 'layouts' => 'Layouts'];
+    'printing' => 'Printing', 'shop' => 'Shop settings', 'colors' => 'App colour', 'layouts' => 'Layouts', 'photo' => 'Photo print'];
 $themes = [
     'DAYbill' => ['#360dd9', '#7ed957'], 'Ocean' => ['#1f6feb', '#14b8a6'], 'Emerald' => ['#047857', '#f59e0b'],
     'Royal' => ['#6d28d9', '#ec4899'], 'Rose' => ['#be123c', '#0ea5e9'], 'Sunset' => ['#c2410c', '#2563eb'],
@@ -59,6 +59,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'delete_user' && $ownUser && $uid !== (int)$admin['id']) {
         $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$uid]);
         flash('User deleted.');
+    } elseif ($action === 'photo') {
+        save_setting('photo_enabled', isset($_POST['photo_enabled']) ? '1' : '0');
+        save_setting('photo_paper', in_array($_POST['photo_paper'] ?? '', PHOTO_PAPERS, true) ? $_POST['photo_paper'] : 'A4');
+        save_setting('photo_printer', mb_substr(trim((string)($_POST['photo_printer'] ?? '')), 0, 200));
+        $sizes = array_keys(array_filter(all_layouts(), fn($L) => $L['type'] === 'size'));
+        save_setting('photo_sizes', implode(',', array_intersect($sizes, (array)($_POST['photo_sizes'] ?? []))));
+        save_setting('photo_price_mode', ($_POST['photo_price_mode'] ?? '') === 'sheet' ? 'sheet' : 'photo');
+        $price = trim(str_replace(',', '.', (string)($_POST['photo_price'] ?? '')));
+        save_setting('photo_price', $price === '' ? '' : (string)max(0, round((float)$price, 2)));
+        flash(photo_enabled() ? 'Photo print is ON for customers.' : 'Photo print saved (off for customers – tick "on" and at least one size).');
     } elseif ($action === 'layouts') {
         $lines = [];
         foreach (preg_split('/\R/', (string)($_POST['layouts_custom'] ?? '')) as $line) {
@@ -389,6 +399,48 @@ echo flash();
   paint();
 })();
 </script>
+
+<?php elseif ($sec === 'photo'): require_once __DIR__ . '/printer.php'; $psz = photo_sizes(); ?>
+<form method="post">
+  <?= csrf_field() ?>
+  <div class="card">
+    <label class="check big-check"><input type="checkbox" name="photo_enabled" value="1" <?= setting('photo_enabled') === '1' ? 'checked' : '' ?>>
+      📷 Photo print is <b>on</b> – customers see a Photo print button</label>
+    <p class="muted">Customers choose a photo, a size and how many. The photos are arranged on the photo paper automatically
+      (turned when more fit, extra sheets added when needed) and printed in colour at exact size.</p>
+  </div>
+  <div class="card opts">
+    <label>Photo paper
+      <select name="photo_paper">
+        <?php foreach (PHOTO_PAPERS as $pp): ?><option <?= photo_paper() === $pp ? 'selected' : '' ?>><?= h($pp) ?></option><?php endforeach; ?>
+      </select>
+      <small>Load this paper in the photo printer.</small>
+    </label>
+    <label>Photo printer
+      <input name="photo_printer" list="pprinters" value="<?= h(setting('photo_printer')) ?>" placeholder="(same as colour printer)">
+      <datalist id="pprinters"><?php foreach (known_printers() as $pn): ?><option value="<?= h($pn) ?>"><?php endforeach; ?></datalist>
+    </label>
+  </div>
+  <div class="card">
+    <h3>Photo sizes offered</h3>
+    <?php foreach (all_layouts() as $id => $L): if ($L['type'] !== 'size') continue; ?>
+      <label class="check"><input type="checkbox" name="photo_sizes[]" value="<?= h($id) ?>" <?= isset($psz[$id]) ? 'checked' : '' ?>> <?= h($L['label']) ?></label>
+    <?php endforeach; ?>
+    <p class="muted">Add your own sizes in Settings → Layouts (“Your own photo sizes”).</p>
+  </div>
+  <div class="card opts">
+    <label>Price
+      <input name="photo_price" inputmode="decimal" value="<?= h(setting('photo_price')) ?>" placeholder="normal colour page price">
+    </label>
+    <label>Price is per
+      <select name="photo_price_mode">
+        <option value="photo" <?= setting('photo_price_mode', 'photo') === 'photo' ? 'selected' : '' ?>>photo (piece)</option>
+        <option value="sheet" <?= setting('photo_price_mode') === 'sheet' ? 'selected' : '' ?>>sheet of paper</option>
+      </select>
+    </label>
+    <div class="actions wide"><button class="btn primary block" name="action" value="photo">Save photo print</button></div>
+  </div>
+</form>
 
 <?php elseif ($sec === 'layouts'): $on = enabled_layouts(); $lp = json_decode(setting('layout_prices', '{}'), true) ?: []; ?>
 <form method="post">

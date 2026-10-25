@@ -6,8 +6,10 @@
 (function () {
   var MM = 72 / 25.4; // PDF points per millimetre
   var PAPER = { A2: [420, 594], A3: [297, 420], A4: [210, 297], A5: [148, 210], A6: [105, 148],
-    Letter: [216, 279], Legal: [216, 356], Tabloid: [279, 432], Statement: [140, 216] };
+    Letter: [216, 279], Legal: [216, 356], Tabloid: [279, 432], Statement: [140, 216],
+    '10x15 cm': [102, 152], '13x18 cm': [127, 178] };
   var MARGIN = 6, GAP = 3; // mm; most printers cannot print the outer ~4 mm
+  function margin(paper) { return /cm$/.test(paper) ? 3 : MARGIN; } // photo paper: photo printers print closer to the edge
 
   function parse(code, defs) {
     var parts = String(code || '').split(':'), d = defs[parts[0]];
@@ -25,12 +27,49 @@
     return landscape ? [g[1], g[0]] : g; // [cols, rows]
   }
 
-  // How many photos of w×h mm fit on the sheet.
+  // How many photos of w×h mm fit on the sheet – upright or turned 90° (whichever fits more).
   function sizeFit(w, h, paper) {
-    var p = paperMm(paper, false);
-    var cols = Math.max(1, Math.floor((p[0] - 2 * MARGIN + GAP) / (w + GAP)));
-    var rows = Math.max(1, Math.floor((p[1] - 2 * MARGIN + GAP) / (h + GAP)));
-    return { cols: cols, rows: rows, max: cols * rows };
+    var p = paperMm(paper, false), m = margin(paper);
+    function fit(cw, ch) {
+      var cols = Math.max(1, Math.floor((p[0] - 2 * m + GAP) / (cw + GAP)));
+      var rows = Math.max(1, Math.floor((p[1] - 2 * m + GAP) / (ch + GAP)));
+      return { cols: cols, rows: rows, max: cols * rows, cw: cw, ch: ch, rot: false };
+    }
+    var a = fit(w, h), b = fit(h, w);
+    if (w !== h && b.max > a.max) { b.rot = true; return b; }
+    return a;
+  }
+
+  // Where every photo goes: {pw, ph, cw, ch, rot, perSheet, sheets: [[[x, y], …], …]} in mm, y from the bottom.
+  function sizePlan(w, h, paper, pieces) {
+    var p = paperMm(paper, false), f = sizeFit(w, h, paper), m = margin(paper);
+    var total = pieces > 0 ? pieces : f.max, sheets = [];
+    var blockW = f.cols * f.cw + (f.cols - 1) * GAP, left = (p[0] - blockW) / 2;
+    for (var j = 0; j < total; j++) {
+      var k = j % f.max, c = k % f.cols, r = Math.floor(k / f.cols);
+      if (k === 0) sheets.push([]);
+      sheets[sheets.length - 1].push([left + c * (f.cw + GAP), p[1] - m - (r + 1) * f.ch - r * GAP]);
+    }
+    return { pw: p[0], ph: p[1], cw: f.cw, ch: f.ch, rot: f.rot, perSheet: f.max, sheets: sheets };
+  }
+
+  // Draws a sheet preview on a canvas from a loaded <img> (same geometry as the PDF).
+  function drawPreview(canvas, img, plan, index, widthPx) {
+    var s = widthPx / plan.pw, cv = canvas, x = cv.getContext('2d');
+    cv.width = Math.round(plan.pw * s); cv.height = Math.round(plan.ph * s);
+    x.fillStyle = '#fff'; x.fillRect(0, 0, cv.width, cv.height);
+    (plan.sheets[index] || []).forEach(function (pos) {
+      var dx = pos[0] * s, dy = (plan.ph - pos[1] - plan.ch) * s, dw = plan.cw * s, dh = plan.ch * s;
+      x.save(); x.beginPath(); x.rect(dx, dy, dw, dh); x.clip();
+      x.translate(dx + dw / 2, dy + dh / 2);
+      if (plan.rot) x.rotate(Math.PI / 2);
+      var bw = plan.rot ? dh : dw, bh = plan.rot ? dw : dh;           // box in the photo's own (upright) direction
+      var k = Math.max(bw / img.naturalWidth, bh / img.naturalHeight); // cover
+      x.drawImage(img, -img.naturalWidth * k / 2, -img.naturalHeight * k / 2, img.naturalWidth * k, img.naturalHeight * k);
+      x.restore();
+      x.strokeStyle = '#c8c8c8'; x.lineWidth = 1; x.strokeRect(dx + .5, dy + .5, dw - 1, dh - 1);
+    });
+    x.strokeStyle = '#aab2c0'; x.strokeRect(.5, .5, cv.width - 1, cv.height - 1);
   }
 
   // Page numbers (1-based) chosen with a range like "1-3,5"; all pages when empty.
@@ -50,10 +89,11 @@
   }
 
   // Number of sheets a layout produces (for the price shown before upload).
-  function sheets(code, defs, pages, range) {
+  function sheets(code, defs, pages, range, paper) {
     var L = parse(code, defs);
     if (!L) return null;
     if (L.type === 'nup') return Math.max(1, Math.ceil(pageList(pages, range).length / L.n));
+    if (L.type === 'size' && L.pieces) return Math.ceil(L.pieces / sizeFit(L.w, L.h, paper || 'A4').max);
     return 1;
   }
 
@@ -61,18 +101,18 @@
     var L = parse(code, defs);
     if (!L) return 0;
     if (L.type === 'grid') return L.n;
-    if (L.type === 'size') { var m = sizeFit(L.w, L.h, paper).max; return L.pieces ? Math.min(L.pieces, m) : m; }
+    if (L.type === 'size') return L.pieces || sizeFit(L.w, L.h, paper).max;
     return 0;
   }
 
   // Photo → JPEG cropped to fill a w:h box ("cover"); rotated when that fills the box better.
-  function photoJpeg(file, wMm, hMm, mayRotate) {
+  function photoJpeg(file, wMm, hMm, mayRotate, force) {
     return new Promise(function (resolve, reject) {
       var img = new Image(), url = URL.createObjectURL(file);
       img.onload = function () {
         URL.revokeObjectURL(url);
         var iw = img.naturalWidth, ih = img.naturalHeight;
-        var rotate = mayRotate && (iw > ih) !== (wMm > hMm) && Math.abs(iw - ih) > 2;
+        var rotate = force || (mayRotate && (iw > ih) !== (wMm > hMm) && Math.abs(iw - ih) > 2);
         var srcW = rotate ? ih : iw, srcH = rotate ? iw : ih; // size after rotation
         var target = wMm / hMm, sw = srcW, sh = srcH;
         if (srcW / srcH > target) sw = srcH * target; else sh = srcW / target;
@@ -128,20 +168,37 @@
       return { blob: new Blob([await out.save()], { type: 'application/pdf' }), sheets: out.getPageCount(), landscape: landscape };
     }
 
-    // Photo sheets (grid or exact size)
+    if (L.type === 'size') { // exact-size photos: as many sheets as needed
+      var plan = sizePlan(L.w, L.h, paper, L.pieces), drawOne;
+      if (src) {
+        var ep1 = (await out.embedPdf(src, [0]))[0];
+        drawOne = function (pg, x, y) {
+          var s1 = fitInto(ep1.width, ep1.height, plan.cw * MM, plan.ch * MM);
+          pg.drawPage(ep1, { x: x * MM + (plan.cw * MM - s1[0]) / 2, y: y * MM + (plan.ch * MM - s1[1]) / 2, width: s1[0], height: s1[1] });
+        };
+      } else {
+        var jp = await out.embedJpg(await photoJpeg(file, plan.cw, plan.ch, false, plan.rot));
+        drawOne = function (pg, x, y) { pg.drawImage(jp, { x: x * MM, y: y * MM, width: plan.cw * MM, height: plan.ch * MM }); };
+      }
+      plan.sheets.forEach(function (cellsOnSheet) {
+        var pg = out.addPage([plan.pw * MM, plan.ph * MM]);
+        cellsOnSheet.forEach(function (c) {
+          drawOne(pg, c[0], c[1]);
+          pg.drawRectangle({ x: c[0] * MM, y: c[1] * MM, width: plan.cw * MM, height: plan.ch * MM, borderColor: grey, borderWidth: 0.3 });
+        });
+      });
+      return { blob: new Blob([await out.save()], { type: 'application/pdf' }), sheets: plan.sheets.length, landscape: false };
+    }
+
+    // Photo sheets: the same photo N times, filling the sheet
     var P = paperMm(paper, false), page2 = out.addPage([P[0] * MM, P[1] * MM]), cells = [];
     var cellW, cellH, cols, rows, count;
-    if (L.type === 'grid') {
-      var gg = grid(L.n, false); cols = gg[0]; rows = gg[1]; count = L.n;
-      cellW = (P[0] - 2 * MARGIN - (cols - 1) * GAP) / cols; cellH = (P[1] - 2 * MARGIN - (rows - 1) * GAP) / rows;
-    } else {
-      var f = sizeFit(L.w, L.h, paper); cols = f.cols; rows = f.rows; cellW = L.w; cellH = L.h;
-      count = L.pieces ? Math.min(L.pieces, f.max) : f.max;
-    }
+    var gg = grid(L.n, false), mg = margin(paper); cols = gg[0]; rows = gg[1]; count = L.n;
+    cellW = (P[0] - 2 * mg - (cols - 1) * GAP) / cols; cellH = (P[1] - 2 * mg - (rows - 1) * GAP) / rows;
     var blockW = cols * cellW + (cols - 1) * GAP, left = (P[0] - blockW) / 2;
     for (var j = 0; j < count; j++) {
       var c2 = j % cols, r2 = Math.floor(j / cols);
-      cells.push([left + c2 * (cellW + GAP), P[1] - MARGIN - (r2 + 1) * cellH - r2 * GAP]);
+      cells.push([left + c2 * (cellW + GAP), P[1] - mg - (r2 + 1) * cellH - r2 * GAP]);
     }
     var draw;
     if (src) { // PDF: its first page, kept whole
@@ -161,5 +218,6 @@
     return { blob: new Blob([await out.save()], { type: 'application/pdf' }), sheets: 1, landscape: false };
   }
 
-  window.DaybillLayout = { parse: parse, sheets: sheets, pieces: pieces, build: build, sizeFit: sizeFit };
+  window.DaybillLayout = { parse: parse, sheets: sheets, pieces: pieces, build: build, sizeFit: sizeFit,
+    sizePlan: sizePlan, drawPreview: drawPreview, papers: PAPER };
 })();
