@@ -946,7 +946,7 @@ function page_header(string $title, bool $staff = false, string $lang = 'en', st
         . '<meta name="mobile-web-app-capable" content="yes">'
         . '<meta name="apple-mobile-web-app-status-bar-style" content="default">'
         . '<meta name="apple-mobile-web-app-title" content="' . h($staff ? 'Print Staff' : $shop) . '">'
-        . '<link rel="stylesheet" href="assets/style.css?v=20">'
+        . '<link rel="stylesheet" href="assets/style.css?v=21">'
         . '<style>' . theme_css() . '</style>'
         . '<script>addEventListener("pagereveal",function(e){var v=e.viewTransition;if(v){v.ready.catch(function(){});v.finished.catch(function(){});}});</script>'
         . '<script src="assets/app.js?v=8" defer></script></head>'

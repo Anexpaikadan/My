@@ -349,30 +349,22 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
   </dialog>
   <?php endif; ?>
 
-  <form id="upForm" method="post" enctype="multipart/form-data" class="upload">
-    <section class="hero">
-      <h1><?= h(t('title')) ?></h1>
-      <p><?= h(t('hint', cfg('max_file_mb'))) ?></p>
-      <ol class="steps">
-        <li><span>1</span><?= h(t('step_choose')) ?></li><li><span>2</span><?= h(t('step_options')) ?></li><li><span>3</span><?= h(t('step_send')) ?></li>
-      </ol>
-    </section>
+  <form id="upForm" method="post" enctype="multipart/form-data" class="card upload">
+    <h1><?= h(t('title')) ?></h1>
+    <p class="muted"><?= h(t('hint', cfg('max_file_mb'))) ?></p>
 
-    <div class="tiles<?= $photoJs ? ' two' : '' ?>">
-      <label class="tile" id="drop">
-        <input type="file" id="picker" name="files[]" multiple accept="<?= h($accept) ?>">
-        <span class="tile-ic"><?= icon('doc') ?></span>
-        <b><?= h(t('tile_docs')) ?></b><small><?= h(t('tile_docs_sub')) ?></small>
-      </label>
-      <?php if ($photoJs): ?>
-        <button type="button" class="tile tile-photo" id="photoBtn">
-          <span class="tile-ic"><?= icon('photo') ?></span>
-          <b><?= h(t('photo_print')) ?></b><small><?= h(t('photo_print_sub')) ?></small>
-        </button>
-      <?php endif; ?>
-    </div>
+    <label class="drop" id="drop">
+      <input type="file" id="picker" name="files[]" multiple accept="<?= h($accept) ?>">
+      <span><?= h(t('choose')) ?></span>
+    </label>
+    <?php if ($photoJs): ?>
+      <button type="button" class="photo-entry" id="photoBtn">
+        <span class="pe-ic">📷</span><span><b><?= h(t('photo_print')) ?></b><small><?= h(t('photo_print_sub')) ?></small></span><span class="chev">›</span>
+      </button>
+    <?php endif; ?>
 
     <div id="list"></div>
+    <div id="total" class="pay-box hidden"></div>
 
     <noscript>
       <div class="opts">
@@ -382,8 +374,8 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
     </noscript>
 
     <div class="icon-btns">
-      <button type="button" class="btn" data-sheet="#pricesSheet"><?= icon('tag') ?> <?= h(t('prices')) ?></button>
-      <button type="button" class="btn" data-sheet="#meSheet" id="meBtn"><?= icon('user') ?> <?= h(t('details')) ?></button>
+      <button type="button" class="btn" data-sheet="#pricesSheet">💰 <?= h(t('prices')) ?></button>
+      <button type="button" class="btn" data-sheet="#meSheet" id="meBtn">👤 <?= h(t('details')) ?></button>
     </div>
     <?= sheet_start('pricesSheet', t('prices')) ?>
       <table class="tbl prices">
@@ -403,13 +395,8 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
     <?= sheet_end() ?>
 
     <div id="err" class="alert err hidden"></div>
-    <div class="cta-bar">
-      <div id="progress" class="progress hidden"><div></div></div>
-      <div class="cta-row">
-        <div id="total" class="cta-total hidden"></div>
-        <button class="btn primary big" id="sendBtn"><?= h(t('send')) ?></button>
-      </div>
-    </div>
+    <div id="progress" class="progress hidden"><div></div></div>
+    <button class="btn primary block big" id="sendBtn"><?= h(t('send')) ?></button>
   </form>
   <div class="card install-card hidden"><?= install_box(false) ?></div>
 

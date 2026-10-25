@@ -1,4 +1,4 @@
-/* Daybill Print – app design (v20)
+/* Daybill Print – app design (v21)
    Colours: --primary / --accent and their tints come from Settings → App colour (theme_css() in lib.php). */
 :root {
   --primary: #360dd9; --accent: #7ed957; --on-primary: #fff;
@@ -153,7 +153,7 @@ form.inline input { margin: 0; width: 140px; padding: 8px 10px; }
 .card-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 .card-actions .btn { flex: 1 1 auto; }
 .icon-btns { display: flex; gap: 10px; margin: 4px 0 12px; }
-.icon-btns .btn { flex: 1; background: var(--card); box-shadow: var(--shadow); }
+.icon-btns .btn { flex: 1; min-width: 0; padding: 10px 8px; font-size: 14.5px; white-space: nowrap; background: var(--card); border: 1.5px solid var(--line); }
 .x { width: 32px; height: 32px; flex: none; border: 0; border-radius: 50%; background: var(--soft); color: var(--muted); font-size: 14px; cursor: pointer; }
 .x:active { background: var(--danger-bg); color: var(--danger); }
 
@@ -179,42 +179,22 @@ button.chip { cursor: pointer; }
 .price-total { font-size: 1.15rem; font-weight: 700; color: var(--a-dark); margin: 4px 0 12px; }
 
 /* ---------- customer page ---------- */
-.hero { position: relative; overflow: hidden; margin: 0 0 16px; padding: 22px 20px 18px; border-radius: var(--radius);
-  background: radial-gradient(120% 140% at 100% 0%, var(--p-dark) 0%, var(--primary) 55%); color: var(--on-primary); box-shadow: var(--shadow); }
-.hero::after { content: ""; position: absolute; width: 180px; height: 180px; inset-inline-end: -60px; bottom: -90px; border-radius: 50%; background: var(--accent); opacity: .28; }
-.hero h1 { font-size: 1.55rem; margin-bottom: 4px; }
-.hero p { opacity: .85; font-size: .9rem; margin: 0 0 14px; }
-.steps { position: relative; z-index: 1; display: flex; gap: 6px; list-style: none; margin: 0; padding: 0; }
-.steps li { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px 5px 5px; border-radius: 999px; background: rgba(255,255,255,.16); font-size: .82rem; font-weight: 600; }
-[dir=rtl] .steps li { padding: 5px 5px 5px 12px; }
-.steps span { width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: #fff; color: var(--primary); font-size: .75rem; font-weight: 800; }
-.tiles { display: grid; gap: 12px; margin-bottom: 16px; }
-.tiles.two { grid-template-columns: 1fr 1fr; }
-.tile { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin: 0; padding: 18px 16px; min-height: 150px;
-  border: 0; border-radius: var(--radius); background: var(--card); box-shadow: var(--shadow); color: var(--text); text-align: start; cursor: pointer;
-  font: inherit; transition: transform .12s, box-shadow .15s; }
-.tile:active { transform: scale(.98); }
-.tile:hover { box-shadow: 0 0 0 2px var(--p-200), var(--shadow); }
-.tile input[type=file] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; margin: 0; }
-.tile-ic { width: 52px; height: 52px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: auto; border-radius: 16px; background: var(--p-100); color: var(--primary); }
-.tile-ic .i { width: 28px; height: 28px; }
-.tile b { margin-top: 14px; font-size: 1.08rem; color: var(--text); }
-.tile small { color: var(--muted); font-size: .82rem; font-weight: 400; line-height: 1.35; }
-.tile-photo { background: linear-gradient(160deg, var(--a-50), #fff 70%); }
-.tile-photo .tile-ic { background: var(--accent); color: #10330a; }
-.tiles:not(.two) .tile { min-height: 0; flex-direction: row; align-items: center; gap: 14px; }
-.tiles:not(.two) .tile b { margin-top: 0; }
-.tiles:not(.two) .tile-ic { margin: 0; }
+.upload h1 { margin-bottom: 4px; }
+.drop { position: relative; display: block; margin: 14px 0 12px; padding: 30px 12px; border: 2px dashed var(--p-300); border-radius: var(--r-md);
+  background: var(--p-50); color: var(--primary); text-align: center; font-size: 1.05rem; font-weight: 700; cursor: pointer; transition: background .15s; }
+.drop:active, .drop:hover { background: var(--p-100); }
+.drop input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.photo-entry { display: flex; align-items: center; gap: 12px; width: 100%; margin: 0 0 12px; padding: 14px 16px; border: 0; border-radius: var(--r-md);
+  background: linear-gradient(135deg, var(--primary), var(--p-dark)); color: var(--on-primary); text-align: start; cursor: pointer; font: inherit;
+  box-shadow: 0 6px 16px -8px var(--primary); }
+.photo-entry:active { transform: scale(.98); }
+.photo-entry .pe-ic { font-size: 2rem; line-height: 1; }
+.photo-entry b { display: block; font-size: 1.08rem; }
+.photo-entry small { display: block; opacity: .85; font-size: .84rem; line-height: 1.35; }
+.photo-entry .chev { margin-inline-start: auto; font-size: 1.6rem; opacity: .8; }
+[dir=rtl] .photo-entry .chev { transform: scaleX(-1); }
 #list:empty { display: none; }
-/* Once files are added: smaller top area, so the order is in view */
-.upload:has(#list:not(:empty)) .hero { padding: 14px 18px; }
-.upload:has(#list:not(:empty)) .hero h1 { font-size: 1.15rem; margin: 0; }
-.upload:has(#list:not(:empty)) .hero p, .upload:has(#list:not(:empty)) .steps { display: none; }
-.upload:has(#list:not(:empty)) .tile { min-height: 0; flex-direction: row; align-items: center; gap: 10px; padding: 12px; }
-.upload:has(#list:not(:empty)) .tile b { margin: 0; font-size: .95rem; }
-.upload:has(#list:not(:empty)) .tile small { display: none; }
-.upload:has(#list:not(:empty)) .tile-ic { width: 40px; height: 40px; margin: 0; border-radius: 12px; }
-.file { position: relative; background: var(--card); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; box-shadow: var(--shadow); }
+.file { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px; margin-bottom: 12px; }
 .file-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 4px; }
 .fname { font-weight: 700; word-break: break-all; }
 .file .price { color: var(--a-dark); font-weight: 600; font-size: .9rem; margin-top: 2px; }
@@ -223,12 +203,6 @@ button.chip { cursor: pointer; }
 .pi-thumbs { display: flex; gap: 6px; align-items: center; flex: none; cursor: pointer; }
 .pi-thumbs canvas { border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,.18); background: #fff; }
 .pi-txt { min-width: 0; }
-.cta-bar { position: sticky; bottom: 0; z-index: 10; margin: 16px -16px -40px; padding: 12px 16px calc(14px + env(safe-area-inset-bottom));
-  background: rgba(244,245,250,.92); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border-top: 1px solid var(--line); }
-.cta-row { display: flex; align-items: center; gap: 12px; }
-.cta-row .btn { flex: 1; }
-.cta-total { flex: none; display: flex; flex-direction: column; line-height: 1.15; font-size: .76rem; font-weight: 600; color: var(--muted); }
-.cta-total b { font-size: 1.35rem; color: var(--a-dark); }
 .done-card { padding: 28px 20px; }
 .done-ic { width: 72px; height: 72px; margin: 0 auto 12px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
   background: var(--ok-bg); color: var(--ok); font-size: 2.2rem; font-weight: 800; animation: pop .4s cubic-bezier(.2,1.6,.4,1); }
@@ -485,7 +459,7 @@ html.in-sheet main.wrap { padding-top: 14px; padding-bottom: 30px; }
   ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
   dialog.sheet { transition: none; } .done-ic { animation: none; }
 }
-.menu-item, .job, .tabbar a, .swatch, .check, .tile { -webkit-user-select: none; user-select: none; }
+.menu-item, .job, .tabbar a, .swatch, .check, .drop, .photo-entry { -webkit-user-select: none; user-select: none; }
 
 /* ---------- small screens ---------- */
 @media (max-width: 600px) {
@@ -501,10 +475,6 @@ html.in-sheet main.wrap { padding-top: 14px; padding-bottom: 30px; }
   .map-tbl tr { display: grid; grid-template-columns: 1fr; }
   .bigcode { font-size: 2.6rem; }
   .job .code { min-width: 72px; font-size: 1.1rem; }
-}
-@media (max-width: 360px) {
-  .tiles.two { grid-template-columns: 1fr; }
-  .steps li { padding-inline-end: 8px; font-size: .76rem; }
 }
 
 @media print {
