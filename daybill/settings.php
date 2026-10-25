@@ -45,7 +45,7 @@ echo flash();
     <?= item('admin.php?s=printing', '🖨️', 'Printing', $modes[setting('print_mode', 'local')] ?? '') ?>
     <?= item('admin.php?s=shop', '🏪', 'Shop settings', setting('shop_name') . ' · language · file cleanup') ?>
     <?= item('admin.php?s=colors', '🎨', 'App colour', 'Theme colours for customers and staff') ?>
-    <?= item('qr.php', '▦', 'QR code poster', 'Print the upload QR code') ?>
+    <?= item('qr.php', '▦', 'QR code posters', 'Customer upload QR · staff login QR') ?>
   </div>
 <?php endif; ?>
 
