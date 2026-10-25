@@ -31,6 +31,7 @@ datas += opt('assets', 'assets')                       # icon, logo, fonts
 datas += opt('modules/fonts', 'modules/fonts')         # Arabic fonts (if added)
 datas += opt('mobile', 'mobile')                       # DayBill Mobile app (phones / PDT / van)
 datas += opt('van_relay', 'van_relay')                 # Hostinger van relay (upload folder)
+datas += opt('docs/MULTI_COUNTER_SETUP.md', 'docs')   # Database Settings ▸ 📖 Several counters — guide
 # NOTE: the config folder is NOT bundled — your db_config.json /
 # app_settings.json / license.json stay on YOUR PC. DayBillERP.exe keeps
 # its own settings in a "config" folder next to the exe.

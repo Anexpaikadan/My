@@ -123,3 +123,8 @@ python main.py
 
 ## Default Login
 **Username:** `admin` — on first sign-in DayBill asks you to set its password.
+
+## Several counters (tills) on one server
+
+See **[MULTI_COUNTER_SETUP.md](MULTI_COUNTER_SETUP.md)** — one PC keeps the
+database, the other counters connect to it over the shop network.

@@ -944,11 +944,11 @@ class DbSettingsDialog:
 
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(t("settings.database"))
-        self.dialog.geometry("460x420")
+        self.dialog.geometry("600x480")
         self.dialog.resizable(False, False)
         self.dialog.grab_set()
         self.dialog.configure(bg=C["content_bg"])
-        self._center(460, 420)
+        self._center(600, 480)
 
         pad = {"padx": 30, "pady": 6}
         self._entry_map = {}
@@ -1061,7 +1061,82 @@ class DbSettingsDialog:
                   relief="flat", padx=12, pady=6, cursor="hand2",
                   command=self._backup_now).pack(side="left", padx=5)
 
+        # third row (v7.9.3): several counters on one server
+        net = tk.Frame(self.dialog, bg=C["content_bg"])
+        net.pack(pady=(0, 12))
+        tk.Button(net, text="🛡  Allow SQL Server in Firewall",
+                  font=("Segoe UI", 9, "bold"), bg="#B45309", fg="white",
+                  relief="flat", padx=12, pady=6, cursor="hand2",
+                  command=self._allow_firewall).pack(side="left", padx=5)
+        tk.Button(net, text="📖  Several counters — guide",
+                  font=("Segoe UI", 9, "bold"), bg=C["primary_light"], fg=C["primary"],
+                  relief="flat", padx=12, pady=6, cursor="hand2",
+                  command=self._show_guide).pack(side="left", padx=5)
+
         self._entries = {k: v for k, v in self._entry_map.items()}
+
+    def _allow_firewall(self):
+        """SERVER PC: let the counters reach SQL Server through Windows Firewall."""
+        from modules import net_setup as NS
+        if not messagebox.askyesno(
+                "Allow SQL Server in Firewall",
+                "Do this on the SERVER PC — the PC that has SQL Server and the DayBill database.\n\n"
+                "Windows Firewall will let the counters on the shop network (private networks) reach "
+                "SQL Server: TCP %d and UDP %d. Windows asks for permission.\n\nContinue?"
+                % (NS.SQL_PORT, NS.BROWSER_PORT), parent=self.dialog):
+            return None
+        asked, msg = NS.allow_sql_firewall()
+        self.status_var.set(("🛡 Firewall: counters type  %s" % NS.server_address()) if asked
+                            else "🛡 Firewall not changed — see the message.")
+        (messagebox.showinfo if asked else messagebox.showwarning)("Firewall", msg, parent=self.dialog)
+        return asked
+
+    def _show_guide(self):
+        """docs/MULTI_COUNTER_SETUP.md in a window (headings in bold)."""
+        from modules import net_setup as NS
+        C = cfg.theme()
+        win = tk.Toplevel(self.dialog)
+        win.title("Several counters on one server")
+        win.configure(bg=C["content_bg"])
+        win.geometry("760x600")
+        try:
+            win.transient(self.dialog)
+        except Exception:
+            pass
+        bar = tk.Frame(win, bg=C["primary"]); bar.pack(fill="x")
+        tk.Label(bar, text="🖥  Several counters on one server", font=("Segoe UI", 12, "bold"),
+                 bg=C["primary"], fg="white").pack(side="left", padx=14, pady=8)
+        tk.Label(bar, text="This PC: " + NS.server_address(), font=("Segoe UI", 9),
+                 bg=C["primary"], fg="white").pack(side="right", padx=14)
+        box = tk.Frame(win, bg=C["content_bg"]); box.pack(fill="both", expand=True, padx=10, pady=10)
+        sb = ttk.Scrollbar(box, orient="vertical")
+        txt = tk.Text(box, wrap="word", font=("Segoe UI", 10), relief="flat", padx=12, pady=8,
+                      bg=C.get("card_bg", "white"), fg=C["text_primary"], yscrollcommand=sb.set)
+        sb.configure(command=txt.yview)
+        sb.pack(side="right", fill="y"); txt.pack(side="left", fill="both", expand=True)
+        txt.tag_configure("h1", font=("Segoe UI", 14, "bold"), foreground=C["primary"], spacing3=6)
+        txt.tag_configure("h2", font=("Segoe UI", 11, "bold"), foreground=C["primary"],
+                          spacing1=10, spacing3=4)
+        txt.tag_configure("code", font=("Consolas", 9), background="#F1F5F9")
+        code = False
+        for line in NS.guide_text().splitlines():
+            if line.strip().startswith("```"):
+                code = not code
+                continue
+            if code:
+                txt.insert("end", line + "\n", "code")
+            elif line.startswith("# "):
+                txt.insert("end", line[2:] + "\n", "h1")
+            elif line.startswith("## "):
+                txt.insert("end", line[3:] + "\n", "h2")
+            elif line.startswith("|---"):
+                continue
+            else:
+                txt.insert("end", line.replace("**", "").replace("*", "").replace("`", "") + "\n")
+        txt.configure(state="disabled")
+        tk.Button(win, text="Close", relief="flat", padx=16, pady=5, command=win.destroy).pack(pady=(0, 10))
+        self._guide_win = win
+        return win
 
     def _filter_dbs(self, _e=None):
         """Type-to-search: narrow the database dropdown as you type."""

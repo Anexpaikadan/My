@@ -10,7 +10,7 @@ import re
 try:                                    # one version for the whole app (config/version.py)
     from config.version import VERSION as APP_VERSION
 except Exception:
-    APP_VERSION = "7.9.2"
+    APP_VERSION = "7.9.3"
 
 # Ordered list of database patches shipped with the app.
 # (filename relative to project root, human description, version)
@@ -35,6 +35,8 @@ PATCHES = [
 
 # What changed in each version (shown in the Updates panel)
 CHANGELOG = [
+    ("7.9.3", ["🖥 Several counters on one server: Database Settings ▸ 🛡 Allow SQL Server in Firewall (on the "
+               "server PC) and 📖 Several counters — guide (docs/MULTI_COUNTER_SETUP.md)."]),
     ("7.9.2", ["🔧 Fixed: \"Windows cannot find C:\\Python314\\pythonw.exe\" at the end of an update — a test "
                "file had gone into the 7.9.1 zip. An update can no longer replace the update helper.",
                "🔧 A PC that runs DayBillERP.exe now refuses the source .zip (the program would not change) and "

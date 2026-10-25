@@ -2,6 +2,19 @@
 
 Newest first. The short guide is in the main README.md.
 
+## 🖥 v7.9.3 — several counters on one server
+
+- New guide docs/MULTI_COUNTER_SETUP.md (bundled into the exe): server PC
+  (TCP/IP, port 1433, firewall, SQL login, fixed IP), counter PCs (ODBC
+  driver, Database Settings), Branches & Counters ▸ Use on THIS PC, what is
+  shared / per PC, daily use, troubleshooting.
+- Login ▸ ⚙ Database Settings: **🛡 Allow SQL Server in Firewall** (one
+  "Run as administrator" prompt; rules "DayBill SQL Server" TCP 1433 and
+  "DayBill SQL Browser" UDP 1434, private / domain networks, replaced when
+  pressed again; shows the address for the counters — modules/net_setup)
+  and **📖 Several counters — guide**. The window is wider so the tools
+  row is no longer cut off.
+
 ## 🔧 v7.9.2 — update fixes
 
 - The 7.9.1 zip held a test update_daybill.bat. During an update the new

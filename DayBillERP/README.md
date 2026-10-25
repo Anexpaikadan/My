@@ -1,7 +1,16 @@
-# DayBill ERP  v7.9.2
+# DayBill ERP  v7.9.3
 
 Billing, POS, inventory, accounts and HR for shops in 🇸🇦 Saudi Arabia, 🇦🇪 the UAE and 🇮🇳 India.
 **VAT / GST by country · ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
+
+## 🖥 v7.9.3 — several counters on one server
+
+- **Guide:** [docs/MULTI_COUNTER_SETUP.md](docs/MULTI_COUNTER_SETUP.md) — server
+  PC, counter PCs, Branches & Counters, what is shared, troubleshooting. Also
+  inside DayBill: login ▸ ⚙ Database Settings ▸ **📖 Several counters — guide**.
+- **🛡 Allow SQL Server in Firewall** (Database Settings, on the server PC):
+  opens TCP 1433 / UDP 1434 for the shop network and shows the address the
+  counters type in *Server*.
 
 ## 🔧 v7.9.2 — update fixes
 
