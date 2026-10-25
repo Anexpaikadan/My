@@ -6,8 +6,8 @@ require __DIR__ . '/printer.php';
 $user = require_login();
 
 $id = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
-$st = db()->prepare('SELECT * FROM jobs WHERE id = ?');
-$st->execute([$id]);
+$st = db()->prepare('SELECT * FROM jobs WHERE id = ? AND shop_id = ?');
+$st->execute([$id, shop_id()]);
 $job = $st->fetch();
 if (!$job) {
     http_response_code(404);
@@ -134,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('staff.php');
     } elseif ($action === 'reopen') {
         $pdo->prepare("UPDATE jobs SET status = 'printing' WHERE id = ?")->execute([$id]);
-    } elseif ($action === 'delete' && $user['role'] === 'admin') {
+    } elseif ($action === 'delete' && in_array($user['role'], ['admin', 'super'], true)) {
         $files = $pdo->prepare('SELECT stored_name FROM job_files WHERE job_id = ?');
         $files->execute([$id]);
         foreach ($files->fetchAll(PDO::FETCH_COLUMN) as $name) {
@@ -296,7 +296,7 @@ echo flash();
       <button class="btn" name="action" value="reopen">Reopen</button>
     </form>
   <?php endif; ?>
-  <?php if ($user['role'] === 'admin'): ?>
+  <?php if (in_array($user['role'], ['admin', 'super'], true)): ?>
     <form method="post" class="actions">
       <?= csrf_field() ?>
       <input type="hidden" name="id" value="<?= (int)$job['id'] ?>">

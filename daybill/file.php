@@ -1,12 +1,18 @@
 <?php
-// Serves an uploaded file to logged-in staff only (preview or download).
+// Serves an uploaded file to logged-in staff of the same shop (preview or download).
+// ?orig=1 gives the customer's original file when a layout made a print-ready PDF from it.
 
 require __DIR__ . '/lib.php';
 require_login();
 
-$st = db()->prepare('SELECT original_name, stored_name, ext FROM job_files WHERE id = ?');
-$st->execute([(int)($_GET['id'] ?? 0)]);
+$st = db()->prepare('SELECT f.original_name, f.stored_name, f.ext, f.orig_name, f.orig_ext FROM job_files f
+                     JOIN jobs j ON j.id = f.job_id WHERE f.id = ? AND j.shop_id = ?');
+$st->execute([(int)($_GET['id'] ?? 0), shop_id()]);
 $f = $st->fetch();
+if ($f && isset($_GET['orig']) && $f['orig_name'] !== '') {
+    $f['stored_name'] = $f['orig_name'];
+    $f['ext'] = $f['orig_ext'];
+}
 $path = $f && $f['stored_name'] !== '' ? cfg('upload_dir') . '/' . $f['stored_name'] : '';
 if (!$path || !is_file($path)) {
     http_response_code(404);

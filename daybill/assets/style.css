@@ -214,3 +214,11 @@ input[type=color] { height: 46px; padding: 4px; cursor: pointer; }
 .preview .pv-body { padding: 12px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .preview .pv-btn { padding: 10px 16px; border-radius: 8px; font-weight: 600; }
 .preview .pv-pay { padding: 10px 14px; border-radius: 8px; font-weight: 700; }
+
+/* ---- v8: multiple shops ---- */
+.shop-chip { flex: none; max-width: 50%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .85rem; font-weight: 600; color: var(--primary); text-decoration: none; border: 1px solid var(--p-200); border-radius: 20px; padding: 5px 12px; }
+.shop-card.current { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+.shop-card.disabled { opacity: .65; }
+.shop-card details { margin-top: 6px; }
+.shop-card summary { cursor: pointer; color: var(--primary); font-weight: 600; }
+.small-link { font-size: .78rem; word-break: break-all; }

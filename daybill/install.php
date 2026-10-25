@@ -22,7 +22,7 @@ function installer_pdo(array $c, bool $withDb): PDO
 // Refuse to run again once an admin exists.
 try {
     $pdo = installer_pdo($CONFIG, true);
-    $hasAdmin = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'admin'")->fetchColumn() > 0;
+    $hasAdmin = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role IN ('admin','super')")->fetchColumn() > 0;
 } catch (Throwable $e) {
     $hasAdmin = false;
 }
@@ -55,8 +55,14 @@ if ($hasAdmin) {
             foreach (array_filter(array_map('trim', explode(';', $sql))) as $stmt) {
                 $pdo->exec($stmt);
             }
-            $st = $pdo->prepare("INSERT INTO users (username, full_name, password_hash, role) VALUES (?, 'Administrator', ?, 'admin')");
+            // Super admin: manages all shops. The first shop is created with default settings.
+            $st = $pdo->prepare("INSERT INTO users (shop_id, username, full_name, password_hash, role) VALUES (NULL, ?, 'Super admin', ?, 'super')");
             $st->execute([$user, password_hash($pass, PASSWORD_DEFAULT)]);
+            require_once __DIR__ . '/lib.php';
+            if (!(int)db()->query('SELECT COUNT(*) FROM shops')->fetchColumn()) {
+                $shopName = mb_substr(trim((string)($_POST['shop_name'] ?? '')), 0, 100) ?: 'DAYbill Solution';
+                create_shop($shopName, 'main', '', '');
+            }
             if (!is_dir($CONFIG['upload_dir'])) {
                 mkdir($CONFIG['upload_dir'], 0770, true);
             }
@@ -81,8 +87,10 @@ if ($hasAdmin) {
   <?php else: ?>
     <p class="muted">Tables will be created in database <b><?= htmlspecialchars($CONFIG['db_name']) ?></b> on <?= htmlspecialchars($CONFIG['db_host']) ?>. Edit <code>config.php</code> first if needed. On cloud hosting, create the database in your hosting panel first.</p>
     <form method="post">
-      <label>Admin username<input name="username" required value="admin"></label>
-      <label>Admin password<input name="password" type="password" required minlength="6"></label>
+      <label>First shop name<input name="shop_name" value="DAYbill Solution" maxlength="100"></label>
+      <label>Super admin username<input name="username" required value="admin"></label>
+      <label>Super admin password<input name="password" type="password" required minlength="6"></label>
+      <p class="muted">The super admin can open every shop, create new shops with their own admin, and reset any password.</p>
       <button class="btn primary block">Install</button>
     </form>
   <?php endif; ?>

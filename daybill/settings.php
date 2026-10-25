@@ -3,7 +3,7 @@
 
 require __DIR__ . '/lib.php';
 $user = require_login();
-$admin = $user['role'] === 'admin';
+$admin = in_array($user['role'], ['admin', 'super'], true);
 
 function item(string $href, string $icon, string $label, string $hint = ''): string
 {
@@ -22,8 +22,15 @@ echo flash();
   <div><b><?= h($user['full_name'] ?: $user['username']) ?></b><div class="muted">@<?= h($user['username']) ?> · <?= h($user['role']) ?></div></div>
 </div>
 
-<?php if ($admin): ?>
-  <h3 class="menu-title">Shop</h3>
+<?php if (is_super($user)): ?>
+  <h3 class="menu-title">All shops</h3>
+  <div class="menu card">
+    <?= item('shops.php', '🏬', 'Shops', 'Working in: ' . (shop()['name'] ?? '–') . ' · ' . count(all_shops()) . ' shop(s) · add shop, super admins') ?>
+  </div>
+<?php endif; ?>
+
+<?php if ($admin && shop()): ?>
+  <h3 class="menu-title">Shop: <?= h(shop()['name']) ?></h3>
   <div class="menu card">
     <?= item('admin.php?s=employees', '👥', 'Employees', 'Add staff, passwords, disable') ?>
     <?= item('admin.php?s=options', '📄', 'Customer options', 'Paper sizes, colour, sides: ' . implode(', ', enabled_papers())) ?>

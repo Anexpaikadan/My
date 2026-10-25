@@ -15,12 +15,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (count($fails) >= 5) {
         $error = 'Too many attempts. Wait a few minutes.';
     } else {
-        $st = db()->prepare('SELECT id, password_hash FROM users WHERE username = ? AND active = 1');
+        $st = db()->prepare('SELECT u.id, u.password_hash FROM users u LEFT JOIN shops s ON s.id = u.shop_id
+                             WHERE u.username = ? AND u.active = 1 AND (u.role = \'super\' OR s.active = 1)');
         $st->execute([trim((string)($_POST['username'] ?? ''))]);
         $row = $st->fetch();
         if ($row && password_verify((string)($_POST['password'] ?? ''), $row['password_hash'])) {
             session_regenerate_id(true);
             $_SESSION['uid'] = (int)$row['id'];
+            unset($_SESSION['shop_id']);
             unset($_SESSION['login_fails']);
             redirect('staff.php');
         }

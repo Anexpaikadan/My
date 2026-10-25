@@ -45,7 +45,7 @@ function db(): PDO
 function migrate(PDO $pdo): void
 {
     try {
-        $v = (int)$pdo->query("SELECT v FROM settings WHERE k = 'schema_version'")->fetchColumn();
+        $v = (int)$pdo->query("SELECT v FROM settings WHERE k = 'schema_version' LIMIT 1")->fetchColumn();
     } catch (PDOException $e) {
         exit('Database not installed yet – open install.php first.');
     }
@@ -61,6 +61,30 @@ function migrate(PDO $pdo): void
     if ($v < 3) {
         $pdo->exec("ALTER TABLE job_files ADD COLUMN printer VARCHAR(200) NOT NULL DEFAULT '' AFTER price");
         $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '3') ON DUPLICATE KEY UPDATE v = '3'");
+    }
+    if ($v < 4) {
+        // Multiple shops: the existing shop becomes shop 1, its first admin becomes super admin.
+        $pdo->exec("CREATE TABLE IF NOT EXISTS shops (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, slug VARCHAR(40) NOT NULL UNIQUE, name VARCHAR(100) NOT NULL,
+            active TINYINT(1) NOT NULL DEFAULT 1, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        $name = (string)($pdo->query("SELECT v FROM settings WHERE k = 'shop_name'")->fetchColumn() ?: 'Main shop');
+        $pdo->prepare("INSERT IGNORE INTO shops (id, slug, name) VALUES (1, 'main', ?)")->execute([$name]);
+        $pdo->exec('ALTER TABLE settings ADD COLUMN shop_id INT UNSIGNED NOT NULL DEFAULT 1 FIRST, DROP PRIMARY KEY, ADD PRIMARY KEY (shop_id, k)');
+        $pdo->exec("UPDATE settings SET shop_id = 0 WHERE k = 'schema_version'");
+        $pdo->exec("ALTER TABLE users ADD COLUMN shop_id INT UNSIGNED NULL AFTER id,
+            MODIFY role ENUM('super','admin','employee') NOT NULL DEFAULT 'employee'");
+        $pdo->exec('UPDATE users SET shop_id = 1');
+        $pdo->exec("UPDATE users SET role = 'super', shop_id = NULL WHERE role = 'admin' ORDER BY id LIMIT 1");
+        $pdo->exec('ALTER TABLE jobs ADD COLUMN shop_id INT UNSIGNED NOT NULL DEFAULT 1 AFTER id, ADD KEY idx_shop (shop_id, status)');
+        $pdo->exec("UPDATE settings SET v = '4' WHERE shop_id = 0 AND k = 'schema_version'");
+    }
+    if ($v < 5) {
+        // Layouts (N pages per sheet, photo sheets): keep the customer's original next to the print-ready file.
+        $pdo->exec("ALTER TABLE job_files ADD COLUMN layout VARCHAR(40) NOT NULL DEFAULT '' AFTER page_range,
+            ADD COLUMN orig_name VARCHAR(100) NOT NULL DEFAULT '' AFTER stored_name,
+            ADD COLUMN orig_ext VARCHAR(10) NOT NULL DEFAULT '' AFTER orig_name");
+        $pdo->exec("UPDATE settings SET v = '5' WHERE shop_id = 0 AND k = 'schema_version'");
     }
 }
 
@@ -105,6 +129,87 @@ function csrf_check(): void
     }
 }
 
+// ---- Shops ----------------------------------------------------------
+// Every order, employee and setting belongs to a shop. The current shop comes from
+// the logged-in user (super admins choose one), the ?shop= link (customers) or the
+// agent key (print agent).
+
+function shop_id(?int $set = null): int
+{
+    static $id = 0;
+    if ($set !== null) {
+        $id = $set;
+        setting('', '', true); // reload settings for this shop
+    }
+    return $id;
+}
+
+function shop(): ?array
+{
+    static $cache = [];
+    $id = shop_id();
+    if (!array_key_exists($id, $cache)) {
+        $st = db()->prepare('SELECT * FROM shops WHERE id = ?');
+        $st->execute([$id]);
+        $cache[$id] = $st->fetch() ?: null;
+    }
+    return $cache[$id];
+}
+
+function all_shops(bool $activeOnly = false): array
+{
+    return db()->query('SELECT * FROM shops' . ($activeOnly ? ' WHERE active = 1' : '') . ' ORDER BY name')->fetchAll();
+}
+
+function shop_by_slug(string $slug): ?array
+{
+    $st = db()->prepare('SELECT * FROM shops WHERE slug = ? AND active = 1');
+    $st->execute([$slug]);
+    return $st->fetch() ?: null;
+}
+
+// Link to this shop's customer page (used for the QR code and the app manifest).
+function shop_url(string $page = 'index.php'): string
+{
+    $s = shop();
+    return base_url() . $page . ($s ? '?shop=' . rawurlencode($s['slug']) : '');
+}
+
+const DEFAULT_SETTINGS = [
+    'print_mode' => 'agent', 'printer_bw' => '', 'printer_color' => '', 'printer_map' => '{}',
+    'papers_enabled' => 'A4,A3', 'papers_custom' => '', 'colors_enabled' => 'bw,color', 'sides_enabled' => 'single,double',
+    'pricing' => '{"A4":{"bw":{"single":[1,2,1],"double":[1,2,1]},"color":{"single":[1,5,3],"double":[1,5,3]}},"A3":{"bw":{"single":[1,4,2],"double":[1,4,2]},"color":{"single":[1,10,6],"double":[1,10,6]}}}',
+    'currency' => 'SR', 'default_lang' => 'en', 'retention_days' => '2', 'auto_complete' => '1',
+    'layouts_enabled' => 'nup2,nup4,photo4,passport',
+];
+
+// Creates a shop with default settings and its first admin. Returns the shop id.
+function create_shop(string $name, string $slug, string $adminUser, string $adminPass, string $adminName = ''): int
+{
+    $pdo = db();
+    $pdo->prepare('INSERT INTO shops (slug, name) VALUES (?, ?)')->execute([$slug, $name]);
+    $id = (int)$pdo->lastInsertId();
+    $ins = $pdo->prepare('INSERT INTO settings (shop_id, k, v) VALUES (?, ?, ?)');
+    foreach (DEFAULT_SETTINGS + ['shop_name' => $name, 'agent_key' => bin2hex(random_bytes(20))] as $k => $v) {
+        $ins->execute([$id, $k, $v]);
+    }
+    if ($adminUser !== '') {
+        $pdo->prepare("INSERT INTO users (shop_id, username, full_name, password_hash, role) VALUES (?, ?, ?, ?, 'admin')")
+            ->execute([$id, $adminUser, $adminName, password_hash($adminPass, PASSWORD_DEFAULT)]);
+    }
+    return $id;
+}
+
+function valid_slug(string $slug): bool
+{
+    return (bool)preg_match('/^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/', $slug);
+}
+
+function valid_username(string $u): bool
+{
+    return (bool)preg_match('/^[A-Za-z0-9_.-]{3,50}$/', $u);
+}
+
 // ---- Auth ---------------------------------------------------------
 
 function current_user(): ?array
@@ -113,7 +218,9 @@ function current_user(): ?array
     if ($user === false) {
         $user = null;
         if (!empty($_SESSION['uid'])) {
-            $st = db()->prepare('SELECT id, username, full_name, role FROM users WHERE id = ? AND active = 1');
+            $st = db()->prepare('SELECT u.id, u.shop_id, u.username, u.full_name, u.role FROM users u
+                                 LEFT JOIN shops s ON s.id = u.shop_id
+                                 WHERE u.id = ? AND u.active = 1 AND (u.role = \'super\' OR s.active = 1)');
             $st->execute([$_SESSION['uid']]);
             $user = $st->fetch() ?: null;
             if (!$user) {
@@ -124,11 +231,32 @@ function current_user(): ?array
     return $user;
 }
 
+function is_super(?array $u = null): bool
+{
+    $u = $u ?? current_user();
+    return $u !== null && $u['role'] === 'super';
+}
+
 function require_login(): array
 {
     $u = current_user();
     if (!$u) {
         redirect('login.php');
+    }
+    if (is_super($u)) {
+        // Super admins work in the shop they picked (Settings → Shops), or the first one.
+        $sid = (int)($_SESSION['shop_id'] ?? 0);
+        $ids = array_map('intval', array_column(all_shops(), 'id'));
+        if (!in_array($sid, $ids, true)) {
+            $sid = $ids[0] ?? 0;
+            $_SESSION['shop_id'] = $sid;
+        }
+        shop_id($sid);
+        if ($sid === 0 && !in_array(basename($_SERVER['SCRIPT_NAME'] ?? ''), ['shops.php', 'account.php', 'settings.php'], true)) {
+            redirect('shops.php'); // no shop yet: create one first
+        }
+    } else {
+        shop_id((int)$u['shop_id']);
     }
     return $u;
 }
@@ -136,21 +264,33 @@ function require_login(): array
 function require_admin(): array
 {
     $u = require_login();
-    if ($u['role'] !== 'admin') {
+    if (!in_array($u['role'], ['admin', 'super'], true)) {
         http_response_code(403);
         exit('Admins only.');
     }
     return $u;
 }
 
-// ---- Settings (key/value table) -----------------------------------
+function require_super(): array
+{
+    $u = require_login();
+    if (!is_super($u)) {
+        http_response_code(403);
+        exit('Super admin only.');
+    }
+    return $u;
+}
+
+// ---- Settings (key/value per shop; shop 0 = whole system) ---------
 
 function setting(string $key, string $default = '', bool $reload = false): string
 {
     static $cache = null;
     if ($cache === null || $reload) {
         $cache = [];
-        foreach (db()->query('SELECT k, v FROM settings') as $row) {
+        $st = db()->prepare('SELECT k, v FROM settings WHERE shop_id = ?');
+        $st->execute([shop_id()]);
+        foreach ($st as $row) {
             $cache[$row['k']] = $row['v'];
         }
     }
@@ -159,8 +299,8 @@ function setting(string $key, string $default = '', bool $reload = false): strin
 
 function save_setting(string $key, string $value): void
 {
-    $st = db()->prepare('INSERT INTO settings (k, v) VALUES (?, ?) ON DUPLICATE KEY UPDATE v = VALUES(v)');
-    $st->execute([$key, $value]);
+    $st = db()->prepare('INSERT INTO settings (shop_id, k, v) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE v = VALUES(v)');
+    $st->execute([shop_id(), $key, $value]);
     setting($key, '', true);
 }
 
@@ -381,13 +521,17 @@ function cleanup_old_files(): void
     if ($days <= 0) {
         return;
     }
-    $st = db()->prepare('SELECT f.id, f.stored_name FROM job_files f JOIN jobs j ON j.id = f.job_id
-                         WHERE j.created_at < (NOW() - INTERVAL ? DAY) AND f.stored_name <> \'\'');
-    $st->execute([$days]);
-    $upd = db()->prepare('UPDATE job_files SET stored_name = \'\' WHERE id = ?');
+    $st = db()->prepare('SELECT f.id, f.stored_name, f.orig_name FROM job_files f JOIN jobs j ON j.id = f.job_id
+                         WHERE j.shop_id = ? AND j.created_at < (NOW() - INTERVAL ? DAY) AND f.stored_name <> \'\'');
+    $st->execute([shop_id(), $days]);
+    $upd = db()->prepare('UPDATE job_files SET stored_name = \'\', orig_name = \'\' WHERE id = ?');
     foreach ($st as $row) {
-        @unlink(cfg('upload_dir') . '/' . $row['stored_name']);
-        @unlink(cfg('upload_dir') . '/' . $row['stored_name'] . '.pdf');
+        foreach ([$row['stored_name'], $row['orig_name']] as $name) {
+            if ($name !== '') {
+                @unlink(cfg('upload_dir') . '/' . $name);
+                @unlink(cfg('upload_dir') . '/' . $name . '.pdf');
+            }
+        }
         $upd->execute([$row['id']]);
     }
 }
@@ -487,14 +631,14 @@ function page_header(string $title, bool $staff = false, string $lang = 'en', st
         . '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'
         . '<title>' . h($title) . ' – ' . h($shop) . '</title>'
         . '<meta name="theme-color" content="#ffffff">'
-        . '<link rel="manifest" href="manifest.php' . ($staff ? '?app=staff' : '') . '">'
+        . '<link rel="manifest" href="manifest.php' . ($staff ? '?app=staff' : (shop() ? '?shop=' . h(rawurlencode(shop()['slug'])) : '')) . '">'
         . '<link rel="icon" type="image/png" href="assets/icons/favicon.png">'
         . '<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">'
         . '<meta name="apple-mobile-web-app-capable" content="yes">'
         . '<meta name="mobile-web-app-capable" content="yes">'
         . '<meta name="apple-mobile-web-app-status-bar-style" content="default">'
         . '<meta name="apple-mobile-web-app-title" content="' . h($staff ? 'Print Staff' : $shop) . '">'
-        . '<link rel="stylesheet" href="assets/style.css?v=7">'
+        . '<link rel="stylesheet" href="assets/style.css?v=8">'
         . '<style>' . theme_css() . '</style>'
         . '<script src="assets/app.js?v=6" defer></script></head>'
         . '<body class="' . ($u ? 'has-tabs' : '') . '">';
@@ -509,6 +653,9 @@ function page_header(string $title, bool $staff = false, string $lang = 'en', st
     if (!$staff && basename($_SERVER['SCRIPT_NAME'] ?? '') === 'index.php') {
         echo '<nav class="lang"><button type="button" class="install-chip hidden" data-install>⬇ ' . h(t('install_app')) . '</button>'
             . ($rtl ? '<a href="?lang=en">English</a>' : '<a href="?lang=ar">العربية</a>') . '</nav>';
+    }
+    if ($u && is_super($u) && shop()) {
+        echo '<a class="shop-chip" href="shops.php" title="Change shop">🏬 ' . h(shop()['name']) . ' ▾</a>';
     }
     echo '</div></header><main class="wrap">';
 }
@@ -535,8 +682,8 @@ function page_footer(): void
             '<a href="' . $href . '" class="' . (in_array($page, $pages, true) ? 'on' : '') . '"><span>' . $icon . '</span>' . $label . '</a>';
         echo '<nav class="tabbar">'
             . $tab('staff.php', ['staff.php', 'job.php'], '🖨️', 'Jobs')
-            . ($u['role'] === 'admin' ? $tab('qr.php', ['qr.php'], '▦', 'QR code') : '')
-            . $tab('settings.php', ['settings.php', 'admin.php', 'account.php'], '⚙️', 'Settings')
+            . ($u['role'] !== 'employee' ? $tab('qr.php', ['qr.php'], '▦', 'QR code') : '')
+            . $tab('settings.php', ['settings.php', 'admin.php', 'account.php', 'shops.php'], '⚙️', 'Settings')
             . '</nav>';
     }
     echo '</body></html>';

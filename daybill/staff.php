@@ -8,8 +8,10 @@ $user = require_login();
 if (isset($_GET['poll'])) {
     header('Content-Type: application/json');
     // "latest" = newest order (beep), "stamp" changes whenever any order changes status.
-    echo json_encode(db()->query("SELECT COALESCE(MAX(id), 0) AS latest, CONCAT(COALESCE(MAX(updated_at), ''), '/', COUNT(*)) AS stamp
-                                  FROM jobs")->fetch());
+    $st = db()->prepare("SELECT COALESCE(MAX(id), 0) AS latest, CONCAT(COALESCE(MAX(updated_at), ''), '/', COUNT(*)) AS stamp
+                         FROM jobs WHERE shop_id = ?");
+    $st->execute([shop_id()]);
+    echo json_encode($st->fetch());
     exit;
 }
 
@@ -18,8 +20,8 @@ cleanup_old_files();
 $tab = in_array($_GET['tab'] ?? '', ['new', 'done', 'all'], true) ? $_GET['tab'] : 'new';
 $q = strtoupper(trim((string)($_GET['q'] ?? '')));
 
-$where = [];
-$args = [];
+$where = ['j.shop_id = ?'];
+$args = [shop_id()];
 if ($q !== '') {
     $where[] = '(j.code = ? OR j.customer_name LIKE ? OR j.phone LIKE ?)';
     array_push($args, $q, "%$q%", "%$q%");
@@ -38,9 +40,14 @@ $st = db()->prepare($sql);
 $st->execute($args);
 $jobs = $st->fetchAll();
 
-$today = db()->query("SELECT COUNT(*) AS n, COALESCE(SUM(amount), 0) AS total FROM jobs
-                      WHERE status = 'done' AND updated_at >= CURDATE()")->fetch();
-$poll = db()->query("SELECT COALESCE(MAX(id), 0) AS latest, CONCAT(COALESCE(MAX(updated_at), ''), '/', COUNT(*)) AS stamp FROM jobs")->fetch();
+$st = db()->prepare("SELECT COUNT(*) AS n, COALESCE(SUM(amount), 0) AS total FROM jobs
+                     WHERE shop_id = ? AND status = 'done' AND updated_at >= CURDATE()");
+$st->execute([shop_id()]);
+$today = $st->fetch();
+$st = db()->prepare("SELECT COALESCE(MAX(id), 0) AS latest, CONCAT(COALESCE(MAX(updated_at), ''), '/', COUNT(*)) AS stamp
+                     FROM jobs WHERE shop_id = ?");
+$st->execute([shop_id()]);
+$poll = $st->fetch();
 $latest = (int)$poll['latest'];
 
 page_header('Print jobs', true);

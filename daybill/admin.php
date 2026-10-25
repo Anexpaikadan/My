@@ -22,26 +22,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string)($_POST['action'] ?? '');
     $pdo = db();
     $uid = (int)($_POST['user_id'] ?? 0);
+    // Only staff of the current shop can be changed here (super admins are managed in Shops).
+    $own = $pdo->prepare("SELECT COUNT(*) FROM users WHERE id = ? AND shop_id = ? AND role <> 'super'");
+    $own->execute([$uid, shop_id()]);
+    $ownUser = (int)$own->fetchColumn() === 1;
 
     if ($action === 'create_user') {
         $username = trim((string)($_POST['username'] ?? ''));
         $pass = (string)($_POST['password'] ?? '');
         $role = ($_POST['role'] ?? '') === 'admin' ? 'admin' : 'employee';
-        if (!preg_match('/^[A-Za-z0-9_.-]{3,50}$/', $username)) {
+        if (!valid_username($username)) {
             flash('Username: 3–50 letters, numbers, dot, dash or underscore.', 'err');
         } elseif (strlen($pass) < 6) {
             flash('Password must be at least 6 characters.', 'err');
         } else {
             try {
-                $pdo->prepare('INSERT INTO users (username, full_name, password_hash, role) VALUES (?, ?, ?, ?)')
-                    ->execute([$username, mb_substr(trim((string)($_POST['full_name'] ?? '')), 0, 100),
+                $pdo->prepare('INSERT INTO users (shop_id, username, full_name, password_hash, role) VALUES (?, ?, ?, ?, ?)')
+                    ->execute([shop_id(), $username, mb_substr(trim((string)($_POST['full_name'] ?? '')), 0, 100),
                         password_hash($pass, PASSWORD_DEFAULT), $role]);
                 flash("User \"$username\" created.");
             } catch (PDOException $e) {
                 flash($e->errorInfo[1] == 1062 ? 'That username already exists.' : 'Could not create user.', 'err');
             }
         }
-    } elseif ($action === 'reset_password') {
+    } elseif ($action === 'reset_password' && ($ownUser || $uid === (int)$admin['id'])) {
         $pass = (string)($_POST['password'] ?? '');
         if (strlen($pass) < 6) {
             flash('Password must be at least 6 characters.', 'err');
@@ -49,10 +53,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->prepare('UPDATE users SET password_hash = ? WHERE id = ?')->execute([password_hash($pass, PASSWORD_DEFAULT), $uid]);
             flash('Password changed.');
         }
-    } elseif ($action === 'toggle_active' && $uid !== (int)$admin['id']) {
+    } elseif ($action === 'toggle_active' && $ownUser && $uid !== (int)$admin['id']) {
         $pdo->prepare('UPDATE users SET active = 1 - active WHERE id = ?')->execute([$uid]);
         flash('User updated.');
-    } elseif ($action === 'delete_user' && $uid !== (int)$admin['id']) {
+    } elseif ($action === 'delete_user' && $ownUser && $uid !== (int)$admin['id']) {
         $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$uid]);
         flash('User deleted.');
     } elseif ($action === 'colors') {
@@ -62,7 +66,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         flash(!empty($_POST['reset_flag']) ? 'Colours reset to the DAYbill logo colours.' : 'App colours saved.');
     } elseif ($action === 'settings') {
-        save_setting('shop_name', mb_substr(trim((string)($_POST['shop_name'] ?? '')), 0, 100) ?: 'Daybill Print');
+        $shopName = mb_substr(trim((string)($_POST['shop_name'] ?? '')), 0, 100) ?: (shop()['name'] ?? 'Daybill Print');
+        save_setting('shop_name', $shopName);
+        db()->prepare('UPDATE shops SET name = ? WHERE id = ?')->execute([$shopName, shop_id()]);
         save_setting('currency', mb_substr(trim((string)($_POST['currency'] ?? '')), 0, 5));
         save_setting('default_lang', ($_POST['default_lang'] ?? '') === 'ar' ? 'ar' : 'en');
         save_setting('retention_days', (string)max(0, (int)($_POST['retention_days'] ?? 2)));
@@ -122,7 +128,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect('admin.php?s=' . $sec);
 }
 
-$users = db()->query('SELECT id, username, full_name, role, active, created_at FROM users ORDER BY role, username')->fetchAll();
+$st = db()->prepare("SELECT id, username, full_name, role, active, created_at FROM users
+                     WHERE shop_id = ? AND role <> 'super' ORDER BY role, username");
+$st->execute([shop_id()]);
+$users = $st->fetchAll();
 $printers = $sec === 'printing' ? list_printers() : [];
 $mode = setting('print_mode', 'local');
 $labels = ['bw' => 'Black & white', 'color' => 'Colour', 'single' => 'One side', 'double' => 'Both sides'];

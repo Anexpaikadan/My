@@ -3,6 +3,31 @@
 
 require __DIR__ . '/lib.php';
 
+// Which shop? The QR code link has ?shop=<slug> (remembered in a cookie); with only one shop it is used directly.
+$slug = (string)($_GET['shop'] ?? $_POST['shop'] ?? $_COOKIE['daybill_shop'] ?? '');
+$shopRow = $slug !== '' ? shop_by_slug($slug) : null;
+if (!$shopRow) {
+    $active = all_shops(true);
+    $shopRow = count($active) === 1 ? $active[0] : null;
+}
+if (!$shopRow) {
+    page_header('Choose shop');
+    echo '<div class="card"><h1>Choose your shop · اختر المحل</h1><div class="menu">';
+    foreach ($active as $sh) {
+        echo '<a class="menu-item" href="index.php?shop=' . h(rawurlencode($sh['slug'])) . '"><span class="ic">🖨️</span>'
+            . '<span class="txt"><b>' . h($sh['name']) . '</b></span><span class="chev">›</span></a>';
+    }
+    echo $active ? '' : '<p class="muted">No shop is open at the moment.</p>';
+    echo '</div></div>';
+    page_footer();
+    exit;
+}
+shop_id((int)$shopRow['id']);
+if (($_COOKIE['daybill_shop'] ?? '') !== $shopRow['slug']) {
+    setcookie('daybill_shop', $shopRow['slug'], ['expires' => time() + 31536000, 'path' => '/', 'secure' => true, 'samesite' => 'Lax']);
+}
+$self = 'index.php?shop=' . rawurlencode($shopRow['slug']);
+
 function make_code(): string
 {
     $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I
@@ -68,8 +93,9 @@ function handle_upload(): array
         for ($try = 0; $try < 20 && !$jobId; $try++) {
             $code = make_code();
             try {
-                $st = $pdo->prepare('INSERT INTO jobs (code, customer_name, phone, note) VALUES (?, ?, ?, ?)');
+                $st = $pdo->prepare('INSERT INTO jobs (shop_id, code, customer_name, phone, note) VALUES (?, ?, ?, ?, ?)');
                 $st->execute([
+                    shop_id(),
                     $code,
                     mb_substr(trim((string)($_POST['customer_name'] ?? '')), 0, 100),
                     mb_substr(trim((string)($_POST['phone'] ?? '')), 0, 30),
@@ -187,7 +213,7 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
     <div class="bigcode"><?= h($result['code']) ?></div>
     <p class="pay-box"><?= h($result['price'] !== '' ? t('estimate') : t('estimate_ph')) ?><?php if ($result['price'] !== ''): ?><b><?= h($result['price']) ?></b><?php endif; ?></p>
     <p class="muted"><?= h(t('final_note')) ?></p>
-    <a class="btn block" href="index.php"><?= h(t('send_more')) ?></a>
+    <a class="btn block" href="<?= h($self) ?>"><?= h(t('send_more')) ?></a>
   </div>
 <?php else: ?>
   <?php if ($result): ?><div class="alert err"><?= h($result['error']) ?></div><?php endif; ?>
@@ -198,7 +224,7 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
     <div class="bigcode" id="doneCode"></div>
     <p id="donePrice" class="pay-box"></p>
     <p class="muted"><?= h(t('final_note')) ?></p>
-    <a class="btn block" href="index.php"><?= h(t('send_more')) ?></a>
+    <a class="btn block" href="<?= h($self) ?>"><?= h(t('send_more')) ?></a>
   </div>
 
   <form id="upForm" method="post" enctype="multipart/form-data" class="card">
@@ -264,7 +290,7 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
 
   <script>
   (function () {
-    var maxFiles = <?= (int)cfg('max_files') ?>, maxMb = <?= (int)cfg('max_file_mb') ?>;
+    var maxFiles = <?= (int)cfg('max_files') ?>, maxMb = <?= (int)cfg('max_file_mb') ?>, SELF = <?= json_encode($self) ?>;
     var rules = <?= json_encode($rules) ?>, currency = <?= json_encode(setting('currency', 'SR')) ?>;
     var T = <?php $keys = ['err_none', 'err_server', 'err_net', 'estimate', 'estimate_ph', 'pages_count', 'counting'];
                 echo json_encode(array_combine($keys, array_map('t', $keys))); ?>;
@@ -362,7 +388,7 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
     // Asks the server to count pages when the phone could not (old browser or unusual PDF).
     function serverPages(file) {
       var fd = new FormData(); fd.append('ajax', 'count'); fd.append('pdf', file, file.name);
-      return fetch('index.php', { method: 'POST', body: fd }).then(function (r) { return r.json(); })
+      return fetch(SELF, { method: 'POST', body: fd }).then(function (r) { return r.json(); })
         .then(function (d) { return d.pages || 0; }, function () { return 0; });
     }
 
@@ -416,7 +442,7 @@ $accept = '.' . implode(',.', ALLOWED_EXT);
         });
       });
       var xhr = new XMLHttpRequest();
-      xhr.open('POST', 'index.php');
+      xhr.open('POST', SELF);
       btn.disabled = true; prog.classList.remove('hidden');
       xhr.upload.onprogress = function (ev) {
         if (ev.lengthComputable) prog.firstElementChild.style.width = (ev.loaded / ev.total * 100) + '%';

@@ -6,16 +6,21 @@
 require __DIR__ . '/lib.php';
 
 $staff = ($_GET['app'] ?? '') === 'staff';
-$shop = setting('shop_name', 'Daybill Print');
+$row = !$staff && isset($_GET['shop']) ? shop_by_slug((string)$_GET['shop']) : null;
+if ($row) {
+    shop_id((int)$row['id']);
+}
+$shop = $row ? setting('shop_name', $row['name']) : 'DAYbill Print';
+$q = $row ? 'shop=' . rawurlencode($row['slug']) . '&' : '';
 
 header('Content-Type: application/manifest+json');
 header('Cache-Control: no-cache');
 echo json_encode([
-    'id'               => $staff ? 'daybill-staff' : 'daybill-customer',
-    'name'             => $staff ? $shop . ' – Staff' : $shop,
+    'id'               => $staff ? 'daybill-staff' : 'daybill-customer' . ($row ? '-' . $row['slug'] : ''),
+    'name'             => $staff ? 'DAYbill Print – Staff' : $shop,
     'short_name'       => $staff ? 'Print Staff' : mb_substr($shop, 0, 12),
     'description'      => $staff ? 'Print orders, printing and settings' : 'Send files to print',
-    'start_url'        => $staff ? 'staff.php?source=app' : 'index.php?source=app',
+    'start_url'        => $staff ? 'staff.php?source=app' : 'index.php?' . $q . 'source=app',
     'scope'            => './',
     'display'          => 'standalone',
     'orientation'      => 'portrait',

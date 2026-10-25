@@ -5,7 +5,7 @@ require __DIR__ . '/lib.php';
 require_admin();
 
 // Phones cannot reach "localhost" – suggest the PC's network address instead.
-$default = base_url() . 'index.php';
+$default = shop_url('index.php');
 $host = preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? '');
 if (in_array($host, ['localhost', '127.0.0.1', '::1', '[::1]'], true)) {
     $lan = gethostbyname(gethostname());
@@ -18,6 +18,10 @@ $url = trim((string)($_GET['url'] ?? setting('upload_url', $default)));
 $url = preg_replace('#^http://#i', 'https://', $url);
 if (!preg_match('#^https://#i', $url)) {
     $url = $url !== '' ? 'https://' . ltrim($url, '/') : $default;
+}
+// Each shop's QR code opens its own upload page.
+if (shop() && strpos($url, 'shop=') === false) {
+    $url .= (strpos($url, '?') === false ? '?' : '&') . 'shop=' . rawurlencode(shop()['slug']);
 }
 if (isset($_GET['url'])) {
     save_setting('upload_url', $url);
