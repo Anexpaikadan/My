@@ -67,6 +67,10 @@ $groups = [
   <a href="attendance.php" class="btn btn-accent btn-lg d-none d-sm-inline-flex align-items-center gap-2"><i class="bi bi-qr-code"></i> <?= e(t('attendance_qr')) ?></a>
 </div></div>
 
+<?php $lastDl = setting('last_download'); if ($lastDl === '' || strtotime($lastDl) < strtotime('-7 day')): ?>
+  <a href="backup.php" class="alert alert-warning d-flex align-items-center gap-2 text-decoration-none mb-3">
+    <i class="bi bi-cloud-arrow-down-fill fs-4"></i><span class="me-auto"><?= e($lastDl === '' ? t('never_downloaded') : t('backup_reminder', fdate($lastDl))) ?></span><i class="bi bi-chevron-right"></i></a>
+<?php endif; ?>
 <div class="quick-row mb-4">
   <a href="member_invite.php" class="quick tap"><span class="qi bg-primary"><i class="bi bi-person-plus-fill"></i></span><span><?= e(t('new_member')) ?></span></a>
   <a href="payment_add.php" class="quick tap"><span class="qi" style="background:var(--vm-green);color:#10260a"><i class="bi bi-cash-coin"></i></span><span><?= e(t('record_payment')) ?></span></a>

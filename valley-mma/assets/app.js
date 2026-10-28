@@ -273,6 +273,8 @@
       f.dataset.verified = '1';
       modal.hide();
       HTMLFormElement.prototype.submit.call(f);
+      // Downloads keep the page open: ask again next time.
+      setTimeout(function () { f.dataset.verified = ''; h.value = ''; }, 1500);
     });
   }
 

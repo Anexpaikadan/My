@@ -245,6 +245,14 @@ return [
         'verify_title' => 'Confirm with password', 'verify_enter' => 'Password of %s', 'confirm' => 'Confirm',
         'verify_wrong' => 'Wrong password – nothing was changed.', 'verify_money' => 'This changes the accounts.',
         'verify_plan' => 'This changes plan prices.', 'verify_admin' => 'This changes admin accounts.',
+        // Backup (v3)
+        'verify_download' => 'The backup file has all member and money data. Keep it safe.',
+        'never_downloaded' => 'No backup downloaded yet – download one and keep it safe.',
+        'last_downloaded' => 'Last downloaded: %s (%d days ago)', 'backup_reminder' => 'Last backup downloaded on %s – download a new one.',
+        'auto_backup' => 'Automatic backup', 'auto_backup_label' => 'Save a backup on the server every day',
+        'backup_keep_label' => 'Keep the last', 'last_auto_backup' => 'Last automatic backup: %s', 'auto_backup_none' => 'No automatic backup yet – it runs the first time an admin opens the app each day.',
+        'auto' => 'Auto', 'manual' => 'Manual', 'restore_from_file' => 'Restore from a file',
+        'restore_saved_confirm' => 'Put back the backup of %s? All data now is replaced (a copy is saved first).',
     ],
 
     'ml' => [
@@ -469,5 +477,12 @@ return [
         'verify_title' => 'പാസ്‌വേഡ് നൽകി സ്ഥിരീകരിക്കുക', 'verify_enter' => '%s-ന്റെ പാസ്‌വേഡ്', 'confirm' => 'സ്ഥിരീകരിക്കുക',
         'verify_wrong' => 'പാസ്‌വേഡ് തെറ്റാണ് – ഒന്നും മാറ്റിയില്ല.', 'verify_money' => 'ഇത് അക്കൗണ്ടുകളിൽ മാറ്റം വരുത്തും.',
         'verify_plan' => 'ഇത് പ്ലാൻ വിലകൾ മാറ്റും.', 'verify_admin' => 'ഇത് അഡ്മിൻ അക്കൗണ്ടുകൾ മാറ്റും.',
+        'verify_download' => 'ബാക്കപ്പ് ഫയലിൽ എല്ലാ അംഗ, പണ വിവരങ്ങളുമുണ്ട്. സുരക്ഷിതമായി സൂക്ഷിക്കുക.',
+        'never_downloaded' => 'ഇതുവരെ ബാക്കപ്പ് ഡൗൺലോഡ് ചെയ്തിട്ടില്ല – ഒന്ന് ഡൗൺലോഡ് ചെയ്ത് സൂക്ഷിക്കുക.',
+        'last_downloaded' => 'അവസാനം ഡൗൺലോഡ് ചെയ്തത്: %s (%d ദിവസം മുമ്പ്)', 'backup_reminder' => 'അവസാന ബാക്കപ്പ് %s-ന് – പുതിയത് ഡൗൺലോഡ് ചെയ്യുക.',
+        'auto_backup' => 'ഓട്ടോമാറ്റിക് ബാക്കപ്പ്', 'auto_backup_label' => 'എല്ലാ ദിവസവും സെർവറിൽ ബാക്കപ്പ് സേവ് ചെയ്യുക',
+        'backup_keep_label' => 'സൂക്ഷിക്കേണ്ട എണ്ണം', 'last_auto_backup' => 'അവസാന ഓട്ടോമാറ്റിക് ബാക്കപ്പ്: %s', 'auto_backup_none' => 'ഇതുവരെ ഓട്ടോമാറ്റിക് ബാക്കപ്പ് ഇല്ല – ഓരോ ദിവസവും അഡ്മിൻ ആദ്യമായി ആപ്പ് തുറക്കുമ്പോൾ ഇത് നടക്കും.',
+        'auto' => 'ഓട്ടോ', 'manual' => 'കൈകൊണ്ട്', 'restore_from_file' => 'ഫയലിൽ നിന്ന് പുനഃസ്ഥാപിക്കുക',
+        'restore_saved_confirm' => '%s-ലെ ബാക്കപ്പ് തിരികെ കൊണ്ടുവരണോ? ഇപ്പോഴുള്ള എല്ലാ ഡാറ്റയും മാറ്റപ്പെടും (ആദ്യം ഒരു പകർപ്പ് സേവ് ചെയ്യും).',
     ],
 ];

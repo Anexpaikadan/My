@@ -268,6 +268,10 @@ function require_admin(): array
         redirect('login.php');
     }
     csrf_check();
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        require_once __DIR__ . '/backup_lib.php';
+        auto_backup_if_due();
+    }
     return $a;
 }
 

@@ -21,7 +21,7 @@ It has English and Malayalam (switch at any time), and you can install it on a p
 | **Daily activity** | Weekly training plan (warm-up, primary, secondary, finisher, cool down) – editable. Today's plan is shown on the dashboard and in the member app |
 | **Reports** | Daily, monthly and yearly income (cash / online split), active and expired members, payment history, pending balances, monthly attendance. Every report: **Print**, **PDF** download, **Excel (CSV)** |
 | **Member app** | Members log in with phone + password (the admin sets or changes it). They see their plan, expiry, days left, attendance calendar, receipts and today's training, scan the attendance QR and pay by UPI |
-| **Backup** | Download a full backup (ZIP: data + photos) or data only (SQL), keep backups on the server, restore a backup |
+| **Backup** | Download a full backup (ZIP: data + photos) or data only (SQL). **Automatic backup every day** on the server (the newest 14 are kept, number can be changed). Restore from a saved backup or an uploaded file; a copy of the current data is saved first, and backups from older app versions are upgraded automatically. Downloads, restore and delete ask for the admin password. The dashboard reminds you when no backup was downloaded for 7 days |
 | **Security** | Admin login with `password_hash()`, session login that lasts 7 days (`login_days` in config.php), CSRF protection on every form, PDO prepared statements, input checks, login lock after 8 wrong tries, private member photos, signed QR codes and receipt links |
 
 Colours and logo come from the DAYbill logo (blue `#360DD9`, green `#7ED957`, dark `#1A1A1A`).

@@ -148,6 +148,8 @@ INSERT IGNORE INTO settings (k, v) VALUES
   ('att_refresh', '0'),
   ('att_block_expired', '0'),
   ('trial_days', '7'),
+  ('auto_backup', '1'),
+  ('backup_keep', '14'),
   ('schema_version', '3');
 
 INSERT IGNORE INTO plans (id, name, duration_value, duration_unit, price, description, sort_order) VALUES
