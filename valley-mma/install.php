@@ -46,6 +46,7 @@ if ($installed) {
             run_sql($pdo, file_get_contents(__DIR__ . '/sql/schema.sql'));
             run_sql($pdo, file_get_contents(__DIR__ . '/sql/accounts.sql'));
             run_sql($pdo, file_get_contents(__DIR__ . '/sql/leaves.sql'));
+            run_sql($pdo, file_get_contents(__DIR__ . '/sql/levels.sql'));
             if (!empty($_POST['sample']) && !(int)$pdo->query('SELECT COUNT(*) FROM members')->fetchColumn()) {
                 run_sql($pdo, file_get_contents(__DIR__ . '/sql/sample_data.sql'));
             }

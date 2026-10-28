@@ -9,7 +9,13 @@ function mark(int $memberId, string $date, string $method): bool
 {
     $st = q('INSERT IGNORE INTO attendance (member_id, att_date, check_in, method) VALUES (?, ?, ?, ?)',
         [$memberId, $date, $date === today() ? date('H:i:s') : '00:00:00', $method]);
-    return $st->rowCount() > 0;
+    if ($st->rowCount() === 0) {
+        return false;
+    }
+    if ($l = level_update($memberId)) { // position changes with attendance days
+        $GLOBALS['vm_promoted'][$memberId] = $l;
+    }
+    return true;
 }
 
 function today_list(): array
@@ -53,7 +59,8 @@ if ($action === 'card') { // admin scanned a member ID card
     $st = member_status($m['expiry_date']);
     echo json_encode([
         'ok' => true, 'new' => $new, 'name' => $m['name'], 'adm_no' => $m['adm_no'], 'photo' => photo_url($m),
-        'msg' => $new ? t('marked_present') : t('already_marked'),
+        'msg' => ($new ? t('marked_present') : t('already_marked'))
+            . (isset($GLOBALS['vm_promoted'][$m['id']]) ? ' · ' . t('promoted', $m['name'], $GLOBALS['vm_promoted'][$m['id']]['name']) : ''),
         'status' => $st, 'status_text' => $st === 'expired' ? t('membership_expired_on', fdate($m['expiry_date'])) : t('valid_till') . ' ' . fdate($m['expiry_date']),
     ], JSON_UNESCAPED_UNICODE);
     exit;
@@ -75,6 +82,9 @@ if ($action === 'manual') {
         $n += mark($mid, $date, 'manual') ? 1 : 0;
     }
     flash('success', t('n_marked', $n, fdate($date)));
+    foreach ($GLOBALS['vm_promoted'] ?? [] as $pid => $l) {
+        flash('info', t('promoted', (string)q('SELECT name FROM members WHERE id = ?', [$pid])->fetchColumn(), $l['name']));
+    }
     if ($skipped) {
         flash('warning', t('not_marked_list', implode(', ', $skipped)));
     }
@@ -82,7 +92,11 @@ if ($action === 'manual') {
 }
 if ($action === 'remove') {
     require_verify('attendance.php?tab=list');
+    $mid = (int)q('SELECT member_id FROM attendance WHERE id = ?', [(int)post('id')])->fetchColumn();
     q('DELETE FROM attendance WHERE id = ?', [(int)post('id')]);
+    if ($mid) {
+        level_update($mid);
+    }
     flash('success', t('removed'));
     redirect('attendance.php?tab=list');
 }

@@ -36,6 +36,12 @@ if ($m['status'] === 'pending') { // not approved yet: only the join link and th
     }
 }
 $attBlock = attendance_block($m);
+$levels = levels();
+$progress = $levels ? level_progress($m) : null;
+if ($progress && $progress['level'] && $m['status'] !== 'pending') {
+    $msgs['wa_send_position'] = level_text($m, $progress['level']);
+}
+$openComplaints = (int)q("SELECT COUNT(*) FROM complaints WHERE member_id = ? AND status <> 'resolved'", [$id])->fetchColumn();
 $freezes = q('SELECT * FROM member_freezes WHERE member_id = ? ORDER BY from_date DESC', [$id])->fetchAll();
 $curFreeze = current_freeze($id);
 $fsent = (int)get('fsent');
@@ -133,6 +139,24 @@ require __DIR__ . '/includes/header.php';
         <button class="btn btn-sm btn-primary w-100"><i class="bi bi-snow"></i> <?= e(t('save')) ?></button>
       </form>
     <?php }; ?>
+    <?php if ($progress && $m['status'] !== 'pending'): $mm = $m; ?>
+    <div class="card mb-3" id="position"><div class="card-header d-flex align-items-center gap-2"><i class="bi bi-award-fill text-primary"></i>
+      <span class="me-auto"><?= e(t('position')) ?></span>
+      <span class="badge <?= $m['level_auto'] ? 'text-bg-light border' : 'bg-dark' ?>"><?= e(t($m['level_auto'] ? 'level_auto' : 'level_manual')) ?></span>
+      <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#posChange"><i class="bi bi-arrow-left-right"></i> <?= e(t('change')) ?></button></div>
+      <div class="card-body">
+        <?= level_progress_html($progress) ?>
+        <?php if ($m['level_since']): ?><div class="small-muted"><?= e(t('level_since', fdate($m['level_since']))) ?></div><?php endif; ?>
+        <form method="post" action="levels.php" class="collapse mt-2 border rounded p-2 bg-light" id="posChange"><?= csrf_field() ?>
+          <input type="hidden" name="action" value="member_level"><input type="hidden" name="member_id" value="<?= $id ?>">
+          <input type="hidden" name="back" value="member_view.php?id=<?= $id ?>#position">
+          <?php require __DIR__ . '/includes/level_fields.php'; ?>
+        </form>
+      </div>
+    </div>
+    <?php endif; ?>
+    <a href="complaints.php?new=1&member=<?= $id ?>" class="btn btn-light w-100 mb-3 d-flex align-items-center gap-2"><i class="bi bi-chat-left-text text-primary"></i>
+      <span class="me-auto text-start"><?= e(t('complaints')) ?></span><?php if ($openComplaints): ?><span class="badge bg-danger"><?= $openComplaints ?> <?= e(t('cs_open')) ?></span><?php endif; ?><i class="bi bi-plus-lg"></i></a>
     <?php if ($m['status'] !== 'pending'): ?>
     <div class="card mb-3" id="freeze"><div class="card-header d-flex align-items-center gap-2"><i class="bi bi-snow text-info"></i>
       <span class="me-auto"><?= e(t('freeze_title')) ?></span>

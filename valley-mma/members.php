@@ -100,7 +100,7 @@ require __DIR__ . '/includes/header.php';
           <td data-label="<?= e(t('phone')) ?>"><a href="tel:<?= e(clean_phone($m['phone'])) ?>"><?= e($m['phone']) ?></a></td>
           <td data-label="<?= e(t('plan')) ?>"><?= e($m['plan_name'] ?? '–') ?></td>
           <td data-label="<?= e(t('expiry_date')) ?>"><?= e(fdate($m['expiry_date'])) ?></td>
-          <td data-label="<?= e(t('status')) ?>"><?= status_badge($m['expiry_date'], $m['status']) ?><?= in_array((int)$m['id'], frozen_ids(), true) ? ' <span class="badge bg-info text-dark"><i class="bi bi-snow"></i> ' . e(t('frozen')) . '</span>' : '' ?></td>
+          <td data-label="<?= e(t('status')) ?>"><?= status_badge($m['expiry_date'], $m['status']) ?> <?= level_badge(level_by_id($m['level_id'] !== null ? (int)$m['level_id'] : null)) ?><?= in_array((int)$m['id'], frozen_ids(), true) ? ' <span class="badge bg-info text-dark"><i class="bi bi-snow"></i> ' . e(t('frozen')) . '</span>' : '' ?></td>
           <td data-label="<?= e(t('balance')) ?>" class="<?= $m['balance'] > 0 ? 'text-danger fw-bold' : '' ?>"><?= money($m['balance']) ?></td>
           <td class="td-actions text-end text-nowrap">
             <a class="btn btn-sm btn-accent" href="payment_add.php?member=<?= $m['id'] ?>" title="<?= e(t('record_payment')) ?>"><i class="bi bi-cash-coin"></i></a>

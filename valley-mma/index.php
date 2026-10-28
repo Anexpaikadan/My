@@ -24,6 +24,10 @@ $absent = (int)q("SELECT COUNT(*) FROM members WHERE status = 'active' AND expir
     AND id NOT IN (SELECT member_id FROM member_freezes WHERE from_date <= ? AND to_date > ?)",
     [$today, date('Y-m-d', strtotime("-$absentDays day")), $today, date('Y-m-d', strtotime("-$absentDays day"))])->fetchColumn();
 $frozen = count(frozen_ids());
+$openComplaints = (int)q("SELECT COUNT(*) FROM complaints WHERE status <> 'resolved'")->fetchColumn();
+$newComplaints = complaints_unread_admin();
+$firstLevel = levels()[0] ?? null;
+$warmup = $firstLevel ? (int)q("SELECT COUNT(*) FROM members WHERE status = 'active' AND expiry_date >= ? AND (level_id = ? OR level_id IS NULL)", [$today, $firstLevel['id']])->fetchColumn() : 0;
 $leaves = q('SELECT * FROM gym_leaves WHERE to_date >= ? AND from_date <= ? ORDER BY from_date', [$today, date('Y-m-d', strtotime('+14 day'))])->fetchAll();
 $birthdays = q("SELECT * FROM members WHERE dob IS NOT NULL AND DATE_FORMAT(dob, '%m-%d') = ?", [date('m-d')])->fetchAll();
 $month = acc_totals($monthStart, $today);
@@ -54,6 +58,8 @@ $groups = [
         ['members.php?status=pending', 'bi-person-fill-exclamation', 'ico-blue', $pending, t('waiting_approval'), t('invited_members')],
         ['members.php?status=inactive', 'bi-slash-circle', 'ico-dark', $inactive, t('st_inactive'), t('cannot_attend')],
         ['members.php?status=frozen', 'bi-snow', 'ico-blue', $frozen, t('frozen'), t('freeze_short')],
+        ['levels.php?level=' . ($firstLevel['id'] ?? 0), 'bi-award-fill', 'ico-amber', $warmup, $firstLevel['name'] ?? t('positions'), $firstLevel ? level_range($firstLevel) : ''],
+        ['complaints.php', 'bi-chat-left-text-fill', 'ico-red', $openComplaints, t('open_complaints'), $newComplaints ? t('n_new', $newComplaints) : ''],
     ],
     'this_month' => [
         ['ledger.php?type=income&from=' . $monthStart, 'bi-arrow-down-left-circle-fill', 'ico-green', money($month['income']), t('acc_income'), ''],

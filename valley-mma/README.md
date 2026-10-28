@@ -20,6 +20,8 @@ It has English and Malayalam (switch at any time), and you can install it on a p
 | **Attendance** | 1) The admin phone shows today's QR code (dated, optionally changing every few minutes). Members scan it with their phone camera and are marked present. 2) The admin scans member ID cards (front/back camera). 3) Mark by hand. The order of these 3 ways and the default one are set in Settings. Monthly attendance sheet |
 | **Gym leave** | Write a gym-closed notice (dates, title, message – quick titles: holiday, festival, rain …) and share it on WhatsApp: to a group or any chat, copy the text, or send it to each active member one by one. Shown on the dashboard, in the member app and in red on all attendance calendars; tap a red day to change it |
 | **Freeze** | Member page → *Freeze*: for an accident/injury, illness, travel or other reason, with dates and a note. While frozen the member cannot mark attendance and is not counted as absent; the frozen days are added to the expiry (can be switched off). Change or remove a freeze later (the expiry is corrected), send the member a WhatsApp message. Frozen days show in light blue on the calendars; *Members → Frozen* lists them |
+| **Positions (levels)** | Positions by attendance days, set in *Positions*: Warm-up (attendance day 1–5), Beginner (from day 6), Intermediate (from day 31), Advanced (from day 91) – names, start day, colour and note can be changed, added or removed. When a member marks attendance and reaches the next start day, the position changes automatically (shown on the check-in screen and as a message to the admin). The admin can set any member's position by hand (it then stays until changed) or switch the member back to automatic. Progress bar on the member page, the positions page and in the member app; WhatsApp message with the position |
+| **Complaints** | Members write complaints or suggestions in the member app (category: equipment, trainer, cleanliness, timing, payment, suggestion, other). The admin sees them under *Complaints* (new ones marked), replies, sets *Open / Working on it / Solved* and can send the reply on WhatsApp. The member sees the reply in the app and can answer. The admin can also write a complaint for a member or a general one. Open complaints are shown on the dashboard |
 | **Daily activity** | Weekly training plan (warm-up, primary, secondary, finisher, cool down) – editable. Today's plan is shown on the dashboard and in the member app |
 | **Reports** | Daily, monthly and yearly income (cash / online split), active and expired members, payment history, pending balances, monthly attendance. Every report: **Print**, **PDF** download, **Excel (CSV)** |
 | **Member app** | Members log in with phone + password (the admin sets or changes it). They see their plan, expiry, days left, attendance calendar, receipts and today's training, scan the attendance QR and pay by UPI |
@@ -47,7 +49,7 @@ Sample member login (member app): phone **9847012345**, password **member123**.
 ## Updating an existing installation
 
 Copy the new files over the old ones but keep your `config.php`. New tables (accounts, gym leave,
-freeze) are added automatically the first time a page is opened.
+freeze, positions, complaints) are added automatically the first time a page is opened.
 
 ## Phones and the attendance QR (important on XAMPP)
 
@@ -113,6 +115,7 @@ valley-mma/
   alerts.php
   attendance.php, attendance_monthly.php, checkin.php (QR target)
   activities.php        weekly training plan
+  levels.php            positions by attendance; complaints.php, complaint.php (admin), me_complaints.php (member)
   leaves.php            gym leave (closed days) with WhatsApp sharing; freeze.php (member freeze)
   reports.php
   accounts.php, ledger.php, entry_edit.php, voucher.php, acc_reports.php, acc_settings.php
@@ -123,7 +126,7 @@ valley-mma/
   includes/             init.php (helpers), accounts.php, header/nav/footer, lang.php (English + Malayalam), sql_tools.php
   assets/               style.css, print.css, app.js, attendance.js, qr.js, icons, vendor libraries
   sql/                  valley_mma_clean.sql (clean, for phpMyAdmin), database.sql (with sample data),
-                        schema.sql, accounts.sql, leaves.sql, sample_data.sql (used by install.php)
+                        schema.sql, accounts.sql, leaves.sql, levels.sql, sample_data.sql (used by install.php)
   uploads/photos/       member photos (not web-accessible)
   backups/              backups saved on the server (not web-accessible)
 ```

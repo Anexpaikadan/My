@@ -100,6 +100,8 @@ $dow = (int)date('N');
 $marks = day_marks($month . '-01', date('Y-m-t'), (int)$m['id']);
 $freeze = current_freeze((int)$m['id']);
 $leaves = q('SELECT * FROM gym_leaves WHERE to_date >= ? AND from_date <= ? ORDER BY from_date', [today(), date('Y-m-d', strtotime('+14 day'))])->fetchAll();
+$progress = levels() && $m['status'] !== 'pending' ? level_progress($m) : null;
+$unread = (int)q('SELECT COUNT(*) FROM complaints WHERE member_id = ? AND member_unread = 1', [$m['id']])->fetchColumn();
 $payAmount = $balance > 0 ? $balance : ($st !== 'active' && $plan ? (float)$plan['price'] : 0);
 ?>
 <div class="d-flex align-items-center gap-3 mb-3 pt-2">
@@ -164,6 +166,18 @@ $payAmount = $balance > 0 ? $balance : ($st !== 'active' && $plan ? (float)$plan
     <?= month_calendar($month, array_map('intval', $days), $marks['leave'], $marks['freeze'][(int)$m['id']] ?? []) ?>
   </div>
 </div>
+
+<?php if ($progress): ?>
+<div class="card mb-3"><div class="card-header"><i class="bi bi-award-fill text-primary"></i> <?= e(t('my_position')) ?></div>
+  <div class="card-body"><?= level_progress_html($progress) ?>
+    <?php if ($progress['level']['note'] !== ''): ?><div class="small-muted mt-1"><?= e($progress['level']['note']) ?></div><?php endif; ?></div>
+</div>
+<?php endif; ?>
+
+<a href="me_complaints.php" class="card card-body mb-3 d-flex flex-row align-items-center gap-2 text-decoration-none text-reset">
+  <i class="bi bi-chat-left-text-fill text-primary fs-4"></i><span class="me-auto fw-semibold"><?= e(t('complaints_suggestions')) ?>
+    <span class="d-block small-muted fw-normal"><?= e(t('complaints_member_help')) ?></span></span>
+  <?php if ($unread): ?><span class="badge bg-danger"><?= $unread ?> <?= e(t('new_reply')) ?></span><?php endif; ?><i class="bi bi-chevron-right"></i></a>
 
 <div class="card mb-3"><div class="card-header"><i class="bi bi-lightning-charge-fill text-primary"></i> <?= e(t('todays_training')) ?> – <?= e(t('day' . $dow)) ?></div>
   <div class="card-body py-2">

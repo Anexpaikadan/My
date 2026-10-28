@@ -79,6 +79,10 @@ CREATE TABLE IF NOT EXISTS members (
   invite_token CHAR(32) NULL,
   details_at DATETIME NULL,
   approved_at DATETIME NULL,
+  /* Position (level): changes by attendance when level_auto = 1, or set by the admin */
+  level_id INT UNSIGNED NULL,
+  level_auto TINYINT(1) NOT NULL DEFAULT 1,
+  level_since DATE NULL,
   notes VARCHAR(500) NOT NULL DEFAULT '',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -163,7 +167,7 @@ INSERT IGNORE INTO settings (k, v) VALUES
   ('trial_days', '7'),
   ('auto_backup', '1'),
   ('backup_keep', '14'),
-  ('schema_version', '4');
+  ('schema_version', '5');
 
 INSERT IGNORE INTO plans (id, name, duration_value, duration_unit, price, description, sort_order) VALUES
   (1, 'Monthly', 1, 'month', 1500, 'MMA, boxing, kickboxing and fitness training', 1),
@@ -244,6 +248,52 @@ CREATE TABLE IF NOT EXISTS member_freezes (
   KEY idx_member (member_id, from_date),
   CONSTRAINT fk_freeze_member FOREIGN KEY (member_id) REFERENCES members (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+/* Member positions (levels) that change with attendance, and complaints / suggestions */
+
+/* A member is in the level with the highest from_day not above their attendance days. */
+CREATE TABLE IF NOT EXISTS levels (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(60) NOT NULL,
+  from_day SMALLINT UNSIGNED NOT NULL DEFAULT 1,
+  color VARCHAR(7) NOT NULL DEFAULT '#6C757D',
+  note VARCHAR(255) NOT NULL DEFAULT '',
+  UNIQUE KEY uq_from_day (from_day)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO levels (id, name, from_day, color, note) VALUES
+  (1, 'Warm-up', 1, '#F08C00', 'First 5 days: warm-up, stretching, basic movements'),
+  (2, 'Beginner', 6, '#2F9E44', 'Stance, guard, basic punches and kicks'),
+  (3, 'Intermediate', 31, '#1971C2', 'Combinations, pad work, light sparring'),
+  (4, 'Advanced', 91, '#C8160E', 'Full training and sparring');
+
+CREATE TABLE IF NOT EXISTS complaints (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  member_id INT UNSIGNED NULL,
+  category ENUM('equipment','trainer','cleanliness','timing','payment','suggestion','other') NOT NULL DEFAULT 'other',
+  subject VARCHAR(150) NOT NULL,
+  status ENUM('open','progress','resolved') NOT NULL DEFAULT 'open',
+  by_admin TINYINT(1) NOT NULL DEFAULT 0,
+  admin_unread TINYINT(1) NOT NULL DEFAULT 0,
+  member_unread TINYINT(1) NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_status (status, updated_at),
+  KEY idx_member (member_id),
+  CONSTRAINT fk_comp_member FOREIGN KEY (member_id) REFERENCES members (id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS complaint_msgs (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  complaint_id INT UNSIGNED NOT NULL,
+  by_admin TINYINT(1) NOT NULL DEFAULT 0,
+  admin_id INT UNSIGNED NULL,
+  message TEXT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_complaint (complaint_id),
+  CONSTRAINT fk_cmsg_comp FOREIGN KEY (complaint_id) REFERENCES complaints (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 
 INSERT IGNORE INTO acc_accounts (id, name, kind, opening_balance, sort_order) VALUES
@@ -424,3 +474,15 @@ INSERT INTO gym_leaves (from_date, to_date, title, message) VALUES
 INSERT INTO member_freezes (member_id, from_date, to_date, days, extended, reason, note) VALUES
   (4, CURDATE() - INTERVAL 3 DAY, CURDATE() + INTERVAL 4 DAY, 8, 1, 'injury', 'Knee injury, doctor rest');
 
+/* Positions from attendance */
+UPDATE members m SET level_id = (SELECT l.id FROM levels l WHERE l.from_day <= GREATEST(1, (SELECT COUNT(*) FROM attendance a WHERE a.member_id = m.id))
+  ORDER BY l.from_day DESC LIMIT 1), level_since = CURDATE() WHERE m.level_auto = 1;
+
+/* Complaints */
+INSERT INTO complaints (id, member_id, category, subject, status, admin_unread, member_unread, created_at, updated_at) VALUES
+  (1, 2, 'equipment', 'Punching bag chain is loose', 'progress', 0, 1, NOW() - INTERVAL 2 DAY, NOW() - INTERVAL 1 DAY),
+  (2, 8, 'timing', 'Morning batch at 6 am please', 'open', 1, 0, NOW() - INTERVAL 3 HOUR, NOW() - INTERVAL 3 HOUR);
+INSERT INTO complaint_msgs (complaint_id, by_admin, message, created_at) VALUES
+  (1, 0, 'The chain of the big punching bag near the window is loose and makes noise.', NOW() - INTERVAL 2 DAY),
+  (1, 1, 'Thank you, we have ordered a new chain. It will be fixed this week.', NOW() - INTERVAL 1 DAY),
+  (2, 0, 'Can we have a 6 am batch? 7 am is late for people going to work.', NOW() - INTERVAL 3 HOUR);

@@ -32,6 +32,7 @@ if (!$m && !$error && !empty($_SESSION['pending_checkin'])) {
 }
 
 $result = null;
+$promoted = null;
 $block = '';
 if (!$error) {
     if (!$m || ($_SESSION['pending_checkin'] ?? '') !== today()) {
@@ -45,6 +46,7 @@ if (!$error) {
     } else {
         $st = q('INSERT IGNORE INTO attendance (member_id, att_date, check_in, method) VALUES (?, ?, ?, ?)', [$m['id'], today(), date('H:i:s'), 'qr']);
         $result = $st->rowCount() > 0 ? 'new' : 'again';
+        $promoted = $result === 'new' ? level_update((int)$m['id']) : null;
     }
 }
 $time = $m ? (string)q('SELECT check_in FROM attendance WHERE member_id = ? AND att_date = ?', [$m['id'], today()])->fetchColumn() : '';
@@ -72,6 +74,10 @@ require __DIR__ . '/includes/header.php';
         <div><div class="fs-6 fw-bold mt-2"><?= e(fdate($m['expiry_date'])) ?></div><div class="small-muted"><?= e(t('expiry_date')) ?></div></div>
       </div>
     </div></div>
+    <?php if ($promoted): ?>
+      <div class="alert alert-success fs-5"><i class="bi bi-trophy-fill"></i> <?= e(t('promoted_you', $promoted['name'])) ?></div>
+    <?php endif; ?>
+    <?php if (levels()): ?><div class="card mb-3 text-start"><div class="card-body"><?= level_progress_html(level_progress(q('SELECT * FROM members WHERE id = ?', [$m['id']])->fetch())) ?></div></div><?php endif; ?>
     <?php if ($status === 'expired'): ?>
       <div class="alert alert-danger"><?= e(t('membership_expired_on', fdate($m['expiry_date']))) ?> <?= e(t('please_renew')) ?></div>
       <?php if (setting('upi_id') !== ''): ?><a href="pay.php" class="btn btn-accent btn-lg w-100 mb-2"><i class="bi bi-phone"></i> <?= e(t('pay_by_upi')) ?></a><?php endif; ?>

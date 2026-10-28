@@ -32,7 +32,7 @@ $sections = nav_sections();
 </aside>
 
 <?php
-$navTab = ['dashboard' => 'home', 'members' => 'members', 'add_member' => 'members', 'plans' => 'members', 'alerts' => 'members',
+$navTab = ['dashboard' => 'home', 'members' => 'members', 'add_member' => 'members', 'plans' => 'members', 'alerts' => 'members', 'levels' => 'members', 'complaints' => 'members',
     'attendance' => 'attendance', 'accounts' => 'money', 'payments' => 'money', 'reports' => 'money'][$active] ?? 'more';
 $bottom = [
     ['index.php', 'home', 'bi-house-door', 'bi-house-door-fill', t('home')],

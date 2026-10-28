@@ -138,3 +138,16 @@ INSERT INTO gym_leaves (from_date, to_date, title, message) VALUES
   (CURDATE() + INTERVAL 5 DAY, CURDATE() + INTERVAL 6 DAY, 'Festival holiday', 'Gym will be closed for the festival. Classes start again the next day as usual.');
 INSERT INTO member_freezes (member_id, from_date, to_date, days, extended, reason, note) VALUES
   (4, CURDATE() - INTERVAL 3 DAY, CURDATE() + INTERVAL 4 DAY, 8, 1, 'injury', 'Knee injury, doctor rest');
+
+/* Positions from attendance */
+UPDATE members m SET level_id = (SELECT l.id FROM levels l WHERE l.from_day <= GREATEST(1, (SELECT COUNT(*) FROM attendance a WHERE a.member_id = m.id))
+  ORDER BY l.from_day DESC LIMIT 1), level_since = CURDATE() WHERE m.level_auto = 1;
+
+/* Complaints */
+INSERT INTO complaints (id, member_id, category, subject, status, admin_unread, member_unread, created_at, updated_at) VALUES
+  (1, 2, 'equipment', 'Punching bag chain is loose', 'progress', 0, 1, NOW() - INTERVAL 2 DAY, NOW() - INTERVAL 1 DAY),
+  (2, 8, 'timing', 'Morning batch at 6 am please', 'open', 1, 0, NOW() - INTERVAL 3 HOUR, NOW() - INTERVAL 3 HOUR);
+INSERT INTO complaint_msgs (complaint_id, by_admin, message, created_at) VALUES
+  (1, 0, 'The chain of the big punching bag near the window is loose and makes noise.', NOW() - INTERVAL 2 DAY),
+  (1, 1, 'Thank you, we have ordered a new chain. It will be fixed this week.', NOW() - INTERVAL 1 DAY),
+  (2, 0, 'Can we have a 6 am batch? 7 am is late for people going to work.', NOW() - INTERVAL 3 HOUR);

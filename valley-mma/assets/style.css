@@ -248,3 +248,15 @@ a.cal-d:hover { filter: brightness(.92); }
 .att-grid td.f { background: #CFF4FC; color: #055160; font-weight: 700; }
 .pulse { animation: vm-pulse 1.2s ease-in-out 3; }
 @keyframes vm-pulse { 50% { box-shadow: 0 0 0 .4rem rgba(37, 211, 102, .35); } }
+
+/* Positions (levels) */
+.level-badge { color: #fff; }
+.level-step { width: 2rem; height: 2rem; border-radius: 50%; display: inline-grid; place-items: center; color: #fff; font-weight: 800; flex: none; }
+
+/* Complaint messages */
+.chat { display: flex; flex-direction: column; gap: .6rem; }
+.chat-msg { max-width: 85%; padding: .55rem .8rem; border-radius: 1rem; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .06); }
+.chat-msg.me { align-self: flex-end; background: #FBE7E6; border-bottom-right-radius: .3rem; }
+.chat-msg.them { align-self: flex-start; border-bottom-left-radius: .3rem; }
+.chat-who { font-size: .72rem; color: #8E8B8B; margin-bottom: .15rem; }
+.chat-text { white-space: normal; word-wrap: break-word; }

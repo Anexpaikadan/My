@@ -4,7 +4,7 @@
 declare(strict_types=1);
 
 // App version: shown in the app (More, login, Scanner test). Must match window.VM_JS in assets/app.js.
-const APP_VERSION = '3.8';
+const APP_VERSION = '3.9';
 
 $CONFIG = require __DIR__ . '/../config.php';
 date_default_timezone_set($CONFIG['timezone'] ?? 'Asia/Kolkata');
@@ -66,7 +66,7 @@ function db(): PDO
 function migrate(PDO $pdo): void
 {
     $v = (int)$pdo->query("SELECT v FROM settings WHERE k = 'schema_version'")->fetchColumn();
-    if ($v >= 4) {
+    if ($v >= 5) {
         return;
     }
     if ($v < 2) {
@@ -77,8 +77,21 @@ function migrate(PDO $pdo): void
     }
     require_once __DIR__ . '/sql_tools.php';
     run_sql($pdo, file_get_contents(__DIR__ . '/../sql/leaves.sql'));
-    $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '4') ON DUPLICATE KEY UPDATE v = '4'");
+    // v5: positions (levels) by attendance, complaints
+    $cols = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'members'")
+        ->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('level_id', $cols, true)) {
+        $pdo->exec('ALTER TABLE members ADD COLUMN level_id INT UNSIGNED NULL AFTER approved_at,
+            ADD COLUMN level_auto TINYINT(1) NOT NULL DEFAULT 1 AFTER level_id, ADD COLUMN level_since DATE NULL AFTER level_auto');
+    }
+    run_sql($pdo, file_get_contents(__DIR__ . '/../sql/levels.sql'));
+    $pdo->exec(LEVEL_RECALC_SQL . ', level_since = CURDATE() WHERE m.level_auto = 1 AND m.level_id IS NULL');
+    $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '5') ON DUPLICATE KEY UPDATE v = '5'");
 }
+
+// Sets level_id from the attendance days (add a WHERE).
+const LEVEL_RECALC_SQL = 'UPDATE members m SET level_id = (SELECT l.id FROM levels l WHERE l.from_day <= GREATEST(1,
+    (SELECT COUNT(*) FROM attendance a WHERE a.member_id = m.id)) ORDER BY l.from_day DESC LIMIT 1)';
 
 function migrate_v3(PDO $pdo): void
 {
@@ -393,6 +406,8 @@ function nav_sections(): array
             ['plans.php', 'plans', 'bi-card-checklist', 'plans'],
             ['attendance.php', 'attendance', 'bi-qr-code-scan', 'attendance'],
             ['alerts.php', 'alerts', 'bi-bell-fill', 'alerts'],
+            ['levels.php', 'positions', 'bi-award-fill', 'levels'],
+            ['complaints.php', 'complaints', 'bi-chat-left-text-fill', 'complaints'],
         ],
         'sec_money' => [
             ['payments.php', 'payments', 'bi-cash-coin', 'payments'],
@@ -570,6 +585,156 @@ function delete_payment(array $p): void
         q('UPDATE members SET plan_id = ?, start_date = ?, expiry_date = ? WHERE id = ?',
             [$p['prev_plan_id'], $p['prev_start'], $p['prev_expiry'], $p['member_id']]);
     }
+}
+
+// ---- Positions (levels) by attendance -------------------------------
+
+function levels(bool $fresh = false): array
+{
+    static $all = null;
+    if ($all === null || $fresh) {
+        $all = q('SELECT * FROM levels ORDER BY from_day')->fetchAll();
+    }
+    return $all;
+}
+
+function level_by_id(?int $id): ?array
+{
+    foreach (levels() as $l) {
+        if ((int)$l['id'] === (int)$id) {
+            return $l;
+        }
+    }
+    return null;
+}
+
+function level_for_days(int $days): ?array
+{
+    $found = levels()[0] ?? null;
+    foreach (levels() as $l) {
+        if ((int)$l['from_day'] <= max(1, $days)) {
+            $found = $l;
+        }
+    }
+    return $found;
+}
+
+function level_next(?array $level): ?array
+{
+    foreach (levels() as $l) {
+        if ($level && (int)$l['from_day'] > (int)$level['from_day']) {
+            return $l;
+        }
+    }
+    return null;
+}
+
+function att_days(int $memberId): int
+{
+    return (int)q('SELECT COUNT(*) FROM attendance WHERE member_id = ?', [$memberId])->fetchColumn();
+}
+
+// "Day 1–5" / "Day 91+"
+function level_range(array $l): string
+{
+    $next = level_next($l);
+    return $next ? t('level_days', (int)$l['from_day'], (int)$next['from_day'] - 1) : t('level_days_plus', (int)$l['from_day']);
+}
+
+// After attendance changes: moves an automatic member to the level of their attendance days.
+// Returns the new level when it changed.
+function level_update(int $memberId): ?array
+{
+    $m = q('SELECT level_id, level_auto FROM members WHERE id = ?', [$memberId])->fetch();
+    if (!$m || !(int)$m['level_auto']) {
+        return null;
+    }
+    $l = level_for_days(att_days($memberId));
+    if (!$l || (int)$l['id'] === (int)$m['level_id']) {
+        return null;
+    }
+    q('UPDATE members SET level_id = ?, level_since = ? WHERE id = ?', [$l['id'], today(), $memberId]);
+    return $l;
+}
+
+function levels_recalc(): void
+{
+    q(LEVEL_RECALC_SQL . ' WHERE m.level_auto = 1');
+}
+
+function level_badge(?array $l, string $extra = ''): string
+{
+    if (!$l) {
+        return '';
+    }
+    return '<span class="badge level-badge ' . e($extra) . '" style="background:' . e($l['color']) . '" data-en="' . e($l['name']) . '"><i class="bi bi-award-fill"></i> ' . e($l['name']) . '</span>';
+}
+
+// Where a member is: level, next level, attendance days, day number inside the level, days still needed.
+function level_progress(array $m): array
+{
+    $days = att_days((int)$m['id']);
+    $l = level_by_id(isset($m['level_id']) ? (int)$m['level_id'] : null) ?? level_for_days($days);
+    $next = level_next($l);
+    $out = ['level' => $l, 'next' => $next, 'days' => $days, 'auto' => (int)($m['level_auto'] ?? 1) === 1, 'pct' => 100, 'left' => 0, 'day_in' => 0, 'len' => 0];
+    if ($l && $next) {
+        $len = (int)$next['from_day'] - (int)$l['from_day'];
+        $in = max(0, $days - (int)$l['from_day'] + 1);
+        $out['len'] = $len;
+        $out['day_in'] = min($in, $len);
+        $out['left'] = max(0, (int)$next['from_day'] - $days);
+        $out['pct'] = $len > 0 ? (int)round(min($in, $len) * 100 / $len) : 100;
+    }
+    return $out;
+}
+
+function level_progress_html(array $p): string
+{
+    if (!$p['level']) {
+        return '';
+    }
+    $h = '<div class="d-flex align-items-center gap-2 mb-1">' . level_badge($p['level']) . '<span class="small-muted">' . e(level_range($p['level'])) . '</span>'
+        . '<span class="ms-auto small fw-semibold">' . e(t('att_days_total', $p['days'])) . '</span></div>';
+    if ($p['next']) {
+        $h .= '<div class="progress" role="progressbar" style="height:.6rem" aria-valuenow="' . $p['pct'] . '" aria-valuemin="0" aria-valuemax="100">'
+            . '<div class="progress-bar" style="width:' . $p['pct'] . '%;background:' . e($p['level']['color']) . '"></div></div>'
+            . '<div class="small mt-1">' . ($p['day_in'] > 0 ? e(t('level_day_of', $p['day_in'], $p['len'], $p['level']['name'])) . ' · ' : '')
+            . e(t('level_left', $p['left'], $p['next']['name'])) . '</div>';
+    } else {
+        $h .= '<div class="small mt-1">' . e(t('level_top')) . '</div>';
+    }
+    return $h;
+}
+
+function level_text(array $m, array $l): string
+{
+    $next = level_next($l);
+    return t('wa_level', $m['name'], $l['name'], gym_title()) . ($l['note'] !== '' ? "\n" . $l['note'] : '')
+        . ($next ? "\n" . t('wa_level_next', $next['name'], (int)$next['from_day']) : '');
+}
+
+// ---- Complaints ---------------------------------------------------
+
+const COMPLAINT_CATS = ['equipment' => 'bi-tools', 'trainer' => 'bi-person-badge', 'cleanliness' => 'bi-droplet', 'timing' => 'bi-clock',
+    'payment' => 'bi-cash-coin', 'suggestion' => 'bi-lightbulb', 'other' => 'bi-chat-dots'];
+
+function complaint_badge(string $status): string
+{
+    $cls = ['open' => 'bg-danger', 'progress' => 'bg-warning text-dark', 'resolved' => 'bg-success'][$status] ?? 'bg-secondary';
+    return '<span class="badge ' . $cls . '">' . e(t('cs_' . $status)) . '</span>';
+}
+
+function complaint_add_msg(int $complaintId, bool $byAdmin, string $msg): void
+{
+    q('INSERT INTO complaint_msgs (complaint_id, by_admin, admin_id, message) VALUES (?, ?, ?, ?)',
+        [$complaintId, (int)$byAdmin, $byAdmin ? (admin()['id'] ?? null) : null, $msg]);
+    q('UPDATE complaints SET updated_at = NOW(), admin_unread = ?, member_unread = ? WHERE id = ?',
+        [$byAdmin ? 0 : 1, $byAdmin ? 1 : 0, $complaintId]);
+}
+
+function complaints_unread_admin(): int
+{
+    return (int)q('SELECT COUNT(*) FROM complaints WHERE admin_unread = 1')->fetchColumn();
 }
 
 // ---- Gym leave days and member freezes ------------------------------
