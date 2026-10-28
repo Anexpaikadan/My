@@ -126,6 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $title = $m ? t('edit_member') : t('new_member_form');
 $active = $m ? 'members' : 'add_member';
+$back = $m ? 'member_view.php?id=' . $id : 'members.php';
 require __DIR__ . '/includes/header.php';
 
 $yn = function (int $i) use ($d) {

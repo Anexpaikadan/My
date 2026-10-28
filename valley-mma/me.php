@@ -165,7 +165,7 @@ $payAmount = $balance > 0 ? $balance : ($st !== 'active' && $plan ? (float)$plan
 </details>
 
 <div class="d-flex gap-2 mb-4">
-  <button type="button" class="btn btn-outline-primary flex-fill d-none" id="installBtn"><i class="bi bi-phone"></i> <?= e(t('install_app')) ?></button>
+  <button type="button" class="btn btn-outline-primary flex-fill d-none" data-install><i class="bi bi-phone"></i> <?= e(t('install_app')) ?></button>
   <form method="post" action="logout.php" class="flex-fill"><?= csrf_field() ?><input type="hidden" name="who" value="member">
     <button class="btn btn-outline-secondary w-100"><i class="bi bi-box-arrow-right"></i> <?= e(t('logout')) ?></button></form>
 </div>

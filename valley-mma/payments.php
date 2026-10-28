@@ -37,6 +37,7 @@ foreach ($rows as $r) {
 
 $title = t('payment_history');
 $active = 'payments';
+$back = 'index.php';
 $actions = '<a href="payment_add.php" class="btn btn-accent"><i class="bi bi-plus-lg"></i> ' . e(t('record_payment')) . '</a>';
 require __DIR__ . '/includes/header.php';
 ?>

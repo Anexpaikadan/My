@@ -1,5 +1,5 @@
 -- Valley MMA Fight Club – database tables
--- install.php runs this file. To set up by hand, import database.sql in phpMyAdmin instead.
+-- install.php runs this file and accounts.sql. To set up by hand, import database.sql in phpMyAdmin instead.
 
 CREATE TABLE IF NOT EXISTS admins (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -140,7 +140,7 @@ INSERT IGNORE INTO settings (k, v) VALUES
   ('att_order', 'qr,card,manual'),
   ('att_camera', 'environment'),
   ('att_refresh', '0'),
-  ('schema_version', '1');
+  ('schema_version', '2');
 
 INSERT IGNORE INTO plans (id, name, duration_value, duration_unit, price, description, sort_order) VALUES
   (1, 'Monthly', 1, 'month', 1500, 'MMA, boxing, kickboxing and fitness training', 1),

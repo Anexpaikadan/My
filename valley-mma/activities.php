@@ -24,6 +24,7 @@ $edit = get('edit') === '1';
 
 $title = t('daily_activity');
 $active = 'activities';
+$back = 'more.php';
 $actions = $edit ? '' : '<a href="?edit=1" class="btn btn-primary"><i class="bi bi-pencil"></i> ' . e(t('edit')) . '</a>';
 require __DIR__ . '/includes/header.php';
 ?>

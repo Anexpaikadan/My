@@ -9,6 +9,6 @@
     'place' => setting('gym_place', 'PANDIKKAD'),
     'phones' => trim(setting('phone1') . '  ' . setting('phone2')),
 ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) ?>;</script>
-<script src="assets/app.js?v=3"></script>
+<script src="assets/app.js?v=4"></script>
 </body>
 </html>

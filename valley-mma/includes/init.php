@@ -54,8 +54,27 @@ function db(): PDO
         }
         // Use the app time zone for CURDATE()/NOW() in queries too.
         $pdo->exec("SET time_zone = '" . (new DateTime())->format('P') . "'");
+        migrate($pdo);
     }
     return $pdo;
+}
+
+// Brings databases from older versions of the app up to date.
+function migrate(PDO $pdo): void
+{
+    $v = (int)$pdo->query("SELECT v FROM settings WHERE k = 'schema_version'")->fetchColumn();
+    if ($v >= 2) {
+        return;
+    }
+    require_once __DIR__ . '/sql_tools.php';
+    $cols = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payments'")
+        ->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('prev_expiry', $cols, true)) {
+        $pdo->exec('ALTER TABLE payments ADD COLUMN prev_plan_id INT UNSIGNED NULL AFTER period_end,
+            ADD COLUMN prev_start DATE NULL AFTER prev_plan_id, ADD COLUMN prev_expiry DATE NULL AFTER prev_start');
+    }
+    run_sql($pdo, file_get_contents(__DIR__ . '/../sql/accounts.sql'));
+    $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '2') ON DUPLICATE KEY UPDATE v = '2'");
 }
 
 function q(string $sql, array $params = []): PDOStatement
@@ -142,7 +161,9 @@ function e($s): string
 
 function money($n): string
 {
-    return '₹' . number_format((float)$n, ((float)$n == floor((float)$n)) ? 0 : 2);
+    $n = (float)$n;
+    $a = abs($n);
+    return ($n < 0 ? '−' : '') . '₹' . number_format($a, $a == floor($a) ? 0 : 2);
 }
 
 function fdate(?string $d): string
@@ -253,6 +274,32 @@ function too_many_attempts(): bool
 function failed_attempt(): void
 {
     q('INSERT INTO login_attempts (ip, tried_at) VALUES (?, NOW())', [$_SERVER['REMOTE_ADDR'] ?? '']);
+}
+
+// ---- Navigation ---------------------------------------------------
+
+// Menu sections: [link, text key, icon, active key]. Used by the sidebar and the "More" page.
+function nav_sections(): array
+{
+    return [
+        'sec_members' => [
+            ['members.php', 'members', 'bi-people-fill', 'members'],
+            ['member_edit.php', 'add_member', 'bi-person-plus-fill', 'add_member'],
+            ['plans.php', 'plans', 'bi-card-checklist', 'plans'],
+            ['attendance.php', 'attendance', 'bi-qr-code-scan', 'attendance'],
+            ['alerts.php', 'alerts', 'bi-bell-fill', 'alerts'],
+        ],
+        'sec_money' => [
+            ['payments.php', 'payments', 'bi-cash-coin', 'payments'],
+            ['accounts.php', 'accounts', 'bi-wallet2', 'accounts'],
+            ['reports.php', 'reports', 'bi-bar-chart-fill', 'reports'],
+        ],
+        'sec_gym' => [
+            ['activities.php', 'daily_activity', 'bi-calendar-week', 'activities'],
+            ['settings.php', 'settings', 'bi-gear-fill', 'settings'],
+            ['backup.php', 'backup', 'bi-cloud-arrow-down-fill', 'backup'],
+        ],
+    ];
 }
 
 // ---- Input --------------------------------------------------------

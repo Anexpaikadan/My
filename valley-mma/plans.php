@@ -52,6 +52,7 @@ $allText .= "\n\n📞 " . trim(setting('phone1') . ' / ' . setting('phone2'), ' 
 
 $title = t('membership_plans');
 $active = 'plans';
+$back = 'index.php';
 $actions = '<a class="btn btn-whatsapp" target="_blank" rel="noopener" href="' . e(wa_link('', $allText)) . '"><i class="bi bi-whatsapp"></i> ' . e(t('share_all_plans')) . '</a>'
     . '<button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#planModal" data-plan="{}"><i class="bi bi-plus-lg"></i> ' . e(t('add_plan')) . '</button>';
 require __DIR__ . '/includes/header.php';

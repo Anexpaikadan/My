@@ -11,9 +11,9 @@
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
     deferred = e;
-    $$('#installBtn').forEach(function (b) { b.classList.remove('d-none'); });
+    $$('[data-install]').forEach(function (b) { b.classList.remove('d-none'); });
   });
-  $$('#installBtn').forEach(function (b) {
+  $$('[data-install]').forEach(function (b) {
     b.addEventListener('click', function () {
       if (!deferred) return;
       deferred.prompt();
@@ -123,6 +123,28 @@
     refresh();
   }
 
+  // ---- Accounts entry form: show the fields for income / expense / transfer ----
+  var entry = $('#entryForm');
+  if (entry) {
+    var showType = function () {
+      var type = ($('[data-entry-type]:checked') || {}).value || 'expense';
+      $$('.when-cat', entry).forEach(function (el) { el.classList.toggle('d-none', type === 'transfer'); });
+      $$('.when-transfer', entry).forEach(function (el) { el.classList.toggle('d-none', type !== 'transfer'); });
+      $$('.when-income', entry).forEach(function (el) { el.classList.toggle('d-none', type !== 'income'); });
+      $$('.when-expense', entry).forEach(function (el) { el.classList.toggle('d-none', type !== 'expense'); });
+      $$('[data-cat-type]', entry).forEach(function (el) {
+        var hide = el.dataset.catType !== type;
+        el.classList.toggle('d-none', hide);
+        if (hide) el.querySelector('input').checked = false;
+      });
+      var title = document.querySelector('.page-head h1');
+      var radio = $('[data-entry-type]:checked');
+      if (title && radio && !entry.querySelector('[name=id]').value) title.textContent = radio.dataset.title;
+    };
+    $$('[data-entry-type]').forEach(function (r) { r.addEventListener('change', showType); });
+    showType();
+  }
+
   // ---- Report export: print, PDF, Excel (CSV) ----
   var cellText = function (c) {
     var t = c.dataset.en !== undefined ? c.dataset.en : c.innerText;
@@ -136,7 +158,7 @@
         });
       });
     };
-    return { head: rows('thead tr'), body: rows('tbody tr').filter(function (r) { return r.length > 1; }), foot: rows('tfoot tr') };
+    return { head: rows('thead tr'), body: rows('tbody tr').filter(function (r) { return r.length > 1 || (r[0] && r[0].colSpan > 1 && r[0].content !== ''); }), foot: rows('tfoot tr') };
   };
   $$('[data-export]').forEach(function (b) {
     b.addEventListener('click', function () {

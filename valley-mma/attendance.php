@@ -77,6 +77,7 @@ $all = q('SELECT id, name, adm_no, phone, photo, expiry_date FROM members ORDER 
 
 $title = t('attendance');
 $active = 'attendance';
+$back = 'index.php';
 $actions = '<a href="attendance_monthly.php" class="btn btn-outline-primary"><i class="bi bi-calendar3"></i> ' . e(t('monthly_attendance')) . '</a>';
 require __DIR__ . '/includes/header.php';
 ?>

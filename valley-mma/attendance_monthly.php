@@ -28,6 +28,7 @@ $monthName = date('F Y', strtotime($first));
 
 $title = t('monthly_attendance');
 $active = 'attendance';
+$back = 'attendance.php';
 $actions = '<a href="attendance.php" class="btn btn-outline-primary"><i class="bi bi-qr-code"></i> ' . e(t('attendance')) . '</a>';
 require __DIR__ . '/includes/header.php';
 ?>

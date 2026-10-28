@@ -24,6 +24,7 @@ $tabs = [
 
 $title = t('reports');
 $active = 'reports';
+$back = 'index.php';
 require __DIR__ . '/includes/header.php';
 ?>
 <ul class="nav nav-pills mb-3 gap-1 flex-nowrap overflow-auto no-print">
@@ -31,6 +32,8 @@ require __DIR__ . '/includes/header.php';
     <li class="nav-item"><a class="nav-link text-nowrap<?= $r === $k ? ' active' : '' ?>" href="?r=<?= $k ?>"><i class="bi <?= $icon ?>"></i> <?= e($label) ?></a></li>
   <?php endforeach; ?>
   <li class="nav-item"><a class="nav-link text-nowrap" href="attendance_monthly.php"><i class="bi bi-calendar3"></i> <?= e(t('attendance')) ?></a></li>
+  <li class="nav-item"><a class="nav-link text-nowrap" href="acc_reports.php?r=pl"><i class="bi bi-wallet2"></i> <?= e(t('profit_loss')) ?></a></li>
+  <li class="nav-item"><a class="nav-link text-nowrap" href="ledger.php"><i class="bi bi-journal-text"></i> <?= e(t('ledger')) ?></a></li>
 </ul>
 <div class="print-only mb-2"><b><?= e(gym_title() . ' – ' . setting('gym_place')) ?></b></div>
 

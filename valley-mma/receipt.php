@@ -36,7 +36,7 @@ $amt = fn($n) => $n > 0 ? money($n) : '';
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e(t('receipt')) ?> #<?= (int)$p['receipt_no'] ?></title>
-<link rel="stylesheet" href="assets/print.css?v=3">
+<link rel="stylesheet" href="assets/print.css?v=4">
 </head>
 <body>
 <div class="toolbar">

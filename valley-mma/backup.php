@@ -144,6 +144,7 @@ $counts = [
 
 $title = t('backup');
 $active = 'backup';
+$back = 'more.php';
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="row g-3">

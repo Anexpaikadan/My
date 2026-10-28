@@ -14,7 +14,6 @@
 
 SET NAMES utf8mb4;
 
-
 CREATE TABLE IF NOT EXISTS admins (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   username VARCHAR(50) NOT NULL UNIQUE,
@@ -154,7 +153,7 @@ INSERT IGNORE INTO settings (k, v) VALUES
   ('att_order', 'qr,card,manual'),
   ('att_camera', 'environment'),
   ('att_refresh', '0'),
-  ('schema_version', '1');
+  ('schema_version', '2');
 
 INSERT IGNORE INTO plans (id, name, duration_value, duration_unit, price, description, sort_order) VALUES
   (1, 'Monthly', 1, 'month', 1500, 'MMA, boxing, kickboxing and fitness training', 1),
@@ -170,6 +169,76 @@ INSERT IGNORE INTO activities (day_no, slot, activity) VALUES
   (5, 'warmup', ''), (5, 'primary', 'Lower body'), (5, 'secondary', 'Bag A / Bag B'), (5, 'finisher', 'Neck'), (5, 'cooldown', ''),
   (6, 'warmup', ''), (6, 'primary', 'Strategic shadow / swimming'), (6, 'secondary', 'Batch drills'), (6, 'finisher', 'Abs'), (6, 'cooldown', ''),
   (7, 'warmup', ''), (7, 'primary', ''), (7, 'secondary', ''), (7, 'finisher', ''), (7, 'cooldown', '');
+
+
+CREATE TABLE IF NOT EXISTS acc_accounts (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(60) NOT NULL,
+  kind ENUM('cash','bank','upi') NOT NULL DEFAULT 'cash',
+  opening_balance DECIMAL(12,2) NOT NULL DEFAULT 0,
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  sort_order INT NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS acc_categories (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(60) NOT NULL,
+  type ENUM('income','expense') NOT NULL,
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  sort_order INT NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Membership payments are not copied here: the ledger reads them from the payments table.
+CREATE TABLE IF NOT EXISTS acc_entries (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  voucher_no INT UNSIGNED NOT NULL,
+  entry_date DATE NOT NULL,
+  type ENUM('income','expense','transfer') NOT NULL,
+  category_id INT UNSIGNED NULL,
+  account_id INT UNSIGNED NOT NULL,
+  to_account_id INT UNSIGNED NULL,
+  amount DECIMAL(12,2) NOT NULL,
+  party VARCHAR(100) NOT NULL DEFAULT '',
+  description VARCHAR(255) NOT NULL DEFAULT '',
+  ref_no VARCHAR(50) NOT NULL DEFAULT '',
+  created_by INT UNSIGNED NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_date (entry_date),
+  KEY idx_cat (category_id),
+  KEY idx_acc (account_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO acc_accounts (id, name, kind, opening_balance, sort_order) VALUES
+  (1, 'Cash', 'cash', 0, 1),
+  (2, 'Bank / UPI', 'bank', 0, 2);
+
+INSERT IGNORE INTO acc_categories (id, name, type, sort_order) VALUES
+  (1, 'Membership fees', 'income', 1),
+  (2, 'Personal training', 'income', 2),
+  (3, 'Equipment sale', 'income', 3),
+  (4, 'Events / tournaments', 'income', 4),
+  (5, 'Other income', 'income', 9),
+  (20, 'Rent', 'expense', 1),
+  (21, 'Electricity', 'expense', 2),
+  (22, 'Water', 'expense', 3),
+  (23, 'Trainer salary', 'expense', 4),
+  (24, 'Staff salary', 'expense', 5),
+  (25, 'Equipment', 'expense', 6),
+  (26, 'Maintenance / repairs', 'expense', 7),
+  (27, 'Cleaning', 'expense', 8),
+  (28, 'Internet / phone', 'expense', 9),
+  (29, 'Marketing', 'expense', 10),
+  (30, 'Tournament fees', 'expense', 11),
+  (31, 'Other expense', 'expense', 19);
+
+-- Which account receives membership payments, by payment method.
+INSERT IGNORE INTO settings (k, v) VALUES
+  ('acc_fee_category', '1'),
+  ('acc_map_cash', '1'),
+  ('acc_map_upi', '2'),
+  ('acc_map_card', '2'),
+  ('acc_map_bank', '2'),
+  ('absent_days', '7');
 
 -- Default admin: admin / admin123
 INSERT IGNORE INTO admins (id, username, full_name, password_hash) VALUES
@@ -285,3 +354,21 @@ INSERT IGNORE INTO attendance (member_id, att_date, check_in, method) VALUES
   (11, CURDATE(), '19:57:00', 'manual'),
   (12, CURDATE() - INTERVAL 2 DAY, '06:38:00', 'card'),
   (12, CURDATE(), '06:04:00', 'qr');
+
+-- Accounts: opening balances and some income / expense entries
+UPDATE acc_accounts SET opening_balance = 5000 WHERE id = 1;
+UPDATE acc_accounts SET opening_balance = 20000 WHERE id = 2;
+INSERT INTO acc_entries (voucher_no, entry_date, type, category_id, account_id, to_account_id, amount, party, description, ref_no) VALUES
+  (1, CURDATE() - INTERVAL 25 DAY, 'expense', 20, 2, NULL, 12000, 'Building owner', 'Gym hall rent', 'UPI8812'),
+  (2, CURDATE() - INTERVAL 20 DAY, 'expense', 21, 1, NULL, 2350, 'KSEB', 'Electricity bill', ''),
+  (3, CURDATE() - INTERVAL 18 DAY, 'expense', 25, 2, NULL, 4800, 'Sports shop Manjeri', '2 punching bags', 'INV-221'),
+  (4, CURDATE() - INTERVAL 15 DAY, 'income', 2, 1, NULL, 3000, 'Rahul Das', 'Personal training – 10 sessions', ''),
+  (5, CURDATE() - INTERVAL 12 DAY, 'expense', 27, 1, NULL, 600, 'Cleaner', 'Cleaning – 2 weeks', ''),
+  (6, CURDATE() - INTERVAL 10 DAY, 'transfer', NULL, 1, 2, 5000, '', 'Cash deposited in bank', ''),
+  (7, CURDATE() - INTERVAL 5 DAY, 'income', 3, 1, NULL, 1200, 'Adil Rahman', 'Gloves and hand wraps', ''),
+  (8, CURDATE() - INTERVAL 3 DAY, 'expense', 28, 2, NULL, 799, 'Jio', 'Internet', ''),
+  (9, CURDATE() - INTERVAL 1 DAY, 'expense', 23, 2, NULL, 15000, 'Coach Anees', 'Trainer salary', 'UPI9921'),
+  (10, CURDATE(), 'expense', 31, 1, NULL, 250, 'Shop', 'Drinking water cans', '');
+
+-- A member with a birthday today, for the dashboard
+UPDATE members SET dob = CONCAT('2002-', DATE_FORMAT(CURDATE(), '%m-%d')) WHERE id = 12 AND DATE_FORMAT(CURDATE(), '%m-%d') <> '02-29';

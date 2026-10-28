@@ -32,6 +32,7 @@ $msgs['wa_send_login'] = t('wa_login', $m['name'], base_url() . 'me.php', $m['ph
 
 $title = $m['name'];
 $active = 'members';
+$back = 'members.php';
 $actions = '<a href="member_edit.php?id=' . $id . '" class="btn btn-outline-primary"><i class="bi bi-pencil"></i> ' . e(t('edit')) . '</a>'
     . '<a href="payment_add.php?member=' . $id . '" class="btn btn-accent"><i class="bi bi-cash-coin"></i> ' . e(t('record_payment')) . '</a>';
 require __DIR__ . '/includes/header.php';

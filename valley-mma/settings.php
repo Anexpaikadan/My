@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         set_setting('country_code', preg_replace('/\D/', '', post('country_code')) ?: '91');
         set_setting('admission_fee', (string)num(post('admission_fee')));
         set_setting('expiry_days', (string)max(1, min(60, (int)post('expiry_days'))));
+        set_setting('absent_days', (string)max(1, min(60, (int)post('absent_days'))));
         set_setting('default_lang', post('default_lang') === 'ml' ? 'ml' : 'en');
         flash('success', t('saved'));
     } elseif ($a === 'attendance') {
@@ -75,6 +76,7 @@ $s = fn($k, $d = '') => e(setting($k, $d));
 
 $title = t('settings');
 $active = 'settings';
+$back = 'more.php';
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="row g-3">
@@ -99,6 +101,7 @@ require __DIR__ . '/includes/header.php';
       <div class="card-body row g-3">
         <div class="col-6 col-md-3"><label class="form-label"><?= e(t('admission_fee')) ?> (₹)</label><input class="form-control" type="number" min="0" step="0.01" name="admission_fee" value="<?= $s('admission_fee', '0') ?>"></div>
         <div class="col-6 col-md-3"><label class="form-label"><?= e(t('alert_days')) ?></label><input class="form-control" type="number" min="1" max="60" name="expiry_days" value="<?= $s('expiry_days', '7') ?>"></div>
+        <div class="col-6 col-md-3"><label class="form-label"><?= e(t('absent_days_label')) ?></label><input class="form-control" type="number" min="1" max="60" name="absent_days" value="<?= $s('absent_days', '7') ?>"></div>
         <div class="col-6 col-md-3"><label class="form-label"><?= e(t('country_code')) ?></label><input class="form-control" name="country_code" value="<?= $s('country_code', '91') ?>" inputmode="numeric"></div>
         <div class="col-6 col-md-3"><label class="form-label"><?= e(t('default_language')) ?></label>
           <select class="form-select" name="default_lang"><option value="en">English</option><option value="ml"<?= setting('default_lang') === 'ml' ? ' selected' : '' ?>>മലയാളം</option></select></div>

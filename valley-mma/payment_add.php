@@ -74,6 +74,7 @@ $defStart = $_POST['period_start'] ?? $nextStart($m);
 
 $title = t('record_payment');
 $active = 'payments';
+$back = 'payments.php';
 require __DIR__ . '/includes/header.php';
 $val = fn($k, $def = '') => e($_POST[$k] ?? $def);
 ?>

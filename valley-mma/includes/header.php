@@ -5,7 +5,7 @@
 $title = $title ?? '';
 $active = $active ?? '';
 $bare = $bare ?? false;
-$v = '3';
+$v = '4';
 ?><!doctype html>
 <html lang="<?= e(lang()) ?>">
 <head>
@@ -31,6 +31,7 @@ $v = '3';
 <?php require __DIR__ . '/nav.php'; ?>
 <main class="main">
   <div class="page-head d-flex flex-wrap align-items-center gap-2 mb-3">
+    <?php if (!empty($back)): ?><a href="<?= e($back) ?>" class="btn btn-light btn-back" data-back aria-label="<?= e(t('back')) ?>"><i class="bi bi-arrow-left"></i></a><?php endif; ?>
     <h1 class="h4 mb-0 me-auto"><?= e($title) ?></h1>
     <?= $actions ?? '' ?>
   </div>

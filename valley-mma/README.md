@@ -7,11 +7,13 @@ It has English and Malayalam (switch at any time), and you can install it on a p
 
 | Area | What it does |
 |---|---|
-| **Dashboard** | Total / active / expired members, today's payments, memberships expiring soon, present today, pending balance, this month's income, today's training, large quick buttons |
+| **Dashboard** | In sections – *Today* (present, collection, expense, birthdays), *Members* (total, active, expired, expiring soon, absent, pending balance) and *This month* (income, expense, profit/loss, balance). Every tile opens the matching list. Quick buttons: new member, record payment, add expense, attendance QR, reminders |
+| **Navigation** | Phone: bottom bar (Home, Members, Attendance, Accounts, More) and a *More* page with every part of the app as tiles in sections. Desktop: sidebar grouped in Members / Money / Gym. Back button on inner pages |
+| **Accounts** | Cash, bank and UPI accounts with opening balance. Income, expense and transfer vouchers with categories (rent, electricity, salary, equipment …, editable). Membership payments are counted as income automatically. Ledger with filters, opening/closing and running balance; printable vouchers; reports: profit & loss, monthly summary, cash book – all with print / PDF / Excel |
 | **Members** | Add, edit, delete, search (name, phone, admission no.), filter by status and plan. The join form has every field of the paper form: photo, client information, gender M/F, height/weight (BMI is calculated), the 8 health-screening Yes/No questions, blood group, urea/creatinine/uric, HbA1c, declaration, trainer. Printable join form (filled or empty) and a member ID card with a QR code |
 | **Plans** | Monthly, 3 months, 6 months, yearly (or any number of days/months). Change price and duration. Send one plan or all plans on WhatsApp |
 | **Payments** | Admission fee, plan (renews the membership automatically), other fee, total, paid, balance. Cash / UPI / card / bank, UPI QR code for the exact amount. Payment history and a printable receipt in the same layout as the paper receipt, with a WhatsApp button that sends the receipt link |
-| **Expiry alerts** | Members expiring soon, expired members and pending balances, each with a WhatsApp reminder that includes the UPI ID, UPI number and a pay link |
+| **Alerts** | Members expiring soon, expired members and pending balances, each with a WhatsApp reminder that includes the UPI ID, UPI number and a pay link. Birthdays (today and next 7 days) with a WhatsApp wish. Absent members (active but not came for N days, set in Settings) with a WhatsApp follow-up |
 | **Attendance** | 1) The admin phone shows today's QR code (dated, optionally changing every few minutes). Members scan it with their phone camera and are marked present. 2) The admin scans member ID cards (front/back camera). 3) Mark by hand. The order of these 3 ways and the default one are set in Settings. Monthly attendance sheet |
 | **Daily activity** | Weekly training plan (warm-up, primary, secondary, finisher, cool down) – editable. Today's plan is shown on the dashboard and in the member app |
 | **Reports** | Daily, monthly and yearly income (cash / online split), active and expired members, payment history, pending balances, monthly attendance. Every report: **Print**, **PDF** download, **Excel (CSV)** |
@@ -33,6 +35,11 @@ Colours and logo come from the DAYbill logo (blue `#360DD9`, green `#7ED957`, da
 **admin / admin123**. Change the password at once in *Settings*.
 
 Sample member login (member app): phone **9847012345**, password **member123**.
+
+## Updating an existing installation
+
+Copy the new files over the old ones but keep your `config.php`. The new accounts tables are
+added automatically the first time a page is opened.
 
 ## Install on hosting (Hostinger, cPanel, …)
 
@@ -63,6 +70,9 @@ and admin accounts.
 - **Attendance:** open *Attendance* on the admin phone and leave the QR on screen (*Full screen*).
   Each member scans it once a day; the first time they log in.
 - **Reminders:** *Expiry alerts* → *Remind* opens WhatsApp with the message, UPI ID and pay link ready.
+- **Expenses:** *Accounts* → *Add expense* (or the quick button on the dashboard). Choose the category and whether it was paid from cash or bank.
+- **Bank deposit:** *Accounts* → *Transfer* (Cash → Bank).
+- **First time in Accounts:** *Accounts setup* → enter the opening balance of cash and bank, and check which account UPI / card payments go into.
 - **Backup:** *Backup* → *Full backup* every week; keep the file on Google Drive or a pen drive.
 
 ## Folders
@@ -79,12 +89,14 @@ valley-mma/
   attendance.php, attendance_monthly.php, checkin.php (QR target)
   activities.php        weekly training plan
   reports.php
+  accounts.php, ledger.php, entry_edit.php, voucher.php, acc_reports.php, acc_settings.php
+  more.php              all pages as tiles (phone)
   settings.php, backup.php
   me.php                member app
   login.php, logout.php, lang.php, photo.php, manifest.php, sw.js, offline.html
-  includes/             init.php (helpers), header/nav/footer, lang.php (English + Malayalam), sql_tools.php
+  includes/             init.php (helpers), accounts.php, header/nav/footer, lang.php (English + Malayalam), sql_tools.php
   assets/               style.css, print.css, app.js, attendance.js, qr.js, icons, vendor libraries
-  sql/                  schema.sql, sample_data.sql, database.sql (complete file for phpMyAdmin)
+  sql/                  schema.sql, accounts.sql, sample_data.sql, database.sql (complete file for phpMyAdmin)
   uploads/photos/       member photos (not web-accessible)
   backups/              backups saved on the server (not web-accessible)
 ```

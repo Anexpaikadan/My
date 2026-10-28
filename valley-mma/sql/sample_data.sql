@@ -107,3 +107,21 @@ INSERT IGNORE INTO attendance (member_id, att_date, check_in, method) VALUES
   (11, CURDATE(), '19:57:00', 'manual'),
   (12, CURDATE() - INTERVAL 2 DAY, '06:38:00', 'card'),
   (12, CURDATE(), '06:04:00', 'qr');
+
+-- Accounts: opening balances and some income / expense entries
+UPDATE acc_accounts SET opening_balance = 5000 WHERE id = 1;
+UPDATE acc_accounts SET opening_balance = 20000 WHERE id = 2;
+INSERT INTO acc_entries (voucher_no, entry_date, type, category_id, account_id, to_account_id, amount, party, description, ref_no) VALUES
+  (1, CURDATE() - INTERVAL 25 DAY, 'expense', 20, 2, NULL, 12000, 'Building owner', 'Gym hall rent', 'UPI8812'),
+  (2, CURDATE() - INTERVAL 20 DAY, 'expense', 21, 1, NULL, 2350, 'KSEB', 'Electricity bill', ''),
+  (3, CURDATE() - INTERVAL 18 DAY, 'expense', 25, 2, NULL, 4800, 'Sports shop Manjeri', '2 punching bags', 'INV-221'),
+  (4, CURDATE() - INTERVAL 15 DAY, 'income', 2, 1, NULL, 3000, 'Rahul Das', 'Personal training – 10 sessions', ''),
+  (5, CURDATE() - INTERVAL 12 DAY, 'expense', 27, 1, NULL, 600, 'Cleaner', 'Cleaning – 2 weeks', ''),
+  (6, CURDATE() - INTERVAL 10 DAY, 'transfer', NULL, 1, 2, 5000, '', 'Cash deposited in bank', ''),
+  (7, CURDATE() - INTERVAL 5 DAY, 'income', 3, 1, NULL, 1200, 'Adil Rahman', 'Gloves and hand wraps', ''),
+  (8, CURDATE() - INTERVAL 3 DAY, 'expense', 28, 2, NULL, 799, 'Jio', 'Internet', ''),
+  (9, CURDATE() - INTERVAL 1 DAY, 'expense', 23, 2, NULL, 15000, 'Coach Anees', 'Trainer salary', 'UPI9921'),
+  (10, CURDATE(), 'expense', 31, 1, NULL, 250, 'Shop', 'Drinking water cans', '');
+
+-- A member with a birthday today, for the dashboard
+UPDATE members SET dob = CONCAT('2002-', DATE_FORMAT(CURDATE(), '%m-%d')) WHERE id = 12 AND DATE_FORMAT(CURDATE(), '%m-%d') <> '02-29';

@@ -1,5 +1,6 @@
 <?php
-// Expiry alerts: memberships ending soon and expired ones, with WhatsApp reminders that include the UPI details.
+// Alerts: memberships ending soon, expired, pending balances (WhatsApp reminders with UPI details),
+// birthdays (WhatsApp wishes) and active members who have not come for some days (follow-up).
 
 require __DIR__ . '/includes/init.php';
 require_admin();
@@ -13,9 +14,33 @@ $sql = 'SELECT m.*, p.name plan_name, p.price plan_price,
 $expiring = q($sql . 'WHERE m.expiry_date BETWEEN ? AND ? ORDER BY m.expiry_date', [$today, $soon])->fetchAll();
 $expired = q($sql . 'WHERE m.expiry_date < ? AND m.expiry_date >= ? ORDER BY m.expiry_date DESC', [$today, date('Y-m-d', strtotime('-' . max(1, (int)get('back', '90')) . ' day'))])->fetchAll();
 $balances = q($sql . 'HAVING balance > 0 ORDER BY balance DESC')->fetchAll();
+$absentDays = max(1, (int)setting('absent_days', '7'));
+$absent = q('SELECT m.*, (SELECT MAX(att_date) FROM attendance WHERE member_id = m.id) last_seen FROM members m
+             WHERE m.expiry_date >= ? AND m.id NOT IN (SELECT member_id FROM attendance WHERE att_date > ?) ORDER BY last_seen',
+    [$today, date('Y-m-d', strtotime("-$absentDays day"))])->fetchAll();
+// Birthdays today and in the next 7 days (also across the new year).
+$bdays = [];
+foreach (q('SELECT * FROM members WHERE dob IS NOT NULL')->fetchAll() as $m) {
+    $next = date('Y') . substr($m['dob'], 4);
+    if (!valid_date($next)) { // 29 Feb in a normal year
+        $next = date('Y') . '-03-01';
+    }
+    if ($next < $today) {
+        $next = date('Y', strtotime('+1 year')) . substr($m['dob'], 4);
+    }
+    $in = days_left($next);
+    if ($in >= 0 && $in <= 7) {
+        $m['in_days'] = $in;
+        $m['turns'] = (int)substr($next, 0, 4) - (int)substr($m['dob'], 0, 4);
+        $bdays[] = $m;
+    }
+}
+usort($bdays, fn($a, $b) => $a['in_days'] <=> $b['in_days']);
+$tab = in_array(get('tab'), ['soon', 'expired', 'balance', 'birthdays', 'absent'], true) ? get('tab') : 'soon';
 
 $title = t('expiry_alerts');
 $active = 'alerts';
+$back = 'index.php';
 require __DIR__ . '/includes/header.php';
 
 $list = function (array $rows, string $kind) {
@@ -58,15 +83,51 @@ $list = function (array $rows, string $kind) {
   <?php endif; ?>
 </form>
 
-<ul class="nav nav-pills mb-3 gap-1" role="tablist">
-  <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#aSoon" type="button"><i class="bi bi-hourglass-split"></i> <?= e(t('expiring_soon')) ?> <span class="badge bg-warning text-dark"><?= count($expiring) ?></span></button></li>
-  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#aExp" type="button"><i class="bi bi-x-octagon"></i> <?= e(t('st_expired')) ?> <span class="badge bg-danger"><?= count($expired) ?></span></button></li>
-  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#aBal" type="button"><i class="bi bi-exclamation-diamond"></i> <?= e(t('pending_balance')) ?> <span class="badge bg-secondary"><?= count($balances) ?></span></button></li>
+<ul class="nav nav-pills mb-3 gap-1 flex-nowrap overflow-auto" role="tablist">
+  <?php foreach ([
+      'soon' => ['bi-hourglass-split', t('expiring_soon'), count($expiring), 'bg-warning text-dark'],
+      'expired' => ['bi-x-octagon', t('st_expired'), count($expired), 'bg-danger'],
+      'balance' => ['bi-exclamation-diamond', t('pending_balance'), count($balances), 'bg-secondary'],
+      'birthdays' => ['bi-cake2', t('birthdays'), count($bdays), 'bg-warning text-dark'],
+      'absent' => ['bi-person-dash', t('absent_members'), count($absent), 'bg-dark'],
+  ] as $k => [$ic, $label, $n, $bc]): ?>
+    <li class="nav-item"><button class="nav-link text-nowrap<?= $tab === $k ? ' active' : '' ?>" data-bs-toggle="tab" data-bs-target="#a-<?= $k ?>" type="button"><i class="bi <?= $ic ?>"></i> <?= e($label) ?> <span class="badge <?= $bc ?>"><?= $n ?></span></button></li>
+  <?php endforeach; ?>
 </ul>
 <div class="tab-content">
-  <div class="tab-pane fade show active card" id="aSoon"><?php $list($expiring, 'expiring'); ?></div>
-  <div class="tab-pane fade card" id="aExp"><?php $list($expired, 'expired'); ?></div>
-  <div class="tab-pane fade card" id="aBal"><?php $list($balances, 'balance'); ?></div>
+  <div class="tab-pane fade card<?= $tab === 'soon' ? ' show active' : '' ?>" id="a-soon"><?php $list($expiring, 'expiring'); ?></div>
+  <div class="tab-pane fade card<?= $tab === 'expired' ? ' show active' : '' ?>" id="a-expired"><?php $list($expired, 'expired'); ?></div>
+  <div class="tab-pane fade card<?= $tab === 'balance' ? ' show active' : '' ?>" id="a-balance"><?php $list($balances, 'balance'); ?></div>
+  <div class="tab-pane fade card<?= $tab === 'birthdays' ? ' show active' : '' ?>" id="a-birthdays">
+    <div class="list-group list-group-flush">
+      <?php if (!$bdays): ?><div class="p-4 text-center text-muted"><?= e(t('nothing_here')) ?></div><?php endif; ?>
+      <?php foreach ($bdays as $m): ?>
+        <div class="list-group-item d-flex flex-wrap align-items-center gap-2">
+          <img src="<?= e(photo_url($m)) ?>" class="avatar" alt="" loading="lazy">
+          <a href="member_view.php?id=<?= $m['id'] ?>" class="me-auto text-decoration-none text-dark" style="min-width:150px">
+            <div class="fw-semibold"><?= e($m['name']) ?> <span class="small-muted"><?= e($m['adm_no']) ?></span></div>
+            <div class="small-muted"><?= e(fdate($m['dob'])) ?> · <b class="<?= $m['in_days'] === 0 ? 'text-success' : '' ?>"><?= e($m['in_days'] === 0 ? t('today') : t('in_n_days', $m['in_days'])) ?></b> · <?= e(t('turns_age', $m['turns'])) ?></div></a>
+          <a class="btn btn-whatsapp" target="_blank" rel="noopener" data-sent href="<?= e(wa_link($m['phone'], t('wa_birthday', $m['name'], gym_title()))) ?>"><i class="bi bi-whatsapp"></i> <?= e(t('wish')) ?></a>
+        </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
+  <div class="tab-pane fade card<?= $tab === 'absent' ? ' show active' : '' ?>" id="a-absent">
+    <div class="card-header small-muted fw-normal"><?= e(t('absent_help', $absentDays)) ?></div>
+    <div class="list-group list-group-flush">
+      <?php if (!$absent): ?><div class="p-4 text-center text-muted"><?= e(t('nothing_here')) ?></div><?php endif; ?>
+      <?php foreach ($absent as $m): ?>
+        <div class="list-group-item d-flex flex-wrap align-items-center gap-2">
+          <img src="<?= e(photo_url($m)) ?>" class="avatar" alt="" loading="lazy">
+          <a href="member_view.php?id=<?= $m['id'] ?>" class="me-auto text-decoration-none text-dark" style="min-width:150px">
+            <div class="fw-semibold"><?= e($m['name']) ?> <span class="small-muted"><?= e($m['adm_no']) ?></span></div>
+            <div class="small-muted"><?= e(t('last_came')) ?>: <b><?= $m['last_seen'] ? e(fdate($m['last_seen'])) . ' (' . e(t('n_days', -days_left($m['last_seen']))) . ')' : e(t('never')) ?></b></div></a>
+          <a class="btn btn-whatsapp" target="_blank" rel="noopener" data-sent href="<?= e(wa_link($m['phone'], t('wa_absent', $m['name'], gym_title()))) ?>"><i class="bi bi-whatsapp"></i> <?= e(t('follow_up')) ?></a>
+          <a class="btn btn-outline-secondary" href="tel:<?= e(clean_phone($m['phone'])) ?>" aria-label="<?= e(t('phone')) ?>"><i class="bi bi-telephone"></i></a>
+        </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
 </div>
 <p class="small-muted mt-3"><i class="bi bi-info-circle"></i> <?= e(t('wa_tip')) ?></p>
 <?php require __DIR__ . '/includes/footer.php';

@@ -14,7 +14,7 @@ if (!$m) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e(t('id_card')) ?> – <?= e($m['name']) ?></title>
-<link rel="stylesheet" href="assets/print.css?v=3">
+<link rel="stylesheet" href="assets/print.css?v=4">
 </head>
 <body>
 <div class="toolbar">

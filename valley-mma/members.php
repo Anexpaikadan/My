@@ -54,6 +54,7 @@ $plans = q('SELECT id, name FROM plans ORDER BY sort_order, id')->fetchAll();
 
 $title = t('members') . " ($count)";
 $active = 'members';
+$back = 'index.php';
 $actions = '<a href="member_edit.php" class="btn btn-primary"><i class="bi bi-person-plus-fill"></i> ' . e(t('add_member')) . '</a>';
 require __DIR__ . '/includes/header.php';
 ?>
