@@ -1,5 +1,5 @@
--- Valley MMA Fight Club – accounts module (income, expense, cash / bank accounts).
--- Part of schema.sql for new installs; older installs get it automatically on the next page load.
+/* Valley MMA Fight Club – accounts module (income, expense, cash / bank accounts). */
+/* Part of schema.sql for new installs; older installs get it automatically on the next page load. */
 
 CREATE TABLE IF NOT EXISTS acc_accounts (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS acc_categories (
   sort_order INT NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Membership payments are not copied here: the ledger reads them from the payments table.
+/* Membership payments are not copied here: the ledger reads them from the payments table. */
 CREATE TABLE IF NOT EXISTS acc_entries (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   voucher_no INT UNSIGNED NOT NULL,
@@ -61,7 +61,7 @@ INSERT IGNORE INTO acc_categories (id, name, type, sort_order) VALUES
   (30, 'Tournament fees', 'expense', 11),
   (31, 'Other expense', 'expense', 19);
 
--- Which account receives membership payments, by payment method.
+/* Which account receives membership payments, by payment method. */
 INSERT IGNORE INTO settings (k, v) VALUES
   ('acc_fee_category', '1'),
   ('acc_map_cash', '1'),

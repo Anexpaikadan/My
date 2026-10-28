@@ -1,5 +1,5 @@
--- Valley MMA Fight Club – sample data for testing (dates are relative to the day you import it).
--- Sample member login: phone 9847012345, password member123
+/* Valley MMA Fight Club – sample data for testing (dates are relative to the day you import it). */
+/* Sample member login: phone 9847012345, password member123 */
 
 INSERT INTO members (id, adm_no, name, phone, gender, place, city, district, post, pin_code, state, occupation, dob, age, height_cm, weight_kg, blood_group, bmi, hq1, hq2, hq3, hq4, hq5, hq6, hq7, hq8, declaration, trainer_name, join_date, plan_id, start_date, expiry_date, password_hash, card_token) VALUES
   (1, 'VM001', 'Muhammed Shafi', '9847012345', 'M', 'Pandikkad', 'Pandikkad', 'Malappuram', 'Pandikkad', '676521', 'Kerala', 'Student', '1998-04-12', 28, 175, 72, 'B+', 23.5, 0,0,0,0,0,0,0,0, 1, 'Coach Anees', CURDATE() - INTERVAL 200 DAY, 1, CURDATE() - INTERVAL 10 DAY, CURDATE() + INTERVAL 20 DAY, '$2y$10$t8f22Rd9D9sitzXy8lB35.kpmUrwbobDSsyu5EooKtNkbK6/GSEFy', '15196325a32fe8de'),
@@ -108,7 +108,7 @@ INSERT IGNORE INTO attendance (member_id, att_date, check_in, method) VALUES
   (12, CURDATE() - INTERVAL 2 DAY, '06:38:00', 'card'),
   (12, CURDATE(), '06:04:00', 'qr');
 
--- Accounts: opening balances and some income / expense entries
+/* Accounts: opening balances and some income / expense entries */
 UPDATE acc_accounts SET opening_balance = 5000 WHERE id = 1;
 UPDATE acc_accounts SET opening_balance = 20000 WHERE id = 2;
 INSERT INTO acc_entries (voucher_no, entry_date, type, category_id, account_id, to_account_id, amount, party, description, ref_no) VALUES
@@ -123,10 +123,10 @@ INSERT INTO acc_entries (voucher_no, entry_date, type, category_id, account_id, 
   (9, CURDATE() - INTERVAL 1 DAY, 'expense', 23, 2, NULL, 15000, 'Coach Anees', 'Trainer salary', 'UPI9921'),
   (10, CURDATE(), 'expense', 31, 1, NULL, 250, 'Shop', 'Drinking water cans', '');
 
--- A member with a birthday today, for the dashboard
+/* A member with a birthday today, for the dashboard */
 UPDATE members SET dob = CONCAT('2002-', DATE_FORMAT(CURDATE(), '%m-%d')) WHERE id = 12 AND DATE_FORMAT(CURDATE(), '%m-%d') <> '02-29';
 
--- An invited member who filled the join form (waiting for approval) and a deactivated member
+/* An invited member who filled the join form (waiting for approval) and a deactivated member */
 INSERT INTO members (id, adm_no, name, phone, gender, place, city, district, pin_code, state, occupation, dob, age, height_cm, weight_kg, bmi,
   hq1, hq2, hq3, hq4, hq5, hq6, hq7, hq8, declaration, join_date, password_hash, card_token, status, invite_token, details_at) VALUES
   (13, 'VM013', 'Faisal Babu', '9645012399', 'M', 'Pandikkad', 'Pandikkad', 'Malappuram', '676521', 'Kerala', 'Student', '2005-02-10', 21, 171, 64, 21.9,

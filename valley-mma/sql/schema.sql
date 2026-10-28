@@ -1,5 +1,5 @@
--- Valley MMA Fight Club – database tables
--- install.php runs this file and accounts.sql. To set up by hand, import database.sql in phpMyAdmin instead.
+/* Valley MMA Fight Club – database tables */
+/* install.php runs this file and accounts.sql. To set up by hand, import database.sql in phpMyAdmin instead. */
 
 CREATE TABLE IF NOT EXISTS admins (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS members (
   bmi DECIMAL(4,1) NULL,
   urea_creat_uric VARCHAR(50) NOT NULL DEFAULT '',
   hba1c VARCHAR(20) NOT NULL DEFAULT '',
-  -- Health screening questions 1-8: 1 = yes, 0 = no, NULL = not answered
+  /* Health screening questions 1-8: 1 = yes, 0 = no, NULL = not answered */
   hq1 TINYINT(1) NULL, hq2 TINYINT(1) NULL, hq3 TINYINT(1) NULL, hq4 TINYINT(1) NULL,
   hq5 TINYINT(1) NULL, hq6 TINYINT(1) NULL, hq7 TINYINT(1) NULL, hq8 TINYINT(1) NULL,
   health_notes VARCHAR(500) NOT NULL DEFAULT '',
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS members (
   expiry_date DATE NULL,
   password_hash VARCHAR(255) NULL,
   card_token CHAR(16) NOT NULL,
-  -- pending = invited, waiting for admin approval; inactive = deactivated by admin (cannot mark attendance)
+  /* pending = invited, waiting for admin approval; inactive = deactivated by admin (cannot mark attendance) */
   status ENUM('pending','active','inactive') NOT NULL DEFAULT 'active',
   invite_token CHAR(32) NULL,
   details_at DATETIME NULL,
@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS payments (
   upi_ref VARCHAR(50) NOT NULL DEFAULT '',
   period_start DATE NULL,
   period_end DATE NULL,
-  -- membership before this payment, restored when the payment is deleted
+  /* membership before this payment, restored when the payment is deleted */
   prev_plan_id INT UNSIGNED NULL,
   prev_start DATE NULL,
   prev_expiry DATE NULL,
@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS attendance (
   CONSTRAINT fk_att_member FOREIGN KEY (member_id) REFERENCES members (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Weekly training plan ("Valley daily"): day 1 = Monday … 7 = Sunday
+/* Weekly training plan ("Valley daily"): day 1 = Monday … 7 = Sunday */
 CREATE TABLE IF NOT EXISTS activities (
   day_no TINYINT UNSIGNED NOT NULL,
   slot ENUM('warmup','primary','secondary','finisher','cooldown') NOT NULL,

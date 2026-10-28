@@ -1,16 +1,16 @@
--- =====================================================================
--- Valley MMA Fight Club – complete database (tables + sample data + admin)
---
--- phpMyAdmin (XAMPP): create a database "valley_mma" (utf8mb4_unicode_ci),
--- open it, then Import this file. Or remove the two -- below to create it here.
--- Login after import:  admin / admin123   (change it in Settings!)
--- Sample member login: phone 9847012345 / member123  (invited member waiting: 9645012399 / member123)
---
--- No sample data wanted? Use install.php instead (it has a checkbox),
--- or delete the "sample data" part at the end of this file before importing.
--- =====================================================================
--- CREATE DATABASE IF NOT EXISTS valley_mma CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
--- USE valley_mma;
+/* ===================================================================== */
+/* Valley MMA Fight Club – complete database (tables + sample data + admin) */
+
+/* phpMyAdmin (XAMPP): create a database "valley_mma" (utf8mb4_unicode_ci), */
+/* open it, then Import this file. (Or take away the comment marks around the two lines below to create it here.) */
+/* Login after import:  admin / admin123   (change it in Settings!) */
+/* Sample member login: phone 9847012345 / member123  (invited member waiting: 9645012399 / member123) */
+
+/* No sample data wanted? Use install.php instead (it has a checkbox), */
+/* or delete the "sample data" part at the end of this file before importing. */
+/* ===================================================================== */
+/* CREATE DATABASE IF NOT EXISTS valley_mma CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; */
+/* USE valley_mma; */
 
 SET NAMES utf8mb4;
 
@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS members (
   bmi DECIMAL(4,1) NULL,
   urea_creat_uric VARCHAR(50) NOT NULL DEFAULT '',
   hba1c VARCHAR(20) NOT NULL DEFAULT '',
-  -- Health screening questions 1-8: 1 = yes, 0 = no, NULL = not answered
+  /* Health screening questions 1-8: 1 = yes, 0 = no, NULL = not answered */
   hq1 TINYINT(1) NULL, hq2 TINYINT(1) NULL, hq3 TINYINT(1) NULL, hq4 TINYINT(1) NULL,
   hq5 TINYINT(1) NULL, hq6 TINYINT(1) NULL, hq7 TINYINT(1) NULL, hq8 TINYINT(1) NULL,
   health_notes VARCHAR(500) NOT NULL DEFAULT '',
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS members (
   expiry_date DATE NULL,
   password_hash VARCHAR(255) NULL,
   card_token CHAR(16) NOT NULL,
-  -- pending = invited, waiting for admin approval; inactive = deactivated by admin (cannot mark attendance)
+  /* pending = invited, waiting for admin approval; inactive = deactivated by admin (cannot mark attendance) */
   status ENUM('pending','active','inactive') NOT NULL DEFAULT 'active',
   invite_token CHAR(32) NULL,
   details_at DATETIME NULL,
@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS payments (
   upi_ref VARCHAR(50) NOT NULL DEFAULT '',
   period_start DATE NULL,
   period_end DATE NULL,
-  -- membership before this payment, restored when the payment is deleted
+  /* membership before this payment, restored when the payment is deleted */
   prev_plan_id INT UNSIGNED NULL,
   prev_start DATE NULL,
   prev_expiry DATE NULL,
@@ -128,7 +128,7 @@ CREATE TABLE IF NOT EXISTS attendance (
   CONSTRAINT fk_att_member FOREIGN KEY (member_id) REFERENCES members (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Weekly training plan ("Valley daily"): day 1 = Monday … 7 = Sunday
+/* Weekly training plan ("Valley daily"): day 1 = Monday … 7 = Sunday */
 CREATE TABLE IF NOT EXISTS activities (
   day_no TINYINT UNSIGNED NOT NULL,
   slot ENUM('warmup','primary','secondary','finisher','cooldown') NOT NULL,
@@ -198,7 +198,7 @@ CREATE TABLE IF NOT EXISTS acc_categories (
   sort_order INT NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Membership payments are not copied here: the ledger reads them from the payments table.
+/* Membership payments are not copied here: the ledger reads them from the payments table. */
 CREATE TABLE IF NOT EXISTS acc_entries (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   voucher_no INT UNSIGNED NOT NULL,
@@ -241,7 +241,7 @@ INSERT IGNORE INTO acc_categories (id, name, type, sort_order) VALUES
   (30, 'Tournament fees', 'expense', 11),
   (31, 'Other expense', 'expense', 19);
 
--- Which account receives membership payments, by payment method.
+/* Which account receives membership payments, by payment method. */
 INSERT IGNORE INTO settings (k, v) VALUES
   ('acc_fee_category', '1'),
   ('acc_map_cash', '1'),
@@ -250,13 +250,13 @@ INSERT IGNORE INTO settings (k, v) VALUES
   ('acc_map_bank', '2'),
   ('absent_days', '7');
 
--- Default admin: admin / admin123
+/* Default admin: admin / admin123 */
 INSERT IGNORE INTO admins (id, username, full_name, password_hash) VALUES
   (1, 'admin', 'Admin', '$2y$10$CVXY22uV3LDS3ukVMDSFsOWqvPFb.cIbm8teAIWfdamzQzv1r4oAW');
 
--- ---------------------------------------------------------------------
--- Sample data
--- ---------------------------------------------------------------------
+/* --------------------------------------------------------------------- */
+/* Sample data */
+/* --------------------------------------------------------------------- */
 
 INSERT INTO members (id, adm_no, name, phone, gender, place, city, district, post, pin_code, state, occupation, dob, age, height_cm, weight_kg, blood_group, bmi, hq1, hq2, hq3, hq4, hq5, hq6, hq7, hq8, declaration, trainer_name, join_date, plan_id, start_date, expiry_date, password_hash, card_token) VALUES
   (1, 'VM001', 'Muhammed Shafi', '9847012345', 'M', 'Pandikkad', 'Pandikkad', 'Malappuram', 'Pandikkad', '676521', 'Kerala', 'Student', '1998-04-12', 28, 175, 72, 'B+', 23.5, 0,0,0,0,0,0,0,0, 1, 'Coach Anees', CURDATE() - INTERVAL 200 DAY, 1, CURDATE() - INTERVAL 10 DAY, CURDATE() + INTERVAL 20 DAY, '$2y$10$t8f22Rd9D9sitzXy8lB35.kpmUrwbobDSsyu5EooKtNkbK6/GSEFy', '15196325a32fe8de'),
@@ -365,7 +365,7 @@ INSERT IGNORE INTO attendance (member_id, att_date, check_in, method) VALUES
   (12, CURDATE() - INTERVAL 2 DAY, '06:38:00', 'card'),
   (12, CURDATE(), '06:04:00', 'qr');
 
--- Accounts: opening balances and some income / expense entries
+/* Accounts: opening balances and some income / expense entries */
 UPDATE acc_accounts SET opening_balance = 5000 WHERE id = 1;
 UPDATE acc_accounts SET opening_balance = 20000 WHERE id = 2;
 INSERT INTO acc_entries (voucher_no, entry_date, type, category_id, account_id, to_account_id, amount, party, description, ref_no) VALUES
@@ -380,10 +380,10 @@ INSERT INTO acc_entries (voucher_no, entry_date, type, category_id, account_id, 
   (9, CURDATE() - INTERVAL 1 DAY, 'expense', 23, 2, NULL, 15000, 'Coach Anees', 'Trainer salary', 'UPI9921'),
   (10, CURDATE(), 'expense', 31, 1, NULL, 250, 'Shop', 'Drinking water cans', '');
 
--- A member with a birthday today, for the dashboard
+/* A member with a birthday today, for the dashboard */
 UPDATE members SET dob = CONCAT('2002-', DATE_FORMAT(CURDATE(), '%m-%d')) WHERE id = 12 AND DATE_FORMAT(CURDATE(), '%m-%d') <> '02-29';
 
--- An invited member who filled the join form (waiting for approval) and a deactivated member
+/* An invited member who filled the join form (waiting for approval) and a deactivated member */
 INSERT INTO members (id, adm_no, name, phone, gender, place, city, district, pin_code, state, occupation, dob, age, height_cm, weight_kg, bmi,
   hq1, hq2, hq3, hq4, hq5, hq6, hq7, hq8, declaration, join_date, password_hash, card_token, status, invite_token, details_at) VALUES
   (13, 'VM013', 'Faisal Babu', '9645012399', 'M', 'Pandikkad', 'Pandikkad', 'Malappuram', '676521', 'Kerala', 'Student', '2005-02-10', 21, 171, 64, 21.9,
