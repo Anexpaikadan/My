@@ -52,6 +52,12 @@ require __DIR__ . '/includes/header.php';
 <div class="card mb-4"><div class="list-group list-group-flush">
   <div class="list-group-item d-flex align-items-center gap-2"><i class="bi bi-translate text-primary"></i><span class="me-auto"><?= e(t('language')) ?></span>
     <div class="btn-group btn-group-sm"><a href="lang.php?l=en" class="btn <?= lang() === 'en' ? 'btn-primary' : 'btn-outline-primary' ?>">English</a><a href="lang.php?l=ml" class="btn <?= lang() === 'ml' ? 'btn-primary' : 'btn-outline-primary' ?>">മലയാളം</a></div></div>
+  <div class="list-group-item">
+    <div class="d-flex align-items-center gap-2"><i class="bi bi-whatsapp text-success"></i><span class="me-auto"><?= e(t('wa_app_phone')) ?></span>
+      <div class="btn-group btn-group-sm"><button type="button" class="btn btn-outline-success" data-wa-app="normal">WhatsApp</button><button type="button" class="btn btn-outline-success" data-wa-app="business">Business</button></div></div>
+    <div class="small-muted mt-1"><?= e(t('wa_app_help')) ?></div>
+    <div class="small text-danger mt-1 d-none" data-wa-ios><?= e(t('wa_app_ios')) ?></div>
+  </div>
   <button type="button" class="list-group-item list-group-item-action d-flex align-items-center gap-2 d-none" data-install><i class="bi bi-phone text-success"></i><span class="me-auto"><?= e(t('install_app')) ?></span><i class="bi bi-chevron-right"></i></button>
   <form method="post" action="logout.php" class="list-group-item p-0"><?= csrf_field() ?>
     <button class="btn w-100 text-start d-flex align-items-center gap-2 px-3 py-2 text-danger"><i class="bi bi-box-arrow-right"></i><span class="me-auto"><?= e(t('logout')) ?> (<?= e($me['username']) ?>)</span></button></form>

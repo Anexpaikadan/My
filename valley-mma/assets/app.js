@@ -1,9 +1,40 @@
 // Valley MMA – page helpers: install as app, forms, exports, WhatsApp sharing, member QR scan.
-window.VM_JS = '3.7'; // same as APP_VERSION in includes/init.php
+window.VM_JS = '3.8'; // same as APP_VERSION in includes/init.php
 
 (function () {
   var $ = function (s, el) { return (el || document).querySelector(s); };
   var $$ = function (s, el) { return Array.prototype.slice.call((el || document).querySelectorAll(s)); };
+
+  // ---- WhatsApp or WhatsApp Business (chosen per phone on the More page) ----
+  // A wa.me link opens the phone's default WhatsApp. On Android an intent link can pick WhatsApp Business.
+  var waPref = function () { try { return localStorage.getItem('vm_wa') || 'normal'; } catch (e) { return 'normal'; } };
+  var isAndroid = /Android/i.test(navigator.userAgent);
+  window.vmWa = function (url) {
+    var m = /^https:\/\/wa\.me\/(\d*)\?text=(.*)$/.exec(url);
+    if (!m || waPref() !== 'business' || !isAndroid) return url;
+    return 'intent://send/?' + (m[1] ? 'phone=' + m[1] + '&' : '') + 'text=' + m[2]
+      + '#Intent;scheme=whatsapp;package=com.whatsapp.w4b;S.browser_fallback_url=' + encodeURIComponent(url) + ';end';
+  };
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="https://wa.me/"]');
+    if (!a) return;
+    var to = window.vmWa(a.href);
+    if (to !== a.href) { e.preventDefault(); location.href = to; }
+  });
+  var waMark = function () {
+    $$('[data-wa-app]').forEach(function (x) {
+      var on = x.dataset.waApp === waPref();
+      x.classList.toggle('btn-success', on); x.classList.toggle('btn-outline-success', !on);
+    });
+  };
+  $$('[data-wa-app]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      try { localStorage.setItem('vm_wa', b.dataset.waApp); } catch (e) {}
+      waMark();
+    });
+  });
+  waMark();
+  $$('[data-wa-ios]').forEach(function (el) { el.classList.toggle('d-none', !/iPhone|iPad|iPod/i.test(navigator.userAgent)); });
 
   // ---- Install as phone app (PWA) ----
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
@@ -232,7 +263,10 @@ window.VM_JS = '3.7'; // same as APP_VERSION in includes/init.php
   var share = $('#shareModal');
   if (share) {
     var txt = $('#shareText');
-    var open = function (phone) { window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(txt.value), '_blank', 'noopener'); };
+    var open = function (phone) {
+      var url = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(txt.value), to = window.vmWa(url);
+      if (to !== url) location.href = to; else window.open(url, '_blank', 'noopener');
+    };
     share.addEventListener('show.bs.modal', function (e) { txt.value = e.relatedTarget.dataset.text; });
     $$('#shareList a').forEach(function (a) { a.addEventListener('click', function (ev) { ev.preventDefault(); open(a.dataset.phone); }); });
     $('#shareGo').addEventListener('click', function () {
