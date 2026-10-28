@@ -37,7 +37,7 @@ $sections = nav_sections();
 </aside>
 
 <?php
-$tab = ['dashboard' => 'home', 'members' => 'members', 'add_member' => 'members', 'plans' => 'members', 'alerts' => 'members',
+$navTab = ['dashboard' => 'home', 'members' => 'members', 'add_member' => 'members', 'plans' => 'members', 'alerts' => 'members',
     'attendance' => 'attendance', 'accounts' => 'money', 'payments' => 'money', 'reports' => 'money'][$active] ?? 'more';
 $bottom = [
     ['index.php', 'home', 'bi-house-door', 'bi-house-door-fill', t('home')],
@@ -49,8 +49,8 @@ $bottom = [
 ?>
 <nav class="bottom-nav d-lg-none d-print-none" aria-label="<?= e(t('menu')) ?>">
   <?php foreach ($bottom as [$href, $id, $icon, $iconOn, $label]): ?>
-    <a href="<?= $href ?>" class="<?= $tab === $id ? 'on' : '' ?><?= $id === 'attendance' ? ' center' : '' ?>"<?= $tab === $id ? ' aria-current="page"' : '' ?>>
-      <span class="bn-ico"><i class="bi <?= $tab === $id ? $iconOn : $icon ?>"></i></span><span class="bn-lbl"><?= e($label) ?></span>
+    <a href="<?= $href ?>" class="<?= $navTab === $id ? 'on' : '' ?><?= $id === 'attendance' ? ' center' : '' ?>"<?= $navTab === $id ? ' aria-current="page"' : '' ?>>
+      <span class="bn-ico"><i class="bi <?= $navTab === $id ? $iconOn : $icon ?>"></i></span><span class="bn-lbl"><?= e($label) ?></span>
     </a>
   <?php endforeach; ?>
 </nav>

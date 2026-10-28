@@ -16,6 +16,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash('warning', t('upi_id_check'));
         }
         set_setting('country_code', preg_replace('/\D/', '', post('country_code')) ?: '91');
+        $appUrl = post('app_url');
+        if ($appUrl === '' || valid_app_url($appUrl)) {
+            set_setting('app_url', $appUrl === '' ? '' : rtrim($appUrl, '/') . '/');
+        } else {
+            flash('danger', t('app_url_bad'));
+        }
         set_setting('admission_fee', (string)num(post('admission_fee')));
         set_setting('expiry_days', (string)max(1, min(60, (int)post('expiry_days'))));
         set_setting('absent_days', (string)max(1, min(60, (int)post('absent_days'))));
@@ -93,6 +99,9 @@ require __DIR__ . '/includes/header.php';
         <div class="col-6 col-md-4"><label class="form-label"><?= e(t('place')) ?></label><input class="form-control" name="gym_place" value="<?= $s('gym_place') ?>" maxlength="40"></div>
         <div class="col-6"><label class="form-label"><?= e(t('phone')) ?> 1</label><input class="form-control" name="phone1" value="<?= $s('phone1') ?>"></div>
         <div class="col-6"><label class="form-label"><?= e(t('phone')) ?> 2</label><input class="form-control" name="phone2" value="<?= $s('phone2') ?>"></div>
+        <div class="col-12"><label class="form-label" for="app_url"><?= e(t('app_url_label')) ?></label>
+          <input class="form-control" id="app_url" name="app_url" value="<?= $s('app_url') ?>" placeholder="<?= e(detected_url()) ?>" inputmode="url">
+          <div class="small-muted mt-1"><?= e(t('app_url_hint')) ?><?php if (is_local_url(detected_url()) && lan_url() !== ''): ?> <?= e(t('app_url_suggest')) ?> <code><?= e(lan_url()) ?></code><?php endif; ?></div></div>
       </div>
       <div class="card-header border-top"><i class="bi bi-phone"></i> <?= e(t('upi_payment')) ?></div>
       <div class="card-body row g-3">

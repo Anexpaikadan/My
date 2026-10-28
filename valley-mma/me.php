@@ -135,7 +135,13 @@ $payAmount = $balance > 0 ? $balance : ($st !== 'active' && $plan ? (float)$plan
     <button type="button" class="btn btn-accent btn-lg big-btn" id="meScan"><i class="bi bi-qr-code-scan"></i><?= e(t('scan_attendance_qr')) ?></button>
   <?php endif; ?>
   <div id="reader" class="d-none"></div>
-  <div id="meScanMsg" class="small text-center"></div>
+  <div id="mePhotoWrap" class="d-none">
+    <label class="btn btn-accent btn-lg big-btn w-100" for="mePhoto"><i class="bi bi-camera-fill"></i><?= e(t('photo_scan')) ?></label>
+    <input type="file" id="mePhoto" accept="image/*" capture="environment" class="d-none">
+    <div class="small-muted text-center mt-1"><?= e(t('photo_scan_help')) ?></div>
+  </div>
+  <div id="mePhotoReader" class="d-none"></div>
+  <div id="meScanMsg" class="small text-center text-danger"></div>
   <?php if ($payAmount > 0 && setting('upi_id') !== ''): ?>
     <a href="pay.php?a=<?= e(number_format($payAmount, 2, '.', '')) ?>" class="btn btn-primary btn-lg"><i class="bi bi-phone"></i> <?= e(t('pay_by_upi')) ?> <?= money($payAmount) ?></a>
   <?php endif; ?>
@@ -184,7 +190,7 @@ $payAmount = $balance > 0 ? $balance : ($st !== 'active' && $plan ? (float)$plan
   <form method="post" action="logout.php" class="flex-fill"><?= csrf_field() ?><input type="hidden" name="who" value="member">
     <button class="btn btn-outline-secondary w-100"><i class="bi bi-box-arrow-right"></i> <?= e(t('logout')) ?></button></form>
 </div>
-<script>window.VM_ME = <?= json_encode(['camErr' => t('camera_error'), 'wrong' => t('not_attendance_qr')], JSON_UNESCAPED_UNICODE) ?>;</script>
+<script>window.VM_ME = <?= json_encode(['camErr' => t('camera_use_photo'), 'wrong' => t('not_attendance_qr'), 'noQr' => t('no_qr_in_photo')], JSON_UNESCAPED_UNICODE) ?>;</script>
 <?php
 $scripts = ['assets/vendor/html5-qrcode.min.js'];
 require __DIR__ . '/includes/footer.php';

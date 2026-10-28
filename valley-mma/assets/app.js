@@ -309,21 +309,55 @@
     });
   });
 
+  // ---- QR scan from a photo (works without https, where the live camera is blocked) ----
+  // input: <input type=file accept=image/* capture=environment>; onText gets the QR text.
+  window.vmPhotoScan = function (input, readerId, onText, onError) {
+    input.addEventListener('change', function () {
+      var file = input.files && input.files[0];
+      if (!file) return;
+      var sc = new Html5Qrcode(readerId);
+      sc.scanFile(file, false).then(function (text) { onText(text); })
+        .catch(function () { onError(); })
+        .finally(function () { input.value = ''; try { sc.clear(); } catch (e) {} });
+    });
+  };
+  window.vmLiveCameraOk = function () {
+    return window.isSecureContext && navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
+  };
+
   // ---- Member app: scan the attendance QR inside the app ----
   var meScan = $('#meScan');
   if (meScan && window.Html5Qrcode) {
     var msg = $('#meScanMsg'), reader = $('#reader'), sc = null;
+    // The gym QR opens checkin.php?d=…&k=… – go to it on this same address (the QR may show another one).
+    var go = function (text) {
+      var u = null;
+      try { u = new URL(text, location.href); } catch (e) {}
+      if (!u || !/checkin\.php$/.test(u.pathname) || !u.searchParams.get('d') || !u.searchParams.get('k')) {
+        msg.textContent = window.VM_ME.wrong;
+        return false;
+      }
+      location.href = 'checkin.php' + u.search;
+      return true;
+    };
+    var photo = $('#mePhoto');
+    var showPhoto = function (why) {
+      reader.classList.add('d-none');
+      $('#mePhotoWrap').classList.remove('d-none');
+      msg.textContent = why || '';
+    };
+    if (photo) window.vmPhotoScan(photo, 'mePhotoReader', go, function () { msg.textContent = window.VM_ME.noQr; });
+    if (!window.vmLiveCameraOk()) {
+      meScan.classList.add('d-none');
+      showPhoto('');
+    }
     meScan.addEventListener('click', function () {
       reader.classList.remove('d-none');
       sc = sc || new Html5Qrcode('reader');
       sc.start({ facingMode: 'environment' }, { fps: 10, qrbox: 230 }, function (text) {
-        var u = null;
-        try { u = new URL(text); } catch (e) {}
-        if (!u || u.origin !== location.origin || u.pathname.indexOf('checkin.php') < 0) { msg.textContent = window.VM_ME.wrong; return; }
-        sc.stop().finally(function () { location.href = text; });
-      }, function () {}).catch(function (err) {
-        reader.classList.add('d-none');
-        msg.textContent = window.VM_ME.camErr + ' (' + err + ')';
+        sc.stop().finally(function () { if (!go(text)) meScan.click(); });
+      }, function () {}).catch(function () {
+        showPhoto(window.VM_ME.camErr);
       });
     });
   }

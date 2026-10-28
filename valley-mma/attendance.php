@@ -20,6 +20,16 @@ function today_list(): array
 
 $action = post('action') ?: get('action');
 
+if ($action === 'set_url') { // fix the address in the QR (phones cannot open "localhost")
+    $url = post('url');
+    if (valid_app_url($url)) {
+        set_setting('app_url', rtrim($url, '/') . '/');
+        flash('success', t('app_url_saved', rtrim($url, '/') . '/'));
+    } else {
+        flash('danger', t('app_url_bad'));
+    }
+    redirect('attendance.php?tab=qr');
+}
 if ($action === 'token') { // new QR when it changes every few minutes
     header('Content-Type: application/json');
     echo json_encode(['url' => att_url(), 'count' => count(today_list())]);
@@ -109,6 +119,18 @@ require __DIR__ . '/includes/header.php';
 
 <div class="tab-content">
   <div class="tab-pane fade<?= $tab === 'qr' ? ' show active' : '' ?>" id="t-qr">
+    <?php if (is_local_url(att_url())): $lan = lan_url(); ?>
+      <div class="alert alert-danger">
+        <div class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill"></i> <?= e(t('qr_localhost_title')) ?></div>
+        <div class="small mb-2"><?= e(t('qr_localhost_help')) ?></div>
+        <form method="post" class="input-group">
+          <?= csrf_field() ?><input type="hidden" name="action" value="set_url">
+          <input class="form-control" name="url" value="<?= e($lan !== '' ? $lan : 'http://192.168.1.?/valley-mma/') ?>" aria-label="<?= e(t('app_url_label')) ?>">
+          <button class="btn btn-danger"><?= e(t('use_this_address')) ?></button>
+        </form>
+        <div class="small mt-2"><?= e(t('qr_localhost_ipconfig')) ?></div>
+      </div>
+    <?php endif; ?>
     <div class="card"><div class="card-body text-center" id="qrPanel">
       <div class="fs-5 fw-bold"><?= e(gym_title()) ?></div>
       <div class="fs-4 fw-bold text-primary mb-2"><i class="bi bi-calendar-event"></i> <?= e(t('day' . date('N'))) ?>, <?= e(fdate(today())) ?></div>
@@ -120,7 +142,8 @@ require __DIR__ . '/includes/header.php';
         <button type="button" class="btn btn-dark" id="qrFull"><i class="bi bi-arrows-fullscreen"></i> <?= e(t('full_screen')) ?></button>
         <a class="btn btn-outline-primary" href="<?= e(att_url()) ?>" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> <?= e(t('test_link')) ?></a>
       </div>
-      <?php if (!is_https()): ?><p class="small text-muted mt-3 mb-0"><i class="bi bi-info-circle"></i> <?= e(t('https_note')) ?></p><?php endif; ?>
+      <div class="small text-muted mt-3 text-break"><i class="bi bi-link-45deg"></i> <?= e(base_url()) ?> · <a href="settings.php#gym"><?= e(t('change')) ?></a></div>
+      <?php if (!is_https()): ?><p class="small text-muted mt-2 mb-0"><i class="bi bi-info-circle"></i> <?= e(t('https_note')) ?></p><?php endif; ?>
     </div></div>
   </div>
 
@@ -130,7 +153,10 @@ require __DIR__ . '/includes/header.php';
         <button type="button" class="btn btn-primary btn-lg" id="scanStart"><i class="bi bi-camera-video"></i> <?= e(t('start_camera')) ?></button>
         <button type="button" class="btn btn-outline-dark btn-lg d-none" id="scanFlip" data-facing="<?= e(setting('att_camera', 'environment')) ?>"><i class="bi bi-arrow-repeat"></i> <?= e(t('switch_camera')) ?></button>
         <button type="button" class="btn btn-outline-danger btn-lg d-none" id="scanStop"><i class="bi bi-stop-circle"></i> <?= e(t('stop')) ?></button>
+        <label class="btn btn-outline-primary btn-lg mb-0" for="cardPhoto"><i class="bi bi-camera-fill"></i> <?= e(t('photo_scan_card')) ?></label>
+        <input type="file" id="cardPhoto" accept="image/*" capture="environment" class="d-none">
       </div>
+      <div id="cardPhotoReader" class="d-none"></div>
       <div id="reader"></div>
       <div id="scanResult" class="scan-result mt-3"></div>
       <p class="small-muted mt-2 mb-0"><?= e(t('scan_card_help')) ?></p>
@@ -177,7 +203,7 @@ require __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
-<script>window.VM_ATT = <?= json_encode(['csrf' => csrf_token(), 'ok' => t('marked_present'), 'camErr' => t('camera_error'), 'facing' => setting('att_camera', 'environment')], JSON_UNESCAPED_UNICODE) ?>;</script>
+<script>window.VM_ATT = <?= json_encode(['csrf' => csrf_token(), 'ok' => t('marked_present'), 'camErr' => t('camera_error'), 'noQr' => t('no_qr_in_photo'), 'httpsCam' => t('camera_https_only'), 'facing' => setting('att_camera', 'environment')], JSON_UNESCAPED_UNICODE) ?>;</script>
 <?php
-$scripts = ['assets/vendor/qrcode.js', 'assets/qr.js', 'assets/vendor/html5-qrcode.min.js', 'assets/attendance.js?v=3'];
+$scripts = ['assets/vendor/qrcode.js', 'assets/qr.js', 'assets/vendor/html5-qrcode.min.js', 'assets/attendance.js?v=4'];
 require __DIR__ . '/includes/footer.php';

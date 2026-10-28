@@ -95,6 +95,19 @@
       facing = facing === 'environment' ? 'user' : 'environment';
       stop().then(start);
     });
+    // No https: the live camera is blocked, so read the card from a photo instead.
+    window.addEventListener('load', function () {
+      var photo = document.getElementById('cardPhoto');
+      if (photo && window.vmPhotoScan) {
+        window.vmPhotoScan(photo, 'cardPhotoReader', onScan, function () {
+          out.innerHTML = '<div class="alert alert-warning">' + esc(cfg.noQr) + '</div>';
+        });
+      }
+      if (window.vmLiveCameraOk && !window.vmLiveCameraOk()) {
+        startBtn.classList.add('d-none');
+        out.innerHTML = '<div class="alert alert-info small">' + esc(cfg.httpsCam) + '</div>';
+      }
+    });
     // Stop the camera when leaving the tab.
     document.querySelectorAll('[data-tab]').forEach(function (b) {
       b.addEventListener('shown.bs.tab', function () { if (b.dataset.tab !== 'card') stop(); });

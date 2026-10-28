@@ -47,6 +47,19 @@ Sample member login (member app): phone **9847012345**, password **member123**.
 Copy the new files over the old ones but keep your `config.php`. The new accounts tables are
 added automatically the first time a page is opened.
 
+## Phones and the attendance QR (important on XAMPP)
+
+The attendance QR code and WhatsApp links contain the app address. Phones **cannot open `localhost`**, so:
+
+1. Connect the PC and the phones to the **same Wi-Fi**.
+2. Open *Attendance*: if the QR uses `localhost`, a red box shows this PC's Wi-Fi address
+   (e.g. `http://192.168.1.10/valley-mma/`) – press **Use this address**. (Also in *Settings → App address*.)
+3. Allow Apache through the Windows firewall if phones cannot open that address.
+
+Members scan the QR with the normal **phone camera**, or in the member app. Without https the live camera inside
+the browser is blocked by phones, so the app offers **Take a photo of the QR** instead – it works everywhere.
+With https (hosting) the live scanner works too.
+
 ## Install on hosting (Hostinger, cPanel, …)
 
 1. Create a MySQL database and user in the control panel.

@@ -28,7 +28,7 @@ $v = '4';
   <a href="index.php" class="brand-mini"><?= e(setting('gym_name', 'VALLEY MMA')) ?></a>
   <a href="lang.php?l=<?= lang() === 'en' ? 'ml' : 'en' ?>" class="btn btn-sm btn-outline-light ms-auto"><?= lang() === 'en' ? 'മലയാളം' : 'English' ?></a>
 </header>
-<?php require __DIR__ . '/nav.php'; ?>
+<?php (function (string $active): void { require __DIR__ . '/nav.php'; })($active); // own scope: the menu's loop variables must not overwrite the page's ($id, $tab …) ?>
 <main class="main">
   <div class="page-head d-flex flex-wrap align-items-center gap-2 mb-3">
     <?php if (!empty($back)): ?><a href="<?= e($back) ?>" class="btn btn-light btn-back" data-back aria-label="<?= e(t('back')) ?>"><i class="bi bi-arrow-left"></i></a><?php endif; ?>

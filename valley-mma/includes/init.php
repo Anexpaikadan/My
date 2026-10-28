@@ -213,7 +213,18 @@ function flashes(): string
     return $out;
 }
 
+// Address used in QR codes and WhatsApp links. Set "app_url" in Settings when the admin opens the app as
+// http://localhost/… (phones cannot open "localhost"); otherwise the address in the browser is used.
 function base_url(): string
+{
+    $set = PHP_SAPI === 'cli' ? '' : setting('app_url');
+    if ($set !== '') {
+        return rtrim($set, '/') . '/';
+    }
+    return detected_url();
+}
+
+function detected_url(): string
 {
     $dir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
     return (is_https() ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $dir . '/';
@@ -317,6 +328,43 @@ function too_many_attempts(): bool
 function failed_attempt(): void
 {
     q('INSERT INTO login_attempts (ip, tried_at) VALUES (?, NOW())', [$_SERVER['REMOTE_ADDR'] ?? '']);
+}
+
+// True when phones cannot open this address (localhost / 127.0.0.1).
+function is_local_url(string $url): bool
+{
+    $h = strtolower(trim((string)parse_url($url, PHP_URL_HOST), '[]'));
+    return in_array($h, ['localhost', '127.0.0.1', '::1'], true) || str_ends_with($h, '.localhost');
+}
+
+// This computer's address on the Wi-Fi / LAN, for the attendance QR (XAMPP). '' when not found.
+function lan_url(): string
+{
+    $ips = [];
+    $cands = [$_SERVER['SERVER_ADDR'] ?? '', gethostbyname((string)gethostname())];
+    // The interface used to reach the internet (a UDP "connect" sends nothing).
+    $sock = @stream_socket_client('udp://8.8.8.8:53', $errno, $errstr, 1);
+    if ($sock) {
+        $cands[] = (string)preg_replace('/:\d+$/', '', (string)stream_socket_get_name($sock, false));
+        fclose($sock);
+    }
+    foreach ($cands as $ip) {
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) && !str_starts_with($ip, '127.')) {
+            $ips[] = $ip;
+        }
+    }
+    if (!$ips) {
+        return '';
+    }
+    $port = (int)($_SERVER['SERVER_PORT'] ?? 80);
+    $https = is_https();
+    $dir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
+    return ($https ? 'https' : 'http') . '://' . $ips[0] . (($https && $port !== 443) || (!$https && $port !== 80) ? ':' . $port : '') . $dir . '/';
+}
+
+function valid_app_url(string $url): bool
+{
+    return (bool)filter_var($url, FILTER_VALIDATE_URL) && preg_match('#^https?://#i', $url);
 }
 
 // ---- Navigation ---------------------------------------------------
