@@ -1,0 +1,84 @@
+/* Print pages: join form, receipt, ID card */
+* { box-sizing: border-box; }
+body { margin: 0; background: #e9e7f3; font-family: "Poppins", system-ui, "Segoe UI", Roboto, "Noto Sans Malayalam", sans-serif; color: #1A1A1A; }
+.toolbar { position: sticky; top: 0; display: flex; gap: 1rem; align-items: center; justify-content: center; padding: .6rem; background: #1A1A1A; flex-wrap: wrap; z-index: 2; }
+.toolbar button, .toolbar a { font: inherit; font-weight: 600; background: #360DD9; color: #fff; border: 0; border-radius: .5rem; padding: .55rem 1.1rem; text-decoration: none; cursor: pointer; }
+.toolbar a { background: transparent; border: 1px solid #fff; }
+.toolbar a.wa { background: #25D366; border-color: #25D366; }
+.sheet { background: #fff; margin: 1rem auto; padding: 14mm 14mm; box-shadow: 0 2px 14px rgba(0, 0, 0, .12); }
+.form-sheet { width: 210mm; min-height: 297mm; max-width: 100%; }
+
+.brand { display: flex; justify-content: center; align-items: flex-start; position: relative; }
+.brand-name { text-align: center; line-height: 1; }
+.brand-name .b1 { font-size: 40px; font-weight: 900; font-style: italic; letter-spacing: -1px; }
+.brand-name .b2 { font-size: 17px; font-weight: 800; letter-spacing: .5em; margin-top: 6px; }
+.brand-name .b3 { font-size: 16px; font-weight: 800; margin-top: 4px; }
+.phones { position: absolute; right: 0; top: 4px; font-weight: 800; font-size: 14px; line-height: 1.35; }
+
+.top-row { display: flex; justify-content: space-between; align-items: flex-start; margin-top: 8px; }
+.photo-box { width: 32mm; height: 40mm; border: 1.5px solid #555; border-radius: 3mm; display: grid; place-items: center; overflow: hidden; color: #555; }
+.photo-box img { width: 100%; height: 100%; object-fit: cover; }
+.sec { display: inline-block; background: #2b2b2b; color: #fff; font-weight: 700; padding: 3px 10px; margin: 14px 0 6px; font-size: 15px; }
+.line { display: flex; align-items: flex-end; gap: 4px; margin: 10px 0; font-size: 14px; flex-wrap: nowrap; }
+.line span { white-space: nowrap; }
+.line b { flex: 1 1 auto; border-bottom: 1.5px dotted #777; min-height: 1.3em; font-weight: 600; padding: 0 4px; min-width: 20mm; }
+.line b.s { flex: 0 1 26mm; white-space: nowrap; }
+.box { display: inline-grid; place-items: center; width: 17px; height: 17px; border: 1.3px solid #444; vertical-align: middle; font-weight: 900; font-size: 13px; line-height: 1; margin-right: 6px; }
+table.hq { width: 100%; border-collapse: collapse; font-size: 14px; }
+table.hq td { padding: 5px 0; }
+table.hq td.yn { width: 18mm; white-space: nowrap; }
+.decl { font-size: 14px; line-height: 1.7; margin: 4px 0; }
+.signs { display: flex; justify-content: space-between; margin-top: 22mm; font-size: 14px; }
+.signs div { width: 45%; }
+
+/* Receipt */
+.receipt { width: 150mm; max-width: 100%; border: 1.5px solid #333; border-radius: 4mm; padding: 6mm 0 0; overflow: hidden; }
+.receipt .head { display: flex; justify-content: space-between; align-items: center; padding: 0 6mm; gap: 4mm; }
+.receipt .brand-name .b1 { font-size: 30px; }
+.receipt .brand-name .b2 { font-size: 13px; }
+.receipt .brand-name .b3 { font-size: 12px; }
+.receipt .phones { position: static; font-size: 13px; }
+.receipt .meta { padding: 3mm 6mm 2mm; font-size: 13.5px; }
+.receipt .meta .line { margin: 6px 0; }
+.receipt table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.receipt th { background: #2b2b2b; color: #fff; padding: 6px; font-weight: 600; font-size: 15px; }
+.receipt td { border-top: 1.3px solid #333; padding: 7px 8px; }
+.receipt td.r { text-align: right; font-weight: 600; }
+.receipt td.amt { border-left: 1.3px solid #333; width: 32%; text-align: right; font-weight: 700; }
+.receipt .months td { text-align: center; font-size: 12.5px; line-height: 1.15; border-left: 1.3px solid #333; }
+.receipt .months td:first-child { border-left: 0; }
+.receipt .months td.v { font-weight: 700; font-size: 13.5px; }
+.receipt .total td { font-size: 15.5px; font-weight: 800; }
+.receipt .foot { display: flex; justify-content: space-between; align-items: flex-end; padding: 4mm 6mm 5mm; font-size: 13px; gap: 4mm; border-top: 1.3px solid #333; }
+.receipt .upi { display: flex; gap: 3mm; align-items: center; }
+.receipt .upi svg { width: 26mm; height: 26mm; }
+.paid-stamp { display: inline-block; border: 2px solid #3d8f1d; color: #3d8f1d; font-weight: 800; padding: 1px 8px; border-radius: 4px; transform: rotate(-6deg); }
+
+/* ID card */
+.idcard { width: 86mm; height: 54mm; padding: 0; display: flex; overflow: hidden; border-radius: 3mm; position: relative; }
+.idcard .left { background: #360DD9; color: #fff; width: 33mm; padding: 3mm; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.idcard .left img { width: 24mm; height: 28mm; object-fit: cover; border-radius: 2mm; background: #fff; }
+.idcard .left .no { font-weight: 800; margin-top: 2mm; font-size: 13px; color: #7ED957; }
+.idcard .right { flex: 1; padding: 3mm; display: flex; flex-direction: column; }
+.idcard .right .b1 { font-weight: 900; font-style: italic; font-size: 17px; line-height: 1; }
+.idcard .right .b2 { font-size: 8px; font-weight: 800; letter-spacing: .35em; }
+.idcard .right .nm { font-weight: 700; font-size: 13px; margin-top: 2mm; }
+.idcard .right .ph { font-size: 10px; }
+.idcard .qr { margin-top: auto; display: flex; align-items: flex-end; gap: 2mm; font-size: 8px; }
+.idcard .qr svg { width: 22mm; height: 22mm; }
+
+@media print {
+  body { background: #fff; }
+  .toolbar { display: none; }
+  .sheet { margin: 0 auto; box-shadow: none; }
+  .form-sheet { padding: 10mm 12mm; min-height: auto; }
+  @page { size: A4; margin: 6mm; }
+}
+@media (max-width: 640px) {
+  .sheet { padding: 5mm; margin: .5rem; }
+  .form-sheet { width: auto; }
+  .line { flex-wrap: wrap; }
+  .phones { position: static; }
+  .brand { flex-direction: column; align-items: center; }
+  .receipt .head { flex-direction: column; }
+}

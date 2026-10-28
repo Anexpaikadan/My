@@ -3,7 +3,16 @@
 | Folder / file | What it is |
 |---|---|
 | [`daybill/`](daybill/) | **Daybill Print** – print shop app (PHP + MySQL) |
+| [`valley-mma/`](valley-mma/) | **Valley MMA Fight Club** – membership, payments, attendance (PHP + MySQL, English / Malayalam) |
 | `sales-pos.html` | Sales POS page |
+
+## Valley MMA Fight Club
+
+Membership management for Valley MMA Fight Club, Pandikkad: members with the full join form and health
+screening, plans, payments with receipts and UPI, expiry alerts with WhatsApp reminders, QR attendance,
+weekly training plan, reports (print / PDF / Excel), backup and a member app. Installable on phones.
+
+Setup and details: [`valley-mma/README.md`](valley-mma/README.md).
 
 ## Daybill Print
 

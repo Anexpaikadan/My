@@ -1,0 +1,32 @@
+# Valley MMA Fight Club – Apache settings (XAMPP / shared hosting)
+Options -Indexes
+DirectoryIndex index.php
+
+# Block config, SQL, helper and text files
+<FilesMatch "^(config)\.php$|\.(sql|md|log|ini|txt)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "same-origin"
+</IfModule>
+
+# Optional: always use HTTPS (needed for the camera scanner on phones). Remove the # when SSL works.
+#<IfModule mod_rewrite.c>
+#  RewriteEngine On
+#  RewriteCond %{HTTPS} off
+#  RewriteCond %{HTTP:X-Forwarded-Proto} !https
+#  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+#</IfModule>
+
+<IfModule mod_php.c>
+  php_value upload_max_filesize 20M
+  php_value post_max_size 25M
+</IfModule>
