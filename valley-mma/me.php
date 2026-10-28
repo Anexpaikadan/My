@@ -79,6 +79,11 @@ if (!$m): ?>
     exit;
 endif;
 
+// Invited member who has not filled the join form yet: send them to it.
+if ($m['status'] === 'pending' && !$m['details_at'] && $m['invite_token']) {
+    redirect('join.php?t=' . $m['invite_token']);
+}
+$block = attendance_block($m);
 $balance = member_balance((int)$m['id']);
 $plan = $m['plan_id'] ? q('SELECT * FROM plans WHERE id = ?', [$m['plan_id']])->fetch() : null;
 $st = member_status($m['expiry_date']);
@@ -105,7 +110,7 @@ $payAmount = $balance > 0 ? $balance : ($st !== 'active' && $plan ? (float)$plan
 <div class="card mb-3 text-white" style="background:linear-gradient(135deg,#360DD9,#1A1A1A)"><div class="card-body">
   <div class="d-flex justify-content-between align-items-start">
     <div><div class="small opacity-75"><?= e(t('plan')) ?></div><div class="fs-5 fw-bold"><?= e($plan['name'] ?? '–') ?></div></div>
-    <?= status_badge($m['expiry_date']) ?>
+    <?= status_badge($m['expiry_date'], $m['status']) ?>
   </div>
   <div class="d-flex justify-content-between mt-3">
     <div><div class="small opacity-75"><?= e(t('expiry_date')) ?></div><div class="fw-bold"><?= e(fdate($m['expiry_date'])) ?></div></div>
@@ -113,8 +118,18 @@ $payAmount = $balance > 0 ? $balance : ($st !== 'active' && $plan ? (float)$plan
   </div>
 </div></div>
 
+<?php if ($m['status'] === 'pending'): ?>
+  <div class="alert alert-info"><i class="bi bi-hourglass-split"></i> <?= e(t('join_waiting_help')) ?>
+    <?php if ($m['invite_token']): ?><a href="join.php?t=<?= e($m['invite_token']) ?>&edit=1" class="d-block mt-1"><?= e(t('join_edit')) ?></a><?php endif; ?></div>
+<?php elseif ($m['status'] === 'inactive'): ?>
+  <div class="alert alert-dark"><i class="bi bi-slash-circle"></i> <?= e(t('you_are_inactive')) ?> <?= e(setting('phone1')) ?></div>
+<?php endif; ?>
 <div class="d-grid gap-2 mb-3">
-  <?php if ($todayIn): ?>
+  <?php if ($block !== ''): ?>
+    <?php if ($m['status'] === 'active'): // expired and attendance blocked in Settings ?>
+      <div class="alert alert-warning mb-0 text-center"><?= e(t($block)) ?></div>
+    <?php endif; ?>
+  <?php elseif ($todayIn): ?>
     <div class="alert alert-success mb-0 text-center"><i class="bi bi-check-circle-fill"></i> <?= e(t('present_today_member')) ?></div>
   <?php else: ?>
     <button type="button" class="btn btn-accent btn-lg big-btn" id="meScan"><i class="bi bi-qr-code-scan"></i><?= e(t('scan_attendance_qr')) ?></button>

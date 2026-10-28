@@ -7,6 +7,7 @@ require __DIR__ . '/includes/accounts.php';
 require_admin();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_verify('acc_settings.php');
     $a = post('action');
     $id = (int)post('id');
     if ($a === 'account') {
@@ -75,7 +76,7 @@ require __DIR__ . '/includes/header.php';
       <div class="card-header"><i class="bi bi-wallet2"></i> <?= e(t('money_accounts')) ?></div>
       <div class="list-group list-group-flush">
         <?php foreach ($accounts as $a): ?>
-          <form method="post" class="list-group-item row g-2 m-0 align-items-center<?= $a['active'] ? '' : ' opacity-50' ?>"><?= csrf_field() ?>
+          <form method="post" data-verify="<?= e(t('verify_money')) ?>" class="list-group-item row g-2 m-0 align-items-center<?= $a['active'] ? '' : ' opacity-50' ?>"><?= csrf_field() ?>
             <input type="hidden" name="action" value="account"><input type="hidden" name="id" value="<?= $a['id'] ?>">
             <div class="col-12 col-sm-4"><input class="form-control form-control-sm" name="name" value="<?= e($a['name']) ?>" required aria-label="<?= e(t('name')) ?>"></div>
             <div class="col-4 col-sm-3"><select class="form-select form-select-sm" name="kind" aria-label="<?= e(t('type')) ?>">
@@ -87,7 +88,7 @@ require __DIR__ . '/includes/header.php';
           </form>
         <?php endforeach; ?>
       </div>
-      <form method="post" class="card-body border-top row g-2 m-0"><?= csrf_field() ?><input type="hidden" name="action" value="account">
+      <form method="post" data-verify="<?= e(t('verify_money')) ?>" class="card-body border-top row g-2 m-0"><?= csrf_field() ?><input type="hidden" name="action" value="account">
         <div class="col-12 small fw-semibold"><?= e(t('add_account')) ?></div>
         <div class="col-12 col-sm-5"><input class="form-control" name="name" placeholder="<?= e(t('account_name_ph')) ?>" required></div>
         <div class="col-6 col-sm-3"><select class="form-select" name="kind"><?php foreach (['cash', 'bank', 'upi'] as $k): ?><option value="<?= $k ?>"><?= e(t('kind_' . $k)) ?></option><?php endforeach; ?></select></div>
@@ -97,7 +98,7 @@ require __DIR__ . '/includes/header.php';
       <div class="card-footer bg-transparent small-muted"><?= e(t('opening_hint')) ?></div>
     </div>
 
-    <form method="post" class="card mb-3" id="mapping"><?= csrf_field() ?><input type="hidden" name="action" value="mapping">
+    <form method="post" data-verify="<?= e(t('verify_money')) ?>" class="card mb-3" id="mapping"><?= csrf_field() ?><input type="hidden" name="action" value="mapping">
       <div class="card-header"><i class="bi bi-diagram-3"></i> <?= e(t('fee_mapping')) ?></div>
       <div class="card-body row g-2">
         <?php foreach (['cash', 'upi', 'card', 'bank'] as $m): ?>
@@ -119,7 +120,7 @@ require __DIR__ . '/includes/header.php';
         <div class="list-group list-group-flush">
           <?php foreach ($cats as $c): if ($c['type'] !== $type) continue; ?>
             <div class="list-group-item d-flex gap-2 align-items-center<?= $c['active'] ? '' : ' opacity-50' ?>">
-              <form method="post" class="d-flex gap-2 align-items-center flex-grow-1"><?= csrf_field() ?>
+              <form method="post" data-verify="<?= e(t('verify_money')) ?>" class="d-flex gap-2 align-items-center flex-grow-1"><?= csrf_field() ?>
                 <input type="hidden" name="action" value="category"><input type="hidden" name="id" value="<?= $c['id'] ?>">
                 <input class="form-control form-control-sm" name="name" value="<?= e($c['name']) ?>" required aria-label="<?= e(t('name')) ?>">
                 <?php if ((int)$c['id'] === acc_fee_category()): ?><span class="badge text-bg-light" title="<?= e(t('fee_category')) ?>"><i class="bi bi-link-45deg"></i></span><input type="hidden" name="active" value="1"><?php else: ?>
@@ -128,14 +129,14 @@ require __DIR__ . '/includes/header.php';
                 <button class="btn btn-sm btn-outline-primary"><i class="bi bi-check2"></i></button>
               </form>
               <?php if ((int)$c['id'] !== acc_fee_category()): ?>
-                <form method="post" onsubmit="return confirm(<?= e(json_encode(t('confirm_delete'))) ?>)"><?= csrf_field() ?>
+                <form method="post" data-verify="<?= e(t('confirm_delete')) ?>"><?= csrf_field() ?>
                   <input type="hidden" name="action" value="delete_category"><input type="hidden" name="id" value="<?= $c['id'] ?>">
                   <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button></form>
               <?php endif; ?>
             </div>
           <?php endforeach; ?>
         </div>
-        <form method="post" class="card-body border-top d-flex gap-2"><?= csrf_field() ?>
+        <form method="post" data-verify="<?= e(t('verify_money')) ?>" class="card-body border-top d-flex gap-2"><?= csrf_field() ?>
           <input type="hidden" name="action" value="category"><input type="hidden" name="type" value="<?= $type ?>">
           <input class="form-control" name="name" placeholder="<?= e(t('new_category')) ?>" required>
           <button class="btn btn-primary"><i class="bi bi-plus-lg"></i></button>

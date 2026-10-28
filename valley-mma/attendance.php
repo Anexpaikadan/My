@@ -33,6 +33,12 @@ if ($action === 'card') { // admin scanned a member ID card
         echo json_encode(['ok' => false, 'msg' => t('card_unknown')]);
         exit;
     }
+    $block = attendance_block($m);
+    if ($block !== '') {
+        echo json_encode(['ok' => true, 'new' => false, 'name' => $m['name'], 'adm_no' => $m['adm_no'], 'photo' => photo_url($m),
+            'msg' => t('not_marked'), 'status' => 'expired', 'status_text' => t($block)], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
     $new = mark((int)$m['id'], today(), 'card');
     $st = member_status($m['expiry_date']);
     echo json_encode([
@@ -46,13 +52,26 @@ if ($action === 'manual') {
     $date = valid_date(post('date')) && post('date') <= today() ? post('date') : today();
     $ids = array_map('intval', (array)($_POST['members'] ?? [post('member_id')]));
     $n = 0;
+    $skipped = [];
     foreach (array_filter($ids) as $mid) {
+        $mm = q('SELECT * FROM members WHERE id = ?', [$mid])->fetch();
+        if (!$mm) {
+            continue;
+        }
+        if (attendance_block($mm) !== '') {
+            $skipped[] = $mm['name'];
+            continue;
+        }
         $n += mark($mid, $date, 'manual') ? 1 : 0;
     }
     flash('success', t('n_marked', $n, fdate($date)));
+    if ($skipped) {
+        flash('warning', t('not_marked_list', implode(', ', $skipped)));
+    }
     redirect(post('back') === 'member' ? 'member_view.php?id=' . (int)post('member_id') : 'attendance.php?tab=manual&date=' . $date);
 }
 if ($action === 'remove') {
+    require_verify('attendance.php?tab=list');
     q('DELETE FROM attendance WHERE id = ?', [(int)post('id')]);
     flash('success', t('removed'));
     redirect('attendance.php?tab=list');
@@ -73,7 +92,7 @@ $labels = ['qr' => ['bi-qr-code', t('show_qr')], 'card' => ['bi-upc-scan', t('sc
 $today = today_list();
 $mdate = valid_date(get('date')) && get('date') <= today() ? get('date') : today();
 $present = q('SELECT member_id FROM attendance WHERE att_date = ?', [$mdate])->fetchAll(PDO::FETCH_COLUMN);
-$all = q('SELECT id, name, adm_no, phone, photo, expiry_date FROM members ORDER BY (expiry_date >= CURDATE()) DESC, name')->fetchAll();
+$all = q("SELECT id, name, adm_no, phone, photo, expiry_date, status FROM members WHERE status <> 'pending' ORDER BY status = 'active' DESC, (expiry_date >= CURDATE()) DESC, name")->fetchAll();
 
 $title = t('attendance');
 $active = 'attendance';
@@ -127,12 +146,12 @@ require __DIR__ . '/includes/header.php';
         <button class="btn btn-primary ms-auto"><i class="bi bi-check2-all"></i> <?= e(t('mark_selected')) ?></button>
       </div>
       <div class="list-group list-group-flush" id="manualList">
-        <?php foreach ($all as $m): $is = in_array($m['id'], $present); $st = member_status($m['expiry_date']); ?>
+        <?php foreach ($all as $m): $is = in_array($m['id'], $present); $st = member_status($m['expiry_date'], $m['status']); $blk = attendance_block($m); ?>
           <label class="list-group-item d-flex align-items-center gap-2<?= $st === 'expired' ? ' row-expired' : '' ?>" data-text="<?= e(mb_strtolower($m['name'] . ' ' . $m['adm_no'] . ' ' . $m['phone'])) ?>">
-            <input class="form-check-input fs-4 m-0" type="checkbox" name="members[]" value="<?= $m['id'] ?>"<?= $is ? ' checked disabled' : '' ?>>
+            <input class="form-check-input fs-4 m-0" type="checkbox" name="members[]" value="<?= $m['id'] ?>"<?= $is ? ' checked disabled' : ($blk !== '' ? ' disabled' : '') ?>>
             <img src="<?= e(photo_url($m)) ?>" class="avatar" alt="" loading="lazy">
             <span class="me-auto"><span class="fw-semibold d-block"><?= e($m['name']) ?></span><span class="small-muted"><?= e($m['adm_no']) ?></span></span>
-            <?= $is ? '<span class="badge bg-success">' . e(t('present')) . '</span>' : status_badge($m['expiry_date']) ?>
+            <?= $is ? '<span class="badge bg-success">' . e(t('present')) . '</span>' : status_badge($m['expiry_date'], $m['status']) ?>
           </label>
         <?php endforeach; ?>
       </div>
@@ -149,7 +168,7 @@ require __DIR__ . '/includes/header.php';
             <a class="me-auto text-dark text-decoration-none" href="member_view.php?id=<?= $a['member_id'] ?>"><span class="fw-semibold d-block"><?= e($a['name']) ?></span>
               <span class="small-muted"><?= e(substr($a['check_in'], 0, 5)) ?> · <?= e(t('via_' . $a['method'])) ?></span></a>
             <?= member_status($a['expiry_date']) === 'expired' ? status_badge($a['expiry_date']) : '' ?>
-            <form method="post" onsubmit="return confirm(<?= e(json_encode(t('confirm_delete'))) ?>)"><?= csrf_field() ?>
+            <form method="post" data-verify="<?= e(t('confirm_delete')) ?>"><?= csrf_field() ?>
               <input type="hidden" name="action" value="remove"><input type="hidden" name="id" value="<?= $a['id'] ?>">
               <button class="btn btn-sm btn-outline-danger"><i class="bi bi-x-lg"></i></button></form>
           </div>

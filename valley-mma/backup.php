@@ -75,6 +75,7 @@ if ($action === 'get') {
     redirect('backup.php');
 }
 if ($action === 'delete') {
+    require_verify('backup.php');
     $f = basename(post('f'));
     if (preg_match('/^valley-mma-backup-[\d-]+\.(sql|zip)$/', $f) && is_file("$dir/$f")) {
         unlink("$dir/$f");
@@ -83,6 +84,7 @@ if ($action === 'delete') {
     redirect('backup.php');
 }
 if ($action === 'restore') {
+    require_verify('backup.php');
     $file = $_FILES['file'] ?? null;
     if (post('confirm') !== 'RESTORE') {
         flash('danger', t('restore_confirm_wrong'));
@@ -167,7 +169,7 @@ require __DIR__ . '/includes/header.php';
             <i class="bi <?= str_ends_with($n, '.zip') ? 'bi-file-earmark-zip' : 'bi-filetype-sql' ?>"></i>
             <span class="me-auto small text-break"><?= e($n) ?><br><span class="small-muted"><?= round(filesize($f) / 1024) ?> KB</span></span>
             <a href="?action=get&f=<?= e(rawurlencode($n)) ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-download"></i></a>
-            <form method="post" onsubmit="return confirm(<?= e(json_encode(t('confirm_delete'))) ?>)"><?= csrf_field() ?><input type="hidden" name="action" value="delete"><input type="hidden" name="f" value="<?= e($n) ?>">
+            <form method="post" data-verify="<?= e(t('confirm_delete')) ?>"><?= csrf_field() ?><input type="hidden" name="action" value="delete"><input type="hidden" name="f" value="<?= e($n) ?>">
               <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button></form>
           </li>
         <?php endforeach; ?>
@@ -175,7 +177,7 @@ require __DIR__ . '/includes/header.php';
     </div>
   </div>
   <div class="col-lg-6">
-    <form method="post" enctype="multipart/form-data" class="card border border-danger"><?= csrf_field() ?><input type="hidden" name="action" value="restore">
+    <form method="post" enctype="multipart/form-data" class="card border border-danger" data-verify="<?= e(t('restore_warning')) ?>"><?= csrf_field() ?><input type="hidden" name="action" value="restore">
       <div class="card-body">
         <h2 class="h5 text-danger"><i class="bi bi-arrow-counterclockwise"></i> <?= e(t('restore_backup')) ?></h2>
         <p class="small"><?= e(t('restore_warning')) ?></p>

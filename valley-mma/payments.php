@@ -5,6 +5,7 @@ require __DIR__ . '/includes/init.php';
 require_admin();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && post('action') === 'delete') {
+    require_verify('payments.php');
     $p = q('SELECT * FROM payments WHERE id = ?', [(int)post('id')])->fetch();
     if ($p) {
         delete_payment($p);
@@ -86,7 +87,7 @@ require __DIR__ . '/includes/header.php';
           <td data-label="<?= e(t('balance')) ?>"><?= money($p['total'] - $p['paid']) ?></td>
           <td class="td-actions text-end text-nowrap no-export">
             <a class="btn btn-sm btn-outline-primary" href="receipt.php?id=<?= $p['id'] ?>"><i class="bi bi-receipt"></i></a>
-            <form method="post" class="d-inline" onsubmit="return confirm(<?= e(json_encode(t('confirm_delete_payment'))) ?>)">
+            <form method="post" class="d-inline" data-verify="<?= e(t('confirm_delete_payment')) ?>">
               <?= csrf_field() ?><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= $p['id'] ?>">
               <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
             </form>

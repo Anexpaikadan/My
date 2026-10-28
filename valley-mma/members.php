@@ -5,6 +5,7 @@ require __DIR__ . '/includes/init.php';
 require_admin();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && post('action') === 'delete') {
+    require_verify('members.php');
     $m = q('SELECT * FROM members WHERE id = ?', [(int)post('id')])->fetch();
     if ($m) {
         q('DELETE FROM members WHERE id = ?', [$m['id']]);
@@ -28,14 +29,17 @@ if ($s !== '') {
     $where[] = '(m.name LIKE ? OR m.phone LIKE ? OR m.adm_no LIKE ? OR m.place LIKE ?)';
     array_push($args, "%$s%", "%$s%", "%$s%", "%$s%");
 }
-if ($status === 'active') {
-    $where[] = 'm.expiry_date >= ?';
+if ($status === 'pending' || $status === 'inactive') {
+    $where[] = 'm.status = ?';
+    $args[] = $status;
+} elseif ($status === 'active') {
+    $where[] = "m.status = 'active' AND m.expiry_date >= ?";
     $args[] = $today;
 } elseif ($status === 'expiring') {
-    $where[] = 'm.expiry_date BETWEEN ? AND ?';
+    $where[] = "m.status = 'active' AND m.expiry_date BETWEEN ? AND ?";
     array_push($args, $today, $soon);
 } elseif ($status === 'expired') {
-    $where[] = '(m.expiry_date < ? OR m.expiry_date IS NULL)';
+    $where[] = "m.status = 'active' AND (m.expiry_date < ? OR m.expiry_date IS NULL)";
     $args[] = $today;
 }
 if ($planId) {
@@ -64,7 +68,7 @@ require __DIR__ . '/includes/header.php';
     <div class="col-6 col-md-3">
       <select class="form-select" name="status" onchange="this.form.submit()">
         <option value=""><?= e(t('all_status')) ?></option>
-        <?php foreach (['active', 'expiring', 'expired'] as $st): ?>
+        <?php foreach (['active', 'expiring', 'expired', 'pending', 'inactive'] as $st): ?>
           <option value="<?= $st ?>"<?= $status === $st ? ' selected' : '' ?>><?= e(t('st_' . $st)) ?></option>
         <?php endforeach; ?>
       </select>
@@ -85,7 +89,7 @@ require __DIR__ . '/includes/header.php';
       <thead><tr><th><?= e(t('member')) ?></th><th><?= e(t('phone')) ?></th><th><?= e(t('plan')) ?></th><th><?= e(t('expiry_date')) ?></th><th><?= e(t('status')) ?></th><th><?= e(t('balance')) ?></th><th></th></tr></thead>
       <tbody>
       <?php if (!$rows): ?><tr><td colspan="7" class="text-center text-muted p-4"><?= e(t('no_members')) ?></td></tr><?php endif; ?>
-      <?php foreach ($rows as $m): $st = member_status($m['expiry_date']); ?>
+      <?php foreach ($rows as $m): $st = member_status($m['expiry_date'], $m['status']); ?>
         <tr class="<?= $st === 'expired' ? 'row-expired' : ($st === 'expiring' ? 'row-expiring' : '') ?>">
           <td class="td-main"><a href="member_view.php?id=<?= $m['id'] ?>" class="member-row text-decoration-none text-dark">
             <img src="<?= e(photo_url($m)) ?>" class="avatar" alt="" loading="lazy">
@@ -93,13 +97,13 @@ require __DIR__ . '/includes/header.php';
           <td data-label="<?= e(t('phone')) ?>"><a href="tel:<?= e(clean_phone($m['phone'])) ?>"><?= e($m['phone']) ?></a></td>
           <td data-label="<?= e(t('plan')) ?>"><?= e($m['plan_name'] ?? '–') ?></td>
           <td data-label="<?= e(t('expiry_date')) ?>"><?= e(fdate($m['expiry_date'])) ?></td>
-          <td data-label="<?= e(t('status')) ?>"><?= status_badge($m['expiry_date']) ?></td>
+          <td data-label="<?= e(t('status')) ?>"><?= status_badge($m['expiry_date'], $m['status']) ?></td>
           <td data-label="<?= e(t('balance')) ?>" class="<?= $m['balance'] > 0 ? 'text-danger fw-bold' : '' ?>"><?= money($m['balance']) ?></td>
           <td class="td-actions text-end text-nowrap">
             <a class="btn btn-sm btn-accent" href="payment_add.php?member=<?= $m['id'] ?>" title="<?= e(t('record_payment')) ?>"><i class="bi bi-cash-coin"></i></a>
             <a class="btn btn-sm btn-whatsapp" target="_blank" rel="noopener" href="<?= e(wa_link($m['phone'], $st === 'active' ? t('wa_hello', $m['name']) : reminder_text($m))) ?>" title="WhatsApp"><i class="bi bi-whatsapp"></i></a>
             <a class="btn btn-sm btn-outline-primary" href="member_edit.php?id=<?= $m['id'] ?>" title="<?= e(t('edit')) ?>"><i class="bi bi-pencil"></i></a>
-            <form method="post" class="d-inline" onsubmit="return confirm(<?= e(json_encode(t('confirm_delete_member', $m['name']))) ?>)">
+            <form method="post" class="d-inline" data-verify="<?= e(t('confirm_delete_member', $m['name'])) ?>">
               <?= csrf_field() ?><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= $m['id'] ?>">
               <button class="btn btn-sm btn-outline-danger" title="<?= e(t('delete')) ?>"><i class="bi bi-trash"></i></button>
             </form>

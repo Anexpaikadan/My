@@ -11,13 +11,16 @@ $soon = date('Y-m-d', strtotime('+' . (int)setting('expiry_days', '7') . ' day')
 $absentDays = max(1, (int)setting('absent_days', '7'));
 
 $total = (int)q('SELECT COUNT(*) FROM members')->fetchColumn();
-$activeCount = (int)q('SELECT COUNT(*) FROM members WHERE expiry_date >= ?', [$today])->fetchColumn();
-$expired = $total - $activeCount;
+$activeCount = (int)q("SELECT COUNT(*) FROM members WHERE status = 'active' AND expiry_date >= ?", [$today])->fetchColumn();
+$byStatus = q('SELECT status, COUNT(*) FROM members GROUP BY status')->fetchAll(PDO::FETCH_KEY_PAIR);
+$pending = (int)($byStatus['pending'] ?? 0);
+$inactive = (int)($byStatus['inactive'] ?? 0);
+$expired = (int)($byStatus['active'] ?? 0) - $activeCount;
 $todayPay = q('SELECT COUNT(*) c, COALESCE(SUM(paid), 0) s FROM payments WHERE pay_date = ?', [$today])->fetch();
-$expiring = q('SELECT * FROM members WHERE expiry_date BETWEEN ? AND ? ORDER BY expiry_date', [$today, $soon])->fetchAll();
+$expiring = q("SELECT * FROM members WHERE status = 'active' AND expiry_date BETWEEN ? AND ? ORDER BY expiry_date", [$today, $soon])->fetchAll();
 $present = (int)q('SELECT COUNT(*) FROM attendance WHERE att_date = ?', [$today])->fetchColumn();
 $due = (float)q('SELECT COALESCE(SUM(b), 0) FROM (SELECT SUM(total - paid) b FROM payments GROUP BY member_id HAVING b > 0) x')->fetchColumn();
-$absent = (int)q('SELECT COUNT(*) FROM members WHERE expiry_date >= ? AND id NOT IN (SELECT member_id FROM attendance WHERE att_date > ?)',
+$absent = (int)q("SELECT COUNT(*) FROM members WHERE status = 'active' AND expiry_date >= ? AND id NOT IN (SELECT member_id FROM attendance WHERE att_date > ?)",
     [$today, date('Y-m-d', strtotime("-$absentDays day"))])->fetchColumn();
 $birthdays = q("SELECT * FROM members WHERE dob IS NOT NULL AND DATE_FORMAT(dob, '%m-%d') = ?", [date('m-d')])->fetchAll();
 $month = acc_totals($monthStart, $today);
@@ -45,6 +48,8 @@ $groups = [
         ['alerts.php', 'bi-hourglass-split', 'ico-amber', count($expiring), t('expiring_soon'), t('within_days', (int)setting('expiry_days', '7'))],
         ['alerts.php?tab=absent', 'bi-person-dash-fill', 'ico-dark', $absent, t('absent_members'), t('not_came_days', $absentDays)],
         ['reports.php?r=balance', 'bi-exclamation-diamond-fill', 'ico-red', money($due), t('pending_balance'), ''],
+        ['members.php?status=pending', 'bi-person-fill-exclamation', 'ico-blue', $pending, t('waiting_approval'), t('invited_members')],
+        ['members.php?status=inactive', 'bi-slash-circle', 'ico-dark', $inactive, t('st_inactive'), t('cannot_attend')],
     ],
     'this_month' => [
         ['ledger.php?type=income&from=' . $monthStart, 'bi-arrow-down-left-circle-fill', 'ico-green', money($month['income']), t('acc_income'), ''],
@@ -63,7 +68,7 @@ $groups = [
 </div></div>
 
 <div class="quick-row mb-4">
-  <a href="member_edit.php" class="quick tap"><span class="qi bg-primary"><i class="bi bi-person-plus-fill"></i></span><span><?= e(t('new_member')) ?></span></a>
+  <a href="member_invite.php" class="quick tap"><span class="qi bg-primary"><i class="bi bi-person-plus-fill"></i></span><span><?= e(t('new_member')) ?></span></a>
   <a href="payment_add.php" class="quick tap"><span class="qi" style="background:var(--vm-green);color:#10260a"><i class="bi bi-cash-coin"></i></span><span><?= e(t('record_payment')) ?></span></a>
   <a href="entry_edit.php?type=expense" class="quick tap"><span class="qi bg-danger"><i class="bi bi-dash-circle-fill"></i></span><span><?= e(t('add_expense')) ?></span></a>
   <a href="attendance.php" class="quick tap"><span class="qi bg-dark"><i class="bi bi-qr-code"></i></span><span><?= e(t('attendance_qr')) ?></span></a>

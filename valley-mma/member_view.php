@@ -29,6 +29,13 @@ if ($balance > 0) {
     $msgs['wa_send_balance'] = t('wa_balance', $m['name'], money($balance), gym_title()) . upi_text($balance);
 }
 $msgs['wa_send_login'] = t('wa_login', $m['name'], base_url() . 'me.php', $m['phone']);
+if ($m['status'] === 'pending') { // not approved yet: only the join link and the app link
+    $msgs = array_intersect_key($msgs, ['wa_send_login' => 1]);
+    if ($m['invite_token']) {
+        $msgs = ['wa_send_invite' => invite_text($m, (string)($_SESSION['invite_pass'][$id] ?? ''))] + $msgs;
+    }
+}
+$attBlock = attendance_block($m);
 
 $title = $m['name'];
 $active = 'members';
@@ -37,19 +44,57 @@ $actions = '<a href="member_edit.php?id=' . $id . '" class="btn btn-outline-prim
     . '<a href="payment_add.php?member=' . $id . '" class="btn btn-accent"><i class="bi bi-cash-coin"></i> ' . e(t('record_payment')) . '</a>';
 require __DIR__ . '/includes/header.php';
 ?>
+<?php if ($m['status'] === 'pending'): ?>
+  <div class="card mb-3 border border-info"><div class="card-body">
+    <h3 class="h6"><i class="bi bi-hourglass-split text-info"></i> <?= e(t('waiting_approval')) ?></h3>
+    <p class="small mb-2"><?= e($m['details_at'] ? t('details_filled_on', fdate($m['details_at'])) : t('details_not_filled')) ?></p>
+    <?php if ($m['invite_token']): ?>
+      <div class="input-group input-group-sm mb-3"><input class="form-control" id="invLink" value="<?= e(invite_link($m)) ?>" readonly>
+        <button class="btn btn-outline-primary" type="button" data-copy="#invLink" aria-label="Copy"><i class="bi bi-copy"></i></button></div>
+    <?php endif; ?>
+    <div class="row g-2">
+      <div class="col-md-6"><a href="payment_add.php?member=<?= $id ?>&new=1" class="btn btn-accent w-100 h-100 d-flex align-items-center justify-content-center gap-2"><i class="bi bi-cash-coin"></i> <?= e(t('approve_with_payment')) ?></a></div>
+      <div class="col-md-6"><form method="post" action="member_action.php" class="input-group" data-verify="<?= e(t('verify_free_days')) ?>"><?= csrf_field() ?>
+        <input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="action" value="activate_days">
+        <input class="form-control" type="number" name="days" min="1" max="366" value="<?= e(setting('trial_days', '7')) ?>" aria-label="<?= e(t('days')) ?>">
+        <button class="btn btn-primary"><?= e(t('activate_days')) ?></button></form></div>
+    </div>
+  </div></div>
+<?php elseif ($m['status'] === 'inactive'): ?>
+  <div class="alert alert-dark d-flex flex-wrap align-items-center gap-2">
+    <i class="bi bi-slash-circle fs-4"></i><span class="me-auto"><?= e(t('member_is_inactive')) ?></span>
+    <form method="post" action="member_action.php"><?= csrf_field() ?><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="action" value="activate">
+      <button class="btn btn-success"><i class="bi bi-check2-circle"></i> <?= e(t('activate')) ?></button></form>
+  </div>
+<?php endif; ?>
 <div class="row g-3">
   <div class="col-lg-4">
     <div class="card mb-3"><div class="card-body text-center">
       <img src="<?= e(photo_url($m)) ?>" class="avatar-lg mb-2" alt="">
       <h2 class="h5 mb-0"><?= e($m['name']) ?></h2>
       <div class="small-muted mb-2"><?= e($m['adm_no']) ?> · <?= e(t('joined')) ?> <?= e(fdate($m['join_date'])) ?></div>
-      <?= status_badge($m['expiry_date']) ?>
+      <?= status_badge($m['expiry_date'], $m['status']) ?>
       <div class="mt-3 d-grid gap-2">
         <a href="tel:<?= e(clean_phone($m['phone'])) ?>" class="btn btn-light"><i class="bi bi-telephone-fill"></i> <?= e($m['phone']) ?></a>
+        <?php if ($attBlock === ''): ?>
         <form method="post" action="attendance.php"><?= csrf_field() ?>
           <input type="hidden" name="action" value="manual"><input type="hidden" name="member_id" value="<?= $id ?>"><input type="hidden" name="back" value="member">
           <button class="btn btn-dark w-100"><i class="bi bi-calendar-check"></i> <?= e(t('mark_present_today')) ?></button>
         </form>
+        <?php else: ?>
+          <div class="alert alert-secondary py-2 small mb-0"><i class="bi bi-slash-circle"></i> <?= e(t($attBlock)) ?></div>
+        <?php endif; ?>
+        <?php if ($m['status'] === 'active'): ?>
+          <div class="d-flex gap-2">
+            <form method="post" action="member_action.php" class="input-group input-group-sm" data-verify="<?= e(t('verify_free_days')) ?>"><?= csrf_field() ?>
+              <input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="action" value="activate_days">
+              <input class="form-control" type="number" name="days" min="1" max="366" value="<?= e(setting('trial_days', '7')) ?>" aria-label="<?= e(t('days')) ?>">
+              <button class="btn btn-outline-primary" title="<?= e(t('add_free_days_help')) ?>">+ <?= e(t('days')) ?></button></form>
+            <form method="post" action="member_action.php" onsubmit="return confirm(<?= e(json_encode(t('confirm_deactivate', $m['name']))) ?>)"><?= csrf_field() ?>
+              <input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="action" value="deactivate">
+              <button class="btn btn-sm btn-outline-dark text-nowrap h-100"><i class="bi bi-slash-circle"></i> <?= e(t('deactivate')) ?></button></form>
+          </div>
+        <?php endif; ?>
         <div class="btn-group">
           <a href="member_print.php?id=<?= $id ?>" class="btn btn-outline-secondary" target="_blank"><i class="bi bi-printer"></i> <?= e(t('join_form')) ?></a>
           <a href="member_card.php?id=<?= $id ?>" class="btn btn-outline-secondary" target="_blank"><i class="bi bi-qr-code"></i> <?= e(t('id_card')) ?></a>

@@ -125,3 +125,10 @@ INSERT INTO acc_entries (voucher_no, entry_date, type, category_id, account_id, 
 
 -- A member with a birthday today, for the dashboard
 UPDATE members SET dob = CONCAT('2002-', DATE_FORMAT(CURDATE(), '%m-%d')) WHERE id = 12 AND DATE_FORMAT(CURDATE(), '%m-%d') <> '02-29';
+
+-- An invited member who filled the join form (waiting for approval) and a deactivated member
+INSERT INTO members (id, adm_no, name, phone, gender, place, city, district, pin_code, state, occupation, dob, age, height_cm, weight_kg, bmi,
+  hq1, hq2, hq3, hq4, hq5, hq6, hq7, hq8, declaration, join_date, password_hash, card_token, status, invite_token, details_at) VALUES
+  (13, 'VM013', 'Faisal Babu', '9645012399', 'M', 'Pandikkad', 'Pandikkad', 'Malappuram', '676521', 'Kerala', 'Student', '2005-02-10', 21, 171, 64, 21.9,
+   0, 0, 0, 0, 0, 0, 0, 0, 1, CURDATE(), '$2y$10$t8f22Rd9D9sitzXy8lB35.kpmUrwbobDSsyu5EooKtNkbK6/GSEFy', 'a1b2c3d4e5f60713', 'pending', 'c0ffee00c0ffee00c0ffee00c0ffee13', NOW());
+UPDATE members SET status = 'inactive', notes = 'Deactivated: stopped coming' WHERE id = 10;

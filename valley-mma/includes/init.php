@@ -19,8 +19,8 @@ function is_https(): bool
 }
 
 if (PHP_SAPI !== 'cli' && session_status() === PHP_SESSION_NONE) {
-    // Members stay signed in on their phone for 30 days so they can scan the attendance QR quickly.
-    $life = 30 * 24 * 3600;
+    // Admins and members stay signed in for "login_days" (config.php, default 7 days).
+    $life = max(1, (int)(cfg('login_days') ?? 7)) * 24 * 3600;
     ini_set('session.gc_maxlifetime', (string)$life);
     session_name('vmma_sid');
     session_set_cookie_params([
@@ -63,9 +63,25 @@ function db(): PDO
 function migrate(PDO $pdo): void
 {
     $v = (int)$pdo->query("SELECT v FROM settings WHERE k = 'schema_version'")->fetchColumn();
-    if ($v >= 2) {
+    if ($v >= 3) {
         return;
     }
+    if ($v < 2) {
+        migrate_v2($pdo);
+    }
+    $cols = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'members'")
+        ->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('status', $cols, true)) {
+        $pdo->exec("ALTER TABLE members ADD COLUMN status ENUM('pending','active','inactive') NOT NULL DEFAULT 'active' AFTER card_token,
+            ADD COLUMN invite_token CHAR(32) NULL AFTER status, ADD COLUMN details_at DATETIME NULL AFTER invite_token,
+            ADD COLUMN approved_at DATETIME NULL AFTER details_at, ADD KEY idx_status (status)");
+    }
+    $pdo->exec("INSERT IGNORE INTO settings (k, v) VALUES ('att_block_expired', '0'), ('trial_days', '7')");
+    $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '3') ON DUPLICATE KEY UPDATE v = '3'");
+}
+
+function migrate_v2(PDO $pdo): void
+{
     require_once __DIR__ . '/sql_tools.php';
     $cols = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payments'")
         ->fetchAll(PDO::FETCH_COLUMN);
@@ -74,7 +90,6 @@ function migrate(PDO $pdo): void
             ADD COLUMN prev_start DATE NULL AFTER prev_plan_id, ADD COLUMN prev_expiry DATE NULL AFTER prev_start');
     }
     run_sql($pdo, file_get_contents(__DIR__ . '/../sql/accounts.sql'));
-    $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '2') ON DUPLICATE KEY UPDATE v = '2'");
 }
 
 function q(string $sql, array $params = []): PDOStatement
@@ -234,7 +249,7 @@ function admin(): ?array
     if ($a === false) {
         $a = null;
         if (!empty($_SESSION['admin_id'])) {
-            if (time() - ($_SESSION['admin_seen'] ?? 0) > 12 * 3600) { // 12 hours without use
+            if (time() - ($_SESSION['admin_seen'] ?? 0) > max(1, (int)(cfg('login_days') ?? 7)) * 86400) {
                 unset($_SESSION['admin_id']);
             } else {
                 $_SESSION['admin_seen'] = time();
@@ -254,6 +269,30 @@ function require_admin(): array
     }
     csrf_check();
     return $a;
+}
+
+// Money changes and deletes need the admin password again (pop-up in the page, field "verify_password").
+function verify_ok(): bool
+{
+    $a = admin();
+    if (!$a || too_many_attempts()) {
+        return false;
+    }
+    $hash = (string)q('SELECT password_hash FROM admins WHERE id = ?', [$a['id']])->fetchColumn();
+    if (password_verify((string)($_POST['verify_password'] ?? ''), $hash)) {
+        return true;
+    }
+    failed_attempt();
+    return false;
+}
+
+// Stops the action and goes back when the password is wrong.
+function require_verify(string $back): void
+{
+    if (!verify_ok()) {
+        flash('danger', t(too_many_attempts() ? 'too_many' : 'verify_wrong'));
+        redirect($back);
+    }
 }
 
 function member_user(): ?array
@@ -284,7 +323,8 @@ function nav_sections(): array
     return [
         'sec_members' => [
             ['members.php', 'members', 'bi-people-fill', 'members'],
-            ['member_edit.php', 'add_member', 'bi-person-plus-fill', 'add_member'],
+            ['member_invite.php', 'invite_member', 'bi-person-plus-fill', 'add_member'],
+            ['member_edit.php', 'add_member', 'bi-person-vcard-fill', 'add_member'],
             ['plans.php', 'plans', 'bi-card-checklist', 'plans'],
             ['attendance.php', 'attendance', 'bi-qr-code-scan', 'attendance'],
             ['alerts.php', 'alerts', 'bi-bell-fill', 'alerts'],
@@ -358,9 +398,12 @@ function plan_duration(array $p): string
     return t($v === 1 ? 'n_month' : 'n_months', $v);
 }
 
-// active / expiring / expired / none
-function member_status(?string $expiry): string
+// pending / inactive / active / expiring / expired / none
+function member_status(?string $expiry, string $status = 'active'): string
 {
+    if ($status === 'pending' || $status === 'inactive') {
+        return $status;
+    }
     if (!$expiry) {
         return 'none';
     }
@@ -371,13 +414,30 @@ function member_status(?string $expiry): string
     return $expiry <= $soon ? 'expiring' : 'active';
 }
 
-function status_badge(?string $expiry): string
+function status_badge(?string $expiry, string $status = 'active'): string
 {
-    $s = member_status($expiry);
-    $cls = ['active' => 'success', 'expiring' => 'warning text-dark', 'expired' => 'danger', 'none' => 'secondary'][$s];
+    $s = member_status($expiry, $status);
+    $cls = ['active' => 'success', 'expiring' => 'warning text-dark', 'expired' => 'danger', 'none' => 'secondary',
+        'pending' => 'info text-dark', 'inactive' => 'dark'][$s];
     $label = $s === 'expiring' ? 'active' : $s;
     $extra = $s === 'expiring' ? ' <i class="bi bi-hourglass-split"></i>' : '';
     return '<span class="badge bg-' . $cls . '" data-en="' . e(t_en('st_' . $label)) . '">' . e(t('st_' . $label)) . $extra . '</span>';
+}
+
+// Can this member mark attendance today? Returns '' when yes, otherwise the reason (text key).
+function attendance_block(array $m): string
+{
+    $st = $m['status'] ?? 'active';
+    if ($st === 'inactive') {
+        return 'att_no_inactive';
+    }
+    if ($st === 'pending') {
+        return 'att_no_pending';
+    }
+    if (setting('att_block_expired', '0') === '1' && member_status($m['expiry_date']) === 'expired') {
+        return 'att_no_expired';
+    }
+    return '';
 }
 
 function days_left(?string $expiry): int
@@ -567,6 +627,17 @@ function plan_text(array $p): string
     return '🥊 ' . gym_title() . "\n" . $p['name'] . ' – ' . plan_duration($p) . "\n"
         . t('price') . ': ' . money($p['price'])
         . ($p['description'] !== '' ? "\n" . $p['description'] : '');
+}
+
+function invite_link(array $m): string
+{
+    return base_url() . 'join.php?t=' . rawurlencode((string)$m['invite_token']);
+}
+
+// WhatsApp message with the personal join link (password only when the admin just set it).
+function invite_text(array $m, string $pass = ''): string
+{
+    return t('wa_invite', gym_title(), invite_link($m), $m['phone'], $pass !== '' ? $pass : t('pass_from_gym'));
 }
 
 function reminder_text(array $m, float $amount = 0): string

@@ -11,12 +11,12 @@ $soon = date('Y-m-d', strtotime("+$days day"));
 $sql = 'SELECT m.*, p.name plan_name, p.price plan_price,
         (SELECT COALESCE(SUM(total - paid), 0) FROM payments WHERE member_id = m.id) balance
         FROM members m LEFT JOIN plans p ON p.id = m.plan_id ';
-$expiring = q($sql . 'WHERE m.expiry_date BETWEEN ? AND ? ORDER BY m.expiry_date', [$today, $soon])->fetchAll();
-$expired = q($sql . 'WHERE m.expiry_date < ? AND m.expiry_date >= ? ORDER BY m.expiry_date DESC', [$today, date('Y-m-d', strtotime('-' . max(1, (int)get('back', '90')) . ' day'))])->fetchAll();
+$expiring = q($sql . "WHERE m.status = 'active' AND m.expiry_date BETWEEN ? AND ? ORDER BY m.expiry_date", [$today, $soon])->fetchAll();
+$expired = q($sql . "WHERE m.status = 'active' AND m.expiry_date < ? AND m.expiry_date >= ? ORDER BY m.expiry_date DESC", [$today, date('Y-m-d', strtotime('-' . max(1, (int)get('back', '90')) . ' day'))])->fetchAll();
 $balances = q($sql . 'HAVING balance > 0 ORDER BY balance DESC')->fetchAll();
 $absentDays = max(1, (int)setting('absent_days', '7'));
 $absent = q('SELECT m.*, (SELECT MAX(att_date) FROM attendance WHERE member_id = m.id) last_seen FROM members m
-             WHERE m.expiry_date >= ? AND m.id NOT IN (SELECT member_id FROM attendance WHERE att_date > ?) ORDER BY last_seen',
+             WHERE m.status = \'active\' AND m.expiry_date >= ? AND m.id NOT IN (SELECT member_id FROM attendance WHERE att_date > ?) ORDER BY last_seen',
     [$today, date('Y-m-d', strtotime("-$absentDays day"))])->fetchAll();
 // Birthdays today and in the next 7 days (also across the new year).
 $bdays = [];

@@ -4,7 +4,7 @@
 -- phpMyAdmin (XAMPP): create a database "valley_mma" (utf8mb4_unicode_ci),
 -- open it, then Import this file. Or remove the two -- below to create it here.
 -- Login after import:  admin / admin123   (change it in Settings!)
--- Sample member login: phone 9847012345 / member123
+-- Sample member login: phone 9847012345 / member123  (invited member waiting: 9645012399 / member123)
 --
 -- No sample data wanted? Use install.php instead (it has a checkbox),
 -- or delete the "sample data" part at the end of this file before importing.
@@ -74,11 +74,17 @@ CREATE TABLE IF NOT EXISTS members (
   expiry_date DATE NULL,
   password_hash VARCHAR(255) NULL,
   card_token CHAR(16) NOT NULL,
+  -- pending = invited, waiting for admin approval; inactive = deactivated by admin (cannot mark attendance)
+  status ENUM('pending','active','inactive') NOT NULL DEFAULT 'active',
+  invite_token CHAR(32) NULL,
+  details_at DATETIME NULL,
+  approved_at DATETIME NULL,
   notes VARCHAR(500) NOT NULL DEFAULT '',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_card (card_token),
   KEY idx_phone (phone),
+  KEY idx_status (status),
   KEY idx_expiry (expiry_date),
   KEY idx_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -153,7 +159,9 @@ INSERT IGNORE INTO settings (k, v) VALUES
   ('att_order', 'qr,card,manual'),
   ('att_camera', 'environment'),
   ('att_refresh', '0'),
-  ('schema_version', '2');
+  ('att_block_expired', '0'),
+  ('trial_days', '7'),
+  ('schema_version', '3');
 
 INSERT IGNORE INTO plans (id, name, duration_value, duration_unit, price, description, sort_order) VALUES
   (1, 'Monthly', 1, 'month', 1500, 'MMA, boxing, kickboxing and fitness training', 1),
@@ -372,3 +380,10 @@ INSERT INTO acc_entries (voucher_no, entry_date, type, category_id, account_id, 
 
 -- A member with a birthday today, for the dashboard
 UPDATE members SET dob = CONCAT('2002-', DATE_FORMAT(CURDATE(), '%m-%d')) WHERE id = 12 AND DATE_FORMAT(CURDATE(), '%m-%d') <> '02-29';
+
+-- An invited member who filled the join form (waiting for approval) and a deactivated member
+INSERT INTO members (id, adm_no, name, phone, gender, place, city, district, pin_code, state, occupation, dob, age, height_cm, weight_kg, bmi,
+  hq1, hq2, hq3, hq4, hq5, hq6, hq7, hq8, declaration, join_date, password_hash, card_token, status, invite_token, details_at) VALUES
+  (13, 'VM013', 'Faisal Babu', '9645012399', 'M', 'Pandikkad', 'Pandikkad', 'Malappuram', '676521', 'Kerala', 'Student', '2005-02-10', 21, 171, 64, 21.9,
+   0, 0, 0, 0, 0, 0, 0, 0, 1, CURDATE(), '$2y$10$t8f22Rd9D9sitzXy8lB35.kpmUrwbobDSsyu5EooKtNkbK6/GSEFy', 'a1b2c3d4e5f60713', 'pending', 'c0ffee00c0ffee00c0ffee00c0ffee13', NOW());
+UPDATE members SET status = 'inactive', notes = 'Deactivated: stopped coming' WHERE id = 10;

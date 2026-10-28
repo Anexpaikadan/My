@@ -27,6 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         set_setting('att_default', in_array(post('att_default'), ['qr', 'card', 'manual'], true) ? post('att_default') : 'qr');
         set_setting('att_camera', post('att_camera') === 'user' ? 'user' : 'environment');
         set_setting('att_refresh', (string)max(0, min(60, (int)post('att_refresh'))));
+        set_setting('att_block_expired', post('att_block_expired') === '1' ? '1' : '0');
+        set_setting('trial_days', (string)max(1, min(366, (int)post('trial_days'))));
         flash('success', t('saved'));
     } elseif ($a === 'password') {
         $row = q('SELECT password_hash FROM admins WHERE id = ?', [$me['id']])->fetch();
@@ -41,6 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             q('UPDATE admins SET password_hash = ? WHERE id = ?', [password_hash($new, PASSWORD_DEFAULT), $me['id']]);
             flash('success', t('password_changed'));
         }
+    } elseif (in_array($a, ['add_admin', 'admin_password', 'delete_admin'], true) && !verify_ok()) {
+        flash('danger', t('verify_wrong'));
     } elseif ($a === 'add_admin') {
         $u = post('username');
         $p = (string)($_POST['password'] ?? '');
@@ -128,6 +132,12 @@ require __DIR__ . '/includes/header.php';
             <select class="form-select" name="att_camera"><option value="environment"><?= e(t('camera_back')) ?></option><option value="user"<?= setting('att_camera') === 'user' ? ' selected' : '' ?>><?= e(t('camera_front')) ?></option></select></div>
           <div class="col-md-4"><label class="form-label"><?= e(t('att_refresh')) ?></label>
             <select class="form-select" name="att_refresh"><?php foreach ([0, 1, 2, 5, 10, 30] as $n): ?><option value="<?= $n ?>"<?= (int)setting('att_refresh', '0') === $n ? ' selected' : '' ?>><?= e($n ? t('every_n_min', $n) : t('once_a_day')) ?></option><?php endforeach; ?></select></div>
+          <div class="col-md-4"><label class="form-label"><?= e(t('trial_days_label')) ?></label>
+            <input class="form-control" type="number" min="1" max="366" name="trial_days" value="<?= $s('trial_days', '7') ?>"></div>
+          <div class="col-md-8 d-flex align-items-end"><div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" name="att_block_expired" value="1" id="abe"<?= setting('att_block_expired') === '1' ? ' checked' : '' ?>>
+            <label class="form-check-label" for="abe"><?= e(t('att_block_expired_label')) ?></label></div></div>
+          <div class="col-12 small-muted"><i class="bi bi-info-circle"></i> <?= e(t('att_rules_hint')) ?></div>
         </div>
       </div>
       <div class="card-footer bg-transparent"><button class="btn btn-primary"><i class="bi bi-check2-circle"></i> <?= e(t('save')) ?></button></div>
@@ -152,16 +162,16 @@ require __DIR__ . '/includes/header.php';
           <li class="list-group-item">
             <div class="d-flex align-items-center gap-2"><i class="bi bi-person-circle"></i><b class="me-auto"><?= e($a['username']) ?></b><span class="small-muted"><?= e($a['full_name']) ?></span>
               <?php if ((int)$a['id'] !== (int)$me['id']): ?>
-                <form method="post" onsubmit="return confirm(<?= e(json_encode(t('confirm_delete'))) ?>)"><?= csrf_field() ?><input type="hidden" name="action" value="delete_admin"><input type="hidden" name="id" value="<?= $a['id'] ?>"><button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button></form>
+                <form method="post" data-verify="<?= e(t('confirm_delete')) ?>"><?= csrf_field() ?><input type="hidden" name="action" value="delete_admin"><input type="hidden" name="id" value="<?= $a['id'] ?>"><button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button></form>
               <?php endif; ?></div>
             <?php if ((int)$a['id'] !== (int)$me['id']): ?>
-              <form method="post" class="input-group input-group-sm mt-2"><?= csrf_field() ?><input type="hidden" name="action" value="admin_password"><input type="hidden" name="id" value="<?= $a['id'] ?>">
+              <form method="post" class="input-group input-group-sm mt-2" data-verify="<?= e(t('verify_admin')) ?>"><?= csrf_field() ?><input type="hidden" name="action" value="admin_password"><input type="hidden" name="id" value="<?= $a['id'] ?>">
                 <input class="form-control" type="password" name="password" placeholder="<?= e(t('new_password')) ?>" minlength="6" required autocomplete="new-password"><button class="btn btn-outline-primary"><?= e(t('change')) ?></button></form>
             <?php endif; ?>
           </li>
         <?php endforeach; ?>
       </ul>
-      <form method="post" class="card-body d-grid gap-2 border-top"><?= csrf_field() ?><input type="hidden" name="action" value="add_admin">
+      <form method="post" class="card-body d-grid gap-2 border-top" data-verify="<?= e(t('verify_admin')) ?>"><?= csrf_field() ?><input type="hidden" name="action" value="add_admin">
         <div class="small fw-semibold"><?= e(t('add_admin')) ?></div>
         <input class="form-control" name="username" placeholder="<?= e(t('username')) ?>" required pattern="[A-Za-z0-9_.\-]{3,50}" autocomplete="off">
         <input class="form-control" name="full_name" placeholder="<?= e(t('name')) ?>">

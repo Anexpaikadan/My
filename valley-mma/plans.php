@@ -5,6 +5,7 @@ require __DIR__ . '/includes/init.php';
 require_admin();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_verify('plans.php');
     $id = (int)post('id');
     if (post('action') === 'delete') {
         $used = (int)q('SELECT COUNT(*) FROM members WHERE plan_id = ?', [$id])->fetchColumn()
@@ -39,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect('plans.php');
 }
 
-$plans = q('SELECT p.*, (SELECT COUNT(*) FROM members m WHERE m.plan_id = p.id AND m.expiry_date >= CURDATE()) members
+$plans = q('SELECT p.*, (SELECT COUNT(*) FROM members m WHERE m.plan_id = p.id AND m.status = \'active\' AND m.expiry_date >= CURDATE()) members
             FROM plans p ORDER BY p.active DESC, p.sort_order, p.id')->fetchAll();
 $members = q('SELECT id, name, phone, adm_no FROM members ORDER BY name')->fetchAll();
 $allText = '🥊 ' . gym_title() . ' – ' . setting('gym_place') . "\n" . t('membership_plans') . ":\n";
@@ -73,7 +74,7 @@ require __DIR__ . '/includes/header.php';
           <div class="mt-auto d-flex flex-wrap gap-2">
             <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#planModal" data-plan="<?= e(json_encode($p)) ?>"><i class="bi bi-pencil"></i> <?= e(t('edit')) ?></button>
             <button class="btn btn-sm btn-whatsapp" data-bs-toggle="modal" data-bs-target="#shareModal" data-text="<?= e(plan_text($p) . "\n\n📞 " . setting('phone1') . upi_text((float)$p['price'])) ?>"><i class="bi bi-whatsapp"></i> <?= e(t('send')) ?></button>
-            <form method="post" class="ms-auto" onsubmit="return confirm(<?= e(json_encode(t('confirm_delete'))) ?>)">
+            <form method="post" class="ms-auto" data-verify="<?= e(t('confirm_delete')) ?>">
               <?= csrf_field() ?><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= $p['id'] ?>">
               <button class="btn btn-sm btn-outline-danger" title="<?= e(t('delete')) ?>"><i class="bi bi-trash"></i></button>
             </form>
@@ -85,7 +86,7 @@ require __DIR__ . '/includes/header.php';
 </div>
 
 <div class="modal fade" id="planModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered"><form class="modal-content" method="post">
+  <div class="modal-dialog modal-dialog-centered"><form class="modal-content" method="post" data-verify="<?= e(t('verify_plan')) ?>">
     <?= csrf_field() ?><input type="hidden" name="id">
     <div class="modal-header"><h2 class="modal-title h5"><?= e(t('plan')) ?></h2><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
     <div class="modal-body row g-3">

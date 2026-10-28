@@ -61,11 +61,17 @@ CREATE TABLE IF NOT EXISTS members (
   expiry_date DATE NULL,
   password_hash VARCHAR(255) NULL,
   card_token CHAR(16) NOT NULL,
+  -- pending = invited, waiting for admin approval; inactive = deactivated by admin (cannot mark attendance)
+  status ENUM('pending','active','inactive') NOT NULL DEFAULT 'active',
+  invite_token CHAR(32) NULL,
+  details_at DATETIME NULL,
+  approved_at DATETIME NULL,
   notes VARCHAR(500) NOT NULL DEFAULT '',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_card (card_token),
   KEY idx_phone (phone),
+  KEY idx_status (status),
   KEY idx_expiry (expiry_date),
   KEY idx_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -140,7 +146,9 @@ INSERT IGNORE INTO settings (k, v) VALUES
   ('att_order', 'qr,card,manual'),
   ('att_camera', 'environment'),
   ('att_refresh', '0'),
-  ('schema_version', '2');
+  ('att_block_expired', '0'),
+  ('trial_days', '7'),
+  ('schema_version', '3');
 
 INSERT IGNORE INTO plans (id, name, duration_value, duration_unit, price, description, sort_order) VALUES
   (1, 'Monthly', 1, 'month', 1500, 'MMA, boxing, kickboxing and fitness training', 1),

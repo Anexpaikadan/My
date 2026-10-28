@@ -119,8 +119,8 @@ require __DIR__ . '/includes/header.php';
 
 <?php elseif ($r === 'active' || $r === 'expired'):
   $rows = $r === 'active'
-      ? q('SELECT m.*, p.name plan_name FROM members m LEFT JOIN plans p ON p.id = m.plan_id WHERE m.expiry_date >= ? ORDER BY m.expiry_date', [$today])->fetchAll()
-      : q('SELECT m.*, p.name plan_name FROM members m LEFT JOIN plans p ON p.id = m.plan_id WHERE m.expiry_date < ? OR m.expiry_date IS NULL ORDER BY m.expiry_date DESC', [$today])->fetchAll();
+      ? q('SELECT m.*, p.name plan_name FROM members m LEFT JOIN plans p ON p.id = m.plan_id WHERE m.status = \'active\' AND m.expiry_date >= ? ORDER BY m.expiry_date', [$today])->fetchAll()
+      : q('SELECT m.*, p.name plan_name FROM members m LEFT JOIN plans p ON p.id = m.plan_id WHERE m.status = \'active\' AND (m.expiry_date < ? OR m.expiry_date IS NULL) ORDER BY m.expiry_date DESC', [$today])->fetchAll();
   $label = t($r === 'active' ? 'active_members' : 'expired_members');
   ?>
   <div class="card">

@@ -32,12 +32,20 @@ if (!$m && !$error && !empty($_SESSION['pending_checkin'])) {
 }
 
 $result = null;
-if ($m && !$error && ($_SESSION['pending_checkin'] ?? '') === today()) {
+$block = '';
+if (!$error) {
+    if (!$m || ($_SESSION['pending_checkin'] ?? '') !== today()) {
+        redirect('me.php'); // opened without scanning today's code
+    }
     unset($_SESSION['pending_checkin']);
-    $st = q('INSERT IGNORE INTO attendance (member_id, att_date, check_in, method) VALUES (?, ?, ?, ?)', [$m['id'], today(), date('H:i:s'), 'qr']);
-    $result = $st->rowCount() > 0 ? 'new' : 'again';
-} elseif (!$error) {
-    redirect('me.php');
+    // Deactivated / not yet approved members (and expired ones when blocked in Settings) are not marked.
+    $block = attendance_block($m);
+    if ($block !== '') {
+        $error = t($block);
+    } else {
+        $st = q('INSERT IGNORE INTO attendance (member_id, att_date, check_in, method) VALUES (?, ?, ?, ?)', [$m['id'], today(), date('H:i:s'), 'qr']);
+        $result = $st->rowCount() > 0 ? 'new' : 'again';
+    }
 }
 $time = $m ? (string)q('SELECT check_in FROM attendance WHERE member_id = ? AND att_date = ?', [$m['id'], today()])->fetchColumn() : '';
 $monthCount = $m ? (int)q('SELECT COUNT(*) FROM attendance WHERE member_id = ? AND att_date >= ?', [$m['id'], date('Y-m-01')])->fetchColumn() : 0;
@@ -52,7 +60,7 @@ require __DIR__ . '/includes/header.php';
   <?php if ($error): ?>
     <div class="checkin-big text-danger mb-3"><i class="bi bi-x-circle-fill"></i></div>
     <h1 class="h4"><?= e($error) ?></h1>
-    <p><?= e(t('scan_again')) ?></p>
+    <p><?= e($block !== '' ? t('ask_at_desk') : t('scan_again')) ?></p>
   <?php else: ?>
     <div class="checkin-big text-success mb-3"><i class="bi bi-check-circle-fill"></i></div>
     <h1 class="h3 mb-1"><?= e($result === 'new' ? t('welcome_present') : t('already_marked')) ?></h1>

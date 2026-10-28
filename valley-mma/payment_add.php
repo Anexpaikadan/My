@@ -23,6 +23,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$m) {
         $errors[] = t('err_member');
     }
+    if (!verify_ok()) {
+        $errors[] = t('verify_wrong');
+    }
     $payDate = post('pay_date');
     if (!valid_date($payDate)) {
         $errors[] = t('err_date');
@@ -62,6 +65,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($planId) {
             sync_membership((int)$m['id']);
         }
+        if ($m['status'] !== 'active' && post('activate') === '1') {
+            q("UPDATE members SET status = 'active', approved_at = COALESCE(approved_at, NOW()) WHERE id = ?", [$m['id']]);
+            flash('success', t('member_activated', $m['name']));
+        }
         flash('success', t('payment_saved', $no));
         redirect('receipt.php?id=' . $pid . '&new=1');
     }
@@ -79,7 +86,7 @@ require __DIR__ . '/includes/header.php';
 $val = fn($k, $def = '') => e($_POST[$k] ?? $def);
 ?>
 <?php if ($errors): ?><div class="alert alert-danger"><?= implode('<br>', array_map('e', array_unique($errors))) ?></div><?php endif; ?>
-<form method="post" id="payForm" class="row g-3" data-balance="<?= e((string)$balance) ?>">
+<form method="post" id="payForm" class="row g-3" data-verify="<?= e(t('verify_money')) ?>" data-balance="<?= e((string)$balance) ?>">
   <?= csrf_field() ?>
   <div class="col-lg-7">
     <div class="card mb-3"><div class="card-body row g-3">
@@ -91,8 +98,12 @@ $val = fn($k, $def = '') => e($_POST[$k] ?? $def);
           <?php endforeach; ?>
         </select>
         <?php if ($m): ?>
-          <div class="small-muted mt-2"><?= e(t('expiry_date')) ?>: <?= e(fdate($m['expiry_date'])) ?> <?= status_badge($m['expiry_date']) ?>
+          <div class="small-muted mt-2"><?= e(t('expiry_date')) ?>: <?= e(fdate($m['expiry_date'])) ?> <?= status_badge($m['expiry_date'], $m['status']) ?>
             · <?= e(t('old_balance')) ?>: <b class="<?= $balance > 0 ? 'text-danger' : '' ?>"><?= money($balance) ?></b></div>
+          <?php if ($m['status'] !== 'active'): ?>
+            <div class="form-check mt-2 p-2 ps-5 rounded bg-info-subtle"><input class="form-check-input" type="checkbox" name="activate" value="1" id="act" checked>
+              <label class="form-check-label fw-semibold" for="act"><?= e(t($m['status'] === 'pending' ? 'approve_activate' : 'activate_again')) ?></label></div>
+          <?php endif; ?>
         <?php endif; ?>
       </div>
       <div class="col-6"><label class="form-label" for="pay_date"><?= e(t('date')) ?></label>

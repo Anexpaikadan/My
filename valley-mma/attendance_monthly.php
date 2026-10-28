@@ -11,7 +11,7 @@ $last = $month . '-' . $daysIn;
 $memberId = (int)get('member');
 $who = get('who', 'all');
 
-$where = $memberId ? 'WHERE m.id = ?' : ($who === 'active' ? 'WHERE m.expiry_date >= ?' : 'WHERE (m.expiry_date >= ? OR m.id IN (SELECT member_id FROM attendance WHERE att_date BETWEEN ? AND ?))');
+$where = $memberId ? 'WHERE m.id = ?' : ($who === 'active' ? 'WHERE m.status = \'active\' AND m.expiry_date >= ?' : 'WHERE (m.expiry_date >= ? OR m.id IN (SELECT member_id FROM attendance WHERE att_date BETWEEN ? AND ?))');
 $args = $memberId ? [$memberId] : ($who === 'active' ? [$first] : [$first, $first, $last]);
 $members = q("SELECT m.id, m.name, m.adm_no FROM members m $where ORDER BY m.name", $args)->fetchAll();
 $grid = [];

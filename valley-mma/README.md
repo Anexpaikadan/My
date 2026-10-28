@@ -10,6 +10,9 @@ It has English and Malayalam (switch at any time), and you can install it on a p
 | **Dashboard** | In sections – *Today* (present, collection, expense, birthdays), *Members* (total, active, expired, expiring soon, absent, pending balance) and *This month* (income, expense, profit/loss, balance). Every tile opens the matching list. Quick buttons: new member, record payment, add expense, attendance QR, reminders |
 | **Navigation** | Phone: bottom bar (Home, Members, Attendance, Accounts, More) and a *More* page with every part of the app as tiles in sections. Desktop: sidebar grouped in Members / Money / Gym. Back button on inner pages |
 | **Accounts** | Cash, bank and UPI accounts with opening balance. Income, expense and transfer vouchers with categories (rent, electricity, salary, equipment …, editable). Membership payments are counted as income automatically. Ledger with filters, opening/closing and running balance; printable vouchers; reports: profit & loss, monthly summary, cash book – all with print / PDF / Excel |
+| **Invite & approve** | *Invite new member*: enter phone + password → a personal link is made → *Send on WhatsApp*. The member opens the link, logs in and fills the join form (photo, details, health questions, declaration). The member then shows as *Waiting for approval*; the admin approves with a payment or activates for some days (7 by default). Members can be **deactivated** and activated again |
+| **Attendance rules** | Deactivated and not-approved members cannot mark attendance in any way (QR scan, ID card, by hand). Optional: block expired members too (Settings) |
+| **Password check** | Every money change (payments, income, expense, transfers, accounts setup, plan prices, free days) and every delete (member, payment, entry, attendance, admin, backup) opens a pop-up asking for the admin password again. Editing member details does not ask |
 | **Members** | Add, edit, delete, search (name, phone, admission no.), filter by status and plan. The join form has every field of the paper form: photo, client information, gender M/F, height/weight (BMI is calculated), the 8 health-screening Yes/No questions, blood group, urea/creatinine/uric, HbA1c, declaration, trainer. Printable join form (filled or empty) and a member ID card with a QR code |
 | **Plans** | Monthly, 3 months, 6 months, yearly (or any number of days/months). Change price and duration. Send one plan or all plans on WhatsApp |
 | **Payments** | Admission fee, plan (renews the membership automatically), other fee, total, paid, balance. Cash / UPI / card / bank, UPI QR code for the exact amount. Payment history and a printable receipt in the same layout as the paper receipt, with a WhatsApp button that sends the receipt link |
@@ -19,7 +22,7 @@ It has English and Malayalam (switch at any time), and you can install it on a p
 | **Reports** | Daily, monthly and yearly income (cash / online split), active and expired members, payment history, pending balances, monthly attendance. Every report: **Print**, **PDF** download, **Excel (CSV)** |
 | **Member app** | Members log in with phone + password (the admin sets or changes it). They see their plan, expiry, days left, attendance calendar, receipts and today's training, scan the attendance QR and pay by UPI |
 | **Backup** | Download a full backup (ZIP: data + photos) or data only (SQL), keep backups on the server, restore a backup |
-| **Security** | Admin login with `password_hash()`, session login, CSRF protection on every form, PDO prepared statements, input checks, login lock after 8 wrong tries, private member photos, signed QR codes and receipt links |
+| **Security** | Admin login with `password_hash()`, session login that lasts 7 days (`login_days` in config.php), CSRF protection on every form, PDO prepared statements, input checks, login lock after 8 wrong tries, private member photos, signed QR codes and receipt links |
 
 Colours and logo come from the DAYbill logo (blue `#360DD9`, green `#7ED957`, dark `#1A1A1A`).
 
@@ -65,7 +68,9 @@ and admin accounts.
 
 ## Daily use
 
-- **New member:** *Add member* → fill in the join form → save → record the first payment (admission fee + plan).
+- **New member (invite):** *Invite new member* → phone + password → *Send link on WhatsApp*. When the member has filled the form: *Members → Waiting* → open → *Approve with payment* (or *Activate days*).
+- **New member (at the desk):** *Add member* → fill in the join form → save → record the first payment (admission fee + plan).
+- **Stop a member:** member page → *Deactivate*. They cannot mark attendance until you press *Activate*.
 - **Renewal:** *Expiry alerts* → *Renew*, or *Record payment*. The new period starts the day after the old expiry.
 - **Attendance:** open *Attendance* on the admin phone and leave the QR on screen (*Full screen*).
   Each member scans it once a day; the first time they log in.
@@ -83,6 +88,7 @@ valley-mma/
   install.php           one-time installer (delete after use)
   index.php             dashboard
   members.php, member_edit.php, member_view.php, member_print.php, member_card.php
+  member_invite.php, member_action.php, join.php (member fills the join form from the WhatsApp link)
   plans.php
   payments.php, payment_add.php, receipt.php, pay.php (public UPI page)
   alerts.php

@@ -16,6 +16,7 @@ $accIds = array_map('intval', array_column(acc_accounts(true), 'id'));
 $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && post('action') === 'delete' && $row) {
+    require_verify('entry_edit.php?id=' . $id);
     q('DELETE FROM acc_entries WHERE id = ?', [$id]);
     flash('success', t('entry_deleted', $row['voucher_no']));
     redirect('ledger.php');
@@ -36,6 +37,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $d['ref_no'] = mb_substr(post('ref_no'), 0, 50);
     if (!valid_date($d['entry_date'])) {
         $errors[] = t('err_date');
+    }
+    if (!verify_ok()) {
+        $errors[] = t('verify_wrong');
     }
     if ($d['amount'] <= 0) {
         $errors[] = t('err_amount');
@@ -74,7 +78,7 @@ require __DIR__ . '/includes/header.php';
 $val = fn($k) => e((string)($d[$k] ?? ''));
 ?>
 <?php if ($errors): ?><div class="alert alert-danger"><?= implode('<br>', array_map('e', array_unique($errors))) ?></div><?php endif; ?>
-<form method="post" class="row g-3" id="entryForm" style="max-width:760px">
+<form method="post" class="row g-3" id="entryForm" style="max-width:760px" data-verify="<?= e(t('verify_money')) ?>">
   <?= csrf_field() ?><input type="hidden" name="id" value="<?= $row ? $id : '' ?>">
   <div class="col-12">
     <div class="btn-group w-100" role="group">
@@ -125,7 +129,7 @@ $val = fn($k) => e((string)($d[$k] ?? ''));
   </div>
 </form>
 <?php if ($row): ?>
-  <form method="post" onsubmit="return confirm(<?= e(json_encode(t('confirm_delete'))) ?>)" class="mb-5"><?= csrf_field() ?>
+  <form method="post" data-verify="<?= e(t('confirm_delete')) ?>" class="mb-5"><?= csrf_field() ?>
     <input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="action" value="delete">
     <button class="btn btn-outline-danger"><i class="bi bi-trash"></i> <?= e(t('delete')) ?></button></form>
 <?php endif; ?>

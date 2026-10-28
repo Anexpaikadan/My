@@ -15,6 +15,9 @@ return [
     // Time zone for dates (payments, attendance, expiry).
     'timezone' => 'Asia/Kolkata',
 
+    // Admins and members stay logged in this many days.
+    'login_days' => 7,
+
     // Member photos are stored here (must be writable).
     'photo_dir' => __DIR__ . '/uploads/photos',
 ];

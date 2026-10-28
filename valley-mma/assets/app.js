@@ -245,6 +245,37 @@
     });
   }
 
+  // ---- Password check before money changes and deletes (forms with data-verify="message") ----
+  var vModal = document.getElementById('verifyModal');
+  if (vModal && window.bootstrap) {
+    var modal = new bootstrap.Modal(vModal);
+    var pending = null, pendingBtn = null;
+    document.addEventListener('submit', function (e) {
+      var f = e.target;
+      if (!f.matches || !f.matches('form[data-verify]') || f.dataset.verified === '1' || e.defaultPrevented) return;
+      e.preventDefault();
+      pending = f; pendingBtn = e.submitter || null;
+      document.getElementById('verifyMsg').textContent = f.dataset.verify || '';
+      document.getElementById('verifyPass').value = '';
+      modal.show();
+    }, true);
+    vModal.addEventListener('shown.bs.modal', function () { document.getElementById('verifyPass').focus(); });
+    document.getElementById('verifyForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (!pending) return;
+      var f = pending;
+      var h = f.querySelector('input[name=verify_password]');
+      if (!h) { h = document.createElement('input'); h.type = 'hidden'; h.name = 'verify_password'; f.appendChild(h); }
+      h.value = document.getElementById('verifyPass').value;
+      if (pendingBtn && pendingBtn.name) {
+        var b = document.createElement('input'); b.type = 'hidden'; b.name = pendingBtn.name; b.value = pendingBtn.value; f.appendChild(b);
+      }
+      f.dataset.verified = '1';
+      modal.hide();
+      HTMLFormElement.prototype.submit.call(f);
+    });
+  }
+
   // ---- Small helpers ----
   $$('[data-filter]').forEach(function (inp) {
     inp.addEventListener('input', function () {
@@ -258,6 +289,11 @@
       el.select();
       if (navigator.clipboard) navigator.clipboard.writeText(el.value); else document.execCommand('copy');
       b.innerHTML = '<i class="bi bi-check2"></i>';
+    });
+  });
+  $$('[data-random-pass]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      $(b.dataset.randomPass).value = String(100000 + Math.floor(Math.random() * 900000));
     });
   });
   $$('a[data-sent]').forEach(function (a) {
