@@ -1,8 +1,8 @@
 /* Print pages: join form, receipt, ID card */
 * { box-sizing: border-box; }
-body { margin: 0; background: #e9e7f3; font-family: "Poppins", system-ui, "Segoe UI", Roboto, "Noto Sans Malayalam", sans-serif; color: #1A1A1A; }
+body { margin: 0; background: #ECEBEB; font-family: "Poppins", system-ui, "Segoe UI", Roboto, "Noto Sans Malayalam", sans-serif; color: #1A1A1A; }
 .toolbar { position: sticky; top: 0; display: flex; gap: 1rem; align-items: center; justify-content: center; padding: .6rem; background: #1A1A1A; flex-wrap: wrap; z-index: 2; }
-.toolbar button, .toolbar a { font: inherit; font-weight: 600; background: #360DD9; color: #fff; border: 0; border-radius: .5rem; padding: .55rem 1.1rem; text-decoration: none; cursor: pointer; }
+.toolbar button, .toolbar a { font: inherit; font-weight: 600; background: #C8160E; color: #fff; border: 0; border-radius: .5rem; padding: .55rem 1.1rem; text-decoration: none; cursor: pointer; }
 .toolbar a { background: transparent; border: 1px solid #fff; }
 .toolbar a.wa { background: #25D366; border-color: #25D366; }
 .sheet { background: #fff; margin: 1rem auto; padding: 14mm 14mm; box-shadow: 0 2px 14px rgba(0, 0, 0, .12); }
@@ -56,9 +56,9 @@ table.hq td.yn { width: 18mm; white-space: nowrap; }
 
 /* ID card */
 .idcard { width: 86mm; height: 54mm; padding: 0; display: flex; overflow: hidden; border-radius: 3mm; position: relative; }
-.idcard .left { background: #360DD9; color: #fff; width: 33mm; padding: 3mm; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.idcard .left { background: #C8160E; color: #fff; width: 33mm; padding: 3mm; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 .idcard .left img { width: 24mm; height: 28mm; object-fit: cover; border-radius: 2mm; background: #fff; }
-.idcard .left .no { font-weight: 800; margin-top: 2mm; font-size: 13px; color: #7ED957; }
+.idcard .left .no { font-weight: 800; margin-top: 2mm; font-size: 13px; color: #E8261C; }
 .idcard .right { flex: 1; padding: 3mm; display: flex; flex-direction: column; }
 .idcard .right .b1 { font-weight: 900; font-style: italic; font-size: 17px; line-height: 1; }
 .idcard .right .b2 { font-size: 8px; font-weight: 800; letter-spacing: .35em; }

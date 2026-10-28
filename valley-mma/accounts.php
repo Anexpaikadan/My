@@ -43,8 +43,8 @@ require __DIR__ . '/includes/header.php';
     </div>
   <?php endforeach; ?>
   <div class="col-6 col-md-4 col-xl-3">
-    <a href="ledger.php?from=<?= $monthStart ?>" class="card stat tap" style="background:linear-gradient(135deg,#360DD9,#1A1A1A);color:#fff">
-      <div class="ico" style="background:rgba(255,255,255,.15);color:#7ED957"><i class="bi bi-wallet2"></i></div>
+    <a href="ledger.php?from=<?= $monthStart ?>" class="card stat tap" style="background:linear-gradient(135deg,#C8160E,#1A1A1A);color:#fff">
+      <div class="ico" style="background:rgba(255,255,255,.15);color:#E8261C"><i class="bi bi-wallet2"></i></div>
       <div><div class="num"><?= money($total) ?></div><div class="lbl text-white-50"><?= e(t('total_balance')) ?></div></div>
       <i class="bi bi-chevron-right go"></i>
     </a>

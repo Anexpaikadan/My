@@ -41,6 +41,9 @@ if ($status === 'pending' || $status === 'inactive') {
 } elseif ($status === 'expired') {
     $where[] = "m.status = 'active' AND (m.expiry_date < ? OR m.expiry_date IS NULL)";
     $args[] = $today;
+} elseif ($status === 'frozen') {
+    $where[] = 'm.id IN (SELECT member_id FROM member_freezes WHERE ? BETWEEN from_date AND to_date)';
+    $args[] = $today;
 }
 if ($planId) {
     $where[] = 'm.plan_id = ?';
@@ -68,7 +71,7 @@ require __DIR__ . '/includes/header.php';
     <div class="col-6 col-md-3">
       <select class="form-select" name="status" onchange="this.form.submit()">
         <option value=""><?= e(t('all_status')) ?></option>
-        <?php foreach (['active', 'expiring', 'expired', 'pending', 'inactive'] as $st): ?>
+        <?php foreach (['active', 'expiring', 'expired', 'frozen', 'pending', 'inactive'] as $st): ?>
           <option value="<?= $st ?>"<?= $status === $st ? ' selected' : '' ?>><?= e(t('st_' . $st)) ?></option>
         <?php endforeach; ?>
       </select>
@@ -97,7 +100,7 @@ require __DIR__ . '/includes/header.php';
           <td data-label="<?= e(t('phone')) ?>"><a href="tel:<?= e(clean_phone($m['phone'])) ?>"><?= e($m['phone']) ?></a></td>
           <td data-label="<?= e(t('plan')) ?>"><?= e($m['plan_name'] ?? '–') ?></td>
           <td data-label="<?= e(t('expiry_date')) ?>"><?= e(fdate($m['expiry_date'])) ?></td>
-          <td data-label="<?= e(t('status')) ?>"><?= status_badge($m['expiry_date'], $m['status']) ?></td>
+          <td data-label="<?= e(t('status')) ?>"><?= status_badge($m['expiry_date'], $m['status']) ?><?= in_array((int)$m['id'], frozen_ids(), true) ? ' <span class="badge bg-info text-dark"><i class="bi bi-snow"></i> ' . e(t('frozen')) . '</span>' : '' ?></td>
           <td data-label="<?= e(t('balance')) ?>" class="<?= $m['balance'] > 0 ? 'text-danger fw-bold' : '' ?>"><?= money($m['balance']) ?></td>
           <td class="td-actions text-end text-nowrap">
             <a class="btn btn-sm btn-accent" href="payment_add.php?member=<?= $m['id'] ?>" title="<?= e(t('record_payment')) ?>"><i class="bi bi-cash-coin"></i></a>

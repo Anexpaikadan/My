@@ -20,8 +20,11 @@ $todayPay = q('SELECT COUNT(*) c, COALESCE(SUM(paid), 0) s FROM payments WHERE p
 $expiring = q("SELECT * FROM members WHERE status = 'active' AND expiry_date BETWEEN ? AND ? ORDER BY expiry_date", [$today, $soon])->fetchAll();
 $present = (int)q('SELECT COUNT(*) FROM attendance WHERE att_date = ?', [$today])->fetchColumn();
 $due = (float)q('SELECT COALESCE(SUM(b), 0) FROM (SELECT SUM(total - paid) b FROM payments GROUP BY member_id HAVING b > 0) x')->fetchColumn();
-$absent = (int)q("SELECT COUNT(*) FROM members WHERE status = 'active' AND expiry_date >= ? AND id NOT IN (SELECT member_id FROM attendance WHERE att_date > ?)",
-    [$today, date('Y-m-d', strtotime("-$absentDays day"))])->fetchColumn();
+$absent = (int)q("SELECT COUNT(*) FROM members WHERE status = 'active' AND expiry_date >= ? AND id NOT IN (SELECT member_id FROM attendance WHERE att_date > ?)
+    AND id NOT IN (SELECT member_id FROM member_freezes WHERE from_date <= ? AND to_date > ?)",
+    [$today, date('Y-m-d', strtotime("-$absentDays day")), $today, date('Y-m-d', strtotime("-$absentDays day"))])->fetchColumn();
+$frozen = count(frozen_ids());
+$leaves = q('SELECT * FROM gym_leaves WHERE to_date >= ? AND from_date <= ? ORDER BY from_date', [$today, date('Y-m-d', strtotime('+14 day'))])->fetchAll();
 $birthdays = q("SELECT * FROM members WHERE dob IS NOT NULL AND DATE_FORMAT(dob, '%m-%d') = ?", [date('m-d')])->fetchAll();
 $month = acc_totals($monthStart, $today);
 $todayAcc = acc_totals($today, $today);
@@ -50,6 +53,7 @@ $groups = [
         ['reports.php?r=balance', 'bi-exclamation-diamond-fill', 'ico-red', money($due), t('pending_balance'), ''],
         ['members.php?status=pending', 'bi-person-fill-exclamation', 'ico-blue', $pending, t('waiting_approval'), t('invited_members')],
         ['members.php?status=inactive', 'bi-slash-circle', 'ico-dark', $inactive, t('st_inactive'), t('cannot_attend')],
+        ['members.php?status=frozen', 'bi-snow', 'ico-blue', $frozen, t('frozen'), t('freeze_short')],
     ],
     'this_month' => [
         ['ledger.php?type=income&from=' . $monthStart, 'bi-arrow-down-left-circle-fill', 'ico-green', money($month['income']), t('acc_income'), ''],
@@ -71,11 +75,16 @@ $groups = [
   <a href="backup.php" class="alert alert-warning d-flex align-items-center gap-2 text-decoration-none mb-3">
     <i class="bi bi-cloud-arrow-down-fill fs-4"></i><span class="me-auto"><?= e($lastDl === '' ? t('never_downloaded') : t('backup_reminder', fdate($lastDl))) ?></span><i class="bi bi-chevron-right"></i></a>
 <?php endif; ?>
+<?php foreach ($leaves as $l): ?>
+  <a href="leaves.php#leave-<?= $l['id'] ?>" class="alert alert-danger d-flex align-items-center gap-2 text-decoration-none mb-3">
+    <i class="bi bi-calendar-x fs-4"></i><span class="me-auto"><b><?= e($l['title']) ?></b> · <?= e(date_range_text($l['from_date'], $l['to_date'])) ?></span><i class="bi bi-whatsapp"></i></a>
+<?php endforeach; ?>
 <div class="quick-row mb-4">
   <a href="member_invite.php" class="quick tap"><span class="qi bg-primary"><i class="bi bi-person-plus-fill"></i></span><span><?= e(t('new_member')) ?></span></a>
-  <a href="payment_add.php" class="quick tap"><span class="qi" style="background:var(--vm-green);color:#10260a"><i class="bi bi-cash-coin"></i></span><span><?= e(t('record_payment')) ?></span></a>
+  <a href="payment_add.php" class="quick tap"><span class="qi bg-success"><i class="bi bi-cash-coin"></i></span><span><?= e(t('record_payment')) ?></span></a>
   <a href="entry_edit.php?type=expense" class="quick tap"><span class="qi bg-danger"><i class="bi bi-dash-circle-fill"></i></span><span><?= e(t('add_expense')) ?></span></a>
   <a href="attendance.php" class="quick tap"><span class="qi bg-dark"><i class="bi bi-qr-code"></i></span><span><?= e(t('attendance_qr')) ?></span></a>
+  <a href="leaves.php" class="quick tap"><span class="qi" style="background:var(--vm-dark)"><i class="bi bi-calendar-x"></i></span><span><?= e(t('gym_leave')) ?></span></a>
   <a href="alerts.php" class="quick tap"><span class="qi" style="background:#25D366"><i class="bi bi-whatsapp"></i></span><span><?= e(t('send_reminders')) ?></span></a>
 </div>
 

@@ -142,7 +142,7 @@ require __DIR__ . '/includes/header.php';
         <button type="button" class="btn btn-dark" id="qrFull"><i class="bi bi-arrows-fullscreen"></i> <?= e(t('full_screen')) ?></button>
         <a class="btn btn-outline-primary" href="<?= e(att_url()) ?>" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> <?= e(t('test_link')) ?></a>
       </div>
-      <div class="small text-muted mt-3 text-break"><i class="bi bi-link-45deg"></i> <?= e(base_url()) ?> · <a href="settings.php#gym"><?= e(t('change')) ?></a> · <a href="scan_test.php"><?= e(t('scanner_problem')) ?></a></div>
+      <div class="small text-muted mt-3 text-break"><i class="bi bi-link-45deg"></i> <?= e(base_url()) ?> · <a href="settings.php#gym"><?= e(t('change')) ?></a></div>
       <?php if (!is_https()): ?><p class="small text-muted mt-2 mb-0"><i class="bi bi-info-circle"></i> <?= e(t('https_note')) ?></p><?php endif; ?>
     </div></div>
   </div>
@@ -159,7 +159,7 @@ require __DIR__ . '/includes/header.php';
       <div id="cardPhotoReader" class="d-none"></div>
       <div id="reader"></div>
       <div id="scanResult" class="scan-result mt-3"></div>
-      <p class="small-muted mt-2 mb-0"><?= e(t('scan_card_help')) ?> <a href="scan_test.php"><?= e(t('scanner_problem')) ?></a></p>
+      <p class="small-muted mt-2 mb-0"><?= e(t('scan_card_help')) ?></p>
     </div></div>
   </div>
 

@@ -33,11 +33,7 @@ $bare = true;
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="login-wrap text-center pt-4">
-  <div class="logo-text dark mb-4">
-    <span class="l1"><?= e(setting('gym_name', 'VALLEY MMA')) ?></span>
-    <span class="l2"><?= e(setting('gym_tagline', 'FIGHT CLUB')) ?></span>
-    <span class="l3"><?= e(setting('gym_place', 'PANDIKKAD')) ?></span>
-  </div>
+  <?= brand_html('', 'mb-4') ?>
   <div class="card text-start">
     <div class="card-body p-4">
       <h1 class="h5 mb-3"><i class="bi bi-shield-lock-fill text-primary"></i> <?= e(t('admin_login')) ?></h1>
@@ -61,7 +57,6 @@ require __DIR__ . '/includes/header.php';
     <a href="lang.php?l=en" class="btn btn-sm btn-light">English</a>
     <a href="lang.php?l=ml" class="btn btn-sm btn-light">മലയാളം</a>
   </div>
-  <img src="assets/daybill-logo.png" alt="DAYbill Solution" width="80" class="mt-4 rounded bg-white">
-  <div class="small-muted mt-1"><?= e(t('version')) ?> <?= e(APP_VERSION) ?> · <a href="scan_test.php"><?= e(t('scan_test')) ?></a></div>
+  <div class="small-muted mt-3"><?= e(t('version')) ?> <?= e(APP_VERSION) ?></div>
 </div>
 <?php require __DIR__ . '/includes/footer.php';

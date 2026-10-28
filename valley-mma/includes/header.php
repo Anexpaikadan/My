@@ -11,7 +11,7 @@ $v = APP_VERSION;
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#360DD9">
+<meta name="theme-color" content="#1F1E1E">
 <title><?= e(($title !== '' ? $title . ' · ' : '') . setting('gym_name', 'VALLEY MMA')) ?></title>
 <link rel="manifest" href="manifest.php<?= !empty($memberApp) ? '?app=member' : '' ?>">
 <link rel="icon" type="image/png" href="assets/icons/favicon.png">
@@ -25,7 +25,7 @@ $v = APP_VERSION;
 <?php if (!$bare): ?>
 <header class="topbar d-lg-none d-print-none">
   <button class="btn btn-link text-white fs-2 p-0 me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-label="<?= e(t('menu')) ?>"><i class="bi bi-list"></i></button>
-  <a href="index.php" class="brand-mini"><?= e(setting('gym_name', 'VALLEY MMA')) ?></a>
+  <a href="index.php" class="brand-mini"><img src="assets/logo.png" alt="<?= e(setting('gym_name', 'VALLEY MMA')) ?>" width="150" height="26"></a>
   <a href="lang.php?l=<?= lang() === 'en' ? 'ml' : 'en' ?>" class="btn btn-sm btn-outline-light ms-auto"><?= lang() === 'en' ? 'മലയാളം' : 'English' ?></a>
 </header>
 <?php (function (string $active): void { require __DIR__ . '/nav.php'; })($active); // own scope: the menu's loop variables must not overwrite the page's ($id, $tab …) ?>

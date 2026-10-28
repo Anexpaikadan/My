@@ -48,8 +48,7 @@ $bare = true;
 $memberApp = true;
 require __DIR__ . '/includes/header.php';
 
-$brand = '<div class="logo-text dark mb-3 text-center"><span class="l1">' . e(setting('gym_name', 'VALLEY MMA')) . '</span><span class="l2">'
-    . e(setting('gym_tagline', 'FIGHT CLUB')) . '</span><span class="l3">' . e(setting('gym_place', 'PANDIKKAD')) . '</span></div>';
+$brand = brand_html('', 'mb-3');
 
 if (!$m): ?>
 <div class="pt-4">
@@ -98,6 +97,9 @@ foreach (q('SELECT day_no, slot, activity FROM activities')->fetchAll() as $r) {
     $week[(int)$r['day_no']][$r['slot']] = $r['activity'];
 }
 $dow = (int)date('N');
+$marks = day_marks($month . '-01', date('Y-m-t'), (int)$m['id']);
+$freeze = current_freeze((int)$m['id']);
+$leaves = q('SELECT * FROM gym_leaves WHERE to_date >= ? AND from_date <= ? ORDER BY from_date', [today(), date('Y-m-d', strtotime('+14 day'))])->fetchAll();
 $payAmount = $balance > 0 ? $balance : ($st !== 'active' && $plan ? (float)$plan['price'] : 0);
 ?>
 <div class="d-flex align-items-center gap-3 mb-3 pt-2">
@@ -107,14 +109,14 @@ $payAmount = $balance > 0 ? $balance : ($st !== 'active' && $plan ? (float)$plan
 </div>
 <?= flashes() ?>
 
-<div class="card mb-3 text-white" style="background:linear-gradient(135deg,#360DD9,#1A1A1A)"><div class="card-body">
+<div class="card mb-3 text-white" style="background:linear-gradient(135deg,#C8160E,#1A1A1A)"><div class="card-body">
   <div class="d-flex justify-content-between align-items-start">
     <div><div class="small opacity-75"><?= e(t('plan')) ?></div><div class="fs-5 fw-bold"><?= e($plan['name'] ?? '–') ?></div></div>
     <?= status_badge($m['expiry_date'], $m['status']) ?>
   </div>
   <div class="d-flex justify-content-between mt-3">
     <div><div class="small opacity-75"><?= e(t('expiry_date')) ?></div><div class="fw-bold"><?= e(fdate($m['expiry_date'])) ?></div></div>
-    <div class="text-end"><div class="small opacity-75"><?= e($dl < 0 ? t('st_expired') : t('days_left_label')) ?></div><div class="fs-4 fw-bold" style="color:#7ED957"><?= $m['expiry_date'] ? abs($dl) : '–' ?></div></div>
+    <div class="text-end"><div class="small opacity-75"><?= e($dl < 0 ? t('st_expired') : t('days_left_label')) ?></div><div class="fs-4 fw-bold" style="color:#E8261C"><?= $m['expiry_date'] ? abs($dl) : '–' ?></div></div>
   </div>
 </div></div>
 
@@ -124,9 +126,18 @@ $payAmount = $balance > 0 ? $balance : ($st !== 'active' && $plan ? (float)$plan
 <?php elseif ($m['status'] === 'inactive'): ?>
   <div class="alert alert-dark"><i class="bi bi-slash-circle"></i> <?= e(t('you_are_inactive')) ?> <?= e(setting('phone1')) ?></div>
 <?php endif; ?>
+<?php foreach ($leaves as $l): ?>
+  <div class="alert alert-danger"><div class="fw-bold"><i class="bi bi-calendar-x"></i> <?= e($l['title']) ?></div>
+    <div class="small"><?= e(t('wa_gym_closed', date_range_text($l['from_date'], $l['to_date']))) ?></div>
+    <?php if (trim((string)$l['message']) !== ''): ?><div class="small mt-1" style="white-space:pre-line"><?= e($l['message']) ?></div><?php endif; ?></div>
+<?php endforeach; ?>
+<?php if ($freeze && $m['status'] === 'active'): ?>
+  <div class="alert alert-info"><i class="bi bi-snow"></i> <b><?= e(t('freeze_title')) ?>: <?= e(t('fr_' . $freeze['reason'])) ?></b>
+    <div class="small"><?= e(date_range_text($freeze['from_date'], $freeze['to_date'])) ?><?= $freeze['extended'] ? ' · ' . e(t('freeze_extended_yes')) : '' ?></div></div>
+<?php endif; ?>
 <div class="d-grid gap-2 mb-3">
   <?php if ($block !== ''): ?>
-    <?php if ($m['status'] === 'active'): // expired and attendance blocked in Settings ?>
+    <?php if ($m['status'] === 'active' && $block !== 'att_no_frozen'): // expired and attendance blocked in Settings ?>
       <div class="alert alert-warning mb-0 text-center"><?= e(t($block)) ?></div>
     <?php endif; ?>
   <?php elseif ($todayIn): ?>
@@ -142,7 +153,6 @@ $payAmount = $balance > 0 ? $balance : ($st !== 'active' && $plan ? (float)$plan
   </div>
   <div id="mePhotoReader" class="d-none"></div>
   <div id="meScanMsg" class="small text-center text-danger"></div>
-  <a href="scan_test.php" class="small text-center d-block"><?= e(t('scanner_problem')) ?></a>
   <?php if ($payAmount > 0 && setting('upi_id') !== ''): ?>
     <a href="pay.php?a=<?= e(number_format($payAmount, 2, '.', '')) ?>" class="btn btn-primary btn-lg"><i class="bi bi-phone"></i> <?= e(t('pay_by_upi')) ?> <?= money($payAmount) ?></a>
   <?php endif; ?>
@@ -151,13 +161,7 @@ $payAmount = $balance > 0 ? $balance : ($st !== 'active' && $plan ? (float)$plan
 
 <div class="card mb-3"><div class="card-header"><i class="bi bi-calendar-check text-success"></i> <?= e(t('attendance_this_month')) ?>: <?= count($days) ?> <?= e(t('days')) ?></div>
   <div class="card-body">
-    <div class="d-grid text-center small" style="grid-template-columns:repeat(7,1fr);gap:4px">
-      <?php for ($i = 1; $i <= 7; $i++): ?><div class="small-muted"><?= e(mb_substr(t('day' . $i), 0, 2)) ?></div><?php endfor; ?>
-      <?php $first = (int)date('N', strtotime($month . '-01')); for ($i = 1; $i < $first; $i++): ?><div></div><?php endfor; ?>
-      <?php for ($d = 1; $d <= (int)date('t'); $d++): $on = in_array($d, array_map('intval', $days), true); ?>
-        <div class="rounded py-1 <?= $on ? 'bg-success text-white fw-bold' : ($d === (int)date('j') ? 'border border-primary' : 'bg-light') ?>"><?= $d ?></div>
-      <?php endfor; ?>
-    </div>
+    <?= month_calendar($month, array_map('intval', $days), $marks['leave'], $marks['freeze'][(int)$m['id']] ?? []) ?>
   </div>
 </div>
 

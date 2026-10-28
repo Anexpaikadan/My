@@ -1,3 +1,6 @@
+  <footer class="dev-credit d-print-none">
+    <img src="assets/daybill-logo.png" alt="" width="28" height="28"><span><?= e(t('developed_by')) ?> <b>DAYbill Solution</b></span>
+  </footer>
 </main>
 <?php if (admin() && empty($bare)): ?>
 <div class="modal fade" id="verifyModal" tabindex="-1" aria-labelledby="verifyTitle" aria-hidden="true">

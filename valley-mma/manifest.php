@@ -16,8 +16,8 @@ echo json_encode([
     'scope'            => './',
     'display'          => 'standalone',
     'orientation'      => 'portrait',
-    'background_color' => '#1A1A1A',
-    'theme_color'      => '#360DD9',
+    'background_color' => '#1F1E1E',
+    'theme_color'      => '#1F1E1E',
     'icons'            => [
         ['src' => 'assets/icons/icon-192.png', 'sizes' => '192x192', 'type' => 'image/png'],
         ['src' => 'assets/icons/icon-512.png', 'sizes' => '512x512', 'type' => 'image/png'],

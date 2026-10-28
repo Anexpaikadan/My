@@ -49,11 +49,7 @@ $bare = true;
 $memberApp = true;
 require __DIR__ . '/includes/header.php';
 ?>
-<div class="logo-text dark text-center mb-3 pt-3">
-  <span class="l1"><?= e(setting('gym_name', 'VALLEY MMA')) ?></span>
-  <span class="l2"><?= e(setting('gym_tagline', 'FIGHT CLUB')) ?></span>
-  <span class="l3"><?= e(setting('gym_place', 'PANDIKKAD')) ?></span>
-</div>
+<div class="pt-3"><?= brand_html('', 'mb-3') ?></div>
 
 <?php if (!$m || $m['status'] !== 'pending'): ?>
   <div class="card"><div class="card-body text-center p-4">

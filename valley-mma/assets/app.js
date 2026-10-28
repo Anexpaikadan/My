@@ -1,5 +1,5 @@
 // Valley MMA – page helpers: install as app, forms, exports, WhatsApp sharing, member QR scan.
-window.VM_JS = '3.6'; // same as APP_VERSION in includes/init.php
+window.VM_JS = '3.7'; // same as APP_VERSION in includes/init.php
 
 (function () {
   var $ = function (s, el) { return (el || document).querySelector(s); };
@@ -203,7 +203,7 @@ window.VM_JS = '3.6'; // same as APP_VERSION in includes/init.php
       doc.autoTable({
         head: fix(data.head), body: fix(data.body), foot: fix(data.foot), startY: 64,
         theme: 'grid', styles: { fontSize: wide && data.head[0].length > 20 ? 6 : 9, cellPadding: wide && data.head[0].length > 20 ? 2 : 4 },
-        headStyles: { fillColor: [54, 13, 217] }, footStyles: { fillColor: [26, 26, 26] },
+        headStyles: { fillColor: [200, 22, 14] }, footStyles: { fillColor: [26, 26, 26] },
         didDrawPage: function () {
           doc.setFontSize(8);
           doc.text('Printed ' + new Date().toLocaleString('en-IN'), 40, doc.internal.pageSize.getHeight() - 16);

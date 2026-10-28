@@ -132,3 +132,9 @@ INSERT INTO members (id, adm_no, name, phone, gender, place, city, district, pin
   (13, 'VM013', 'Faisal Babu', '9645012399', 'M', 'Pandikkad', 'Pandikkad', 'Malappuram', '676521', 'Kerala', 'Student', '2005-02-10', 21, 171, 64, 21.9,
    0, 0, 0, 0, 0, 0, 0, 0, 1, CURDATE(), '$2y$10$t8f22Rd9D9sitzXy8lB35.kpmUrwbobDSsyu5EooKtNkbK6/GSEFy', 'a1b2c3d4e5f60713', 'pending', 'c0ffee00c0ffee00c0ffee00c0ffee13', NOW());
 UPDATE members SET status = 'inactive', notes = 'Deactivated: stopped coming' WHERE id = 10;
+
+/* Gym leave and a member freeze */
+INSERT INTO gym_leaves (from_date, to_date, title, message) VALUES
+  (CURDATE() + INTERVAL 5 DAY, CURDATE() + INTERVAL 6 DAY, 'Festival holiday', 'Gym will be closed for the festival. Classes start again the next day as usual.');
+INSERT INTO member_freezes (member_id, from_date, to_date, days, extended, reason, note) VALUES
+  (4, CURDATE() - INTERVAL 3 DAY, CURDATE() + INTERVAL 4 DAY, 8, 1, 'injury', 'Knee injury, doctor rest');

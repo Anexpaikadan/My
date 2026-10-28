@@ -1,8 +1,8 @@
 // Service worker: makes the app installable and shows an offline page.
 // Pages are never cached (they hold member data); only static files are.
-const CACHE = 'vmma-v8';
+const CACHE = 'vmma-v9';
 const ASSETS = ['offline.html', 'assets/style.css?v=4', 'assets/app.js?v=6', 'assets/vendor/bootstrap.min.css',
-  'assets/vendor/bootstrap.bundle.min.js', 'assets/vendor/bootstrap-icons.min.css', 'assets/icons/icon-192.png', 'assets/avatar.svg'];
+  'assets/vendor/bootstrap.bundle.min.js', 'assets/vendor/bootstrap-icons.min.css', 'assets/icons/icon-192.png', 'assets/avatar.svg', 'assets/logo.png', 'assets/daybill-logo.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));

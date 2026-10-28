@@ -61,7 +61,7 @@ function run_sql(PDO $pdo, string $sql): int
 // Full backup of all app tables as SQL text.
 function dump_sql(PDO $pdo): string
 {
-    $tables = ['admins', 'settings', 'plans', 'members', 'payments', 'attendance', 'activities', 'acc_accounts', 'acc_categories', 'acc_entries'];
+    $tables = ['admins', 'settings', 'plans', 'members', 'payments', 'attendance', 'activities', 'acc_accounts', 'acc_categories', 'acc_entries', 'gym_leaves', 'member_freezes'];
     $out = "-- Valley MMA Fight Club backup\n-- Made: " . date('Y-m-d H:i:s') . "\n\nSET NAMES utf8mb4;\nSET FOREIGN_KEY_CHECKS = 0;\n\n";
     foreach ($tables as $t) {
         $create = $pdo->query("SHOW CREATE TABLE `$t`")->fetch(PDO::FETCH_NUM)[1];

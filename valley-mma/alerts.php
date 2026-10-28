@@ -16,8 +16,9 @@ $expired = q($sql . "WHERE m.status = 'active' AND m.expiry_date < ? AND m.expir
 $balances = q($sql . 'HAVING balance > 0 ORDER BY balance DESC')->fetchAll();
 $absentDays = max(1, (int)setting('absent_days', '7'));
 $absent = q('SELECT m.*, (SELECT MAX(att_date) FROM attendance WHERE member_id = m.id) last_seen FROM members m
-             WHERE m.status = \'active\' AND m.expiry_date >= ? AND m.id NOT IN (SELECT member_id FROM attendance WHERE att_date > ?) ORDER BY last_seen',
-    [$today, date('Y-m-d', strtotime("-$absentDays day"))])->fetchAll();
+             WHERE m.status = \'active\' AND m.expiry_date >= ? AND m.id NOT IN (SELECT member_id FROM attendance WHERE att_date > ?)
+               AND m.id NOT IN (SELECT member_id FROM member_freezes WHERE from_date <= ? AND to_date > ?) ORDER BY last_seen',
+    [$today, date('Y-m-d', strtotime("-$absentDays day")), $today, date('Y-m-d', strtotime("-$absentDays day"))])->fetchAll();
 // Birthdays today and in the next 7 days (also across the new year).
 $bdays = [];
 foreach (q('SELECT * FROM members WHERE dob IS NOT NULL')->fetchAll() as $m) {

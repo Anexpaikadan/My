@@ -4,7 +4,7 @@
 declare(strict_types=1);
 
 // App version: shown in the app (More, login, Scanner test). Must match window.VM_JS in assets/app.js.
-const APP_VERSION = '3.6';
+const APP_VERSION = '3.7';
 
 $CONFIG = require __DIR__ . '/../config.php';
 date_default_timezone_set($CONFIG['timezone'] ?? 'Asia/Kolkata');
@@ -66,12 +66,22 @@ function db(): PDO
 function migrate(PDO $pdo): void
 {
     $v = (int)$pdo->query("SELECT v FROM settings WHERE k = 'schema_version'")->fetchColumn();
-    if ($v >= 3) {
+    if ($v >= 4) {
         return;
     }
     if ($v < 2) {
         migrate_v2($pdo);
     }
+    if ($v < 3) {
+        migrate_v3($pdo);
+    }
+    require_once __DIR__ . '/sql_tools.php';
+    run_sql($pdo, file_get_contents(__DIR__ . '/../sql/leaves.sql'));
+    $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '4') ON DUPLICATE KEY UPDATE v = '4'");
+}
+
+function migrate_v3(PDO $pdo): void
+{
     $cols = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'members'")
         ->fetchAll(PDO::FETCH_COLUMN);
     if (!in_array('status', $cols, true)) {
@@ -391,6 +401,7 @@ function nav_sections(): array
         ],
         'sec_gym' => [
             ['activities.php', 'daily_activity', 'bi-calendar-week', 'activities'],
+            ['leaves.php', 'gym_leaves', 'bi-calendar-x', 'leaves'],
             ['settings.php', 'settings', 'bi-gear-fill', 'settings'],
             ['backup.php', 'backup', 'bi-cloud-arrow-down-fill', 'backup'],
         ],
@@ -489,6 +500,9 @@ function attendance_block(array $m): string
     if ($st === 'pending') {
         return 'att_no_pending';
     }
+    if (isset($m['id']) && in_array((int)$m['id'], frozen_ids(), true)) {
+        return 'att_no_frozen';
+    }
     if (setting('att_block_expired', '0') === '1' && member_status($m['expiry_date']) === 'expired') {
         return 'att_no_expired';
     }
@@ -527,8 +541,11 @@ function sync_membership(int $memberId): void
     $p = q('SELECT plan_id, period_start, period_end FROM payments
             WHERE member_id = ? AND period_end IS NOT NULL ORDER BY period_end DESC, id DESC LIMIT 1', [$memberId])->fetch();
     if ($p) {
-        q('UPDATE members SET plan_id = ?, start_date = ?, expiry_date = ? WHERE id = ?',
-            [$p['plan_id'], $p['period_start'], $p['period_end'], $memberId]);
+        // Freezes in or after this period still move the expiry on.
+        $frozen = (int)q('SELECT COALESCE(SUM(days), 0) FROM member_freezes WHERE member_id = ? AND extended = 1 AND from_date >= ?',
+            [$memberId, $p['period_start']])->fetchColumn();
+        q('UPDATE members SET plan_id = ?, start_date = ?, expiry_date = DATE_ADD(?, INTERVAL ? DAY) WHERE id = ?',
+            [$p['plan_id'], $p['period_start'], $p['period_end'], $frozen, $memberId]);
     }
 }
 
@@ -541,7 +558,9 @@ function delete_payment(array $p): void
         return;
     }
     $m = q('SELECT expiry_date FROM members WHERE id = ?', [$p['member_id']])->fetch();
-    if (!$m || $m['expiry_date'] !== $p['period_end']) {
+    $frozen = (int)q('SELECT COALESCE(SUM(days), 0) FROM member_freezes WHERE member_id = ? AND extended = 1 AND from_date >= ?',
+        [$p['member_id'], $p['period_start']])->fetchColumn();
+    if (!$m || $m['expiry_date'] !== date('Y-m-d', strtotime($p['period_end'] . " +$frozen day"))) {
         return;
     }
     $other = (int)q('SELECT COUNT(*) FROM payments WHERE member_id = ? AND period_end IS NOT NULL', [$p['member_id']])->fetchColumn();
@@ -551,6 +570,129 @@ function delete_payment(array $p): void
         q('UPDATE members SET plan_id = ?, start_date = ?, expiry_date = ? WHERE id = ?',
             [$p['prev_plan_id'], $p['prev_start'], $p['prev_expiry'], $p['member_id']]);
     }
+}
+
+// ---- Gym leave days and member freezes ------------------------------
+
+const FREEZE_REASONS = ['injury' => 'bi-bandaid', 'travel' => 'bi-airplane', 'illness' => 'bi-thermometer-half', 'other' => 'bi-snow'];
+
+function day_count(string $from, string $to): int
+{
+    return (int)((strtotime($to) - strtotime($from)) / 86400) + 1;
+}
+
+// Members frozen on a day (one query per day, kept for the request).
+function frozen_ids(string $date = ''): array
+{
+    static $cache = [];
+    $date = $date !== '' ? $date : today();
+    return $cache[$date] ??= array_map('intval',
+        q('SELECT DISTINCT member_id FROM member_freezes WHERE ? BETWEEN from_date AND to_date', [$date])->fetchAll(PDO::FETCH_COLUMN));
+}
+
+function current_freeze(int $memberId): ?array
+{
+    $f = q('SELECT * FROM member_freezes WHERE member_id = ? AND to_date >= ? ORDER BY from_date LIMIT 1', [$memberId, today()])->fetch();
+    return $f ?: null;
+}
+
+// Leave and freeze days between two dates: ['leave' => [date => row], 'freeze' => [member_id => [date => row]]].
+function day_marks(string $first, string $last, int $memberId = 0): array
+{
+    $out = ['leave' => [], 'freeze' => []];
+    foreach (q('SELECT * FROM gym_leaves WHERE from_date <= ? AND to_date >= ? ORDER BY from_date', [$last, $first])->fetchAll() as $l) {
+        for ($d = max($l['from_date'], $first); $d <= min($l['to_date'], $last); $d = date('Y-m-d', strtotime($d . ' +1 day'))) {
+            $out['leave'][$d] = $l;
+        }
+    }
+    $sql = 'SELECT * FROM member_freezes WHERE from_date <= ? AND to_date >= ?' . ($memberId ? ' AND member_id = ?' : '');
+    foreach (q($sql, $memberId ? [$last, $first, $memberId] : [$last, $first])->fetchAll() as $f) {
+        for ($d = max($f['from_date'], $first); $d <= min($f['to_date'], $last); $d = date('Y-m-d', strtotime($d . ' +1 day'))) {
+            $out['freeze'][(int)$f['member_id']][$d] = $f;
+        }
+    }
+    return $out;
+}
+
+function date_range_text(string $from, string $to): string
+{
+    $n = day_count($from, $to);
+    return ($from === $to ? fdate($from) : fdate($from) . ' – ' . fdate($to)) . ' (' . t($n === 1 ? 'n_day' : 'n_days', $n) . ')';
+}
+
+function leave_text(array $l): string
+{
+    $msg = '*' . gym_title() . "*\n\n📢 *" . $l['title'] . "*\n" . t('wa_gym_closed', date_range_text($l['from_date'], $l['to_date']));
+    if (trim((string)$l['message']) !== '') {
+        $msg .= "\n\n" . trim($l['message']);
+    }
+    $phones = trim(setting('phone1') . '  ' . setting('phone2'));
+    return $msg . ($phones !== '' ? "\n\n📞 " . $phones : '');
+}
+
+function freeze_text(array $m, array $f): string
+{
+    $msg = t('wa_freeze', $m['name'], gym_title(), t('fr_' . $f['reason']), date_range_text($f['from_date'], $f['to_date']));
+    $exp = q('SELECT expiry_date FROM members WHERE id = ?', [$m['id']])->fetchColumn();
+    if ($f['extended'] && $exp) {
+        $msg .= "\n" . t('wa_freeze_extended', fdate($exp));
+    }
+    return $msg;
+}
+
+// Adds or changes a freeze. With $extend the membership expiry moves on by the frozen days.
+function freeze_save(array $m, string $from, string $to, string $reason, string $note, bool $extend, ?array $old = null): int
+{
+    $days = day_count($from, $to);
+    $shift = ($extend ? $days : 0) - ($old && $old['extended'] ? (int)$old['days'] : 0);
+    if ($old) {
+        q('UPDATE member_freezes SET from_date = ?, to_date = ?, days = ?, extended = ?, reason = ?, note = ? WHERE id = ?',
+            [$from, $to, $days, (int)$extend, $reason, $note, $old['id']]);
+        $id = (int)$old['id'];
+    } else {
+        q('INSERT INTO member_freezes (member_id, from_date, to_date, days, extended, reason, note) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [$m['id'], $from, $to, $days, (int)$extend, $reason, $note]);
+        $id = (int)db()->lastInsertId();
+    }
+    if ($shift !== 0) {
+        q('UPDATE members SET expiry_date = DATE_ADD(expiry_date, INTERVAL ? DAY) WHERE id = ? AND expiry_date IS NOT NULL', [$shift, $m['id']]);
+    }
+    return $id;
+}
+
+function freeze_delete(array $f): void
+{
+    q('DELETE FROM member_freezes WHERE id = ?', [$f['id']]);
+    if ($f['extended']) {
+        q('UPDATE members SET expiry_date = DATE_SUB(expiry_date, INTERVAL ? DAY) WHERE id = ? AND expiry_date IS NOT NULL', [(int)$f['days'], $f['member_id']]);
+    }
+}
+
+// Month calendar (Mon–Sun) with present, gym leave and freeze days. $links: date => url for admin changes.
+function month_calendar(string $month, array $present, array $leave, array $freeze, array $links = [], bool $legend = true): string
+{
+    $first = $month . '-01';
+    $n = (int)date('t', strtotime($first));
+    $h = '<div class="cal">';
+    for ($i = 1; $i <= 7; $i++) {
+        $h .= '<div class="cal-h">' . e(mb_substr(t('day' . $i), 0, 2)) . '</div>';
+    }
+    $h .= str_repeat('<div></div>', (int)date('N', strtotime($first)) - 1);
+    for ($d = 1; $d <= $n; $d++) {
+        $date = sprintf('%s-%02d', $month, $d);
+        $cls = in_array($d, $present, true) ? 'p' : (isset($leave[$date]) ? 'l' : (isset($freeze[$date]) ? 'f' : ''));
+        if ($date === today()) {
+            $cls .= ' today';
+        }
+        $tip = isset($leave[$date]) ? $leave[$date]['title'] : (isset($freeze[$date]) ? t('frozen') . ': ' . t('fr_' . $freeze[$date]['reason']) : '');
+        $tag = isset($links[$date]) ? 'a href="' . e($links[$date]) . '"' : 'div';
+        $h .= '<' . $tag . ' class="cal-d ' . $cls . '"' . ($tip !== '' ? ' title="' . e($tip) . '"' : '') . '>' . $d . '</' . strtok($tag, ' ') . '>';
+    }
+    if (!$legend) {
+        return $h . '</div>';
+    }
+    return $h . '</div><div class="cal-legend"><span><i class="p"></i>' . e(t('present')) . '</span><span><i class="l"></i>' . e(t('gym_leave'))
+        . '</span><span><i class="f"></i>' . e(t('frozen')) . '</span></div>';
 }
 
 // ---- Attendance QR ------------------------------------------------
@@ -659,6 +801,16 @@ function upi_link(float $amount = 0, string $note = ''): string
 function gym_title(): string
 {
     return trim(setting('gym_name', 'VALLEY MMA') . ' ' . setting('gym_tagline', 'FIGHT CLUB'));
+}
+
+// The Valley MMA logo (image) with tagline and place, on its dark background.
+function brand_html(string $href = '', string $extra = ''): string
+{
+    $tag = $href !== '' ? 'a href="' . e($href) . '"' : 'div';
+    $end = $href !== '' ? 'a' : 'div';
+    return '<' . $tag . ' class="brand-logo ' . e($extra) . '"><img src="assets/logo.png" alt="' . e(setting('gym_name', 'VALLEY MMA')) . '" width="612" height="106">'
+        . '<span class="l2">' . e(setting('gym_tagline', 'FIGHT CLUB')) . '</span>'
+        . '<span class="l3">' . e(setting('gym_place', 'PANDIKKAD')) . '</span></' . $end . '>';
 }
 
 // Lines about paying by UPI for WhatsApp messages.

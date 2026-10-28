@@ -18,13 +18,15 @@ It has English and Malayalam (switch at any time), and you can install it on a p
 | **Payments** | Admission fee, plan (renews the membership automatically), other fee, total, paid, balance. Cash / UPI / card / bank, UPI QR code for the exact amount. Payment history and a printable receipt in the same layout as the paper receipt, with a WhatsApp button that sends the receipt link |
 | **Alerts** | Members expiring soon, expired members and pending balances, each with a WhatsApp reminder that includes the UPI ID, UPI number and a pay link. Birthdays (today and next 7 days) with a WhatsApp wish. Absent members (active but not came for N days, set in Settings) with a WhatsApp follow-up |
 | **Attendance** | 1) The admin phone shows today's QR code (dated, optionally changing every few minutes). Members scan it with their phone camera and are marked present. 2) The admin scans member ID cards (front/back camera). 3) Mark by hand. The order of these 3 ways and the default one are set in Settings. Monthly attendance sheet |
+| **Gym leave** | Write a gym-closed notice (dates, title, message – quick titles: holiday, festival, rain …) and share it on WhatsApp: to a group or any chat, copy the text, or send it to each active member one by one. Shown on the dashboard, in the member app and in red on all attendance calendars; tap a red day to change it |
+| **Freeze** | Member page → *Freeze*: for an accident/injury, illness, travel or other reason, with dates and a note. While frozen the member cannot mark attendance and is not counted as absent; the frozen days are added to the expiry (can be switched off). Change or remove a freeze later (the expiry is corrected), send the member a WhatsApp message. Frozen days show in light blue on the calendars; *Members → Frozen* lists them |
 | **Daily activity** | Weekly training plan (warm-up, primary, secondary, finisher, cool down) – editable. Today's plan is shown on the dashboard and in the member app |
 | **Reports** | Daily, monthly and yearly income (cash / online split), active and expired members, payment history, pending balances, monthly attendance. Every report: **Print**, **PDF** download, **Excel (CSV)** |
 | **Member app** | Members log in with phone + password (the admin sets or changes it). They see their plan, expiry, days left, attendance calendar, receipts and today's training, scan the attendance QR and pay by UPI |
 | **Backup** | Download a full backup (ZIP: data + photos) or data only (SQL). **Automatic backup every day** on the server (the newest 14 are kept, number can be changed). Restore from a saved backup or an uploaded file; a copy of the current data is saved first, and backups from older app versions are upgraded automatically. Downloads, restore and delete ask for the admin password. The dashboard reminds you when no backup was downloaded for 7 days |
 | **Security** | Admin login with `password_hash()`, session login that lasts 7 days (`login_days` in config.php), CSRF protection on every form, PDO prepared statements, input checks, login lock after 8 wrong tries, private member photos, signed QR codes and receipt links |
 
-Colours and logo come from the DAYbill logo (blue `#360DD9`, green `#7ED957`, dark `#1A1A1A`).
+Colours and logo come from the Valley MMA logo (red `#C8160E`, charcoal `#1F1E1E`, white). App by DAYbill Solution (shown at the bottom of every page).
 
 ## Install on XAMPP (Windows PC)
 
@@ -44,8 +46,8 @@ Sample member login (member app): phone **9847012345**, password **member123**.
 
 ## Updating an existing installation
 
-Copy the new files over the old ones but keep your `config.php`. The new accounts tables are
-added automatically the first time a page is opened.
+Copy the new files over the old ones but keep your `config.php`. New tables (accounts, gym leave,
+freeze) are added automatically the first time a page is opened.
 
 ## Phones and the attendance QR (important on XAMPP)
 
@@ -57,7 +59,7 @@ The attendance QR code and WhatsApp links contain the app address. Phones **cann
 3. Allow Apache through the Windows firewall if phones cannot open that address.
 
 Members scan the QR with the normal **phone camera**, or in the member app. If scanning does not work on a phone,
-open **More → Scanner test** (or `scan_test.php`) on that phone: it checks every step and says what to fix. Without https the live camera inside
+open `scan_test.php` on that phone: it checks every step and says what to fix. Without https the live camera inside
 the browser is blocked by phones, so the app offers **Take a photo of the QR** instead – it works everywhere.
 With https (hosting) the live scanner works too.
 
@@ -111,6 +113,7 @@ valley-mma/
   alerts.php
   attendance.php, attendance_monthly.php, checkin.php (QR target)
   activities.php        weekly training plan
+  leaves.php            gym leave (closed days) with WhatsApp sharing; freeze.php (member freeze)
   reports.php
   accounts.php, ledger.php, entry_edit.php, voucher.php, acc_reports.php, acc_settings.php
   more.php              all pages as tiles (phone)
@@ -120,7 +123,7 @@ valley-mma/
   includes/             init.php (helpers), accounts.php, header/nav/footer, lang.php (English + Malayalam), sql_tools.php
   assets/               style.css, print.css, app.js, attendance.js, qr.js, icons, vendor libraries
   sql/                  valley_mma_clean.sql (clean, for phpMyAdmin), database.sql (with sample data),
-                        schema.sql, accounts.sql, sample_data.sql (used by install.php)
+                        schema.sql, accounts.sql, leaves.sql, sample_data.sql (used by install.php)
   uploads/photos/       member photos (not web-accessible)
   backups/              backups saved on the server (not web-accessible)
 ```

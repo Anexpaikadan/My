@@ -163,7 +163,7 @@ INSERT IGNORE INTO settings (k, v) VALUES
   ('trial_days', '7'),
   ('auto_backup', '1'),
   ('backup_keep', '14'),
-  ('schema_version', '3');
+  ('schema_version', '4');
 
 INSERT IGNORE INTO plans (id, name, duration_value, duration_unit, price, description, sort_order) VALUES
   (1, 'Monthly', 1, 'month', 1500, 'MMA, boxing, kickboxing and fitness training', 1),
@@ -217,6 +217,34 @@ CREATE TABLE IF NOT EXISTS acc_entries (
   KEY idx_cat (category_id),
   KEY idx_acc (account_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+/* Gym leave days (gym closed: holidays, festivals …) and member freezes (accident, injury, travel …) */
+
+CREATE TABLE IF NOT EXISTS gym_leaves (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  from_date DATE NOT NULL,
+  to_date DATE NOT NULL,
+  title VARCHAR(150) NOT NULL,
+  message TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_dates (from_date, to_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+/* While frozen the member cannot mark attendance; the membership expiry is moved on by the frozen days. */
+CREATE TABLE IF NOT EXISTS member_freezes (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  member_id INT UNSIGNED NOT NULL,
+  from_date DATE NOT NULL,
+  to_date DATE NOT NULL,
+  days SMALLINT UNSIGNED NOT NULL,
+  extended TINYINT(1) NOT NULL DEFAULT 1,
+  reason ENUM('injury','travel','illness','other') NOT NULL DEFAULT 'other',
+  note VARCHAR(255) NOT NULL DEFAULT '',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_member (member_id, from_date),
+  CONSTRAINT fk_freeze_member FOREIGN KEY (member_id) REFERENCES members (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 INSERT IGNORE INTO acc_accounts (id, name, kind, opening_balance, sort_order) VALUES
   (1, 'Cash', 'cash', 0, 1),
@@ -389,3 +417,10 @@ INSERT INTO members (id, adm_no, name, phone, gender, place, city, district, pin
   (13, 'VM013', 'Faisal Babu', '9645012399', 'M', 'Pandikkad', 'Pandikkad', 'Malappuram', '676521', 'Kerala', 'Student', '2005-02-10', 21, 171, 64, 21.9,
    0, 0, 0, 0, 0, 0, 0, 0, 1, CURDATE(), '$2y$10$t8f22Rd9D9sitzXy8lB35.kpmUrwbobDSsyu5EooKtNkbK6/GSEFy', 'a1b2c3d4e5f60713', 'pending', 'c0ffee00c0ffee00c0ffee00c0ffee13', NOW());
 UPDATE members SET status = 'inactive', notes = 'Deactivated: stopped coming' WHERE id = 10;
+
+/* Gym leave and a member freeze */
+INSERT INTO gym_leaves (from_date, to_date, title, message) VALUES
+  (CURDATE() + INTERVAL 5 DAY, CURDATE() + INTERVAL 6 DAY, 'Festival holiday', 'Gym will be closed for the festival. Classes start again the next day as usual.');
+INSERT INTO member_freezes (member_id, from_date, to_date, days, extended, reason, note) VALUES
+  (4, CURDATE() - INTERVAL 3 DAY, CURDATE() + INTERVAL 4 DAY, 8, 1, 'injury', 'Knee injury, doctor rest');
+

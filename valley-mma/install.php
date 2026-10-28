@@ -45,6 +45,7 @@ if ($installed) {
             $pdo->exec("SET time_zone = '" . (new DateTime())->format('P') . "'");
             run_sql($pdo, file_get_contents(__DIR__ . '/sql/schema.sql'));
             run_sql($pdo, file_get_contents(__DIR__ . '/sql/accounts.sql'));
+            run_sql($pdo, file_get_contents(__DIR__ . '/sql/leaves.sql'));
             if (!empty($_POST['sample']) && !(int)$pdo->query('SELECT COUNT(*) FROM members')->fetchColumn()) {
                 run_sql($pdo, file_get_contents(__DIR__ . '/sql/sample_data.sql'));
             }
@@ -70,7 +71,7 @@ $h = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
 </head>
 <body class="bare">
 <main class="main-bare pt-4">
-  <div class="logo-text dark text-center mb-3"><span class="l1">VALLEY MMA</span><span class="l2">FIGHT CLUB</span><span class="l3">PANDIKKAD</span></div>
+  <div class="brand-logo mb-3"><img src="assets/logo.png" alt="VALLEY MMA" width="612" height="106"><span class="l2">FIGHT CLUB</span><span class="l3">PANDIKKAD</span></div>
   <div class="card"><div class="card-body p-4">
     <h1 class="h5">Install</h1>
     <?php if ($msg): ?><div class="alert <?= $ok ? 'alert-success' : 'alert-danger' ?>"><?= $h($msg) ?></div><?php endif; ?>

@@ -11,11 +11,7 @@ $memberApp = true;
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="text-center pt-3">
-  <div class="logo-text dark mb-3">
-    <span class="l1"><?= e(setting('gym_name', 'VALLEY MMA')) ?></span>
-    <span class="l2"><?= e(setting('gym_tagline', 'FIGHT CLUB')) ?></span>
-    <span class="l3"><?= e(setting('gym_place', 'PANDIKKAD')) ?></span>
-  </div>
+  <?= brand_html('', 'mb-3') ?>
   <div class="card"><div class="card-body p-4">
     <?php if ($link === ''): ?>
       <p class="mb-0"><?= e(t('upi_not_set_public')) ?><br><b><?= e(setting('phone1')) ?></b></p>

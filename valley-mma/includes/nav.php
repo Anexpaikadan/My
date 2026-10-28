@@ -8,11 +8,7 @@ $sections = nav_sections();
     <button type="button" class="btn-close btn-close-white ms-auto d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Close"></button>
   </div>
   <div class="sidebar-inner">
-    <a href="index.php" class="logo-text">
-      <span class="l1"><?= e(setting('gym_name', 'VALLEY MMA')) ?></span>
-      <span class="l2"><?= e(setting('gym_tagline', 'FIGHT CLUB')) ?></span>
-      <span class="l3"><?= e(setting('gym_place', 'PANDIKKAD')) ?></span>
-    </a>
+    <?= brand_html('index.php') ?>
     <nav class="nav flex-column mt-2">
       <a class="nav-link<?= $active === 'dashboard' ? ' active' : '' ?>" href="index.php"><i class="bi bi-speedometer2"></i><span><?= e(t('dashboard')) ?></span></a>
       <?php foreach ($sections as $sec => $items): ?>
@@ -31,7 +27,6 @@ $sections = nav_sections();
       <form method="post" action="logout.php"><?= csrf_field() ?>
         <button class="btn btn-sm btn-outline-light w-100"><i class="bi bi-box-arrow-right"></i> <?= e(t('logout')) ?> (<?= e(admin()['username'] ?? '') ?>)</button>
       </form>
-      <div class="powered"><img src="assets/daybill-logo.png" alt="DAYbill Solution" width="90" height="90"></div>
     </div>
   </div>
 </aside>

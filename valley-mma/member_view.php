@@ -36,6 +36,14 @@ if ($m['status'] === 'pending') { // not approved yet: only the join link and th
     }
 }
 $attBlock = attendance_block($m);
+$freezes = q('SELECT * FROM member_freezes WHERE member_id = ? ORDER BY from_date DESC', [$id])->fetchAll();
+$curFreeze = current_freeze($id);
+$fsent = (int)get('fsent');
+$calFirst = $month . '-01';
+$marks = day_marks($calFirst, date('Y-m-t', strtotime($calFirst)), $id);
+$calLinks = array_map(fn($l) => 'leaves.php?edit=' . $l['id'] . '#leaveForm', $marks['leave'])
+    + array_map(fn($f) => '#freeze', $marks['freeze'][$id] ?? []);
+$calPresent = array_map(fn($a) => (int)substr($a['att_date'], 8, 2), array_filter($att, fn($a) => substr($a['att_date'], 0, 7) === $month));
 
 $title = $m['name'];
 $active = 'members';
@@ -74,6 +82,8 @@ require __DIR__ . '/includes/header.php';
       <h2 class="h5 mb-0"><?= e($m['name']) ?></h2>
       <div class="small-muted mb-2"><?= e($m['adm_no']) ?> · <?= e(t('joined')) ?> <?= e(fdate($m['join_date'])) ?></div>
       <?= status_badge($m['expiry_date'], $m['status']) ?>
+      <?php if ($curFreeze && $curFreeze['from_date'] <= today()): ?><span class="badge bg-info text-dark"><i class="bi bi-snow"></i> <?= e(t('frozen_till', fdate($curFreeze['to_date']))) ?></span>
+      <?php elseif ($curFreeze): ?><span class="badge text-bg-light border"><i class="bi bi-snow"></i> <?= e(t('freeze_from', fdate($curFreeze['from_date']))) ?></span><?php endif; ?>
       <div class="mt-3 d-grid gap-2">
         <a href="tel:<?= e(clean_phone($m['phone'])) ?>" class="btn btn-light"><i class="bi bi-telephone-fill"></i> <?= e($m['phone']) ?></a>
         <?php if ($attBlock === ''): ?>
@@ -102,6 +112,56 @@ require __DIR__ . '/includes/header.php';
       </div>
     </div></div>
 
+    <?php $freezeForm = function (?array $f) use ($id): void { $fid = (int)($f['id'] ?? 0); ?>
+      <form method="post" action="freeze.php" class="border rounded p-2 mt-2 bg-light" data-verify="<?= e(t('verify_freeze')) ?>"><?= csrf_field() ?>
+        <input type="hidden" name="member_id" value="<?= $id ?>"><input type="hidden" name="id" value="<?= $fid ?>">
+        <div class="row g-2 mb-2">
+          <div class="col-6"><label class="form-label small mb-0" for="ff<?= $fid ?>"><?= e(t('from_date')) ?></label>
+            <input class="form-control form-control-sm" type="date" id="ff<?= $fid ?>" name="from_date" required value="<?= e($f['from_date'] ?? today()) ?>"></div>
+          <div class="col-6"><label class="form-label small mb-0" for="ft<?= $fid ?>"><?= e(t('to_date')) ?></label>
+            <input class="form-control form-control-sm" type="date" id="ft<?= $fid ?>" name="to_date" required value="<?= e($f['to_date'] ?? date('Y-m-d', strtotime('+6 day'))) ?>"></div>
+        </div>
+        <div class="d-flex flex-wrap gap-1 mb-2 cat-opt">
+          <?php foreach (FREEZE_REASONS as $r => $ico): ?>
+            <input type="radio" class="btn-check" name="reason" value="<?= $r ?>" id="fr<?= $fid . $r ?>"<?= ($f['reason'] ?? 'injury') === $r ? ' checked' : '' ?>>
+            <label class="btn btn-sm btn-outline-primary" for="fr<?= $fid . $r ?>"><i class="bi <?= $ico ?>"></i> <?= e(t('fr_' . $r)) ?></label>
+          <?php endforeach; ?>
+        </div>
+        <input class="form-control form-control-sm mb-2" name="note" maxlength="255" placeholder="<?= e(t('note')) ?>" value="<?= e($f['note'] ?? '') ?>">
+        <div class="form-check small mb-2"><input class="form-check-input" type="checkbox" name="extend" value="1" id="fx<?= $fid ?>"<?= !$f || $f['extended'] ? ' checked' : '' ?>>
+          <label class="form-check-label" for="fx<?= $fid ?>"><?= e(t('freeze_extend')) ?></label></div>
+        <button class="btn btn-sm btn-primary w-100"><i class="bi bi-snow"></i> <?= e(t('save')) ?></button>
+      </form>
+    <?php }; ?>
+    <?php if ($m['status'] !== 'pending'): ?>
+    <div class="card mb-3" id="freeze"><div class="card-header d-flex align-items-center gap-2"><i class="bi bi-snow text-info"></i>
+      <span class="me-auto"><?= e(t('freeze_title')) ?></span>
+      <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#fNew"><i class="bi bi-plus-lg"></i> <?= e(t('freeze_add')) ?></button></div>
+      <div class="card-body py-2">
+        <p class="small-muted mb-1"><?= e(t('freeze_help')) ?></p>
+        <div class="collapse" id="fNew"><?php $freezeForm(null); ?></div>
+        <?php foreach ($freezes as $f): $now = $f['from_date'] <= today() && $f['to_date'] >= today(); ?>
+          <div class="border-top py-2">
+            <div class="d-flex align-items-start gap-2">
+              <i class="bi <?= FREEZE_REASONS[$f['reason']] ?? 'bi-snow' ?> fs-5 text-info"></i>
+              <div class="me-auto small"><b><?= e(t('fr_' . $f['reason'])) ?></b><?= $now ? ' <span class="badge bg-info text-dark">' . e(t('now')) . '</span>' : '' ?>
+                <div><?= e(date_range_text($f['from_date'], $f['to_date'])) ?></div>
+                <?php if ($f['note'] !== ''): ?><div class="small-muted"><?= e($f['note']) ?></div><?php endif; ?>
+                <div class="small-muted"><?= e(t($f['extended'] ? 'freeze_extended_yes' : 'freeze_extended_no')) ?></div></div>
+              <div class="btn-group btn-group-sm">
+                <a class="btn btn-whatsapp<?= $fsent === (int)$f['id'] ? ' pulse' : '' ?>" target="_blank" rel="noopener" data-sent href="<?= e(wa_link($m['phone'], freeze_text($m, $f))) ?>" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+                <button type="button" class="btn btn-light" data-bs-toggle="collapse" data-bs-target="#fe<?= $f['id'] ?>" aria-label="<?= e(t('edit')) ?>"><i class="bi bi-pencil"></i></button>
+              </div>
+              <form method="post" action="freeze.php" data-verify="<?= e(t('confirm_delete')) ?>"><?= csrf_field() ?>
+                <input type="hidden" name="member_id" value="<?= $id ?>"><input type="hidden" name="id" value="<?= $f['id'] ?>"><input type="hidden" name="action" value="delete">
+                <button class="btn btn-sm btn-outline-danger" aria-label="<?= e(t('delete')) ?>"><i class="bi bi-trash"></i></button></form>
+            </div>
+            <div class="collapse" id="fe<?= $f['id'] ?>"><?php $freezeForm($f); ?></div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    </div>
+    <?php endif; ?>
     <div class="card mb-3"><div class="card-header"><i class="bi bi-whatsapp text-success"></i> WhatsApp</div>
       <div class="card-body d-grid gap-2">
         <?php foreach ($msgs as $key => $text): ?>
@@ -147,6 +207,8 @@ require __DIR__ . '/includes/header.php';
         </div>
         <div class="tab-pane fade" id="tAtt">
           <div class="p-3">
+            <div class="cal-wrap mb-3"><div class="fw-bold small mb-1"><?= e(date('F Y')) ?></div>
+              <?= month_calendar($month, $calPresent, $marks['leave'], $marks['freeze'][$id] ?? [], $calLinks) ?></div>
             <a href="attendance_monthly.php?month=<?= $month ?>&member=<?= $id ?>" class="btn btn-sm btn-outline-primary mb-2"><i class="bi bi-calendar3"></i> <?= e(t('monthly_attendance')) ?></a>
             <?php if (!$att): ?><div class="text-muted"><?= e(t('no_attendance')) ?></div><?php endif; ?>
             <div class="d-flex flex-wrap gap-2">

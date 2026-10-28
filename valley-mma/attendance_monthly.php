@@ -24,6 +24,8 @@ foreach ($members as $m) {
         $perDay[$d]++;
     }
 }
+$marks = day_marks($first, $last);
+$leaveDay = fn(int $d) => isset($marks['leave'][sprintf('%s-%02d', $month, $d)]);
 $monthName = date('F Y', strtotime($first));
 
 $title = t('monthly_attendance');
@@ -49,13 +51,14 @@ require __DIR__ . '/includes/header.php';
   <div class="table-responsive">
     <table class="table table-bordered att-grid mb-0" id="reportTable" data-title="Attendance <?= e($monthName) ?>" data-landscape="1">
       <thead><tr><th class="sticky" data-en="Member"><?= e(t('member')) ?></th>
-        <?php for ($d = 1; $d <= $daysIn; $d++): $we = date('N', strtotime("$month-$d")) == 7; ?><th class="<?= $we ? 'we' : '' ?>"><?= $d ?></th><?php endfor; ?>
+        <?php for ($d = 1; $d <= $daysIn; $d++): $we = date('N', strtotime("$month-$d")) == 7; ?><th class="<?= $leaveDay($d) ? 'l' : ($we ? 'we' : '') ?>"<?= $leaveDay($d) ? ' title="' . e($marks['leave'][sprintf('%s-%02d', $month, $d)]['title']) . '"' : '' ?>><?= $d ?></th><?php endfor; ?>
         <th data-en="Days"><?= e(t('days')) ?></th></tr></thead>
       <tbody>
       <?php foreach ($members as $m): $cnt = count($grid[$m['id']] ?? []); ?>
         <tr><td class="sticky"><a href="member_view.php?id=<?= $m['id'] ?>"><?= e($m['name']) ?></a></td>
-          <?php for ($d = 1; $d <= $daysIn; $d++): $on = isset($grid[$m['id']][$d]); $we = date('N', strtotime("$month-$d")) == 7; ?>
-            <td class="<?= $on ? 'p' : ($we ? 'we' : '') ?>"<?= $on ? ' data-en="P"' : '' ?>><?= $on ? '✓' : '' ?></td>
+          <?php for ($d = 1; $d <= $daysIn; $d++): $on = isset($grid[$m['id']][$d]); $we = date('N', strtotime("$month-$d")) == 7;
+            $lv = !$on && $leaveDay($d); $fz = !$on && !$lv && isset($marks['freeze'][$m['id']][sprintf('%s-%02d', $month, $d)]); ?>
+            <td class="<?= $on ? 'p' : ($lv ? 'l' : ($fz ? 'f' : ($we ? 'we' : ''))) ?>"<?= $on ? ' data-en="P"' : '' ?>><?= $on ? '✓' : ($lv ? 'L' : ($fz ? 'F' : '')) ?></td>
           <?php endfor; ?>
           <td class="fw-bold"><?= $cnt ?></td></tr>
       <?php endforeach; ?>
@@ -65,6 +68,8 @@ require __DIR__ . '/includes/header.php';
         <td><?= array_sum($perDay) ?></td></tr></tfoot>
     </table>
   </div>
+  <div class="card-footer cal-legend"><span><i class="p"></i>✓ <?= e(t('present')) ?></span><span><i class="l"></i>L <?= e(t('gym_leave')) ?></span>
+    <span><i class="f"></i>F <?= e(t('frozen')) ?></span><a href="leaves.php?month=<?= e($month) ?>" class="ms-auto small"><i class="bi bi-calendar-x"></i> <?= e(t('gym_leaves')) ?></a></div>
 </div>
 <?php
 $scripts = ['assets/vendor/jspdf.umd.min.js', 'assets/vendor/jspdf.plugin.autotable.min.js'];
