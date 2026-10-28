@@ -109,7 +109,8 @@ return [
         'amount' => 'Amount', 'one_month' => 'One month', 'three_months' => 'Three months', 'six_months' => 'Six months',
         'period' => 'Period', 'balance_due' => 'Balance due', 'scan_to_pay' => 'Scan to pay by UPI', 'thank_you' => 'THANK YOU',
         'signature' => 'Signature', 'rec_no' => 'No.',
-        'pay_by_upi' => 'Pay by UPI', 'open_upi_app' => 'Open UPI app (GPay, PhonePe, Paytm)', 'upi_id' => 'UPI ID', 'upi_phone' => 'UPI number',
+        'pay_by_upi' => 'Pay by UPI', 'open_upi_app' => 'Open UPI app (GPay, PhonePe, Paytm)',
+        'pay_screenshot_title' => 'Take a screenshot and pay', 'send_screenshot_btn' => 'Send payment screenshot to the gym', 'wa_paid_screenshot' => "Hello %s, I paid %s by UPI. The screenshot is attached.", 'pay_step1' => 'Take a screenshot of this QR code.', 'pay_step2' => 'Open GPay, PhonePe or Paytm → Scan QR → choose the screenshot from your gallery.', 'pay_step3' => 'Pay the amount, then send the payment screenshot to the gym.', 'upi_id' => 'UPI ID', 'upi_phone' => 'UPI number',
         'upi_name' => 'UPI name', 'send_screenshot' => 'After paying, send the screenshot on WhatsApp.',
         'upi_not_set_public' => 'Please pay at the gym or call:',
 
@@ -420,7 +421,8 @@ return [
         'amount' => 'തുക', 'one_month' => 'ഒരു മാസം', 'three_months' => 'മൂന്ന് മാസം', 'six_months' => 'ആറ് മാസം',
         'period' => 'കാലയളവ്', 'balance_due' => 'അടയ്ക്കാനുള്ള ബാക്കി', 'scan_to_pay' => 'UPI വഴി അടയ്ക്കാൻ സ്കാൻ ചെയ്യുക', 'thank_you' => 'നന്ദി',
         'signature' => 'ഒപ്പ്', 'rec_no' => 'നമ്പർ',
-        'pay_by_upi' => 'UPI വഴി അടയ്ക്കുക', 'open_upi_app' => 'UPI ആപ്പ് തുറക്കുക (GPay, PhonePe, Paytm)', 'upi_id' => 'UPI ഐഡി', 'upi_phone' => 'UPI നമ്പർ',
+        'pay_by_upi' => 'UPI വഴി അടയ്ക്കുക', 'open_upi_app' => 'UPI ആപ്പ് തുറക്കുക (GPay, PhonePe, Paytm)',
+        'pay_screenshot_title' => 'സ്ക്രീൻഷോട്ട് എടുത്ത് പണമടയ്ക്കുക', 'send_screenshot_btn' => 'പേയ്മെന്റ് സ്ക്രീൻഷോട്ട് ജിമ്മിലേക്ക് അയക്കുക', 'wa_paid_screenshot' => "നമസ്കാരം %s, ഞാൻ UPI വഴി %s അടച്ചു. സ്ക്രീൻഷോട്ട് ചേർത്തിട്ടുണ്ട്.", 'pay_step1' => 'ഈ QR കോഡിന്റെ സ്ക്രീൻഷോട്ട് എടുക്കുക.', 'pay_step2' => 'GPay, PhonePe അല്ലെങ്കിൽ Paytm തുറക്കുക → Scan QR → ഗാലറിയിൽ നിന്ന് സ്ക്രീൻഷോട്ട് തിരഞ്ഞെടുക്കുക.', 'pay_step3' => 'തുക അടച്ച ശേഷം പേയ്മെന്റ് സ്ക്രീൻഷോട്ട് ജിമ്മിലേക്ക് അയക്കുക.', 'upi_id' => 'UPI ഐഡി', 'upi_phone' => 'UPI നമ്പർ',
         'upi_name' => 'UPI പേര്', 'send_screenshot' => 'പണമടച്ച ശേഷം സ്ക്രീൻഷോട്ട് WhatsApp-ൽ അയക്കുക.',
         'upi_not_set_public' => 'ദയവായി ജിമ്മിൽ പണമടയ്ക്കുക അല്ലെങ്കിൽ വിളിക്കുക:',
 
