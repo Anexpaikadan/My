@@ -34,8 +34,11 @@ Colours and logo come from the DAYbill logo (blue `#360DD9`, green `#7ED957`, da
    keep "Add sample data" ticked if you want test data, and press **Install**.
 4. Delete `install.php`, then open <http://localhost/valley-mma/>.
 
-**Or with phpMyAdmin:** create a database `valley_mma`, import `sql/database.sql` and log in with
-**admin / admin123**. Change the password at once in *Settings*.
+**Or with phpMyAdmin:** create a database `valley_mma` and import one file:
+- `sql/valley_mma_clean.sql` – **clean start** (all tables, settings, plans, training plan, accounts; no members), or
+- `sql/database.sql` – the same **with sample data** for testing.
+
+Log in with **admin / admin123** and change the password at once in *Settings*.
 
 Sample member login (member app): phone **9847012345**, password **member123**.
 
@@ -102,7 +105,8 @@ valley-mma/
   login.php, logout.php, lang.php, photo.php, manifest.php, sw.js, offline.html
   includes/             init.php (helpers), accounts.php, header/nav/footer, lang.php (English + Malayalam), sql_tools.php
   assets/               style.css, print.css, app.js, attendance.js, qr.js, icons, vendor libraries
-  sql/                  schema.sql, accounts.sql, sample_data.sql, database.sql (complete file for phpMyAdmin)
+  sql/                  valley_mma_clean.sql (clean, for phpMyAdmin), database.sql (with sample data),
+                        schema.sql, accounts.sql, sample_data.sql (used by install.php)
   uploads/photos/       member photos (not web-accessible)
   backups/              backups saved on the server (not web-accessible)
 ```
