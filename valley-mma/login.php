@@ -62,5 +62,6 @@ require __DIR__ . '/includes/header.php';
     <a href="lang.php?l=ml" class="btn btn-sm btn-light">മലയാളം</a>
   </div>
   <img src="assets/daybill-logo.png" alt="DAYbill Solution" width="80" class="mt-4 rounded bg-white">
+  <div class="small-muted mt-1"><?= e(t('version')) ?> <?= e(APP_VERSION) ?> · <a href="scan_test.php"><?= e(t('scan_test')) ?></a></div>
 </div>
 <?php require __DIR__ . '/includes/footer.php';

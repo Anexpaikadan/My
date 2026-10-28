@@ -56,7 +56,8 @@ The attendance QR code and WhatsApp links contain the app address. Phones **cann
    (e.g. `http://192.168.1.10/valley-mma/`) – press **Use this address**. (Also in *Settings → App address*.)
 3. Allow Apache through the Windows firewall if phones cannot open that address.
 
-Members scan the QR with the normal **phone camera**, or in the member app. Without https the live camera inside
+Members scan the QR with the normal **phone camera**, or in the member app. If scanning does not work on a phone,
+open **More → Scanner test** (or `scan_test.php`) on that phone: it checks every step and says what to fix. Without https the live camera inside
 the browser is blocked by phones, so the app offers **Take a photo of the QR** instead – it works everywhere.
 With https (hosting) the live scanner works too.
 
@@ -125,7 +126,7 @@ valley-mma/
 ```
 
 Bundled libraries (in `assets/vendor`, so the app also works without internet on XAMPP):
-Bootstrap 5.3.8, Bootstrap Icons 1.13.2, html5-qrcode 2.3.8, jsPDF 2.5.2 + AutoTable 3.8.4, qrcode-generator 1.4.4.
+Bootstrap 5.3.8, Bootstrap Icons 1.13.2, jsQR 1.4.0 (QR scanning), jsPDF 2.5.2 + AutoTable 3.8.4, qrcode-generator 1.4.4.
 
 PDF reports use English text because the PDF font has no Malayalam letters. Use **Print → Save as PDF**
 for a Malayalam PDF.

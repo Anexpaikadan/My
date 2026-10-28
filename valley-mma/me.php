@@ -142,6 +142,7 @@ $payAmount = $balance > 0 ? $balance : ($st !== 'active' && $plan ? (float)$plan
   </div>
   <div id="mePhotoReader" class="d-none"></div>
   <div id="meScanMsg" class="small text-center text-danger"></div>
+  <a href="scan_test.php" class="small text-center d-block"><?= e(t('scanner_problem')) ?></a>
   <?php if ($payAmount > 0 && setting('upi_id') !== ''): ?>
     <a href="pay.php?a=<?= e(number_format($payAmount, 2, '.', '')) ?>" class="btn btn-primary btn-lg"><i class="bi bi-phone"></i> <?= e(t('pay_by_upi')) ?> <?= money($payAmount) ?></a>
   <?php endif; ?>
@@ -192,5 +193,5 @@ $payAmount = $balance > 0 ? $balance : ($st !== 'active' && $plan ? (float)$plan
 </div>
 <script>window.VM_ME = <?= json_encode(['camErr' => t('camera_use_photo'), 'wrong' => t('not_attendance_qr'), 'noQr' => t('no_qr_in_photo')], JSON_UNESCAPED_UNICODE) ?>;</script>
 <?php
-$scripts = ['assets/vendor/html5-qrcode.min.js'];
+$scripts = ['assets/vendor/jsQR.js', 'assets/qrscan.js?v=1'];
 require __DIR__ . '/includes/footer.php';

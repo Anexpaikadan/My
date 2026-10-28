@@ -5,7 +5,7 @@
 $title = $title ?? '';
 $active = $active ?? '';
 $bare = $bare ?? false;
-$v = '4';
+$v = APP_VERSION;
 ?><!doctype html>
 <html lang="<?= e(lang()) ?>">
 <head>

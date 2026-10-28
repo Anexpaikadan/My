@@ -138,7 +138,7 @@ a.card:hover { transform: translateY(-2px); transition: transform .15s; }
 /* ---- Attendance ---- */
 .qr-box { background: #fff; padding: 1rem; border-radius: 1rem; display: inline-block; }
 .qr-box svg, .qr-box img { width: min(78vw, 340px); height: auto; display: block; }
-#reader { max-width: 480px; margin: 0 auto; border-radius: 1rem; overflow: hidden; }
+#reader { width: 100%; max-width: 480px; margin: 0 auto; border-radius: 1rem; overflow: hidden; }
 #reader video { border-radius: 1rem; }
 .scan-result { font-size: 1.1rem; }
 .att-grid { font-size: .8rem; }
@@ -224,3 +224,8 @@ a.card:hover { transform: none; }
   .col-4 > .stat .lbl, .col-4 > .stat .small-muted { font-size: .72rem; }
   .big-btn { font-size: .85rem; }
 }
+
+/* QR scanner camera view (assets/qrscan.js) */
+.scan-view { position: relative; width: 100%; border-radius: 1rem; overflow: hidden; background: #000; }
+.scan-view video { display: block; width: 100%; height: auto; max-height: 70vh; object-fit: cover; }
+.scan-frame { position: absolute; inset: 12%; border: 3px solid rgba(126, 217, 87, .95); border-radius: 1rem; box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .25); pointer-events: none; }

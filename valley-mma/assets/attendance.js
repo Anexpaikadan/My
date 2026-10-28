@@ -33,7 +33,7 @@
 
   // ---- Scan member ID cards ----
   var startBtn = document.getElementById('scanStart');
-  if (startBtn && window.Html5Qrcode) {
+  if (startBtn && window.VMScan) {
     var flipBtn = document.getElementById('scanFlip');
     var stopBtn = document.getElementById('scanStop');
     var out = document.getElementById('scanResult');
@@ -74,8 +74,8 @@
     };
 
     var start = function () {
-      scanner = scanner || new Html5Qrcode('reader');
-      return scanner.start({ facingMode: facing }, { fps: 10, qrbox: function (w, h) { var s = Math.floor(Math.min(w, h) * 0.7); return { width: s, height: s }; } }, onScan, function () {})
+      scanner = scanner || window.vmNewScanner('reader');
+      return window.vmStartCamera(scanner, facing, window.vmScanConfig, onScan)
         .then(function () {
           startBtn.classList.add('d-none'); flipBtn.classList.remove('d-none'); stopBtn.classList.remove('d-none');
         })

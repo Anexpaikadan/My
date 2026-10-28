@@ -1,4 +1,6 @@
 // Valley MMA – page helpers: install as app, forms, exports, WhatsApp sharing, member QR scan.
+window.VM_JS = '3.6'; // same as APP_VERSION in includes/init.php
+
 (function () {
   var $ = function (s, el) { return (el || document).querySelector(s); };
   var $$ = function (s, el) { return Array.prototype.slice.call((el || document).querySelectorAll(s)); };
@@ -309,17 +311,20 @@
     });
   });
 
-  // ---- QR scan from a photo (works without https, where the live camera is blocked) ----
-  // input: <input type=file accept=image/* capture=environment>; onText gets the QR text.
+  // ---- QR scanning (assets/qrscan.js + assets/vendor/jsQR.js) ----
+  // QR from a photo (works everywhere, also without https). input: <input type=file accept=image/*>.
   window.vmPhotoScan = function (input, readerId, onText, onError) {
     input.addEventListener('change', function () {
       var file = input.files && input.files[0];
-      if (!file) return;
-      var sc = new Html5Qrcode(readerId);
-      sc.scanFile(file, false).then(function (text) { onText(text); })
-        .catch(function () { onError(); })
-        .finally(function () { input.value = ''; try { sc.clear(); } catch (e) {} });
+      if (!file || !window.VMScan) return;
+      VMScan.readFile(file).then(onText, onError).then(function () { input.value = ''; });
     });
+  };
+  window.vmNewScanner = function (id) { return new VMScan.Scanner(id); };
+  window.vmScanConfig = {}; // kept for the pages; the scanner reads the whole camera picture
+  // Starts the live camera (back camera first; any camera when the phone refuses that).
+  window.vmStartCamera = function (scanner, facing, config, onText) {
+    return scanner.start(facing, onText);
   };
   window.vmLiveCameraOk = function () {
     return window.isSecureContext && navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
@@ -327,7 +332,7 @@
 
   // ---- Member app: scan the attendance QR inside the app ----
   var meScan = $('#meScan');
-  if (meScan && window.Html5Qrcode) {
+  if (meScan && window.VMScan) {
     var msg = $('#meScanMsg'), reader = $('#reader'), sc = null;
     // The gym QR opens checkin.php?d=…&k=… – go to it on this same address (the QR may show another one).
     var go = function (text) {
@@ -353,10 +358,10 @@
     }
     meScan.addEventListener('click', function () {
       reader.classList.remove('d-none');
-      sc = sc || new Html5Qrcode('reader');
-      sc.start({ facingMode: 'environment' }, { fps: 10, qrbox: 230 }, function (text) {
+      sc = sc || window.vmNewScanner('reader');
+      window.vmStartCamera(sc, 'environment', window.vmScanConfig, function (text) {
         sc.stop().finally(function () { if (!go(text)) meScan.click(); });
-      }, function () {}).catch(function () {
+      }).catch(function () {
         showPhoto(window.VM_ME.camErr);
       });
     });
