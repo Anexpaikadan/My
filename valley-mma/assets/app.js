@@ -1,5 +1,5 @@
 // Valley MMA – page helpers: install as app, forms, exports, WhatsApp sharing, member QR scan.
-window.VM_JS = '3.9'; // same as APP_VERSION in includes/init.php
+window.VM_JS = '4.0'; // same as APP_VERSION in includes/init.php
 
 (function () {
   var $ = function (s, el) { return (el || document).querySelector(s); };
@@ -281,6 +281,12 @@ window.VM_JS = '3.9'; // same as APP_VERSION in includes/init.php
     });
   }
 
+  // A field that asks the password only when its value is changed (e.g. opening balance on the member form).
+  $$('[data-verify-if-changed]').forEach(function (inp) {
+    inp.addEventListener('input', function () {
+      if (inp.value !== inp.defaultValue) inp.form.dataset.verify = inp.dataset.verifyIfChanged; else delete inp.form.dataset.verify;
+    });
+  });
   // ---- Password check before money changes and deletes (forms with data-verify="message") ----
   var vModal = document.getElementById('verifyModal');
   if (vModal && window.bootstrap) {

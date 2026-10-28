@@ -4,7 +4,7 @@
 declare(strict_types=1);
 
 // App version: shown in the app (More, login, Scanner test). Must match window.VM_JS in assets/app.js.
-const APP_VERSION = '3.9';
+const APP_VERSION = '4.0';
 
 $CONFIG = require __DIR__ . '/../config.php';
 date_default_timezone_set($CONFIG['timezone'] ?? 'Asia/Kolkata');
@@ -66,7 +66,7 @@ function db(): PDO
 function migrate(PDO $pdo): void
 {
     $v = (int)$pdo->query("SELECT v FROM settings WHERE k = 'schema_version'")->fetchColumn();
-    if ($v >= 5) {
+    if ($v >= 6) {
         return;
     }
     if ($v < 2) {
@@ -85,13 +85,24 @@ function migrate(PDO $pdo): void
             ADD COLUMN level_auto TINYINT(1) NOT NULL DEFAULT 1 AFTER level_id, ADD COLUMN level_since DATE NULL AFTER level_auto');
     }
     run_sql($pdo, file_get_contents(__DIR__ . '/../sql/levels.sql'));
+    // v6: old students – attendance days before the app, opening balance
+    $cols = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'members'")
+        ->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('att_opening', $cols, true)) {
+        $pdo->exec('ALTER TABLE members ADD COLUMN att_opening SMALLINT UNSIGNED NOT NULL DEFAULT 0 AFTER level_since');
+    }
+    $cols = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payments'")
+        ->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('kind', $cols, true)) {
+        $pdo->exec("ALTER TABLE payments ADD COLUMN kind ENUM('normal','opening') NOT NULL DEFAULT 'normal' AFTER receipt_no");
+    }
     $pdo->exec(LEVEL_RECALC_SQL . ', level_since = CURDATE() WHERE m.level_auto = 1 AND m.level_id IS NULL');
-    $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '5') ON DUPLICATE KEY UPDATE v = '5'");
+    $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '6') ON DUPLICATE KEY UPDATE v = '6'");
 }
 
 // Sets level_id from the attendance days (add a WHERE).
 const LEVEL_RECALC_SQL = 'UPDATE members m SET level_id = (SELECT l.id FROM levels l WHERE l.from_day <= GREATEST(1,
-    (SELECT COUNT(*) FROM attendance a WHERE a.member_id = m.id)) ORDER BY l.from_day DESC LIMIT 1)';
+    m.att_opening + (SELECT COUNT(*) FROM attendance a WHERE a.member_id = m.id)) ORDER BY l.from_day DESC LIMIT 1)';
 
 function migrate_v3(PDO $pdo): void
 {
@@ -403,6 +414,7 @@ function nav_sections(): array
             ['members.php', 'members', 'bi-people-fill', 'members'],
             ['member_invite.php', 'invite_member', 'bi-person-plus-fill', 'add_member'],
             ['member_edit.php', 'add_member', 'bi-person-vcard-fill', 'add_member'],
+            ['member_edit.php?old=1', 'add_old_student', 'bi-person-check-fill', 'add_member'],
             ['plans.php', 'plans', 'bi-card-checklist', 'plans'],
             ['attendance.php', 'attendance', 'bi-qr-code-scan', 'attendance'],
             ['alerts.php', 'alerts', 'bi-bell-fill', 'alerts'],
@@ -629,9 +641,33 @@ function level_next(?array $level): ?array
     return null;
 }
 
+// Attendance days for the position: days before the app (old students) + days marked in the app.
 function att_days(int $memberId): int
 {
-    return (int)q('SELECT COUNT(*) FROM attendance WHERE member_id = ?', [$memberId])->fetchColumn();
+    return (int)q('SELECT m.att_opening + (SELECT COUNT(*) FROM attendance a WHERE a.member_id = m.id) FROM members m WHERE m.id = ?', [$memberId])->fetchColumn();
+}
+
+// Opening balance of an old student: what they already owed before the app. Kept as a payment row
+// (kind 'opening', paid 0) so balances, alerts and reports include it; 0 removes it.
+function opening_balance(int $memberId): float
+{
+    return (float)q("SELECT COALESCE(SUM(total), 0) FROM payments WHERE member_id = ? AND kind = 'opening'", [$memberId])->fetchColumn();
+}
+
+function opening_balance_set(int $memberId, float $amount, string $date): void
+{
+    $row = q("SELECT id FROM payments WHERE member_id = ? AND kind = 'opening' ORDER BY id LIMIT 1", [$memberId])->fetch();
+    if ($amount <= 0) {
+        q("DELETE FROM payments WHERE member_id = ? AND kind = 'opening'", [$memberId]);
+        return;
+    }
+    if ($row) {
+        q('UPDATE payments SET total = ?, other_fee = ?, pay_date = ? WHERE id = ?', [$amount, $amount, $date, $row['id']]);
+    } else {
+        q("INSERT INTO payments (receipt_no, kind, member_id, pay_date, other_fee, other_note, total, paid, note, created_by)
+           VALUES (?, 'opening', ?, ?, ?, ?, ?, 0, ?, ?)",
+            [next_receipt_no(), $memberId, $date, $amount, t_en('opening_balance'), $amount, t_en('opening_balance_note'), admin()['id'] ?? null]);
+    }
 }
 
 // "Day 1–5" / "Day 91+"

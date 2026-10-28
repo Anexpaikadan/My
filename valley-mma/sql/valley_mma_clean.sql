@@ -122,6 +122,8 @@ CREATE TABLE IF NOT EXISTS members (
   level_id        INT UNSIGNED NULL,
   level_auto      TINYINT(1) NOT NULL DEFAULT 1,
   level_since     DATE NULL,
+  /* old students: attendance days before the app (counted for the position) */
+  att_opening     SMALLINT UNSIGNED NOT NULL DEFAULT 0,
 
   notes           VARCHAR(500) NOT NULL DEFAULT '',
   created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -142,6 +144,8 @@ CREATE TABLE IF NOT EXISTS members (
 CREATE TABLE IF NOT EXISTS payments (
   id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   receipt_no    INT UNSIGNED  NOT NULL UNIQUE,
+  /* opening = old balance of an old student (paid 0) */
+  kind          ENUM('normal','opening') NOT NULL DEFAULT 'normal',
   member_id     INT UNSIGNED  NOT NULL,
   plan_id       INT UNSIGNED  NULL,
   pay_date      DATE          NOT NULL,
@@ -347,7 +351,7 @@ INSERT IGNORE INTO settings (k, v) VALUES
   ('acc_map_upi',       '2'),
   ('acc_map_card',      '2'),
   ('acc_map_bank',      '2'),
-  ('schema_version',    '5');
+  ('schema_version',    '6');
 
 /* Membership plans (change prices in the app: Plans) */
 INSERT IGNORE INTO plans (id, name, duration_value, duration_unit, price, description, sort_order) VALUES

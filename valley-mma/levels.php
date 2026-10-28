@@ -26,6 +26,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         flash('success', t('position_saved', (string)q('SELECT name FROM members WHERE id = ?', [$mid])->fetchColumn(), $l['name'] ?? '–'));
         redirect($back);
     }
+    if ($action === 'bulk_level') { // many members at once
+        $ids = array_filter(array_map('intval', (array)($_POST['ids'] ?? [])));
+        $l = level_by_id((int)post('level_id'));
+        foreach ($ids as $mid) {
+            if (post('auto') === '1') {
+                q('UPDATE members SET level_auto = 1 WHERE id = ?', [$mid]);
+                level_update($mid);
+            } elseif ($l) {
+                q('UPDATE members SET level_since = IF(level_id <=> ?, level_since, ?), level_id = ?, level_auto = 0 WHERE id = ?', [$l['id'], today(), $l['id'], $mid]);
+            }
+        }
+        flash($ids ? 'success' : 'warning', $ids ? t('positions_bulk_saved', count($ids)) : t('select_members_first'));
+        redirect($back);
+    }
     if ($action === 'delete') {
         require_verify('levels.php');
         $id = (int)post('id');
@@ -78,7 +92,7 @@ if ($filter) {
     $args[] = $filter;
 }
 $members = q("SELECT m.id, m.name, m.adm_no, m.photo, m.level_id, m.level_auto, m.level_since,
-              (SELECT COUNT(*) FROM attendance a WHERE a.member_id = m.id) days
+              m.att_opening + (SELECT COUNT(*) FROM attendance a WHERE a.member_id = m.id) days
               FROM members m WHERE $where ORDER BY days DESC, m.name", $args)->fetchAll();
 
 $title = t('positions');
@@ -151,11 +165,21 @@ require __DIR__ . '/includes/header.php';
           <span class="ms-auto align-self-center small-muted"><?= count($members) ?> <?= e(t('members')) ?></span>
         </form>
       </div>
+      <form method="post" id="bulkForm" class="border-bottom p-2 bg-light d-flex flex-wrap gap-2 align-items-center"><?= csrf_field() ?>
+        <input type="hidden" name="action" value="bulk_level"><input type="hidden" name="back" value="levels.php?level=<?= $filter ?>&who=<?= e($who) ?>">
+        <div class="form-check mb-0"><input class="form-check-input" type="checkbox" id="selAll" onclick="document.querySelectorAll('.bulk-cb').forEach(c => c.checked = this.checked)">
+          <label class="form-check-label small" for="selAll"><?= e(t('select_all')) ?></label></div>
+        <select class="form-select form-select-sm w-auto" name="level_id" aria-label="<?= e(t('position')) ?>">
+          <?php foreach ($levels as $l): ?><option value="<?= $l['id'] ?>"><?= e($l['name']) ?></option><?php endforeach; ?></select>
+        <button class="btn btn-sm btn-primary" name="auto" value="0"><?= e(t('set_selected')) ?></button>
+        <button class="btn btn-sm btn-outline-primary" name="auto" value="1"><i class="bi bi-magic"></i> <?= e(t('level_auto')) ?></button>
+      </form>
       <div class="list-group list-group-flush">
         <?php if (!$members): ?><div class="list-group-item text-muted"><?= e(t('nothing_here')) ?></div><?php endif; ?>
         <?php foreach ($members as $mm): $p = level_progress($mm); ?>
           <div class="list-group-item">
             <div class="d-flex align-items-center gap-2 mb-1">
+              <input class="form-check-input bulk-cb mt-0" type="checkbox" name="ids[]" value="<?= $mm['id'] ?>" form="bulkForm" aria-label="<?= e($mm['name']) ?>">
               <img src="<?= e(photo_url($mm)) ?>" class="avatar" alt="">
               <a href="member_view.php?id=<?= $mm['id'] ?>" class="fw-semibold me-auto text-decoration-none"><?= e($mm['name']) ?></a>
               <span class="badge <?= $mm['level_auto'] ? 'text-bg-light border' : 'bg-dark' ?>"><?= e(t($mm['level_auto'] ? 'level_auto' : 'level_manual')) ?></span>

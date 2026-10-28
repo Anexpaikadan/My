@@ -15,6 +15,12 @@ $plansById = array_column($plans, null, 'id');
 
 $text = ['trainer_name' => 100, 'notes' => 500, 'adm_no' => 20]; // admin-only fields
 $errors = [];
+$levels = levels();
+$old = get('old') === '1' || post('old') === '1';
+$opening = $id ? opening_balance($id) : 0.0;
+// Old student: balance before the app, attendance days before the app, position.
+$oldVals = ['opening' => $opening, 'att_opening' => (int)($m['att_opening'] ?? 0),
+    'level' => $m ? ((int)$m['level_auto'] ? 'auto' : (string)(int)$m['level_id']) : 'auto'];
 
 $d = $m ?: [
     'adm_no' => next_adm_no(), 'join_date' => today(), 'start_date' => today(), 'expiry_date' => '', 'state' => 'Kerala',
@@ -22,6 +28,11 @@ $d = $m ?: [
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $oldVals = ['opening' => max(0, num(post('opening_balance'))), 'att_opening' => max(0, min(9999, (int)post('att_opening'))),
+        'level' => post('level') === 'auto' || !level_by_id((int)post('level')) ? 'auto' : (string)(int)post('level')];
+    if ($id && abs($oldVals['opening'] - $opening) > 0.001) { // changing an old balance is a money change
+        require_verify('member_edit.php?id=' . $id);
+    }
     member_read_personal($d, $errors);
     foreach ($text as $k => $max) {
         $d[$k] = mb_substr(post($k), 0, $max);
@@ -82,15 +93,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             q('INSERT INTO members (' . implode(', ', $cols) . ') VALUES (' . implode(', ', array_fill(0, count($cols), '?')) . ')', $vals);
             $id = (int)db()->lastInsertId();
             flash('success', t('member_added', $d['name'], $d['adm_no']));
-            if (post('go_pay') === '1') {
-                redirect('payment_add.php?member=' . $id . '&new=1');
-            }
+        }
+        // Old student details: opening balance, attendance days before the app, position.
+        if (abs($oldVals['opening'] - $opening) > 0.001) {
+            opening_balance_set($id, $oldVals['opening'], $d['join_date'] ?: today());
+        }
+        q('UPDATE members SET att_opening = ? WHERE id = ?', [$oldVals['att_opening'], $id]);
+        if ($oldVals['level'] === 'auto') {
+            q('UPDATE members SET level_auto = 1 WHERE id = ?', [$id]);
+            level_update($id);
+        } else {
+            q('UPDATE members SET level_since = IF(level_id <=> ?, level_since, ?), level_id = ?, level_auto = 0 WHERE id = ?',
+                [(int)$oldVals['level'], today(), (int)$oldVals['level'], $id]);
+        }
+        if (!$m && post('go_pay') === '1') {
+            redirect('payment_add.php?member=' . $id . '&new=1');
         }
         redirect('member_view.php?id=' . $id);
     }
 }
 
-$title = $m ? t('edit_member') : t('new_member_form');
+$title = $m ? t('edit_member') : t($old ? 'add_old_student' : 'new_member_form');
 $active = $m ? 'members' : 'add_member';
 $back = $m ? 'member_view.php?id=' . $id : 'members.php';
 require __DIR__ . '/includes/header.php';
@@ -100,12 +123,13 @@ $f = fn($k) => e($d[$k] ?? '');
 <?php if ($errors): ?><div class="alert alert-danger"><?= implode('<br>', array_map('e', array_unique($errors))) ?></div><?php endif; ?>
 <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
   <?= csrf_field() ?>
-  <input type="hidden" name="id" value="<?= $id ?>">
+  <input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="old" value="<?= $old ? '1' : '' ?>">
+<?php if ($old && !$m): ?><div class="alert alert-info small"><i class="bi bi-info-circle"></i> <?= e(t('old_student_help')) ?></div><?php endif; ?>
 
   <div class="card mb-3"><div class="card-body">
     <div class="d-flex flex-wrap gap-3 align-items-start">
       <div class="flex-grow-1 row g-3" style="min-width:240px">
-        <div class="col-6"><label class="form-label" for="join_date"><?= e(t('date')) ?></label>
+        <div class="col-6"><label class="form-label" for="join_date"><?= e(t('join_date')) ?></label>
           <input class="form-control" type="date" id="join_date" name="join_date" value="<?= $f('join_date') ?>"></div>
         <div class="col-6"><label class="form-label" for="adm_no"><?= e(t('adm_no')) ?></label>
           <input class="form-control" id="adm_no" name="adm_no" value="<?= $f('adm_no') ?>" maxlength="20"></div>
@@ -137,6 +161,26 @@ $f = fn($k) => e($d[$k] ?? '');
     </div>
   </div></div>
 
+  <div class="card mb-3<?= $old || $oldVals['opening'] > 0 || $oldVals['att_opening'] > 0 ? ' border border-info' : '' ?>" id="oldStudent"><div class="card-body">
+    <span class="section-title"><?= e(t('old_student')) ?></span>
+    <p class="small-muted mb-2"><?= e(t('old_student_card_help')) ?></p>
+    <div class="row g-3">
+      <div class="col-6 col-md-4"><label class="form-label" for="opening_balance"><?= e(t('opening_balance')) ?> (₹)</label>
+        <input class="form-control" type="number" min="0" step="0.01" id="opening_balance" name="opening_balance" value="<?= e($oldVals['opening'] > 0 ? (string)(float)$oldVals['opening'] : '') ?>" placeholder="0"
+          <?= $m ? 'data-verify-if-changed="' . e(t('verify_money')) . '"' : '' ?>>
+        <div class="form-text"><?= e(t('opening_balance_help')) ?></div></div>
+      <div class="col-6 col-md-4"><label class="form-label" for="att_opening"><?= e(t('att_opening')) ?></label>
+        <input class="form-control" type="number" min="0" max="9999" id="att_opening" name="att_opening" value="<?= $oldVals['att_opening'] ?: '' ?>" placeholder="0">
+        <div class="form-text"><?= e(t('att_opening_help')) ?></div></div>
+      <div class="col-md-4"><label class="form-label" for="level"><?= e(t('position')) ?></label>
+        <select class="form-select" id="level" name="level">
+          <option value="auto"<?= $oldVals['level'] === 'auto' ? ' selected' : '' ?>><?= e(t('level_auto_option')) ?></option>
+          <?php foreach ($levels as $l): ?><option value="<?= $l['id'] ?>"<?= $oldVals['level'] === (string)$l['id'] ? ' selected' : '' ?>><?= e($l['name'] . ' (' . level_range($l) . ')') ?></option><?php endforeach; ?>
+        </select>
+        <div class="form-text"><?= e(t('position_form_help')) ?></div></div>
+    </div>
+  </div></div>
+
   <div class="card mb-3"><div class="card-body">
     <span class="section-title"><?= e(t('member_login')) ?></span>
     <div class="row g-3 align-items-end">
@@ -154,7 +198,7 @@ $f = fn($k) => e($d[$k] ?? '');
   <div class="d-flex flex-wrap gap-2 align-items-center mb-5">
     <button class="btn btn-primary btn-lg px-4"><i class="bi bi-check2-circle"></i> <?= e(t('save')) ?></button>
     <?php if (!$m): ?>
-      <div class="form-check ms-2"><input class="form-check-input" type="checkbox" name="go_pay" value="1" id="gp" checked><label class="form-check-label" for="gp"><?= e(t('go_to_payment')) ?></label></div>
+      <div class="form-check ms-2"><input class="form-check-input" type="checkbox" name="go_pay" value="1" id="gp"<?= $old ? '' : ' checked' ?>><label class="form-check-label" for="gp"><?= e(t('go_to_payment')) ?></label></div>
     <?php endif; ?>
     <a href="<?= $m ? 'member_view.php?id=' . $id : 'members.php' ?>" class="btn btn-light btn-lg ms-auto"><?= e(t('cancel')) ?></a>
   </div>
