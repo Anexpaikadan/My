@@ -163,7 +163,7 @@ body{background:#f6f5fd;padding-bottom:84px;line-height:1.6;-webkit-font-smoothi
 </style></head><body>
 <nav class="navbar noprint"><div class="container" style="max-width:820px"><a class="navbar-brand d-flex align-items-center gap-2 m-0" href="dashboard.php"><img src="logo.png" height="32" alt=""><b style="color:var(--p);font-size:16px">സംഭാവന</b></a>';
  echo '<div class="d-flex align-items-center gap-2"><button id="inst" type="button" class="btn btn-sm btn-primary d-none">📲 Install</button>';
- if($u)echo '<span class="small"><b>'.e($u['name']).'</b> · <a href="logout.php">Logout</a></span>';
+ if($u)echo '<span class="small"><a href="account.php" class="fw-bold text-decoration-none" title="My account">👤 '.e($u['name']).'</a> · <a href="logout.php">Logout</a></span>';
  echo '</div></div></nav><div class="container py-3" style="max-width:820px">';
  if($fl)echo '<div class="alert alert-'.$fl[1].' noprint">'.e($fl[0]).'</div>';
  // Malayalam turns into ????? when the tables are latin1 (shared hosting default). Checked once per login.
