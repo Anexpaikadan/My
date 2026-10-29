@@ -35,6 +35,8 @@ CREATE TABLE contributions(
  serial_no INT NOT NULL,
  name VARCHAR(120) NOT NULL,
  mobile VARCHAR(15) NULL,
+ item_id INT NULL,                        -- fund_items.id when the entry is a product (Payasam × qty)
+ qty INT NULL,
  amount DECIMAL(12,2) NOT NULL,
  cancelled TINYINT NOT NULL DEFAULT 0,
  created_by INT NOT NULL,
@@ -56,6 +58,15 @@ CREATE TABLE handovers(
  collector_id INT NOT NULL,
  amount DECIMAL(12,2) NOT NULL,
  status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'approved',
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY(fund_id) REFERENCES funds(id)
+);
+CREATE TABLE fund_items(
+ id INT AUTO_INCREMENT PRIMARY KEY,
+ fund_id INT NOT NULL,
+ name VARCHAR(100) NOT NULL,              -- e.g. Payasam
+ price DECIMAL(12,2) NOT NULL,            -- e.g. 500 per unit
+ active TINYINT NOT NULL DEFAULT 1,
  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
  FOREIGN KEY(fund_id) REFERENCES funds(id)
 );

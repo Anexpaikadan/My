@@ -3,6 +3,7 @@
 | Folder / file | What it is |
 |---|---|
 | [`daybill/`](daybill/) | **Daybill Print** – print shop app (PHP + MySQL) |
+| [`sambavana/`](sambavana/) | **സംഭാവന (Sambhavana)** – fund / contribution collection app (PHP + MySQL) |
 | `sales-pos.html` | Sales POS page |
 
 ## Daybill Print
