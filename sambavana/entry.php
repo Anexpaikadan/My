@@ -42,7 +42,7 @@ head('Entry');?>
 </style>
 <div class="d-flex justify-content-between align-items-center mb-2"><h5 class="m-0">Entries / എൻട്രികൾ</h5>
 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#em">＋ New entry</button></div>
-<?php if($role==='creator'):?><div class="d-flex gap-2 mb-2 noprint"><a class="btn btn-sm btn-outline-primary" href="items.php?id=<?=$fid?>">🛍 Products<?=$items?' ('.count($items).')':''?></a><a class="btn btn-sm btn-outline-success" href="import.php?id=<?=$fid?>">📥 Import from Excel</a></div><?php endif;?>
+<?php if($role==='creator'):?><div class="d-flex gap-2 mb-2 noprint"><a class="btn btn-sm btn-outline-primary" href="items.php?id=<?=$fid?>">🛍 Products<?=$items?' ('.count($items).')':''?></a></div><?php endif;?>
 <p class="small text-muted">Recent / അവസാനത്തെ എൻട്രികൾ</p>
 <?php foreach($rows as $x):$bal=$x['amount']-$x['paid'];?>
 <a href="contribution.php?id=<?=$x['id']?>" class="card p-2 mb-1 text-decoration-none text-dark"><div class="d-flex justify-content-between"><span><b>#<?=$x['serial_no']?></b> <?=nm($x['name'],$bal)?></span><span><?=bal_badge($bal)?></span></div>

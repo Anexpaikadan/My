@@ -21,7 +21,6 @@ $opt[]=['bi-cash-coin','Transfer','കൈമാറ്റം',"handover.php?id=$f
 if($role==='creator'){
  $opt[]=['bi-people','Collectors','കളക്ടർമാർ',"collectors.php?id=$fid",''];
  $opt[]=['bi-bag','Products','ഇനങ്ങൾ',"items.php?id=$fid",''];
- if($open)$opt[]=['bi-file-earmark-excel','Import Excel','എക്സൽ',"import.php?id=$fid",''];
  $opt[]=['bi-gear','Settings','ക്രമീകരണം',"settings.php?id=$fid",''];
 }
 head($f['title']);?>

@@ -61,7 +61,6 @@ nav_main('home');head('Home');?>
 <a href="reports.php?id=<?=$id?>"><i class="bi bi-bar-chart-line"></i>Reports</a>
 <a href="remind.php?id=<?=$id?>"><i class="bi bi-bell"></i>Pending<?=$f['pend']?' ('.$f['pend'].')':''?></a>
 <a href="items.php?id=<?=$id?>"><i class="bi bi-bag"></i>Products</a>
-<?php if($f['status']==='open'):?><a href="import.php?id=<?=$id?>"><i class="bi bi-file-earmark-excel"></i>Import</a><?php endif;?>
 </div></div>
 <?php endforeach;if(!$funds):?>
 <div class="card p-4 text-center mb-3"><div style="font-size:42px">🪙</div><b>No funds yet</b><p class="small text-muted mb-2">Create your first fund, e.g. പായസം ചലഞ്ച്</p>
