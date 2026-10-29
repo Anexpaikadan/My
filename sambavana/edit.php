@@ -3,7 +3,7 @@ $s=$pdo->prepare('SELECT * FROM contributions WHERE id=?');$s->execute([(int)($_
 if(!$c){http_response_code(404);die('Not found');}
 [$f,$role]=fund_access($c['fund_id']);
 if($role!=='creator'||$f['status']!=='open'||$c['cancelled']){http_response_code(403);die('Not allowed');}
-nav($f,$role,'home');$items=fund_items($f['id'],true);
+nav($f,$role,'home');$GLOBALS['BACK']='contribution.php?id='.$c['id'];$items=fund_items($f['id'],true);
 $q=$pdo->prepare('SELECT COALESCE(SUM(amount),0) FROM payments WHERE contribution_id=?');$q->execute([$c['id']]);$paid=(float)$q->fetchColumn();
 if($_SERVER['REQUEST_METHOD']==='POST'){csrf_check();
  if(($_POST['do']??'')==='cancel'){
@@ -20,7 +20,6 @@ if($_SERVER['REQUEST_METHOD']==='POST'){csrf_check();
  redirect('edit.php?id='.$c['id']);
 }
 head('Edit entry');?>
-<a href="contribution.php?id=<?=$c['id']?>" class="small">← Back</a>
 <h5 class="mt-1">Edit #<?=$c['serial_no']?></h5>
 <div class="card p-3 mb-3"><form method="post"><?=csrf_field()?><input type="hidden" name="id" value="<?=$c['id']?>">
 <label class="small text-muted">Name</label><input class="form-control mb-2" name="name" value="<?=e($c['name'])?>" required>

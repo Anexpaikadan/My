@@ -15,8 +15,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){csrf_check();
  }catch(PDOException $x){flash('Username already taken','danger');}
  redirect('account.php');
 }
-head('My account');?>
-<a href="dashboard.php" class="small">← Back</a>
+nav_main('account');head('My account');?>
 <h5 class="mt-2">👤 My account / എന്റെ അക്കൗണ്ട്</h5>
 <div class="card p-3"><form method="post" autocomplete="off"><?=csrf_field()?>
 <label class="small text-muted">Name / പേര്</label>
@@ -29,4 +28,5 @@ head('My account');?>
 <label class="small text-muted">Current password (required to save) / നിലവിലെ പാസ്‌വേഡ്</label>
 <input class="form-control mb-3" type="password" name="current" autocomplete="current-password" required>
 <button class="btn btn-primary w-100">Save / സേവ്</button></form></div>
+<a class="btn btn-outline-danger w-100 mt-3" href="logout.php"><i class="bi bi-box-arrow-right"></i> Logout / ലോഗൗട്ട്</a>
 <?php foot();

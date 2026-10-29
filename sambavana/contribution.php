@@ -18,7 +18,6 @@ $full=$head."Total: ₹".money($c['amount'])."\nPaid: ₹".money($paidAmt)."\nBa
 if($pays){$full.="\nPayments:\n";foreach($pays as $i=>$p)$full.=($i+1).") ".date('d-m-Y',strtotime($p['created_at']))." – ₹".money($p['amount'])."\n";}
 $full.="\nThank you 🙏";
 head('Contribution #'.$c['serial_no']);?>
-<a href="fund.php?id=<?=$f['id']?>" class="small">← Back</a>
 <div class="card p-3 my-2"><h5>#<?=$c['serial_no']?> <?=e($c['name'])?></h5>
 <?php if($c['item_name']):?><div class="mb-1"><span class="itm"><?=e(item_label($c))?></span> <small class="text-muted">₹<?=money($c['amount']/$c['qty'])?> each</small></div><?php endif;?>
 <div>Total: <b>₹<?=money($c['amount'])?></b></div>

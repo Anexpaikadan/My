@@ -16,7 +16,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){csrf_check();$id=(int)$_POST['id'];$do=$
 }
 $rl=$_SESSION['rlink']??null;unset($_SESSION['rlink']);
 $rows=$pdo->query("SELECT id,name,username,status,reset_requested,created_at FROM users WHERE role='user' ORDER BY reset_requested DESC,FIELD(status,'pending','approved','blocked','rejected'),id DESC")->fetchAll();
-head('Admin');?>
+nav_main('users');head('Admin');?>
 <h5>Users / ഉപയോക്താക്കൾ</h5>
 <?php if($rl):$m="സംഭാവന - Hello {$rl[0]}, set a new password using this link (valid 24 hours):\n{$rl[2]}";?>
 <div class="alert alert-info"><b>Reset link for <?=e($rl[0])?></b> (shown only now)

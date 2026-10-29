@@ -10,21 +10,94 @@ if($_SERVER['REQUEST_METHOD']==='POST'){csrf_check();
    ->execute([$u['id'],$t,trim($_POST['description']),$type,$_POST['start_date']?:date('Y-m-d'),trim($_POST['creator_details'])]);
   redirect('fund.php?id='.$pdo->lastInsertId());
  }
+ redirect('dashboard.php#new');
 }
-$s=$pdo->prepare('SELECT * FROM funds WHERE creator_id=? ORDER BY id DESC');$s->execute([$u['id']]);$funds=$s->fetchAll();
-head('My Funds');?>
-<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="m-0">My Funds / എന്റെ ഫണ്ടുകൾ</h5>
-<button class="btn btn-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#nf">+ New Fund</button></div>
-<div id="nf" class="collapse card p-3 mb-3"><form method="post"><?=csrf_field()?>
-<input class="form-control mb-2" name="title" placeholder="Fund title / ഫണ്ടിന്റെ പേര്" required>
+$s=$pdo->prepare('SELECT * FROM funds WHERE creator_id=? ORDER BY status=\'closed\',id DESC');$s->execute([$u['id']]);$funds=$s->fetchAll();
+// per fund: totals, entries, people with balance
+$q=$pdo->prepare('SELECT COUNT(*) n,COALESCE(SUM(c.amount>COALESCE(pp.paid,0)),0) pend FROM contributions c LEFT JOIN (SELECT contribution_id,SUM(amount) paid FROM payments GROUP BY contribution_id) pp ON pp.contribution_id=c.id WHERE c.fund_id=? AND c.cancelled=0');
+$T=$P=$N=$PN=0;
+foreach($funds as &$f){[$f['t'],$f['p'],$f['b']]=fund_totals($f['id']);$q->execute([$f['id']]);$x=$q->fetch();$f['n']=(int)$x['n'];$f['pend']=(int)$x['pend'];
+ $T+=$f['t'];$P+=$f['p'];$N+=$f['n'];$PN+=$f['pend'];}
+unset($f);
+$r=$pdo->prepare('SELECT c.id,c.serial_no,c.name,c.amount,c.created_at,f.title FROM contributions c JOIN funds f ON f.id=c.fund_id WHERE f.creator_id=? AND c.cancelled=0 ORDER BY c.id DESC LIMIT 5');$r->execute([$u['id']]);$recent=$r->fetchAll();
+$pc=fn($p,$t)=>$t>0?(int)min(100,round($p/$t*100)):0;
+$h=(int)date('G');$hi=$h<12?'Good morning':($h<17?'Good afternoon':'Good evening');
+nav_main('home');head('Home');?>
+<style>
+.hero{background:linear-gradient(135deg,#3513d6,#6a3df0);color:#fff;border-radius:20px;padding:18px;box-shadow:0 6px 18px #3513d640}
+.hero .big{font-size:1.9rem;font-weight:800;line-height:1.1}
+.hero .progress{background:#ffffff40;height:8px}
+.hero .progress-bar{background:var(--g)}
+.hero .k{font-size:.8rem;opacity:.85}
+.stat{background:#fff;border-radius:16px;padding:12px 6px;text-align:center;box-shadow:0 1px 4px #3513d614;text-decoration:none;color:#222;display:block}
+.stat b{display:block;font-size:1.25rem}
+.stat i{font-size:1.2rem;color:var(--p)}
+.fund{border-radius:18px;overflow:hidden}
+.fund .top{display:block;padding:14px 14px 10px;color:#222;text-decoration:none}
+.fund .progress{height:7px}
+.chip{font-size:.75rem;border-radius:20px;padding:1px 9px;background:#ece8ff;color:var(--p);font-weight:600}
+.chip.closed{background:#eee;color:#666}
+.acts{display:flex;border-top:1px solid #f0eef8}
+.acts a{flex:1;text-align:center;padding:8px 2px;font-size:11px;color:#555;text-decoration:none}
+.acts a i{display:block;font-size:19px;color:var(--p)}
+.acts a:active{background:#f3f1ff}
+.fab{position:fixed;right:18px;bottom:calc(86px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:18px;background:var(--p);color:#fff;border:0;font-size:28px;box-shadow:0 6px 16px #3513d655;z-index:45;display:flex;align-items:center;justify-content:center}
+.fab:active{transform:scale(.92)}
+.rec{display:flex;align-items:center;gap:10px;padding:10px 12px;color:#222;text-decoration:none;border-bottom:1px solid #f3f2f8}
+.rec:last-child{border-bottom:0}
+.rec .dot{width:36px;height:36px;border-radius:12px;background:#ece8ff;color:var(--p);display:flex;align-items:center;justify-content:center;font-weight:700;flex:none;font-size:13px}
+</style>
+<div class="hero mb-3">
+<div class="k"><?=$hi?>, <?=e($u['name'])?> 👋</div>
+<div class="k mt-2">Collected / ലഭിച്ചത്</div>
+<div class="big">₹<?=money($P)?></div>
+<div class="progress my-2"><div class="progress-bar" style="width:<?=$pc($P,$T)?>%"></div></div>
+<div class="d-flex justify-content-between small"><span>Promised ₹<?=money($T)?></span><span>Balance ₹<?=money($T-$P)?></span></div>
+</div>
+<div class="row g-2 mb-3">
+<div class="col-4"><div class="stat"><i class="bi bi-collection"></i><b><?=count($funds)?></b><small class="text-muted">Funds</small></div></div>
+<div class="col-4"><div class="stat"><i class="bi bi-people"></i><b><?=$N?></b><small class="text-muted">Entries</small></div></div>
+<div class="col-4"><div class="stat"><i class="bi bi-hourglass-split"></i><b class="text-danger"><?=$PN?></b><small class="text-muted">Pending</small></div></div>
+</div>
+<div class="d-flex justify-content-between align-items-center mb-2"><h6 class="m-0 fw-bold">My Funds / എന്റെ ഫണ്ടുകൾ</h6>
+<button class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#nf"><i class="bi bi-plus"></i> New</button></div>
+<?php foreach($funds as $f):$id=$f['id'];?>
+<div class="card fund mb-3">
+<a class="top" href="fund.php?id=<?=$id?>">
+<div class="d-flex justify-content-between align-items-start gap-2"><b style="font-size:1.05rem"><?=e($f['title'])?></b><i class="bi bi-chevron-right text-muted"></i></div>
+<div class="d-flex gap-1 my-1"><span class="chip"><?=e(ucfirst($f['type']))?></span><span class="chip <?=$f['status']==='closed'?'closed':''?>"><?=$f['status']==='closed'?'🔒 Closed':'● Open'?></span><small class="text-muted ms-auto"><?=$f['n']?> entries</small></div>
+<div class="progress my-2"><div class="progress-bar bg-success" style="width:<?=$pc($f['p'],$f['t'])?>%"></div></div>
+<div class="row g-0 text-center small"><div class="col-4"><small class="text-muted d-block">Total</small><b>₹<?=money($f['t'])?></b></div><div class="col-4 border-start"><small class="text-muted d-block">Paid</small><b class="text-success">₹<?=money($f['p'])?></b></div><div class="col-4 border-start"><small class="text-muted d-block">Balance</small><b class="text-danger">₹<?=money($f['b'])?></b></div></div>
+</a>
+<div class="acts">
+<?php if($f['status']==='open'):?><a href="entry.php?id=<?=$id?>"><i class="bi bi-plus-square"></i>Entry</a><?php endif;?>
+<a href="reports.php?id=<?=$id?>"><i class="bi bi-bar-chart-line"></i>Reports</a>
+<a href="remind.php?id=<?=$id?>"><i class="bi bi-bell"></i>Pending<?=$f['pend']?' ('.$f['pend'].')':''?></a>
+<a href="items.php?id=<?=$id?>"><i class="bi bi-bag"></i>Products</a>
+<?php if($f['status']==='open'):?><a href="import.php?id=<?=$id?>"><i class="bi bi-file-earmark-excel"></i>Import</a><?php endif;?>
+</div></div>
+<?php endforeach;if(!$funds):?>
+<div class="card p-4 text-center mb-3"><div style="font-size:42px">🪙</div><b>No funds yet</b><p class="small text-muted mb-2">Create your first fund, e.g. പായസം ചലഞ്ച്</p>
+<button class="btn btn-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#nf">＋ Create fund</button></div>
+<?php endif;?>
+<?php if($recent):?><h6 class="fw-bold mb-2">Recent entries / പുതിയവ</h6>
+<div class="card mb-3"><?php foreach($recent as $x):?><a class="rec" href="contribution.php?id=<?=$x['id']?>"><span class="dot">#<?=$x['serial_no']?></span>
+<span class="flex-grow-1 text-truncate"><b><?=e($x['name'])?></b><br><small class="text-muted"><?=e($x['title'])?> · <?=date('d M, g:i a',strtotime($x['created_at']))?></small></span><b>₹<?=money($x['amount'])?></b></a><?php endforeach;?></div>
+<?php endif;?>
+<button class="fab noprint" data-bs-toggle="modal" data-bs-target="#nf" aria-label="New fund"><i class="bi bi-plus-lg"></i></button>
+<div class="modal fade sheet" id="nf" tabindex="-1" aria-hidden="true"><div class="modal-dialog"><div class="modal-content"><div class="grab"></div>
+<form method="post"><?=csrf_field()?>
+<div class="modal-header border-0 pb-0"><h5 class="modal-title">New Fund / പുതിയ ഫണ്ട്</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+<div class="modal-body">
+<input class="form-control form-control-lg mb-2" name="title" placeholder="Fund title / ഫണ്ടിന്റെ പേര്" required>
 <select class="form-select mb-2" name="type"><option value="charity">Charity / ചാരിറ്റി</option><option value="festival">Festival / ഉത്സവം</option><option value="other">Other</option></select>
 <input class="form-control mb-2" type="date" name="start_date" value="<?=date('Y-m-d')?>">
 <textarea class="form-control mb-2" name="description" rows="3" placeholder="Description / വിവരണം"></textarea>
-<textarea class="form-control mb-2" name="creator_details" rows="2" placeholder="Creator details (name, phone, place)"></textarea>
-<button class="btn btn-primary w-100">Create Fund</button></form></div>
-<?php foreach($funds as $f): [$t,$p,$b]=fund_totals($f['id']);?>
-<a href="fund.php?id=<?=$f['id']?>" class="card p-3 mb-2 text-decoration-none text-dark">
-<b><?=e($f['title'])?></b><small class="text-muted"><?=e($f['type'])?> · <?=e($f['start_date'])?></small>
-<div class="small mt-1">Total ₹<?=money($t)?> · Paid ₹<?=money($p)?> · Balance ₹<?=money($b)?></div></a>
-<?php endforeach; if(!$funds)echo '<p class="text-muted">No funds yet. Create one.</p>';
-foot();
+<textarea class="form-control mb-2" name="creator_details" rows="2" placeholder="Creator details (name, phone, place)"></textarea></div>
+<div class="modal-footer border-0 pt-0"><button class="btn btn-primary btn-lg w-100">Create Fund</button></div></form></div></div></div>
+<script>
+window.addEventListener('load',function(){var m=bootstrap.Modal.getOrCreateInstance(document.getElementById('nf'));
+ function chk(){if(location.hash==='#new'){m.show();history.replaceState(null,'',location.pathname);}}
+ chk();window.addEventListener('hashchange',chk);});
+</script>
+<?php foot();

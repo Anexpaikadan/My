@@ -128,18 +128,29 @@ function members($f){
 $GLOBALS['NAV']=null;
 function nav($f,$role,$active){
  global $pdo;$id=$f['id'];
- $items=[['home','🏠','Home',"fund.php?id=$id"],['entry','➕','Entry',"entry.php?id=$id"]];
- if($role==='creator'){$items[]=['reports','📊','Reports',"reports.php?id=$id"];$items[]=['transfer','💵','Transfer',"handover.php?id=$id"];$items[]=['team','👥','Collectors',"collectors.php?id=$id"];}
- else{$items[]=['reports','📤','Share',"reports.php?id=$id"];$items[]=['transfer','💵','Transfer',"handover.php?id=$id"];}
- if(!empty($f['reminders']))$items[]=['remind','🔔','Pending',"remind.php?id=$id"];
+ $items=[['home','bi-house-door','Home',"fund.php?id=$id"],['entry','bi-plus-square','Entry',"entry.php?id=$id"]];
+ if($role==='creator'){$items[]=['reports','bi-bar-chart-line','Reports',"reports.php?id=$id"];$items[]=['transfer','bi-cash-coin','Transfer',"handover.php?id=$id"];$items[]=['team','bi-people','Collectors',"collectors.php?id=$id"];}
+ else{$items[]=['reports','bi-share','Share',"reports.php?id=$id"];$items[]=['transfer','bi-cash-coin','Transfer',"handover.php?id=$id"];}
+ if(!empty($f['reminders']))$items[]=['remind','bi-bell','Pending',"remind.php?id=$id"];
+ // back arrow: fund home -> all funds (creator only); every other fund page -> fund home
+ $GLOBALS['BACK']=basename($_SERVER['SCRIPT_NAME'])==='fund.php'?($role==='creator'?'dashboard.php':null):"fund.php?id=$id";
  $b=0;
  if($role==='creator'){$q=$pdo->prepare("SELECT COUNT(*) FROM handovers WHERE fund_id=? AND status='pending'");$q->execute([$id]);$b=(int)$q->fetchColumn();}
  $GLOBALS['NAV']=[$items,$active,$b];
 }
+// Bottom tabs outside a fund (dashboard, account, admin)
+function nav_main($active){
+ $u=me();
+ $items=$u['role']==='admin'?[['users','bi-people','Users','admin.php'],['account','bi-person-circle','Account','account.php']]
+  :[['home','bi-house-door','Home','dashboard.php'],['new','bi-plus-circle','New fund','dashboard.php#new'],['account','bi-person-circle','Account','account.php']];
+ if($u['role']==='collector')$items=[['home','bi-house-door','Home','fund.php?id='.(int)$u['fund_id']],['account','bi-person-circle','Account','account.php']];
+ $GLOBALS['NAV']=[$items,$active,0];
+}
+$GLOBALS['BACK']=false;
 function head($title){
  $u=me();$fl=$_SESSION['flash']??null;unset($_SESSION['flash']);
  echo '<!doctype html><html lang="ml"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#3513d6"><title>'.e($title).' - സംഭാവന</title>
-<link rel="icon" href="logo.png"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="സംഭാവന"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;600;700&display=swap" rel="stylesheet"><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="icon" href="logo.png"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="സംഭാവന"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;600;700&display=swap" rel="stylesheet"><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"><link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 <style>
 :root{--p:#3513d6;--g:#7ed957;--bs-link-color:#3513d6;--bs-link-hover-color:#2a0fae;--bs-body-font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Malayalam","Nirmala UI","Kartika",sans-serif}
 body{background:#f6f5fd;padding-bottom:84px;line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
@@ -148,7 +159,29 @@ body{background:#f6f5fd;padding-bottom:84px;line-height:1.6;-webkit-font-smoothi
 .bal{background:#fdecee;color:#b02a37;border-radius:6px;padding:0 6px;font-weight:600;white-space:nowrap}
 .ok{background:#e8f8e1;color:#2f7d14;border-radius:6px;padding:0 6px;font-weight:600;white-space:nowrap}
 .itm{background:#ece8ff;color:#3513d6;border-radius:6px;padding:0 6px;font-size:.85em;white-space:nowrap}
-.navbar{background:#fff;border-bottom:3px solid var(--g)}
+html{-webkit-tap-highlight-color:transparent}
+body{touch-action:manipulation;overscroll-behavior-y:none}
+@view-transition{navigation:auto}
+.page{animation:pin .22s ease-out}
+@keyframes pin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+body.go .page{opacity:.5;transition:opacity .15s}
+#lb{position:fixed;top:0;left:0;height:3px;width:0;background:var(--g);z-index:2000}
+body.go #lb{animation:lb 2.5s ease-out forwards}
+@keyframes lb{to{width:90%}}
+@media (prefers-reduced-motion:reduce){.page{animation:none}}
+a.card,.btn,.tile,.bnav a{transition:transform .08s,background .15s}
+a.card:active,.btn:active,.tile:active{transform:scale(.97)}
+.appbar{position:sticky;top:0;z-index:60;background:#fff;border-bottom:3px solid var(--g);padding-top:env(safe-area-inset-top)}
+.appbar .in{max-width:820px;margin:0 auto;height:56px;display:flex;align-items:center;gap:6px;padding:0 10px}
+.appbar .ttl{flex:1;min-width:0;font-weight:700;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ib{width:40px;height:40px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#222;text-decoration:none;font-size:22px;flex:none}
+.ib:active{background:#ece8ff}
+.av{width:36px;height:36px;border-radius:50%;background:var(--p);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;text-decoration:none;flex:none}
+.sheet .modal-dialog{position:fixed;left:0;right:0;bottom:0;margin:0 auto;width:100%;max-width:820px}
+.sheet .modal-content{border:0;border-radius:20px 20px 0 0;max-height:92vh;overflow-y:auto}
+.sheet.fade .modal-dialog{transform:translateY(100%);transition:transform .3s ease}
+.sheet.show .modal-dialog{transform:none}
+.grab{width:44px;height:5px;border-radius:3px;background:#d0d0dc;margin:8px auto 0}
 .card{border:0;box-shadow:0 1px 4px #3513d614;border-radius:12px}
 .btn-primary{--bs-btn-bg:#3513d6;--bs-btn-border-color:#3513d6;--bs-btn-hover-bg:#2a0fae;--bs-btn-hover-border-color:#2a0fae;--bs-btn-active-bg:#2a0fae;--bs-btn-active-border-color:#2a0fae}
 .btn-outline-primary{--bs-btn-color:#3513d6;--bs-btn-border-color:#3513d6;--bs-btn-hover-bg:#3513d6;--bs-btn-hover-border-color:#3513d6;--bs-btn-active-bg:#3513d6;--bs-btn-active-border-color:#3513d6}
@@ -156,15 +189,22 @@ body{background:#f6f5fd;padding-bottom:84px;line-height:1.6;-webkit-font-smoothi
 .text-success{color:#3a9a1c!important}
 .bnav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #ddd;display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:50}
 .bnav a{flex:1;text-align:center;padding:6px 2px 5px;font-size:11px;color:#666;text-decoration:none;position:relative;border-top:3px solid transparent}
-.bnav a span{display:block;font-size:20px;line-height:1.2}
-.bnav a.on{color:var(--p);font-weight:700;border-top-color:var(--p)}
+.bnav a span{display:block;line-height:1.2;margin-bottom:1px}
+.bnav a span i{display:inline-block;font-size:21px;padding:1px 16px;border-radius:16px}
+.bnav a.on{color:var(--p);font-weight:700}
+.bnav a.on span i{background:#ece8ff}
 .bdg{position:absolute;top:2px;right:16%;background:#dc3545;color:#fff;border-radius:10px;padding:0 5px;font-size:10px}
 @media print{.noprint{display:none!important}body{background:#fff;padding:0}}
 </style></head><body>
-<nav class="navbar noprint"><div class="container" style="max-width:820px"><a class="navbar-brand d-flex align-items-center gap-2 m-0" href="dashboard.php"><img src="logo.png" height="32" alt=""><b style="color:var(--p);font-size:16px">സംഭാവന</b></a>';
- echo '<div class="d-flex align-items-center gap-2"><button id="inst" type="button" class="btn btn-sm btn-primary d-none">📲 Install</button>';
- if($u)echo '<span class="small"><a href="account.php" class="fw-bold text-decoration-none" title="My account">👤 '.e($u['name']).'</a> · <a href="logout.php">Logout</a></span>';
- echo '</div></div></nav><div class="container py-3" style="max-width:820px">';
+<div id="lb"></div><header class="appbar noprint"><div class="in">';
+ // app bar: back arrow + page title on inner pages, logo on the main screens
+ $back=$GLOBALS['BACK'];
+ if($back===false)$back=in_array(basename($_SERVER['SCRIPT_NAME']),['dashboard.php','admin.php','index.php'],true)?null:($u?($u['role']==='admin'?'admin.php':'dashboard.php'):'index.php');
+ if($back)echo '<a class="ib" href="'.e($back).'" aria-label="Back"><i class="bi bi-arrow-left"></i></a><div class="ttl">'.e($title).'</div>';
+ else echo '<a class="d-flex align-items-center gap-2 text-decoration-none flex-grow-1" href="dashboard.php"><img src="logo.png" height="32" alt=""><b style="color:var(--p);font-size:16px">സംഭാവന</b></a>';
+ echo '<button id="inst" type="button" class="btn btn-sm btn-primary d-none">📲 Install</button>';
+ if($u)echo '<a class="av" href="account.php" title="'.e($u['name']).'">'.e(sn($u['name'],null)).'</a>';
+ echo '</div></header><div class="container py-3 page" style="max-width:820px">';
  if($fl)echo '<div class="alert alert-'.$fl[1].' noprint">'.e($fl[0]).'</div>';
  // Malayalam turns into ????? when the tables are latin1 (shared hosting default). Checked once per login.
  if($u&&$u['role']!=='collector'){
@@ -175,7 +215,7 @@ body{background:#f6f5fd;padding-bottom:84px;line-height:1.6;-webkit-font-smoothi
 function foot(){
  echo '</div>';
  if($n=$GLOBALS['NAV']){echo '<nav class="bnav noprint">';
-  foreach($n[0] as $i){echo '<a class="'.($i[0]===$n[1]?'on':'').'" href="'.$i[3].'"><span>'.$i[1].'</span>'.$i[2].($i[0]==='transfer'&&$n[2]?'<b class="bdg">'.$n[2].'</b>':'').'</a>';}
+  foreach($n[0] as $i){echo '<a class="'.($i[0]===$n[1]?'on':'').'" href="'.$i[3].'"><span><i class="bi '.$i[1].'"></i></span>'.$i[2].($i[0]==='transfer'&&$n[2]?'<b class="bdg">'.$n[2].'</b>':'').'</a>';}
   echo '</nav>';}
  echo '<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script><script src="app.js"></script></body></html>';
 }

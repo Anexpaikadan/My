@@ -60,14 +60,14 @@ foreach($R['rows'] as $row)$txt.=implode(' | ',$row)."\n";
 if($R['foot'])$txt.="\n".implode("\n",$R['foot']);
 head('Report');
 $tabs=[1=>'Fund',2=>'Contributions',3=>'Members',4=>'Member cash',5=>'Handover']+($hasItems||$r===6?[6=>'Products']:[]);?>
-<div class="noprint"><a href="fund.php?id=<?=$fid?>" class="small">← <?=e($f['title'])?></a>
+<div class="noprint">
 <div class="d-flex flex-wrap gap-1 my-2"><?php foreach($tabs as $k=>$v):?><a class="btn btn-sm btn-<?=$k===$r?'primary':'outline-primary'?>" href="reports.php?id=<?=$fid?>&r=<?=$k?>"><?=$v?></a><?php endforeach;?></div>
 <?php if($r===4):?><form class="mb-2"><input type="hidden" name="id" value="<?=$fid?>"><input type="hidden" name="r" value="4">
 <select class="form-select" name="m" onchange="this.form.submit()"><?php foreach($mem as $m):?><option value="<?=$m['id']?>" <?=$m['id']==$msel?'selected':''?>><?=e($m['name'])?></option><?php endforeach;?></select></form><?php endif;?>
 <?php if($r===2):?><div class="btn-group btn-group-sm mb-2"><a class="btn btn-<?=$d?'primary':'outline-primary'?>" href="reports.php?id=<?=$fid?>&r=2&d=1">With paid &amp; balance</a><a class="btn btn-<?=!$d?'primary':'outline-primary'?>" href="reports.php?id=<?=$fid?>&r=2&d=0">Contribution only</a></div><?php endif;?>
 <div class="mb-3"><button class="btn btn-danger btn-sm" onclick="window.print()">📄 PDF (Save as PDF)</button>
 <a class="btn btn-primary btn-sm" target="_blank" href="<?=e(wa($txt))?>">WhatsApp Share</a>
-<a class="btn btn-success btn-sm" href="reports.php?<?=e(http_build_query(['id'=>$fid,'r'=>$r,'d'=>$d?1:0,'m'=>$msel,'xls'=>1]))?>">📊 Excel</a></div></div>
+<a class="btn btn-success btn-sm" href="reports.php?<?=e(http_build_query(['id'=>$fid,'r'=>$r,'d'=>$d?1:0,'m'=>$msel,'xls'=>1]))?>" download>📊 Excel</a></div></div>
 <div class="card p-3"><h5><?=e($R['title'])?></h5>
 <?php foreach($R['lines'] as $l)echo '<div class="small">'.e($l).'</div>';?>
 <?php if($R['rows']):?><div class="table-responsive mt-2"><table class="table table-sm table-bordered mb-1"><thead class="table-light"><tr><?php foreach($R['head'] as $h)echo '<th>'.e($h).'</th>';?></tr></thead><tbody>

@@ -13,8 +13,6 @@ $cn=$pdo->prepare('SELECT name FROM users WHERE id=?');$cn->execute([$f['creator
 $share="*{$f['title']}*\n{$f['description']}\n\nCreator: $cn";
 if($f['show_target']&&$f['target_amount']>0)$share.="\nTarget: ₹".money($f['target_amount']);
 head($f['title']);?>
-<?php if($role==='creator'):?><a class="small" href="dashboard.php">← All funds</a><?php endif;?>
-<h5 class="mt-1"><?=e($f['title'])?></h5>
 <p class="text-muted small mb-2"><?=nl2br(e($f['description']))?></p>
 <?php if($role==='creator'):?><a class="btn btn-sm btn-success mb-3 noprint" target="_blank" href="<?=e(wa($share))?>">WhatsApp: share fund</a><?php endif;?>
 <?php if($pend):?><a href="handover.php?id=<?=$fid?>" class="alert alert-warning d-block py-2 text-decoration-none">💵 <?=$pend?> transfer request(s) waiting for your approval</a><?php endif;?>

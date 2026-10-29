@@ -24,7 +24,6 @@ if($_SERVER['REQUEST_METHOD']==='POST'){csrf_check();$do=$_POST['do']??'add';
 $s=$pdo->prepare('SELECT fi.*,COUNT(c.id) n,COALESCE(SUM(c.qty),0) q,COALESCE(SUM(c.amount),0) amt FROM fund_items fi LEFT JOIN contributions c ON c.item_id=fi.id AND c.cancelled=0 WHERE fi.fund_id=? GROUP BY fi.id ORDER BY fi.active DESC,fi.id');
 $s->execute([$fid]);$items=$s->fetchAll();
 head('Products');?>
-<a href="fund.php?id=<?=$fid?>" class="small">← <?=e($f['title'])?></a>
 <h5 class="mt-2">Products / ഇനങ്ങൾ</h5>
 <p class="small text-muted">Fixed-price contributions, e.g. <b>Payasam ₹500</b>. In a new entry pick the product and the number (qty); the amount is filled automatically.<br>
 നിശ്ചിത തുകയുള്ള ഇനങ്ങൾ (ഉദാ: പായസം ₹500). എൻട്രിയിൽ ഇനവും എണ്ണവും തിരഞ്ഞെടുത്താൽ തുക തനിയെ വരും.</p>

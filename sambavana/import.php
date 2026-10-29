@@ -76,14 +76,13 @@ if($_SERVER['REQUEST_METHOD']==='POST'){csrf_check();$do=$_POST['do']??'';
  redirect("import.php?id=$fid");
 }
 head('Import from Excel');?>
-<a href="entry.php?id=<?=$fid?>" class="small">← Entries</a>
 <h5 class="mt-2">📥 Import from Excel / എക്സൽ വഴി ചേർക്കുക</h5>
 <?php if(!$prev):?>
 <div class="card p-3 mb-3"><ol class="small mb-2 ps-3">
 <li>Download the template, fill one contributor per row. / ടെംപ്ലേറ്റ് ഡൗൺലോഡ് ചെയ്ത് ഓരോ വരിയിലും ഒരാളെ ചേർക്കുക.</li>
 <li>Columns: <b>Name</b>, Mobile, <b>Amount</b>, Paid, Item, Qty. For a product (e.g. <?=e($items[0]['name']??'Payasam')?>) write the product name and qty — amount can be left empty.</li>
 <li>Upload, check the preview, then press Import. New numbers continue after the last entry.</li></ol>
-<a class="btn btn-outline-success mb-3" href="import.php?id=<?=$fid?>&template=1">⬇ Download Excel template</a>
+<a class="btn btn-outline-success mb-3" href="import.php?id=<?=$fid?>&template=1" download>⬇ Download Excel template</a>
 <form method="post" enctype="multipart/form-data"><?=csrf_field()?><input type="hidden" name="id" value="<?=$fid?>"><input type="hidden" name="do" value="upload">
 <label class="small fw-bold">Step 1: choose the Excel file / ഫയൽ തിരഞ്ഞെടുക്കുക</label>
 <input id="xf" class="form-control mb-2" type="file" name="file" accept=".xlsx,.csv" required>

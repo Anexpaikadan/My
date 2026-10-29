@@ -24,7 +24,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){csrf_check();
 $cols=$pdo->prepare("SELECT * FROM users WHERE role='collector' AND fund_id=? ORDER BY id");$cols->execute([$fid]);$cols=$cols->fetchAll();
 $base=(isset($_SERVER['HTTPS'])?'https':'http').'://'.$_SERVER['HTTP_HOST'].rtrim(dirname($_SERVER['SCRIPT_NAME']),'/').'/';
 head('Collectors');?>
-<a href="fund.php?id=<?=$fid?>" class="small">← <?=e($f['title'])?></a><h5 class="mt-2">Collectors / കളക്ടർമാർ</h5>
+<h5 class="mt-2">Collectors / കളക്ടർമാർ</h5>
 <?php if($new):$m="*{$f['title']}* - Collector login\nName: {$new[0]}\nLink: {$base}\nUsername: {$new[1]}\nPassword: {$new[2]}";?>
 <div class="alert alert-info">Share now — password cannot be shown again.<br><b><?=e($new[1])?></b> / <b><?=e($new[2])?></b><br>
 <a class="btn btn-sm btn-success mt-2" target="_blank" href="<?=e(wa($m))?>">Share on WhatsApp</a></div><?php endif;?>
