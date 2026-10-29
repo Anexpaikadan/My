@@ -166,6 +166,11 @@ body{background:#f6f5fd;padding-bottom:84px;line-height:1.6;-webkit-font-smoothi
  if($u)echo '<span class="small"><b>'.e($u['name']).'</b> · <a href="logout.php">Logout</a></span>';
  echo '</div></div></nav><div class="container py-3" style="max-width:820px">';
  if($fl)echo '<div class="alert alert-'.$fl[1].' noprint">'.e($fl[0]).'</div>';
+ // Malayalam turns into ????? when the tables are latin1 (shared hosting default). Checked once per login.
+ if($u&&$u['role']!=='collector'){
+  if(!isset($_SESSION['cs'])){global $pdo;$_SESSION['cs']=(int)$pdo->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND DATA_TYPE IN('varchar','text','char') AND CHARACTER_SET_NAME NOT LIKE 'utf8mb4%'")->fetchColumn();}
+  if($_SESSION['cs'])echo '<div class="alert alert-danger noprint small">⚠ Database cannot store Malayalam (it saves ?????). Admin: run <b>migrate_5.sql</b> once in phpMyAdmin, then log out and in again.</div>';
+ }
 }
 function foot(){
  echo '</div>';

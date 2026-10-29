@@ -1,5 +1,6 @@
-CREATE DATABASE IF NOT EXISTS sambhavana CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE sambhavana;
+-- Select your database in phpMyAdmin first, then import this file.
+-- Every table is utf8mb4 so Malayalam is stored correctly (latin1 turns it into ?????).
+SET NAMES utf8mb4;
 CREATE TABLE users(
  id INT AUTO_INCREMENT PRIMARY KEY,
  name VARCHAR(100) NOT NULL,
@@ -13,7 +14,7 @@ CREATE TABLE users(
  reset_expires DATETIME NULL,
  reset_requested TINYINT NOT NULL DEFAULT 0,
  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE funds(
  id INT AUTO_INCREMENT PRIMARY KEY,
  creator_id INT NOT NULL,
@@ -28,7 +29,7 @@ CREATE TABLE funds(
  status ENUM('open','closed') NOT NULL DEFAULT 'open',
  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
  FOREIGN KEY(creator_id) REFERENCES users(id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE contributions(
  id INT AUTO_INCREMENT PRIMARY KEY,
  fund_id INT NOT NULL,
@@ -43,7 +44,7 @@ CREATE TABLE contributions(
  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
  UNIQUE(fund_id,serial_no),
  FOREIGN KEY(fund_id) REFERENCES funds(id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE payments(
  id INT AUTO_INCREMENT PRIMARY KEY,
  contribution_id INT NOT NULL,
@@ -51,7 +52,7 @@ CREATE TABLE payments(
  received_by INT NOT NULL,
  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
  FOREIGN KEY(contribution_id) REFERENCES contributions(id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE handovers(
  id INT AUTO_INCREMENT PRIMARY KEY,
  fund_id INT NOT NULL,
@@ -60,7 +61,7 @@ CREATE TABLE handovers(
  status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'approved',
  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
  FOREIGN KEY(fund_id) REFERENCES funds(id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE fund_items(
  id INT AUTO_INCREMENT PRIMARY KEY,
  fund_id INT NOT NULL,
@@ -69,4 +70,4 @@ CREATE TABLE fund_items(
  active TINYINT NOT NULL DEFAULT 1,
  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
  FOREIGN KEY(fund_id) REFERENCES funds(id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
