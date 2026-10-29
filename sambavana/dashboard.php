@@ -1,17 +1,6 @@
 <?php require 'config.php';$u=require_login();
 if($u['role']==='admin')redirect('admin.php');
 if($u['role']==='collector')redirect('fund.php?id='.(int)$u['fund_id']);
-if($_SERVER['REQUEST_METHOD']==='POST'){csrf_check();
- $t=trim($_POST['title']);
- if($t==='')flash('Title required','danger');
- else{
-  $type=in_array($_POST['type'],['charity','festival','other'])?$_POST['type']:'other';
-  $pdo->prepare('INSERT INTO funds(creator_id,title,description,type,start_date,creator_details) VALUES(?,?,?,?,?,?)')
-   ->execute([$u['id'],$t,trim($_POST['description']),$type,$_POST['start_date']?:date('Y-m-d'),trim($_POST['creator_details'])]);
-  redirect('fund.php?id='.$pdo->lastInsertId());
- }
- redirect('dashboard.php#new');
-}
 $s=$pdo->prepare('SELECT * FROM funds WHERE creator_id=? ORDER BY status=\'closed\',id DESC');$s->execute([$u['id']]);$funds=$s->fetchAll();
 // per fund: totals, entries, people with balance
 $q=$pdo->prepare('SELECT COUNT(*) n,COALESCE(SUM(c.amount>COALESCE(pp.paid,0)),0) pend FROM contributions c LEFT JOIN (SELECT contribution_id,SUM(amount) paid FROM payments GROUP BY contribution_id) pp ON pp.contribution_id=c.id WHERE c.fund_id=? AND c.cancelled=0');
@@ -41,8 +30,6 @@ nav_main('home');head('Home');?>
 .acts a{flex:1;text-align:center;padding:8px 2px;font-size:11px;color:#555;text-decoration:none}
 .acts a i{display:block;font-size:19px;color:var(--p)}
 .acts a:active{background:#f3f1ff}
-.fab{position:fixed;right:18px;bottom:calc(86px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:18px;background:var(--p);color:#fff;border:0;font-size:28px;box-shadow:0 6px 16px #3513d655;z-index:45;display:flex;align-items:center;justify-content:center}
-.fab:active{transform:scale(.92)}
 .rec{display:flex;align-items:center;gap:10px;padding:10px 12px;color:#222;text-decoration:none;border-bottom:1px solid #f3f2f8}
 .rec:last-child{border-bottom:0}
 .rec .dot{width:36px;height:36px;border-radius:12px;background:#ece8ff;color:var(--p);display:flex;align-items:center;justify-content:center;font-weight:700;flex:none;font-size:13px}
@@ -60,7 +47,7 @@ nav_main('home');head('Home');?>
 <div class="col-4"><div class="stat"><i class="bi bi-hourglass-split"></i><b class="text-danger"><?=$PN?></b><small class="text-muted">Pending</small></div></div>
 </div>
 <div class="d-flex justify-content-between align-items-center mb-2"><h6 class="m-0 fw-bold">My Funds / എന്റെ ഫണ്ടുകൾ</h6>
-<button class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#nf"><i class="bi bi-plus"></i> New</button></div>
+<a class="btn btn-sm btn-outline-primary rounded-pill" href="account.php#new"><i class="bi bi-plus"></i> New</a></div>
 <?php foreach($funds as $f):$id=$f['id'];?>
 <div class="card fund mb-3">
 <a class="top" href="fund.php?id=<?=$id?>">
@@ -78,26 +65,10 @@ nav_main('home');head('Home');?>
 </div></div>
 <?php endforeach;if(!$funds):?>
 <div class="card p-4 text-center mb-3"><div style="font-size:42px">🪙</div><b>No funds yet</b><p class="small text-muted mb-2">Create your first fund, e.g. പായസം ചലഞ്ച്</p>
-<button class="btn btn-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#nf">＋ Create fund</button></div>
+<a class="btn btn-primary rounded-pill" href="account.php#new">＋ Create fund</a></div>
 <?php endif;?>
 <?php if($recent):?><h6 class="fw-bold mb-2">Recent entries / പുതിയവ</h6>
 <div class="card mb-3"><?php foreach($recent as $x):?><a class="rec" href="contribution.php?id=<?=$x['id']?>"><span class="dot">#<?=$x['serial_no']?></span>
 <span class="flex-grow-1 text-truncate"><b><?=nm($x['name'],$x['amount']-$x['paid'])?></b><br><small class="text-muted"><?=e($x['title'])?> · <?=date('d M, g:i a',strtotime($x['created_at']))?></small></span><b>₹<?=money($x['amount'])?></b></a><?php endforeach;?></div>
 <?php endif;?>
-<button class="fab noprint" data-bs-toggle="modal" data-bs-target="#nf" aria-label="New fund"><i class="bi bi-plus-lg"></i></button>
-<div class="modal fade sheet" id="nf" tabindex="-1" aria-hidden="true"><div class="modal-dialog"><div class="modal-content"><div class="grab"></div>
-<form method="post"><?=csrf_field()?>
-<div class="modal-header border-0 pb-0"><h5 class="modal-title">New Fund / പുതിയ ഫണ്ട്</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
-<div class="modal-body">
-<input class="form-control form-control-lg mb-2" name="title" placeholder="Fund title / ഫണ്ടിന്റെ പേര്" required>
-<select class="form-select mb-2" name="type"><option value="charity">Charity / ചാരിറ്റി</option><option value="festival">Festival / ഉത്സവം</option><option value="other">Other</option></select>
-<input class="form-control mb-2" type="date" name="start_date" value="<?=date('Y-m-d')?>">
-<textarea class="form-control mb-2" name="description" rows="3" placeholder="Description / വിവരണം"></textarea>
-<textarea class="form-control mb-2" name="creator_details" rows="2" placeholder="Creator details (name, phone, place)"></textarea></div>
-<div class="modal-footer border-0 pt-0"><button class="btn btn-primary btn-lg w-100">Create Fund</button></div></form></div></div></div>
-<script>
-window.addEventListener('load',function(){var m=bootstrap.Modal.getOrCreateInstance(document.getElementById('nf'));
- function chk(){if(location.hash==='#new'){m.show();history.replaceState(null,'',location.pathname);}}
- chk();window.addEventListener('hashchange',chk);});
-</script>
 <?php foot();

@@ -46,7 +46,7 @@ if($r===1){ // Fund report
  $R['foot']=["Total received ₹".money($tr),"Handed to creator ₹".money($th),"Still with collectors ₹".money($tb)];
 }
 if($xls){ // Excel download of the report on screen; "1,234.00" becomes a number
- $num=fn($v)=>is_string($v)&&preg_match('/^[+-]?[\d,]+\.\d\d$/',$v)?(float)str_replace(',','',$v):$v;
+ $num=fn($v)=>is_string($v)&&preg_match('/^[+-]?\d{1,3}(,\d{3})*(\.\d\d)?$/',$v)?(float)str_replace(',','',$v):$v;
  $out=[[$R['title']]];foreach($R['lines'] as $l)$out[]=[$l];$out[]=[];$out[]=$R['head'];
  foreach($R['rows'] as $row)$out[]=array_map($num,$row);
  if($R['foot']){$out[]=[];foreach($R['foot'] as $l)$out[]=[$l];}

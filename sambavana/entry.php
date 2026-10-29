@@ -86,7 +86,7 @@ window.addEventListener('load',function(){
  var a=document.getElementById('amt'),p=document.getElementById('pay'),pv=document.getElementById('pv');
  function upd(){var x=parseFloat(a.value)||0,y=parseFloat(p.value)||0,b=x-y;
   if(y>x){pv.className='small text-danger';pv.textContent='⚠ Payment is more than the contribution';}
-  else if(x>0){pv.className='small fw-bold '+(b>0?'text-danger':'text-success');pv.textContent=b>0?'Balance ₹'+b.toFixed(2):'Fully paid ✅';}
+  else if(x>0){pv.className='small fw-bold '+(b>0?'text-danger':'text-success');pv.textContent=b>0?'Balance ₹'+b.toLocaleString('en-US',{maximumFractionDigits:2}):'Fully paid ✅';}
   else pv.textContent='';}
  a.oninput=p.oninput=upd;
  // product (e.g. Payasam ₹500): amount = price × qty

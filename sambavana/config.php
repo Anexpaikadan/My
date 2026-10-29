@@ -6,7 +6,8 @@ $pdo=new PDO('mysql:host='.DB_HOST.';dbname='.DB_NAME.';charset=utf8mb4',DB_USER
  [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]);
 
 function e($s){return htmlspecialchars((string)$s,ENT_QUOTES,'UTF-8');}
-function money($n){return number_format((float)$n,2);}
+// 500 -> "500", 1500.5 -> "1,500.50" (no .00 on whole rupees)
+function money($n){$n=round((float)$n,2);return number_format($n,abs($n-round($n))<0.001?0:2);}
 function csrf_field(){if(empty($_SESSION['t']))$_SESSION['t']=bin2hex(random_bytes(32));return '<input type="hidden" name="_t" value="'.$_SESSION['t'].'">';}
 function csrf_check(){if($_SERVER['REQUEST_METHOD']==='POST'&&!hash_equals($_SESSION['t']??'',$_POST['_t']??''))die('Invalid request');}
 function redirect($u){header('Location: '.$u);exit;}
@@ -178,7 +179,7 @@ function nav($f,$role,$active){
 function nav_main($active){
  $u=me();
  $items=$u['role']==='admin'?[['users','bi-people','Users','admin.php'],['funds','bi-collection','Funds','admin_funds.php'],['account','bi-person-circle','Account','account.php']]
-  :[['home','bi-house-door','Home','dashboard.php'],['new','bi-plus-circle','New fund','dashboard.php#new'],['account','bi-person-circle','Account','account.php']];
+  :[['home','bi-house-door','Home','dashboard.php'],['new','bi-plus-circle','New fund','account.php#new'],['account','bi-person-circle','Account','account.php']];
  if($u['role']==='collector')$items=[['home','bi-house-door','Home','fund.php?id='.(int)$u['fund_id']],['account','bi-person-circle','Account','account.php']];
  $GLOBALS['NAV']=[$items,$active,0];
 }
@@ -237,7 +238,7 @@ a.card:active,.btn:active,.tile:active{transform:scale(.97)}
 <div id="lb"></div><header class="appbar noprint"><div class="in">';
  // app bar: back arrow + page title on inner pages, logo on the main screens
  $back=$GLOBALS['BACK'];
- if($back===false)$back=in_array(basename($_SERVER['SCRIPT_NAME']),['dashboard.php','admin.php','admin_funds.php','index.php'],true)?null:($u?($u['role']==='admin'?'admin.php':'dashboard.php'):'index.php');
+ if($back===false)$back=in_array(basename($_SERVER['SCRIPT_NAME']),['dashboard.php','admin.php','admin_funds.php','account.php','index.php'],true)?null:($u?($u['role']==='admin'?'admin.php':'dashboard.php'):'index.php');
  if($back)echo '<a class="ib" href="'.e($back).'" aria-label="Back"><i class="bi bi-arrow-left"></i></a><div class="ttl">'.e($title).'</div>';
  else echo '<a class="d-flex align-items-center gap-2 text-decoration-none flex-grow-1" href="dashboard.php"><img src="logo.png" height="32" alt=""><b style="color:var(--p);font-size:16px">സംഭാവന</b></a>';
  echo '<button id="inst" type="button" class="btn btn-sm btn-primary d-none">📲 Install</button>';
