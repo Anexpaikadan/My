@@ -18,7 +18,7 @@ if($r===1){ // Fund report
   foreach($s as $c)$R['rows'][]=[(int)$c['serial_no'],$c['name'],(string)$c['mobile'],(float)$c['amount'],(float)$c['paid'],(string)$c['item_name'],$c['qty']?(int)$c['qty']:'',(float)($c['amount']-$c['paid']),sn($c['uname'],$c['short_name']),date('d-m-Y',strtotime($c['created_at']))];
  }else{
   $R['head']=array_merge(['Sl','Name'],$hasItems?['Item']:[],$d?['Amount','Status','By']:['Amount','By']);
-  foreach($s as $c){$b=$c['amount']-$c['paid'];$R['rows'][]=array_merge([$c['serial_no'],$c['name']],$hasItems?[item_label($c)]:[],[money($c['amount'])],$d?[$b<=0?'✅':'Bal '.money($b)]:[],[sn($c['uname'],$c['short_name'])]);}
+  foreach($s as $c){$b=$c['amount']-$c['paid'];$R['cls'][count($R['rows'])]=$b>0?'nm-due':'nm-paid';$R['rows'][]=array_merge([$c['serial_no'],$c['name']],$hasItems?[item_label($c)]:[],[money($c['amount'])],$d?[$b<=0?'✅':'Bal '.money($b)]:[],[sn($c['uname'],$c['short_name'])]);}
  }
  [$t,$p,$b]=fund_totals($fid);$R['foot']=$d?["Total: ₹".money($t),"Paid: ₹".money($p),"Balance: ₹".money($b)]:["Total contribution: ₹".money($t)];
 }elseif($r===3){ // Member-wise
@@ -56,7 +56,7 @@ if($xls){ // Excel download of the report on screen; "1,234.00" becomes a number
 // WhatsApp text
 $txt="*{$R['title']}*\n";foreach($R['lines'] as $l)$txt.="$l\n";
 if($R['rows'])$txt.="\n".implode(' | ',$R['head'])."\n";
-foreach($R['rows'] as $row)$txt.=implode(' | ',$row)."\n";
+foreach($R['rows'] as $i=>$row){if(isset($R['cls'][$i]))$row[1]=($R['cls'][$i]==='nm-due'?'🔴 ':'🟢 ').$row[1];$txt.=implode(' | ',$row)."\n";}
 if($R['foot'])$txt.="\n".implode("\n",$R['foot']);
 head('Report');
 $tabs=[1=>'Fund',2=>'Contributions',3=>'Members',4=>'Member cash',5=>'Handover']+($hasItems||$r===6?[6=>'Products']:[]);?>
@@ -71,6 +71,6 @@ $tabs=[1=>'Fund',2=>'Contributions',3=>'Members',4=>'Member cash',5=>'Handover']
 <div class="card p-3"><h5><?=e($R['title'])?></h5>
 <?php foreach($R['lines'] as $l)echo '<div class="small">'.e($l).'</div>';?>
 <?php if($R['rows']):?><div class="table-responsive mt-2"><table class="table table-sm table-bordered mb-1"><thead class="table-light"><tr><?php foreach($R['head'] as $h)echo '<th>'.e($h).'</th>';?></tr></thead><tbody>
-<?php foreach($R['rows'] as $row){echo '<tr>';foreach($row as $c)echo '<td>'.e($c).'</td>';echo '</tr>';}?></tbody></table></div><?php else:echo '<p class="text-muted mt-2">No data.</p>';endif;?>
+<?php foreach($R['rows'] as $i=>$row){echo '<tr>';foreach($row as $k=>$c)echo '<td'.($k===1&&isset($R['cls'][$i])?' class="'.$R['cls'][$i].'"':'').'>'.e($c).'</td>';echo '</tr>';}?></tbody></table></div><?php else:echo '<p class="text-muted mt-2">No data.</p>';endif;?>
 <?php foreach($R['foot'] as $l)echo '<div><b>'.e($l).'</b></div>';?></div>
 <?php foot();

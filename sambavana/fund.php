@@ -51,7 +51,7 @@ head($f['title']);?>
 <?php if($items):?><select class="form-select" name="item" style="max-width:40%"><option value="0">All</option><?php foreach($items as $x):?><option value="<?=$x['id']?>" <?=$it==$x['id']?'selected':''?>><?=e($x['name'])?></option><?php endforeach;?></select><?php endif;?><button class="btn btn-outline-primary">🔍</button></form>
 <?php foreach($rows as $r):$bal=$r['amount']-$r['paid'];?>
 <a href="contribution.php?id=<?=$r['id']?>" class="card p-2 mb-1 text-decoration-none text-dark">
-<div class="d-flex justify-content-between"><span><b>#<?=$r['serial_no']?></b> <?=e($r['name'])?></span>
+<div class="d-flex justify-content-between"><span><b>#<?=$r['serial_no']?></b> <?=nm($r['name'],$bal)?></span>
 <span><?=bal_badge($bal)?></span></div>
 <small class="text-muted"><?php if($r['item_name']):?><span class="itm"><?=e(item_label($r))?></span> <?php endif;?>₹<?=money($r['amount'])?> · Paid ₹<?=money($r['paid'])?> · <?=e(sn($r['uname'],$r['short_name']))?></small></a>
 <?php endforeach; if(!$rows)echo '<p class="text-muted">No contributions found.</p>';

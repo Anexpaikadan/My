@@ -11,7 +11,7 @@ $list.="\nTotal pending: ₹".money($tot);?>
 <a class="btn btn-sm btn-success" target="_blank" href="<?=e(wa($list))?>">Share full list</a></div>
 <?php foreach($rows as $r):$b=$r['amount']-$r['paid'];
 $m="Hello {$r['name']}, a gentle reminder for *{$f['title']}*.\n".($r['item_name']?"Item: ".item_label($r)."\n":'')."Contribution: ₹".money($r['amount'])."\nPaid: ₹".money($r['paid'])."\nBalance: ₹".money($b)."\nKindly pay the balance. Thank you 🙏";?>
-<div class="card p-2 mb-1 d-flex flex-row justify-content-between align-items-center"><span><b>#<?=$r['serial_no']?></b> <?=e($r['name'])?><br><small class="text-muted"><?php if($r['item_name']):?><span class="itm"><?=e(item_label($r))?></span> <?php endif;?>Total ₹<?=money($r['amount'])?> · Paid ₹<?=money($r['paid'])?> · <?=$r['mobile']?e($r['mobile']):'no mobile'?></small></span>
+<div class="card p-2 mb-1 d-flex flex-row justify-content-between align-items-center"><span><b>#<?=$r['serial_no']?></b> <?=nm($r['name'],$b)?><br><small class="text-muted"><?php if($r['item_name']):?><span class="itm"><?=e(item_label($r))?></span> <?php endif;?>Total ₹<?=money($r['amount'])?> · Paid ₹<?=money($r['paid'])?> · <?=$r['mobile']?e($r['mobile']):'no mobile'?></small></span>
 <span class="text-end"><b class="text-danger">₹<?=money($b)?></b><br><a class="btn btn-sm btn-success mt-1" target="_blank" href="<?=e(wa($m,$r['mobile']))?>">Remind</a></span></div>
 <?php endforeach;else:echo '<p class="text-muted">No pending balances 🎉</p>';endif;
 foot();

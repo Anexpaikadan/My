@@ -51,6 +51,8 @@ function item_of($fid,$iid){
 }
 // "Payasam × 2" for a contribution row that has item_name/qty, else ''
 function item_label($c){return !empty($c['item_name'])?$c['item_name'].' × '.(int)$c['qty']:'';}
+// Contributor name colour: red while balance is due, dark green when fully paid
+function nm($name,$bal){return '<span class="'.($bal>0?'nm-due':'nm-paid').'">'.e($name).'</span>';}
 function bal_badge($b){return $b<=0?'<span class="ok">✔ Paid</span>':'<span class="bal">Bal ₹'.money($b).'</span>';}
 const ITEM_JOIN=' LEFT JOIN fund_items fi ON fi.id=c.item_id ';
 
@@ -192,6 +194,8 @@ body{background:#f6f5fd;padding-bottom:84px;line-height:1.6;-webkit-font-smoothi
 .form-control::placeholder{color:#8a8aa0}
 .bal{background:#fdecee;color:#b02a37;border-radius:6px;padding:0 6px;font-weight:600;white-space:nowrap}
 .ok{background:#e8f8e1;color:#2f7d14;border-radius:6px;padding:0 6px;font-weight:600;white-space:nowrap}
+.nm-due{color:#c62828!important;font-weight:600}
+.nm-paid{color:#1b6b1b!important;font-weight:600}
 .itm{background:#ece8ff;color:#3513d6;border-radius:6px;padding:0 6px;font-size:.85em;white-space:nowrap}
 html{-webkit-tap-highlight-color:transparent}
 body{touch-action:manipulation;overscroll-behavior-y:none}

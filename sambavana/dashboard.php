@@ -19,7 +19,7 @@ $T=$P=$N=$PN=0;
 foreach($funds as &$f){[$f['t'],$f['p'],$f['b']]=fund_totals($f['id']);$q->execute([$f['id']]);$x=$q->fetch();$f['n']=(int)$x['n'];$f['pend']=(int)$x['pend'];
  $T+=$f['t'];$P+=$f['p'];$N+=$f['n'];$PN+=$f['pend'];}
 unset($f);
-$r=$pdo->prepare('SELECT c.id,c.serial_no,c.name,c.amount,c.created_at,f.title FROM contributions c JOIN funds f ON f.id=c.fund_id WHERE f.creator_id=? AND c.cancelled=0 ORDER BY c.id DESC LIMIT 5');$r->execute([$u['id']]);$recent=$r->fetchAll();
+$r=$pdo->prepare('SELECT c.id,c.serial_no,c.name,c.amount,c.created_at,f.title,(SELECT COALESCE(SUM(amount),0) FROM payments p WHERE p.contribution_id=c.id) paid FROM contributions c JOIN funds f ON f.id=c.fund_id WHERE f.creator_id=? AND c.cancelled=0 ORDER BY c.id DESC LIMIT 5');$r->execute([$u['id']]);$recent=$r->fetchAll();
 $pc=fn($p,$t)=>$t>0?(int)min(100,round($p/$t*100)):0;
 $h=(int)date('G');$hi=$h<12?'Good morning':($h<17?'Good afternoon':'Good evening');
 nav_main('home');head('Home');?>
@@ -82,7 +82,7 @@ nav_main('home');head('Home');?>
 <?php endif;?>
 <?php if($recent):?><h6 class="fw-bold mb-2">Recent entries / പുതിയവ</h6>
 <div class="card mb-3"><?php foreach($recent as $x):?><a class="rec" href="contribution.php?id=<?=$x['id']?>"><span class="dot">#<?=$x['serial_no']?></span>
-<span class="flex-grow-1 text-truncate"><b><?=e($x['name'])?></b><br><small class="text-muted"><?=e($x['title'])?> · <?=date('d M, g:i a',strtotime($x['created_at']))?></small></span><b>₹<?=money($x['amount'])?></b></a><?php endforeach;?></div>
+<span class="flex-grow-1 text-truncate"><b><?=nm($x['name'],$x['amount']-$x['paid'])?></b><br><small class="text-muted"><?=e($x['title'])?> · <?=date('d M, g:i a',strtotime($x['created_at']))?></small></span><b>₹<?=money($x['amount'])?></b></a><?php endforeach;?></div>
 <?php endif;?>
 <button class="fab noprint" data-bs-toggle="modal" data-bs-target="#nf" aria-label="New fund"><i class="bi bi-plus-lg"></i></button>
 <div class="modal fade sheet" id="nf" tabindex="-1" aria-hidden="true"><div class="modal-dialog"><div class="modal-content"><div class="grab"></div>
