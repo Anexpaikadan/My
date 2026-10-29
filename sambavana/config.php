@@ -125,6 +125,40 @@ function members($f){
  }
  return $rows;
 }
+// ---- Admin deletes (always after admin_pw_ok) ----
+// Fund with everything in it: payments, entries, products, transfers, its collectors
+function delete_fund($fid){
+ global $pdo;$fid=(int)$fid;
+ $pdo->prepare('DELETE p FROM payments p JOIN contributions c ON c.id=p.contribution_id WHERE c.fund_id=?')->execute([$fid]);
+ foreach(['contributions','fund_items','handovers'] as $t)$pdo->prepare("DELETE FROM $t WHERE fund_id=?")->execute([$fid]);
+ $pdo->prepare("DELETE FROM users WHERE role='collector' AND fund_id=?")->execute([$fid]);
+ $pdo->prepare('DELETE FROM funds WHERE id=?')->execute([$fid]);
+}
+// User (never an admin) with all funds they created
+function delete_user($uid){
+ global $pdo;$s=$pdo->prepare('SELECT id FROM funds WHERE creator_id=?');$s->execute([(int)$uid]);
+ foreach($s->fetchAll(PDO::FETCH_COLUMN) as $fid)delete_fund($fid);
+ $pdo->prepare("DELETE FROM users WHERE id=? AND role<>'admin'")->execute([(int)$uid]);
+}
+// Admin re-enters own password before a delete; 5 wrong tries = locked for 10 minutes
+function admin_pw_ok($pw){
+ global $pdo;$u=me();$l=$_SESSION['pwfail']??[0,0];
+ if($l[0]>=5&&time()-$l[1]<600)return 'Too many wrong passwords. Try again after 10 minutes.';
+ $s=$pdo->prepare('SELECT password FROM users WHERE id=?');$s->execute([$u['id']]);
+ if(!password_verify((string)$pw,$s->fetchColumn())){$_SESSION['pwfail']=[$l[0]+1,time()];return 'Wrong admin password / പാസ്‌വേഡ് തെറ്റാണ്';}
+ unset($_SESSION['pwfail']);return true;
+}
+// Shared "type your password to delete" sheet. Buttons: data-del="<id>" data-what="text"
+function del_sheet($action,$do){
+ echo '<div class="modal fade sheet" id="del" tabindex="-1" aria-hidden="true"><div class="modal-dialog"><div class="modal-content"><div class="grab"></div>
+<form method="post" action="'.e($action).'">'.csrf_field().'<input type="hidden" name="do" value="'.e($do).'"><input type="hidden" name="id" id="delid">
+<div class="modal-header border-0 pb-0"><h5 class="modal-title text-danger"><i class="bi bi-trash3"></i> Delete?</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+<div class="modal-body"><div id="delwhat" class="alert alert-danger small mb-3"></div>
+<label class="small text-muted">Admin password to confirm / അഡ്മിൻ പാസ്‌വേഡ്</label>
+<input class="form-control form-control-lg" type="password" name="pw" autocomplete="current-password" required></div>
+<div class="modal-footer border-0 pt-0"><button class="btn btn-danger btn-lg w-100">Delete permanently</button></div></form></div></div></div>
+<script>document.querySelectorAll("[data-del]").forEach(function(b){b.onclick=function(){document.getElementById("delid").value=b.dataset.del;document.getElementById("delwhat").textContent=b.dataset.what;bootstrap.Modal.getOrCreateInstance(document.getElementById("del")).show();setTimeout(function(){document.querySelector("#del input[name=pw]").focus();},350);};});</script>';
+}
 $GLOBALS['NAV']=null;
 function nav($f,$role,$active){
  global $pdo;$id=$f['id'];
@@ -141,7 +175,7 @@ function nav($f,$role,$active){
 // Bottom tabs outside a fund (dashboard, account, admin)
 function nav_main($active){
  $u=me();
- $items=$u['role']==='admin'?[['users','bi-people','Users','admin.php'],['account','bi-person-circle','Account','account.php']]
+ $items=$u['role']==='admin'?[['users','bi-people','Users','admin.php'],['funds','bi-collection','Funds','admin_funds.php'],['account','bi-person-circle','Account','account.php']]
   :[['home','bi-house-door','Home','dashboard.php'],['new','bi-plus-circle','New fund','dashboard.php#new'],['account','bi-person-circle','Account','account.php']];
  if($u['role']==='collector')$items=[['home','bi-house-door','Home','fund.php?id='.(int)$u['fund_id']],['account','bi-person-circle','Account','account.php']];
  $GLOBALS['NAV']=[$items,$active,0];
@@ -199,7 +233,7 @@ a.card:active,.btn:active,.tile:active{transform:scale(.97)}
 <div id="lb"></div><header class="appbar noprint"><div class="in">';
  // app bar: back arrow + page title on inner pages, logo on the main screens
  $back=$GLOBALS['BACK'];
- if($back===false)$back=in_array(basename($_SERVER['SCRIPT_NAME']),['dashboard.php','admin.php','index.php'],true)?null:($u?($u['role']==='admin'?'admin.php':'dashboard.php'):'index.php');
+ if($back===false)$back=in_array(basename($_SERVER['SCRIPT_NAME']),['dashboard.php','admin.php','admin_funds.php','index.php'],true)?null:($u?($u['role']==='admin'?'admin.php':'dashboard.php'):'index.php');
  if($back)echo '<a class="ib" href="'.e($back).'" aria-label="Back"><i class="bi bi-arrow-left"></i></a><div class="ttl">'.e($title).'</div>';
  else echo '<a class="d-flex align-items-center gap-2 text-decoration-none flex-grow-1" href="dashboard.php"><img src="logo.png" height="32" alt=""><b style="color:var(--p);font-size:16px">സംഭാവന</b></a>';
  echo '<button id="inst" type="button" class="btn btn-sm btn-primary d-none">📲 Install</button>';
