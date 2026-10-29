@@ -85,18 +85,22 @@ head('Import from Excel');?>
 <li>Upload, check the preview, then press Import. New numbers continue after the last entry.</li></ol>
 <a class="btn btn-outline-success mb-3" href="import.php?id=<?=$fid?>&template=1">⬇ Download Excel template</a>
 <form method="post" enctype="multipart/form-data"><?=csrf_field()?><input type="hidden" name="id" value="<?=$fid?>"><input type="hidden" name="do" value="upload">
-<input class="form-control mb-2" type="file" name="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" required>
-<button class="btn btn-primary w-100">Upload &amp; check</button></form></div>
+<label class="small fw-bold">Step 1: choose the Excel file / ഫയൽ തിരഞ്ഞെടുക്കുക</label>
+<input id="xf" class="form-control mb-2" type="file" name="file" accept=".xlsx,.csv" required>
+<button id="xb" class="btn btn-primary w-100">⬆ Upload &amp; check</button></form></div>
+<script>document.getElementById('xf').onchange=function(){if(this.files.length){var b=document.getElementById('xb');b.textContent='⏳ Checking…';b.disabled=true;this.form.submit();}};</script>
 <?php if($items):?><p class="small text-muted">Products in this fund: <?php foreach($items as $it)echo '<span class="itm">'.e($it['name']).' ₹'.money($it['price']).'</span> ';?></p><?php endif;?>
 <?php else:$ok=array_filter($prev['rows'],fn($r)=>!$r['err']);$bad=count($prev['rows'])-count($ok);$sum=array_sum(array_column($ok,'amount'));$paid=array_sum(array_column($ok,'paid'));?>
+<div class="alert alert-warning py-2 small mb-2"><b>Step 2: not saved yet.</b> Check the list below, then press <b>✔ Import</b>.<br>ഇതുവരെ സേവ് ആയിട്ടില്ല — ലിസ്റ്റ് നോക്കി <b>Import</b> അമർത്തുക.</div>
 <div class="card p-3 mb-2"><div class="small text-muted"><?=e($prev['file'])?></div>
 <div><b class="text-success"><?=count($ok)?> ready</b><?php if($bad):?> · <b class="text-danger"><?=$bad?> with errors (skipped)</b><?php endif;?></div>
 <div class="small">Total ₹<?=money($sum)?> · Paid ₹<?=money($paid)?> · Balance ₹<?=money($sum-$paid)?></div>
 <div class="d-flex gap-2 mt-2">
-<?php if($ok):?><form method="post" class="flex-grow-1" onsubmit="this.querySelector('button').disabled=true"><?=csrf_field()?><input type="hidden" name="id" value="<?=$fid?>"><button name="do" value="confirm" class="btn btn-primary w-100">✔ Import <?=count($ok)?> entries</button></form><?php endif;?>
+<?php if($ok):?><div class="flex-grow-1"><form method="post" onsubmit="this.querySelector('button').disabled=true"><?=csrf_field()?><input type="hidden" name="id" value="<?=$fid?>"><input type="hidden" name="do" value="confirm"><button class="btn btn-primary btn-lg w-100">✔ Import <?=count($ok)?> entries / ചേർക്കുക</button></form></div><?php endif;?>
 <form method="post"><?=csrf_field()?><input type="hidden" name="id" value="<?=$fid?>"><button name="do" value="clear" class="btn btn-outline-secondary">Cancel</button></form></div></div>
 <div class="table-responsive"><table class="table table-sm table-bordered small bg-white"><thead class="table-light"><tr><th>Row</th><th>Name</th><th>Mobile</th><th>Item</th><th class="text-end">Amount</th><th class="text-end">Paid</th><th>Check</th></tr></thead><tbody>
 <?php foreach($prev['rows'] as $r):?><tr class="<?=$r['err']?'table-danger':($r['warn']?'table-warning':'')?>"><td><?=$r['line']?></td><td><?=e($r['name'])?></td><td><?=e($r['mobile'])?></td><td><?=$r['item']!==''?e($r['item'].' × '.$r['qty']):''?></td><td class="text-end"><?=money($r['amount'])?></td><td class="text-end"><?=money($r['paid'])?></td><td><?=$r['err']?'✖ '.e($r['err']):($r['warn']?'⚠ '.e($r['warn']):'✔')?></td></tr><?php endforeach;?>
 </tbody></table></div>
+<?php if($ok):?><div class="position-sticky noprint py-2" style="bottom:70px;z-index:40"><form method="post" onsubmit="this.querySelector('button').disabled=true"><?=csrf_field()?><input type="hidden" name="id" value="<?=$fid?>"><input type="hidden" name="do" value="confirm"><button class="btn btn-primary btn-lg w-100">✔ Import <?=count($ok)?> entries / ചേർക്കുക</button></form></div><?php endif;?>
 <?php endif;
 foot();
