@@ -1,0 +1,4 @@
+# uploaded photos (top photo, products) are data, not code
+*.jpg
+*.png
+*.webp
