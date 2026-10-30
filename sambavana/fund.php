@@ -13,11 +13,11 @@ $pend=0;if($role==='creator'){$x=$pdo->prepare("SELECT COUNT(*) FROM handovers W
 $open=$f['status']==='open';
 // option buttons: [icon, label, malayalam, link, style]
 $opt=[];
-if($open)$opt[]=['bi-plus-circle-fill','New contribution','പുതിയ സംഭാവന',"entry.php?id=$fid",'main'];
+if($open){$opt[]=['bi-plus-circle-fill','New contribution','പുതിയ സംഭാവന',"entry.php?id=$fid",'main'];$opt[]=['bi-cash-coin','Add payment','പണം സ്വീകരിക്കുക',"pay.php?id=$fid",'main pay'];}
 $opt[]=['bi-search','Search contributor','തിരയുക','#search','js'];
 if($f['reminders'])$opt[]=['bi-bell','Pending','ബാക്കി',"remind.php?id=$fid",''];
 $opt[]=[$role==='creator'?'bi-bar-chart-line':'bi-share',$role==='creator'?'Report':'Share','റിപ്പോർട്ട്',"reports.php?id=$fid",''];
-$opt[]=['bi-cash-coin','Transfer','കൈമാറ്റം',"handover.php?id=$fid",''];
+$opt[]=['bi-arrow-left-right','Transfer','കൈമാറ്റം',"handover.php?id=$fid",''];
 if($role==='creator'){
  $opt[]=['bi-people','Collectors','കളക്ടർമാർ',"collectors.php?id=$fid",''];
  $opt[]=['bi-bag','Products','ഇനങ്ങൾ',"items.php?id=$fid",''];
@@ -29,11 +29,12 @@ head($f['title']);?>
 .st small{display:block;color:#666}
 .st b{font-size:1.15rem}
 .st.c{background:linear-gradient(135deg,#3513d6,#6a3df0);color:#fff}.st.c small{color:#ffffffcc}
-.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:96px;padding:10px 4px;border-radius:16px;background:#fff;box-shadow:0 1px 4px #3513d614;color:#222;text-decoration:none;text-align:center;font-size:13px;font-weight:600;line-height:1.25}
+.tiles{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.tile{grid-column:span 2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:96px;padding:10px 4px;border-radius:16px;background:#fff;box-shadow:0 1px 4px #3513d614;color:#222;text-decoration:none;text-align:center;font-size:13px;font-weight:600;line-height:1.25}
 .tile i{font-size:26px;color:var(--p);width:46px;height:46px;border-radius:14px;background:#ece8ff;display:flex;align-items:center;justify-content:center}
 .tile small{font-weight:400;color:#777;font-size:11px}
-.tile.main{grid-column:span 3;flex-direction:row;min-height:64px;background:var(--p);color:#fff;font-size:16px;gap:12px}
+.tile.main{grid-column:span 3;min-height:112px;background:linear-gradient(135deg,#3513d6,#6a3df0);color:#fff;font-size:15px;box-shadow:0 6px 16px #3513d640}
+.tile.main.pay{background:linear-gradient(135deg,#1f8f3a,#4cc46a);box-shadow:0 6px 16px #1f8f3a40}
 .tile.main i{background:#ffffff26;color:#fff}.tile.main small{color:#ffffffcc;font-size:12px}
 #search{scroll-margin-top:70px}
 </style>
@@ -49,7 +50,7 @@ head($f['title']);?>
 <div class="small text-muted mt-1">To go ₹<?=money(max(0,$f['target_amount']-$p))?></div></div>
 <?php endif;?>
 <div class="tiles mb-3 noprint">
-<?php foreach($opt as $o):?><a class="tile <?=$o[4]==='main'?'main':''?>" href="<?=$o[3]?>"<?=$o[4]==='js'?' data-search':''?>><i class="bi <?=$o[0]?>"></i><span><?=$o[1]?><br><small><?=$o[2]?></small></span></a><?php endforeach;?>
+<?php foreach($opt as $o):?><a class="tile <?=$o[4]!=='js'?$o[4]:''?>" href="<?=$o[3]?>"<?=$o[4]==='js'?' data-search':''?>><i class="bi <?=$o[0]?>"></i><span><?=$o[1]?><br><small><?=$o[2]?></small></span></a><?php endforeach;?>
 </div>
 <div id="search" class="card p-2 mb-2"><form class="d-flex gap-1 noprint"><input type="hidden" name="id" value="<?=$fid?>">
 <input id="sq" class="form-control" name="q" value="<?=e($q)?>" type="search" placeholder="Name, No. or mobile / തിരയുക" enterkeyhint="search">

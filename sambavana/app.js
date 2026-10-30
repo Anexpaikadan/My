@@ -16,5 +16,22 @@ document.addEventListener('click',function(e){var a=e.target.closest('a[href]');
  if(a.origin!==location.origin||a.getAttribute('href').charAt(0)==='#')return;
  if(a.pathname===location.pathname&&a.search===location.search&&a.hash)return;
  go();});
-document.addEventListener('submit',function(e){if(!e.defaultPrevented&&!e.target.target)go();});
-window.addEventListener('pageshow',function(){document.body.classList.remove('go');});
+// Saving: no internet = don't send (nothing is lost, try again). Otherwise lock the buttons so a
+// second tap cannot send it twice (the server also ignores a repeated form, see csrf_check).
+function toast(m){var t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';document.body.appendChild(t);}
+ t.textContent=m;t.className='show';clearTimeout(window.toastT);window.toastT=setTimeout(function(){t.className='';},3500);}
+document.addEventListener('submit',function(e){var f=e.target;if(e.defaultPrevented||f.target)return;
+ if((f.method||'').toLowerCase()==='post'){
+  if(!navigator.onLine){e.preventDefault();toast('📶 No internet — not saved. Try again when online. / ഇന്റർനെറ്റ് ഇല്ല');return;}
+  if(f.dataset.sending){e.preventDefault();return;}
+  f.dataset.sending='1';
+  var b=e.submitter;
+  if(b&&b.name){var h=document.createElement('input');h.type='hidden';h.name=b.name;h.value=b.value;h.className='subh';f.appendChild(h);}
+  f.querySelectorAll('button,[type=submit]').forEach(function(x){x.disabled=true;});
+  if(b){b.dataset.t=b.innerHTML;b.innerHTML='<span class="spinner-border spinner-border-sm"></span> Saving…';}
+ }
+ go();});
+window.addEventListener('pageshow',function(){document.body.classList.remove('go');
+ document.querySelectorAll('form[data-sending]').forEach(function(f){delete f.dataset.sending;f.querySelectorAll('.subh').forEach(function(h){h.remove();});
+  f.querySelectorAll('button,[type=submit]').forEach(function(x){x.disabled=false;if(x.dataset.t){x.innerHTML=x.dataset.t;delete x.dataset.t;}});});});
+window.addEventListener('offline',function(){toast('📶 You are offline / ഓഫ്‌ലൈൻ');});

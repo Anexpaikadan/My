@@ -8,9 +8,19 @@ $pdo=new PDO('mysql:host='.DB_HOST.';dbname='.DB_NAME.';charset=utf8mb4',DB_USER
 function e($s){return htmlspecialchars((string)$s,ENT_QUOTES,'UTF-8');}
 // 500 -> "500", 1500.5 -> "1,500.50" (no .00 on whole rupees)
 function money($n){$n=round((float)$n,2);return number_format($n,abs($n-round($n))<0.001?0:2);}
-function csrf_field(){if(empty($_SESSION['t']))$_SESSION['t']=bin2hex(random_bytes(32));return '<input type="hidden" name="_t" value="'.$_SESSION['t'].'">';}
-function csrf_check(){if($_SERVER['REQUEST_METHOD']==='POST'&&!hash_equals($_SESSION['t']??'',$_POST['_t']??''))die('Invalid request');}
-function redirect($u){header('Location: '.$u);exit;}
+// Every form also carries a one-time key (_k). If the same form arrives twice (double tap,
+// retry after a network drop), the second one is not saved again: it goes where the first went.
+function csrf_field(){if(empty($_SESSION['t']))$_SESSION['t']=bin2hex(random_bytes(32));return '<input type="hidden" name="_t" value="'.$_SESSION['t'].'"><input type="hidden" name="_k" value="'.bin2hex(random_bytes(12)).'">';}
+function csrf_check(){
+ if($_SERVER['REQUEST_METHOD']!=='POST')return;
+ if(!hash_equals($_SESSION['t']??'',$_POST['_t']??''))die('Invalid request');
+ $k=(string)($_POST['_k']??'');
+ if($k!==''&&isset($_SESSION['once'][$k])){flash('Already saved ✔ — not saved twice / ഒരിക്കൽ മാത്രം സേവ് ചെയ്തു','info');header('Location: '.$_SESSION['once'][$k]);exit;}
+}
+function redirect($u){
+ $k=(string)($_POST['_k']??'');
+ if($_SERVER['REQUEST_METHOD']==='POST'&&$k!==''){$_SESSION['once'][$k]=$u;$_SESSION['once']=array_slice($_SESSION['once'],-100,null,true);}
+ header('Location: '.$u);exit;}
 function flash($m,$t='success'){$_SESSION['flash']=[$m,$t];}
 // First 2 letters; \X keeps Malayalam vowel signs with their letter (കൃ, സു)
 function sn($name,$short){if($short)return $short;preg_match_all('/\X/u',trim((string)$name),$m);return mb_strtoupper(implode('',array_slice($m[0],0,2)));}
@@ -166,8 +176,9 @@ $GLOBALS['NAV']=null;
 function nav($f,$role,$active){
  global $pdo;$id=$f['id'];
  $items=[['home','bi-house-door','Home',"fund.php?id=$id"],['entry','bi-plus-square','Entry',"entry.php?id=$id"]];
- if($role==='creator'){$items[]=['reports','bi-bar-chart-line','Reports',"reports.php?id=$id"];$items[]=['transfer','bi-cash-coin','Transfer',"handover.php?id=$id"];$items[]=['team','bi-people','Collectors',"collectors.php?id=$id"];}
- else{$items[]=['reports','bi-share','Share',"reports.php?id=$id"];$items[]=['transfer','bi-cash-coin','Transfer',"handover.php?id=$id"];}
+ if($f['status']==='open')$items[]=['pay','bi-cash-coin','Pay',"pay.php?id=$id"];
+ if($role==='creator'){$items[]=['reports','bi-bar-chart-line','Reports',"reports.php?id=$id"];$items[]=['transfer','bi-arrow-left-right','Transfer',"handover.php?id=$id"];}
+ else{$items[]=['reports','bi-share','Share',"reports.php?id=$id"];$items[]=['transfer','bi-arrow-left-right','Transfer',"handover.php?id=$id"];}
  if(!empty($f['reminders']))$items[]=['remind','bi-bell','Pending',"remind.php?id=$id"];
  // back arrow: fund home -> all funds (creator only); every other fund page -> fund home
  $GLOBALS['BACK']=basename($_SERVER['SCRIPT_NAME'])==='fund.php'?($role==='creator'?'dashboard.php':null):"fund.php?id=$id";
@@ -197,6 +208,8 @@ body{background:#f6f5fd;padding-bottom:84px;line-height:1.6;-webkit-font-smoothi
 .ok{background:#e8f8e1;color:#2f7d14;border-radius:6px;padding:0 6px;font-weight:600;white-space:nowrap}
 .nm-due{color:#c62828!important;font-weight:600}
 .nm-paid{color:#1b6b1b!important;font-weight:600}
+#toast{position:fixed;left:50%;bottom:96px;transform:translate(-50%,20px);background:#222;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:3000;max-width:92%;text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}
 .itm{background:#ece8ff;color:#3513d6;border-radius:6px;padding:0 6px;font-size:.85em;white-space:nowrap}
 html{-webkit-tap-highlight-color:transparent}
 body{touch-action:manipulation;overscroll-behavior-y:none}
