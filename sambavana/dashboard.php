@@ -46,8 +46,7 @@ nav_main('home');head('Home');?>
 <div class="col-4"><div class="stat"><i class="bi bi-people"></i><b><?=$N?></b><small class="text-muted">Entries</small></div></div>
 <div class="col-4"><div class="stat"><i class="bi bi-hourglass-split"></i><b class="text-danger"><?=$PN?></b><small class="text-muted">Pending</small></div></div>
 </div>
-<div class="d-flex justify-content-between align-items-center mb-2"><h6 class="m-0 fw-bold">My Funds / എന്റെ ഫണ്ടുകൾ</h6>
-<a class="btn btn-sm btn-outline-primary rounded-pill" href="account.php#new"><i class="bi bi-plus"></i> New</a></div>
+<div class="d-flex justify-content-between align-items-center mb-2"><h6 class="m-0 fw-bold">My Funds / എന്റെ ഫണ്ടുകൾ</h6></div>
 <?php foreach($funds as $f):$id=$f['id'];?>
 <div class="card fund mb-3">
 <a class="top" href="fund.php?id=<?=$id?>">

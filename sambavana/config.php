@@ -179,7 +179,7 @@ function nav($f,$role,$active){
 function nav_main($active){
  $u=me();
  $items=$u['role']==='admin'?[['users','bi-people','Users','admin.php'],['funds','bi-collection','Funds','admin_funds.php'],['account','bi-person-circle','Account','account.php']]
-  :[['home','bi-house-door','Home','dashboard.php'],['new','bi-plus-circle','New fund','account.php#new'],['account','bi-person-circle','Account','account.php']];
+  :[['home','bi-house-door','Home','dashboard.php'],['account','bi-person-circle','Account','account.php']];
  if($u['role']==='collector')$items=[['home','bi-house-door','Home','fund.php?id='.(int)$u['fund_id']],['account','bi-person-circle','Account','account.php']];
  $GLOBALS['NAV']=[$items,$active,0];
 }
