@@ -1,0 +1,13 @@
+# Public images (hero photo, products). Images only – no scripts run here.
+Options -Indexes -ExecCGI
+<FilesMatch "\.(php|phtml|php\d|phar|pl|py|cgi|sh|html?)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Deny from all
+  </IfModule>
+</FilesMatch>
+<IfModule mod_php.c>
+  php_flag engine off
+</IfModule>

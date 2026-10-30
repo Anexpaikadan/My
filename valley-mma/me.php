@@ -46,6 +46,7 @@ $m = member_user();
 $title = $m ? t('my_account') : t('member_login');
 $bare = true;
 $memberApp = true;
+$publicPage = 'login';
 require __DIR__ . '/includes/header.php';
 
 $brand = brand_html('', 'mb-3');

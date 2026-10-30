@@ -2,6 +2,10 @@
 // Dashboard in sections (Today, Members, Money). Every tile opens the page with those details.
 
 require __DIR__ . '/includes/init.php';
+if (!admin()) { // visitors (and members) see the public home page at the site address
+    require __DIR__ . '/home.php';
+    exit;
+}
 require __DIR__ . '/includes/accounts.php';
 $me = require_admin();
 

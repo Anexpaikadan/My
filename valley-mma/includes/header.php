@@ -21,7 +21,7 @@ $v = APP_VERSION;
 <link rel="stylesheet" href="assets/vendor/bootstrap-icons.min.css">
 <link rel="stylesheet" href="assets/style.css?v=<?= $v ?>">
 </head>
-<body class="<?= $bare ? 'bare' : 'with-nav' ?> lang-<?= e(lang()) ?>">
+<body class="<?= $bare ? 'bare' : 'with-nav' ?><?= !empty($publicPage) ? ' pub' . (in_array($publicPage, ['home', 'shop', 'rules'], true) ? ' pub-dark' : '') : '' ?> lang-<?= e(lang()) ?>">
 <?php if (!$bare): ?>
 <header class="topbar d-lg-none d-print-none">
   <button class="btn btn-link text-white fs-2 p-0 me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-label="<?= e(t('menu')) ?>"><i class="bi bi-list"></i></button>

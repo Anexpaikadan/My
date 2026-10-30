@@ -44,6 +44,9 @@ function make_zip(string $sql, string $path): bool
         return false;
     }
     $zip->addFromString('database.sql', $sql);
+    foreach (array_merge(glob(__DIR__ . '/../media/*.jpg') ?: [], glob(__DIR__ . '/../media/products/*.jpg') ?: []) as $f) {
+        $zip->addFile($f, 'media/' . (str_contains($f, '/products/') ? 'products/' : '') . basename($f)); // hero photo, shop photos
+    }
     foreach (glob(cfg('photo_dir') . '/*.jpg') ?: [] as $f) {
         $zip->addFile($f, 'photos/' . basename($f));
     }
@@ -103,6 +106,8 @@ function read_backup(string $path, string $name): ?array
         for ($i = 0; $i < $zip->numFiles; $i++) {
             if (preg_match('#^photos/([a-f0-9]{20}\.jpg)$#', (string)$zip->getNameIndex($i), $mm)) {
                 $photos[$mm[1]] = $zip->getFromIndex($i);
+            } elseif (preg_match('#^media/(?:products/)?[a-f0-9]{20}\.jpg$#', (string)$zip->getNameIndex($i))) {
+                $photos[(string)$zip->getNameIndex($i)] = $zip->getFromIndex($i);
             }
         }
         $zip->close();
@@ -126,7 +131,12 @@ function restore_backup(string $sql, array $photos): void
     try {
         run_sql(db(), $sql);
         foreach ($photos as $name => $data) {
-            file_put_contents(cfg('photo_dir') . '/' . $name, $data);
+            if (str_starts_with($name, 'media/')) {
+                @mkdir(dirname(__DIR__ . '/../' . $name), 0775, true);
+                file_put_contents(__DIR__ . '/../' . $name, $data);
+            } else {
+                file_put_contents(cfg('photo_dir') . '/' . $name, $data);
+            }
         }
     } catch (Throwable $e) {
         try {

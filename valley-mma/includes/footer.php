@@ -2,6 +2,7 @@
     <img src="assets/daybill-logo.png" alt="" width="28" height="28"><span><?= e(t('developed_by')) ?> <b>DAYbill Solution</b></span>
   </footer>
 </main>
+<?php if (!empty($publicPage)) echo public_nav((string)$publicPage); ?>
 <?php if (admin() && empty($bare)): ?>
 <div class="modal fade" id="verifyModal" tabindex="-1" aria-labelledby="verifyTitle" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-sm"><form class="modal-content" id="verifyForm">

@@ -41,6 +41,9 @@ $progress = $levels ? level_progress($m) : null;
 if ($progress && $progress['level'] && $m['status'] !== 'pending') {
     $msgs['wa_send_position'] = level_text($m, $progress['level']);
 }
+if ($m['status'] !== 'pending' || $m['details_at']) {
+    $msgs['wa_send_rules'] = t('wa_hello', $m['name']) . "\n\n" . rules_text();
+}
 $openComplaints = (int)q("SELECT COUNT(*) FROM complaints WHERE member_id = ? AND status <> 'resolved'", [$id])->fetchColumn();
 $freezes = q('SELECT * FROM member_freezes WHERE member_id = ? ORDER BY from_date DESC', [$id])->fetchAll();
 $curFreeze = current_freeze($id);
@@ -87,6 +90,7 @@ require __DIR__ . '/includes/header.php';
       <img src="<?= e(photo_url($m)) ?>" class="avatar-lg mb-2" alt="">
       <h2 class="h5 mb-0"><?= e($m['name']) ?></h2>
       <div class="small-muted mb-2"><?= e($m['adm_no']) ?> · <?= e(t('joined')) ?> <?= e(fdate($m['join_date'])) ?></div>
+      <?php if ($m['rules_accepted_at']): ?><div class="small text-success mb-2"><i class="bi bi-journal-check"></i> <?= e(t('rules_accepted_on', fdate($m['rules_accepted_at']))) ?></div><?php endif; ?>
       <?= status_badge($m['expiry_date'], $m['status']) ?>
       <?php if ($curFreeze && $curFreeze['from_date'] <= today()): ?><span class="badge bg-info text-dark"><i class="bi bi-snow"></i> <?= e(t('frozen_till', fdate($curFreeze['to_date']))) ?></span>
       <?php elseif ($curFreeze): ?><span class="badge text-bg-light border"><i class="bi bi-snow"></i> <?= e(t('freeze_from', fdate($curFreeze['from_date']))) ?></span><?php endif; ?>

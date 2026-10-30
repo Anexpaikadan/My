@@ -30,6 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 $title = t('admin_login');
 $bare = true;
+$publicPage = 'login';
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="login-wrap text-center pt-4">

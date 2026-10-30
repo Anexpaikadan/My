@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS members (
   status ENUM('pending','active','inactive') NOT NULL DEFAULT 'active',
   invite_token CHAR(32) NULL,
   details_at DATETIME NULL,
+  rules_accepted_at DATETIME NULL,
   approved_at DATETIME NULL,
   /* Position (level): changes by attendance when level_auto = 1, or set by the admin */
   level_id INT UNSIGNED NULL,
@@ -158,7 +159,7 @@ INSERT IGNORE INTO settings (k, v) VALUES
   ('trial_days', '7'),
   ('auto_backup', '1'),
   ('backup_keep', '14'),
-  ('schema_version', '6');
+  ('schema_version', '7');
 
 INSERT IGNORE INTO plans (id, name, duration_value, duration_unit, price, description, sort_order) VALUES
   (1, 'Monthly', 1, 'month', 1500, 'MMA, boxing, kickboxing and fitness training', 1),

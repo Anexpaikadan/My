@@ -7,6 +7,9 @@ It has English and Malayalam (switch at any time), and you can install it on a p
 
 | Area | What it does |
 |---|---|
+| **Public website** | The site address (e.g. https://mma.mynamecc.online) shows a public home page to visitors: big photo, title, *Join Us* (WhatsApp) and *Call*, About, Programs, Membership fees (from the plans), Class timings, Valley Rules, Fight shop and Contact (phones, WhatsApp, Google Maps, Instagram). Bottom bar: **Home** · **Fight Shop** (middle, name can be changed) · **Login** (opens the dashboard for a logged-in admin, *My account* for a logged-in member). Admin: *Public page* – change the photo, every heading and text, switch sections on/off, edit the rules, WhatsApp numbers |
+| **Fight shop** | Admin: *Products* – name, category, price and offer price, details, up to 8 photos (cover photo = thumbnail), in stock, show/hide. Visitors see two products per row; tapping one opens a pop-up with a photo slideshow, details, price and *Enquire on WhatsApp* (message with product, price and link goes to the shop WhatsApp number) |
+| **Rules** | The Valley Rules are shown when a new member sends the join form: the member must tick *I have read the Valley Rules and agree* (date saved, shown on the member page). Public rules page `rules.php`; *Send rules* on WhatsApp from the member page, or share to a group from the rules page |
 | **Dashboard** | In sections – *Today* (present, collection, expense, birthdays), *Members* (total, active, expired, expiring soon, absent, pending balance) and *This month* (income, expense, profit/loss, balance). Every tile opens the matching list. Quick buttons: new member, record payment, add expense, attendance QR, reminders |
 | **Navigation** | Phone: bottom bar (Home, Members, Attendance, Accounts, More) and a *More* page with every part of the app as tiles in sections. Desktop: sidebar grouped in Members / Money / Gym. Back button on inner pages |
 | **Accounts** | Cash, bank and UPI accounts with opening balance. Income, expense and transfer vouchers with categories (rent, electricity, salary, equipment …, editable). Membership payments are counted as income automatically. Ledger with filters, opening/closing and running balance; printable vouchers; reports: profit & loss, monthly summary, cash book – all with print / PDF / Excel |
@@ -116,6 +119,8 @@ valley-mma/
   alerts.php
   attendance.php, attendance_monthly.php, checkin.php (QR target)
   activities.php        weekly training plan
+  home.php, shop.php, rules.php   public website; public_settings.php, products.php (admin)
+  media/                public photos (top photo, products) – must be writable
   levels.php            positions by attendance; complaints.php, complaint.php (admin), me_complaints.php (member)
   leaves.php            gym leave (closed days) with WhatsApp sharing; freeze.php (member freeze)
   reports.php
@@ -127,7 +132,7 @@ valley-mma/
   includes/             init.php (helpers), accounts.php, header/nav/footer, lang.php (English + Malayalam), sql_tools.php
   assets/               style.css, print.css, app.js, attendance.js, qr.js, icons, vendor libraries
   sql/                  valley_mma_clean.sql (clean, for phpMyAdmin), database.sql (with sample data),
-                        schema.sql, accounts.sql, leaves.sql, levels.sql, sample_data.sql (used by install.php)
+                        schema.sql, accounts.sql, leaves.sql, levels.sql, shop.sql, sample_data.sql (used by install.php)
   uploads/photos/       member photos (not web-accessible)
   backups/              backups saved on the server (not web-accessible)
 ```

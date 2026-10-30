@@ -30,6 +30,9 @@ if ($m && $_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$d['declaration']) {
             $errors[] = t('err_declaration');
         }
+        if (post('rules_ok') !== '1') {
+            $errors[] = t('err_rules');
+        }
         if (!$errors) {
             member_save_photo($d, (string)$m['photo'], $errors);
         }
@@ -37,7 +40,7 @@ if ($m && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $cols = member_personal_cols();
             $vals = array_map(fn($c) => $c === 'dob' && ($d[$c] ?? '') === '' ? null : ($d[$c] ?? null), $cols);
             $vals[] = $m['id'];
-            q('UPDATE members SET ' . implode(', ', array_map(fn($c) => "$c = ?", $cols)) . ', details_at = NOW() WHERE id = ?', $vals);
+            q('UPDATE members SET ' . implode(', ', array_map(fn($c) => "$c = ?", $cols)) . ', details_at = NOW(), rules_accepted_at = NOW() WHERE id = ?', $vals);
             redirect('join.php?t=' . $token . '&sent=1');
         }
         $m = $d;
@@ -88,7 +91,7 @@ require __DIR__ . '/includes/header.php';
   <h1 class="h5"><?= e(t('join_fill', $m['name'] !== $m['phone'] ? ' ' . $m['name'] : '')) ?></h1>
   <p class="small-muted"><?= e(t('join_fill_help')) ?></p>
   <?php if ($errors): ?><div class="alert alert-danger"><?= implode('<br>', array_map('e', array_unique($errors))) ?></div><?php endif; ?>
-  <form method="post" enctype="multipart/form-data">
+  <form method="post" enctype="multipart/form-data" id="joinForm">
     <?= csrf_field() ?><input type="hidden" name="action" value="details">
     <div class="card mb-3"><div class="card-body d-flex align-items-center gap-3">
       <?php member_photo_html($m); ?>
@@ -96,7 +99,30 @@ require __DIR__ . '/includes/header.php';
     </div></div>
     <?php if ($m['name'] === $m['phone']) { $m['name'] = ''; } member_personal_html($m); ?>
     </div></div>
-    <button class="btn btn-primary btn-lg w-100 mb-5"><i class="bi bi-send"></i> <?= e(t('join_submit')) ?></button>
+    <button type="button" class="btn btn-primary btn-lg w-100 mb-5" id="joinNext"><i class="bi bi-send"></i> <?= e(t('join_submit')) ?></button>
+
+    <div class="modal fade" id="rulesModal" tabindex="-1" aria-labelledby="rulesTitle" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><div class="modal-content pub-modal">
+        <div class="modal-header"><h2 class="modal-title h5" id="rulesTitle"><i class="bi bi-journal-check"></i> <?= e(pub('pub_rules_title')) ?></h2>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button></div>
+        <div class="modal-body"><p class="small mb-2"><?= e(t('rules_read_first')) ?></p><?= rules_html() ?></div>
+        <div class="modal-footer d-block">
+          <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="rules_ok" value="1" id="rulesOk">
+            <label class="form-check-label fw-semibold" for="rulesOk"><?= e(t('rules_agree', pub('pub_rules_title'))) ?></label></div>
+          <button class="btn btn-primary btn-lg w-100" id="rulesGo" disabled><i class="bi bi-check2-circle"></i> <?= e(t('agree_and_send')) ?></button>
+        </div>
+      </div></div>
+    </div>
   </form>
+  <script>
+  (function () {
+    var f = document.getElementById('joinForm'), ok = document.getElementById('rulesOk'), go = document.getElementById('rulesGo');
+    ok.addEventListener('change', function () { go.disabled = !ok.checked; });
+    document.getElementById('joinNext').addEventListener('click', function () {
+      if (!f.reportValidity()) return; // first fill the form, then read and accept the rules
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('rulesModal')).show();
+    });
+  })();
+  </script>
 <?php endif; ?>
 <?php require __DIR__ . '/includes/footer.php';

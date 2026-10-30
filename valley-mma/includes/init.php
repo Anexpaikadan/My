@@ -4,7 +4,7 @@
 declare(strict_types=1);
 
 // App version: shown in the app (More, login, Scanner test). Must match window.VM_JS in assets/app.js.
-const APP_VERSION = '4.1';
+const APP_VERSION = '4.2';
 
 $CONFIG = require __DIR__ . '/../config.php';
 date_default_timezone_set($CONFIG['timezone'] ?? 'Asia/Kolkata');
@@ -66,7 +66,7 @@ function db(): PDO
 function migrate(PDO $pdo): void
 {
     $v = (int)$pdo->query("SELECT v FROM settings WHERE k = 'schema_version'")->fetchColumn();
-    if ($v >= 6) {
+    if ($v >= 7) {
         return;
     }
     if ($v < 2) {
@@ -97,7 +97,14 @@ function migrate(PDO $pdo): void
         $pdo->exec("ALTER TABLE payments ADD COLUMN kind ENUM('normal','opening') NOT NULL DEFAULT 'normal' AFTER receipt_no");
     }
     $pdo->exec(LEVEL_RECALC_SQL . ', level_since = CURDATE() WHERE m.level_auto = 1 AND m.level_id IS NULL');
-    $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '6') ON DUPLICATE KEY UPDATE v = '6'");
+    // v7: rules accepted on the join form, fight shop
+    $cols = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'members'")
+        ->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('rules_accepted_at', $cols, true)) {
+        $pdo->exec('ALTER TABLE members ADD COLUMN rules_accepted_at DATETIME NULL AFTER details_at');
+    }
+    run_sql($pdo, file_get_contents(__DIR__ . '/../sql/shop.sql'));
+    $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '7') ON DUPLICATE KEY UPDATE v = '7'");
 }
 
 // Sets level_id from the attendance days (add a WHERE).
@@ -429,6 +436,8 @@ function nav_sections(): array
         'sec_gym' => [
             ['activities.php', 'daily_activity', 'bi-calendar-week', 'activities'],
             ['leaves.php', 'gym_leaves', 'bi-calendar-x', 'leaves'],
+            ['public_settings.php', 'public_page', 'bi-globe2', 'public'],
+            ['products.php', 'products', 'bi-bag-fill', 'products'],
             ['settings.php', 'settings', 'bi-gear-fill', 'settings'],
             ['backup.php', 'backup', 'bi-cloud-arrow-down-fill', 'backup'],
         ],
@@ -941,7 +950,7 @@ function att_key(string $date, int $slot): string
 // ---- Photos -------------------------------------------------------
 
 // Saves an uploaded photo as a resized JPEG (also removes anything hidden in the file). Returns the file name.
-function save_photo(array $file): ?string
+function save_photo(array $file, int $max = 600, string $dir = ''): ?string
 {
     if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || $file['size'] > 8 * 1024 * 1024) {
         return null;
@@ -964,13 +973,13 @@ function save_photo(array $file): ?string
     }
     $w = imagesx($src);
     $h = imagesy($src);
-    $scale = min(1, 600 / max($w, $h));
+    $scale = min(1, $max / max($w, $h));
     $nw = max(1, (int)round($w * $scale));
     $nh = max(1, (int)round($h * $scale));
     $dst = imagecreatetruecolor($nw, $nh);
     imagefill($dst, 0, 0, imagecolorallocate($dst, 255, 255, 255));
     imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
-    $dir = cfg('photo_dir');
+    $dir = $dir !== '' ? $dir : cfg('photo_dir');
     if (!is_dir($dir)) {
         mkdir($dir, 0775, true);
     }
@@ -1078,3 +1087,5 @@ function reminder_text(array $m, float $amount = 0): string
         : t('wa_expiring', $m['name'], gym_title(), fdate($m['expiry_date']));
     return $msg . upi_text($amount);
 }
+
+require __DIR__ . '/public.php';
