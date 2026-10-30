@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && post('action') === 'delete') {
         delete_payment($p);
         flash('success', t('payment_deleted', $p['receipt_no']));
     }
-    redirect('payments.php');
+    redirect($p && post('back') === 'member' ? 'member_view.php?id=' . $p['member_id'] : 'payments.php');
 }
 
 $from = valid_date(get('from')) ? get('from') : date('Y-m-01');
@@ -86,7 +86,8 @@ require __DIR__ . '/includes/header.php';
           <td data-label="<?= e(t('paid')) ?>" class="text-success fw-bold"><?= money($p['paid']) ?></td>
           <td data-label="<?= e(t('balance')) ?>"><?= money($p['total'] - $p['paid']) ?></td>
           <td class="td-actions text-end text-nowrap no-export">
-            <a class="btn btn-sm btn-outline-primary" href="receipt.php?id=<?= $p['id'] ?>"><i class="bi bi-receipt"></i></a>
+            <a class="btn btn-sm btn-outline-primary" href="receipt.php?id=<?= $p['id'] ?>" aria-label="<?= e(t('receipt')) ?>"><i class="bi bi-receipt"></i></a>
+            <a class="btn btn-sm btn-outline-secondary" href="payment_add.php?edit=<?= $p['id'] ?>" aria-label="<?= e(t('edit')) ?>"><i class="bi bi-pencil"></i></a>
             <form method="post" class="d-inline" data-verify="<?= e(t('confirm_delete_payment')) ?>">
               <?= csrf_field() ?><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= $p['id'] ?>">
               <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>

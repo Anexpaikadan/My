@@ -223,7 +223,8 @@ require __DIR__ . '/includes/header.php';
                 <td data-label="<?= e(t('particulars')) ?>"><?= e($p['plan_name'] ? $p['plan_name'] . ' (' . fdate($p['period_start']) . ' – ' . fdate($p['period_end']) . ')' : ($p['note'] ?: $p['other_note'] ?: t('other_fee'))) ?></td>
                 <td data-label="<?= e(t('total')) ?>"><?= money($p['total']) ?></td>
                 <td data-label="<?= e(t('paid')) ?>" class="text-success fw-bold"><?= money($p['paid']) ?> <span class="badge text-bg-light"><?= e($p['kind'] === 'opening' ? t('opening_balance') : t('m_' . $p['method'])) ?></span></td>
-                <td class="td-actions text-end"><a href="receipt.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-receipt"></i> <?= e(t('receipt')) ?></a></td>
+                <td class="td-actions text-end text-nowrap"><a href="receipt.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-receipt"></i> <?= e(t('receipt')) ?></a>
+                  <a href="payment_add.php?edit=<?= $p['id'] ?>" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i> <?= e(t('edit')) ?></a></td>
               </tr>
             <?php endforeach; ?>
             </tbody>

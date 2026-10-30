@@ -4,7 +4,7 @@
 declare(strict_types=1);
 
 // App version: shown in the app (More, login, Scanner test). Must match window.VM_JS in assets/app.js.
-const APP_VERSION = '4.0';
+const APP_VERSION = '4.1';
 
 $CONFIG = require __DIR__ . '/../config.php';
 date_default_timezone_set($CONFIG['timezone'] ?? 'Asia/Kolkata');
@@ -573,6 +573,28 @@ function sync_membership(int $memberId): void
             [$memberId, $p['period_start']])->fetchColumn();
         q('UPDATE members SET plan_id = ?, start_date = ?, expiry_date = DATE_ADD(?, INTERVAL ? DAY) WHERE id = ?',
             [$p['plan_id'], $p['period_start'], $p['period_end'], $frozen, $memberId]);
+    }
+}
+
+// After a payment was changed: when it was (or now is) the plan payment in use, the membership dates
+// follow the latest plan payment, or go back to the dates from before this payment.
+function payment_changed(array $old, ?string $newEnd): void
+{
+    $mid = (int)$old['member_id'];
+    $m = q('SELECT expiry_date FROM members WHERE id = ?', [$mid])->fetch();
+    $inUse = false;
+    if ($old['period_end']) {
+        $frozen = (int)q('SELECT COALESCE(SUM(days), 0) FROM member_freezes WHERE member_id = ? AND extended = 1 AND from_date >= ?',
+            [$mid, $old['period_start']])->fetchColumn();
+        $inUse = $m && $m['expiry_date'] === date('Y-m-d', strtotime($old['period_end'] . " +$frozen day"));
+    }
+    if (!$inUse && !($newEnd && (!$m['expiry_date'] || $newEnd >= $m['expiry_date']))) {
+        return;
+    }
+    if ((int)q('SELECT COUNT(*) FROM payments WHERE member_id = ? AND period_end IS NOT NULL', [$mid])->fetchColumn()) {
+        sync_membership($mid);
+    } else {
+        q('UPDATE members SET plan_id = ?, start_date = ?, expiry_date = ? WHERE id = ?', [$old['prev_plan_id'], $old['prev_start'], $old['prev_expiry'], $mid]);
     }
 }
 

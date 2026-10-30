@@ -44,6 +44,7 @@ $amt = fn($n) => $n > 0 ? money($n) : '';
   <?php if ($isAdmin): ?>
     <a class="wa" href="<?= e(wa_link($p['phone'], $waText)) ?>" target="_blank" rel="noopener">WhatsApp</a>
     <a href="member_view.php?id=<?= (int)$p['member_id'] ?>">← <?= e(t('back')) ?></a>
+    <a href="payment_add.php?edit=<?= (int)$p['id'] ?>">✎ <?= e(t('edit')) ?> / <?= e(t('delete')) ?></a>
     <a href="payment_add.php">+ <?= e(t('record_payment')) ?></a>
   <?php elseif (member_user()): ?>
     <a href="me.php">← <?= e(t('back')) ?></a>

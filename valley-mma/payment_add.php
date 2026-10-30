@@ -1,5 +1,6 @@
 <?php
 // Record a payment: admission fee, plan (renews the membership), other fee, paid amount and balance.
+// With ?edit=ID the same form changes a saved payment (same receipt number); delete is on that page too.
 
 require __DIR__ . '/includes/init.php';
 $me = require_admin();
@@ -7,7 +8,19 @@ $me = require_admin();
 $members = q('SELECT id, name, phone, adm_no, expiry_date, plan_id FROM members ORDER BY name')->fetchAll();
 $plans = q('SELECT * FROM plans WHERE active = 1 ORDER BY sort_order, id')->fetchAll();
 $plansById = array_column($plans, null, 'id');
-$memberId = (int)($_POST['member_id'] ?? $_GET['member'] ?? 0);
+$editId = (int)($_POST['edit'] ?? $_GET['edit'] ?? 0);
+$edit = $editId ? q('SELECT * FROM payments WHERE id = ?', [$editId])->fetch() : null;
+if ($editId && !$edit) {
+    redirect('payments.php');
+}
+if ($edit && $edit['plan_id'] && !isset($plansById[(int)$edit['plan_id']])) { // plan switched off later: still allow it here
+    $old = q('SELECT * FROM plans WHERE id = ?', [$edit['plan_id']])->fetch();
+    if ($old) {
+        $plans[] = $old;
+        $plansById[(int)$old['id']] = $old;
+    }
+}
+$memberId = $edit ? (int)$edit['member_id'] : (int)($_POST['member_id'] ?? $_GET['member'] ?? 0);
 $m = $memberId ? q('SELECT * FROM members WHERE id = ?', [$memberId])->fetch() : null;
 $errors = [];
 
@@ -53,6 +66,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($total <= 0 && $paid <= 0) {
         $errors[] = t('err_amount');
     }
+    if (!$errors && $edit) {
+        q('UPDATE payments SET plan_id = ?, pay_date = ?, admission_fee = ?, plan_fee = ?, other_fee = ?, other_note = ?, total = ?, paid = ?,
+               method = ?, upi_ref = ?, period_start = ?, period_end = ?, note = ? WHERE id = ?',
+            [$planId, $payDate, $adm, $planFee, $other, mb_substr(post('other_note'), 0, 100), $total, $paid,
+                $method, mb_substr(post('upi_ref'), 0, 50), $planId ? $start : null, $planId ? $end : null, mb_substr(post('note'), 0, 255), $edit['id']]);
+        payment_changed($edit, $planId ? $end : null);
+        flash('success', t('payment_updated', $edit['receipt_no']));
+        redirect('receipt.php?id=' . $edit['id']);
+    }
     if (!$errors) {
         $no = next_receipt_no();
         q('INSERT INTO payments (receipt_no, member_id, plan_id, pay_date, admission_fee, plan_fee, other_fee, other_note, total, paid,
@@ -74,24 +96,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$balance = $m ? member_balance((int)$m['id']) : 0;
-$isNew = get('new') === '1' || ($m && !q('SELECT COUNT(*) FROM payments WHERE member_id = ?', [$m['id']])->fetchColumn());
-$defPlan = (int)($_POST['plan_id'] ?? ($m['plan_id'] ?? ($plans[0]['id'] ?? 0)));
-$defStart = $_POST['period_start'] ?? $nextStart($m);
+// Balance before this payment (when changing a payment, without its own balance).
+$balance = $m ? member_balance((int)$m['id']) - ($edit ? (float)$edit['total'] - (float)$edit['paid'] : 0) : 0;
+$isNew = !$edit && (get('new') === '1' || ($m && !q('SELECT COUNT(*) FROM payments WHERE member_id = ?', [$m['id']])->fetchColumn()));
+$pre = $edit ? array_map(fn($v) => $v === null ? '' : (string)$v, $edit) : [];
+if ($edit) {
+    foreach (['admission_fee', 'plan_fee', 'other_fee', 'paid'] as $k) {
+        $pre[$k] = (string)(float)$edit[$k];
+    }
+}
+$defPlan = (int)($_POST['plan_id'] ?? ($edit ? (int)$edit['plan_id'] : ($m['plan_id'] ?? ($plans[0]['id'] ?? 0))));
+$defStart = $_POST['period_start'] ?? ($edit && $edit['period_start'] ? $edit['period_start'] : $nextStart($m));
 
-$title = t('record_payment');
+$title = $edit ? t('edit_payment', $edit['receipt_no']) : t('record_payment');
 $active = 'payments';
-$back = 'payments.php';
+$back = $edit ? 'receipt.php?id=' . $edit['id'] : 'payments.php';
 require __DIR__ . '/includes/header.php';
-$val = fn($k, $def = '') => e($_POST[$k] ?? $def);
+$val = fn($k, $def = '') => e($_POST[$k] ?? $pre[$k] ?? $def);
 ?>
 <?php if ($errors): ?><div class="alert alert-danger"><?= implode('<br>', array_map('e', array_unique($errors))) ?></div><?php endif; ?>
+<?php if ($edit): ?><div class="alert alert-warning small"><i class="bi bi-pencil-square"></i> <?= e(t('edit_payment_help')) ?></div><?php endif; ?>
 <form method="post" id="payForm" class="row g-3" data-verify="<?= e(t('verify_money')) ?>" data-balance="<?= e((string)$balance) ?>">
-  <?= csrf_field() ?>
+  <?= csrf_field() ?><?php if ($edit): ?><input type="hidden" name="edit" value="<?= $edit['id'] ?>"><?php endif; ?>
   <div class="col-lg-7">
     <div class="card mb-3"><div class="card-body row g-3">
       <div class="col-12"><label class="form-label" for="member_id"><?= e(t('member')) ?> *</label>
-        <select class="form-select form-select-lg" id="member_id" name="member_id" required onchange="location.href='payment_add.php?member='+this.value">
+        <select class="form-select form-select-lg" id="member_id" name="member_id" required onchange="location.href='payment_add.php?member='+this.value"<?= $edit ? ' disabled' : '' ?>>
           <option value=""><?= e(t('choose_member')) ?></option>
           <?php foreach ($members as $mm): ?>
             <option value="<?= $mm['id'] ?>"<?= $memberId === (int)$mm['id'] ? ' selected' : '' ?>><?= e($mm['name'] . ' – ' . $mm['adm_no'] . ' – ' . $mm['phone']) ?></option>
@@ -100,7 +130,7 @@ $val = fn($k, $def = '') => e($_POST[$k] ?? $def);
         <?php if ($m): ?>
           <div class="small-muted mt-2"><?= e(t('expiry_date')) ?>: <?= e(fdate($m['expiry_date'])) ?> <?= status_badge($m['expiry_date'], $m['status']) ?>
             · <?= e(t('old_balance')) ?>: <b class="<?= $balance > 0 ? 'text-danger' : '' ?>"><?= money($balance) ?></b></div>
-          <?php if ($m['status'] !== 'active'): ?>
+          <?php if ($m['status'] !== 'active' && !$edit): ?>
             <div class="form-check mt-2 p-2 ps-5 rounded bg-info-subtle"><input class="form-check-input" type="checkbox" name="activate" value="1" id="act" checked>
               <label class="form-check-label fw-semibold" for="act"><?= e(t($m['status'] === 'pending' ? 'approve_activate' : 'activate_again')) ?></label></div>
           <?php endif; ?>
@@ -109,7 +139,7 @@ $val = fn($k, $def = '') => e($_POST[$k] ?? $def);
       <div class="col-6"><label class="form-label" for="pay_date"><?= e(t('date')) ?></label>
         <input class="form-control" type="date" id="pay_date" name="pay_date" value="<?= $val('pay_date', today()) ?>" required></div>
       <div class="col-6"><label class="form-label" for="receipt"><?= e(t('receipt_no')) ?></label>
-        <input class="form-control" id="receipt" value="<?= next_receipt_no() ?>" disabled></div>
+        <input class="form-control" id="receipt" value="<?= $edit ? (int)$edit['receipt_no'] : next_receipt_no() ?>" disabled></div>
     </div></div>
 
     <div class="card mb-3"><div class="card-body row g-3">
@@ -161,7 +191,7 @@ $val = fn($k, $def = '') => e($_POST[$k] ?? $def);
       <label class="form-label d-block"><?= e(t('payment_method')) ?></label>
       <div class="btn-group w-100 mb-3" role="group">
         <?php foreach (['cash' => 'bi-cash', 'upi' => 'bi-phone', 'card' => 'bi-credit-card', 'bank' => 'bi-bank'] as $k => $ic): ?>
-          <input type="radio" class="btn-check" name="method" id="me_<?= $k ?>" value="<?= $k ?>"<?= ($_POST['method'] ?? 'cash') === $k ? ' checked' : '' ?>>
+          <input type="radio" class="btn-check" name="method" id="me_<?= $k ?>" value="<?= $k ?>"<?= ($_POST['method'] ?? $pre['method'] ?? 'cash') === $k ? ' checked' : '' ?>>
           <label class="btn btn-outline-primary" for="me_<?= $k ?>"><i class="bi <?= $ic ?>"></i> <?= e(t('m_' . $k)) ?></label>
         <?php endforeach; ?>
       </div>
@@ -176,10 +206,15 @@ $val = fn($k, $def = '') => e($_POST[$k] ?? $def);
       </div>
       <label class="form-label" for="note"><?= e(t('note')) ?></label>
       <input class="form-control mb-3" id="note" name="note" value="<?= $val('note') ?>" maxlength="255">
-      <button class="btn btn-primary btn-lg w-100"><i class="bi bi-check2-circle"></i> <?= e(t('save_print_receipt')) ?></button>
+      <button class="btn btn-primary btn-lg w-100"><i class="bi bi-check2-circle"></i> <?= e(t($edit ? 'save_changes' : 'save_print_receipt')) ?></button>
     </div></div>
   </div>
 </form>
+<?php if ($edit): ?>
+<form method="post" action="payments.php" class="text-end mb-4" data-verify="<?= e(t('confirm_delete_payment')) ?>"><?= csrf_field() ?>
+  <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= $edit['id'] ?>"><input type="hidden" name="back" value="member">
+  <button class="btn btn-outline-danger"><i class="bi bi-trash"></i> <?= e(t('delete_payment')) ?></button></form>
+<?php endif; ?>
 <?php
 $scripts = ['assets/vendor/qrcode.js', 'assets/qr.js'];
 require __DIR__ . '/includes/footer.php';
