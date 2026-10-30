@@ -1,6 +1,6 @@
 <?php require 'config.php';
 [$f,$role]=fund_access($_GET['id']??0);$fid=$f['id'];$r=(int)($_GET['r']??1);
-nav($f,$role,'reports');$mem=members($f);$d=($_GET['d']??'1')==='1';$R=['title'=>'','lines'=>[],'head'=>[],'rows'=>[],'foot'=>[]];
+nav($f,$role,'reports');$mem=members($f);$d=($_GET['d']??'1')==='1';$ds=($_GET['ds']??'0')==='1';$R=['title'=>'','lines'=>[],'head'=>[],'rows'=>[],'foot'=>[]];
 $cr=$pdo->prepare('SELECT name,username FROM users WHERE id=?');$cr->execute([$f['creator_id']]);$cr=$cr->fetch();
 $msel=(int)($_GET['m']??$mem[0]['id']);$xls=isset($_GET['xls']);
 $hasItems=(bool)fund_items($fid,true);
@@ -53,6 +53,8 @@ if($xls){ // Excel download of the report on screen; "1,234.00" becomes a number
  if($r===2)$out=array_merge([$R['head']],$R['rows']); // contributions: plain sheet, header row first (same columns as the import)
  xlsx_send($R['title'],$out);
 }
+// Optional: fund description at the top of the report (and its WhatsApp share)
+if($ds&&$r!==1){$top=[];if(trim((string)$f['description'])!=='')$top[]=trim($f['description']);$top[]='Creator: '.$cr['name'].($f['creator_details']?' · '.trim($f['creator_details']):'');$R['lines']=array_merge($top,$R['lines']);}
 // WhatsApp text
 $txt="*{$R['title']}*\n";foreach($R['lines'] as $l)$txt.="$l\n";
 if($R['rows'])$txt.="\n".implode(' | ',$R['head'])."\n";
@@ -64,12 +66,13 @@ $tabs=[1=>'Fund',2=>'Contributions',3=>'Members',4=>'Member cash',5=>'Handover']
 <div class="d-flex flex-wrap gap-1 my-2"><?php foreach($tabs as $k=>$v):?><a class="btn btn-sm btn-<?=$k===$r?'primary':'outline-primary'?>" href="reports.php?id=<?=$fid?>&r=<?=$k?>"><?=$v?></a><?php endforeach;?></div>
 <?php if($r===4):?><form class="mb-2"><input type="hidden" name="id" value="<?=$fid?>"><input type="hidden" name="r" value="4">
 <select class="form-select" name="m" onchange="this.form.submit()"><?php foreach($mem as $m):?><option value="<?=$m['id']?>" <?=$m['id']==$msel?'selected':''?>><?=e($m['name'])?></option><?php endforeach;?></select></form><?php endif;?>
-<?php if($r===2):?><div class="btn-group btn-group-sm mb-2"><a class="btn btn-<?=$d?'primary':'outline-primary'?>" href="reports.php?id=<?=$fid?>&r=2&d=1">With paid &amp; balance</a><a class="btn btn-<?=!$d?'primary':'outline-primary'?>" href="reports.php?id=<?=$fid?>&r=2&d=0">Contribution only</a></div><?php endif;?>
+<?php if($r===2):?><div class="btn-group btn-group-sm mb-2"><a class="btn btn-<?=$d?'primary':'outline-primary'?>" href="reports.php?id=<?=$fid?>&r=2&d=1&ds=<?=$ds?1:0?>">With paid &amp; balance</a><a class="btn btn-<?=!$d?'primary':'outline-primary'?>" href="reports.php?id=<?=$fid?>&r=2&d=0&ds=<?=$ds?1:0?>">Contribution only</a></div><?php endif;?>
+<?php if($r!==1):?><a class="form-check form-switch d-block mb-2 text-decoration-none text-dark" href="reports.php?<?=e(http_build_query(['id'=>$fid,'r'=>$r,'d'=>$d?1:0,'m'=>$msel,'ds'=>$ds?0:1]))?>"><input class="form-check-input" type="checkbox" <?=$ds?'checked':''?> tabindex="-1" style="pointer-events:none"> <span class="form-check-label">Add fund description / വിവരണം ചേർക്കുക</span></a><?php endif;?>
 <div class="mb-3"><button class="btn btn-danger btn-sm" onclick="window.print()">📄 PDF (Save as PDF)</button>
 <a class="btn btn-primary btn-sm" target="_blank" href="<?=e(wa($txt))?>">WhatsApp Share</a>
-<a class="btn btn-success btn-sm" href="reports.php?<?=e(http_build_query(['id'=>$fid,'r'=>$r,'d'=>$d?1:0,'m'=>$msel,'xls'=>1]))?>" download>📊 Excel</a></div></div>
+<a class="btn btn-success btn-sm" href="reports.php?<?=e(http_build_query(['id'=>$fid,'r'=>$r,'d'=>$d?1:0,'m'=>$msel,'ds'=>$ds?1:0,'xls'=>1]))?>" download>📊 Excel</a></div></div>
 <div class="card p-3"><h5><?=e($R['title'])?></h5>
-<?php foreach($R['lines'] as $l)echo '<div class="small">'.e($l).'</div>';?>
+<?php foreach($R['lines'] as $l)echo '<div class="small">'.nl2br(e($l)).'</div>';?>
 <?php if($R['rows']):?><div class="table-responsive mt-2"><table class="table table-sm table-bordered mb-1"><thead class="table-light"><tr><?php foreach($R['head'] as $h)echo '<th>'.e($h).'</th>';?></tr></thead><tbody>
 <?php foreach($R['rows'] as $i=>$row){echo '<tr>';foreach($row as $k=>$c)echo '<td'.($k===1&&isset($R['cls'][$i])?' class="'.$R['cls'][$i].'"':'').'>'.e($c).'</td>';echo '</tr>';}?></tbody></table></div><?php else:echo '<p class="text-muted mt-2">No data.</p>';endif;?>
 <?php foreach($R['foot'] as $l)echo '<div><b>'.e($l).'</b></div>';?></div>
