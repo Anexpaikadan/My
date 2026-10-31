@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../includes/config.php';
 if(file_exists(__DIR__.'/../includes/whatsapp_otp.php'))
     require_once __DIR__ . '/../includes/whatsapp_otp.php';
+require_once __DIR__ . '/../includes/wa_gateway.php';
 requireLogin();
 $me = currentUser();
 if (!canAccessSettings($me)) { header('Location: '.url('dashboard.php').'?err=access'); exit; }
@@ -152,6 +153,7 @@ if(!empty($_POST['action'])){
     $waUrl=null;
     if($appMember && !empty($appMember['whatsapp_number'])){
       $waUrl=makeWaLink($appMember['whatsapp_number'],memberApprovedMessage($appMember['name']));
+      if(wa_feature_on('approve') && wa_queue($appMember['whatsapp_number'],memberApprovedMessage($appMember['name']),'approve')) $waUrl=null; // sent automatically
     }
     echo json_encode(['ok'=>true,'name'=>$appMember['name']??'','wa'=>$waUrl]);exit;
   }
@@ -168,12 +170,39 @@ if(!empty($_POST['action'])){
     }
     echo json_encode(['ok'=>true,'name'=>$rejMember['name']??'','wa'=>$waUrl]);exit;
   }
+  if($act==='wa_status'){ list($ok,$m)=wa_status(); echo json_encode(['ok'=>$ok,'msg'=>$m]);exit; }
+  if($act==='wa_test'){
+    $ph=trim($_POST['phone']??'');
+    if(strlen(preg_replace('/\D/','',$ph))<10){ echo json_encode(['ok'=>false,'msg'=>'Enter a WhatsApp number']);exit; }
+    list($ok,$m)=wa_send_now($ph,"✅ Test message from ".setting('CLUB_NAME','Aishwarya Arts & Sports Club')." website.\nWhatsApp sending works!",'test');
+    echo json_encode(['ok'=>$ok,'msg'=>$ok?'Test message sent — check WhatsApp.':$m]);exit;
+  }
+  if($act==='wa_run'){ @set_time_limit(150); wa_daily_jobs(); $r=wa_process_queue(10); echo json_encode(['ok'=>true,'msg'=>'Sent '.$r['sent'].', failed '.$r['failed'].', waiting '.wa_queue_pending()]);exit; }
+  if($act==='wa_retry'){ try{db()->exec("UPDATE wa_queue SET status='pending',attempts=0 WHERE status='failed'");}catch(Exception $e){} echo json_encode(['ok'=>true,'msg'=>'Failed messages moved back to the queue']);exit; }
   echo json_encode(['ok'=>false,'msg'=>'Unknown']);exit;
 }
 
 // ── Handle POST ──────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD']==='POST') {
     $act = $_POST['act'] ?? '';
+
+    // Save WhatsApp sending settings
+    if ($act === 'save_whatsapp') {
+        $prov = in_array($_POST['wa_provider'] ?? 'off', array('off','gowa','meta'), true) ? $_POST['wa_provider'] : 'off';
+        saveSetting('wa_provider', $prov, 'whatsapp');
+        $url = trim($_POST['wa_gowa_url'] ?? '');
+        if ($url !== '' && !preg_match('#^https?://#i', $url)) $url = 'http://' . $url;
+        saveSetting('wa_gowa_url', rtrim($url, '/'), 'whatsapp');
+        foreach (array('wa_gowa_user','wa_gowa_device','wa_meta_phone_id','wa_meta_tpl_otp','wa_meta_tpl_notice') as $f) saveSetting($f, trim($_POST[$f] ?? ''), 'whatsapp');
+        // secrets: an empty box keeps the saved value
+        foreach (array('wa_gowa_pass','wa_meta_token') as $f) { $v = trim($_POST[$f] ?? ''); if ($v !== '') saveSetting($f, $v, 'whatsapp'); }
+        saveSetting('wa_meta_lang', preg_replace('/[^a-zA-Z_]/', '', $_POST['wa_meta_lang'] ?? 'en') ?: 'en', 'whatsapp');
+        saveSetting('wa_country', preg_replace('/\D/', '', $_POST['wa_country'] ?? '91') ?: '91', 'whatsapp');
+        saveSetting('wa_delay', (string)max(2, min(30, (int)($_POST['wa_delay'] ?? 4))), 'whatsapp');
+        foreach (array('otp','approve','events','blood','fees') as $f) saveSetting('wa_on_'.$f, isset($_POST['wa_on_'.$f]) ? '1' : '0', 'whatsapp');
+        if (!empty($_POST['wa_new_key']) || getSetting('wa_cron_key') === '') saveSetting('wa_cron_key', bin2hex(random_bytes(16)), 'whatsapp');
+        $msg = ['t'=>'ok','m'=>'WhatsApp settings saved. Use “Check connection” and “Send test message” below.'];
+    }
 
     // Save social media links
     if ($act === 'save_social') {
@@ -303,6 +332,7 @@ require_once __DIR__ . '/../includes/header.php';
     <button class="stab" onclick="switchStab('acts',this)">🏟 Activities</button>
     <button class="stab" onclick="switchStab('fees',this)">💳 Fees</button>
     <button class="stab" onclick="switchStab('social',this)">📱 Social</button>
+    <button class="stab" onclick="switchStab('wa',this)">💬 WhatsApp</button>
     <button class="stab" onclick="switchStab('roles',this)">👥 Roles</button>
     <button class="stab" onclick="switchStab('notif',this)">🔔 Notify</button>
     <button class="stab" onclick="switchStab('backup',this)">💾 Backup</button>
@@ -715,6 +745,182 @@ require_once __DIR__ . '/../includes/header.php';
   </div>
 
   <!-- ═══ ROLES TAB ═══ -->
+  <!-- ══ TAB: WHATSAPP SENDING ══ -->
+  <?php
+  if (getSetting('wa_cron_key') === '') { saveSetting('wa_cron_key', bin2hex(random_bytes(16)), 'whatsapp'); $settings['wa_cron_key'] = getSetting('wa_cron_key'); }
+  $waProv = $s('wa_provider','off');
+  wa_tables();
+  $waPending = 0; $waFailed = 0; $waLog = array();
+  try {
+    $waPending = (int)db()->query("SELECT COUNT(*) FROM wa_queue WHERE status='pending'")->fetchColumn();
+    $waFailed  = (int)db()->query("SELECT COUNT(*) FROM wa_queue WHERE status='failed'")->fetchColumn();
+    $waLog     = db()->query("SELECT * FROM wa_log ORDER BY id DESC LIMIT 15")->fetchAll();
+  } catch (Exception $e) {}
+  $waCron = rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . '/modules/wa_worker.php?key=' . getSetting('wa_cron_key');
+  ?>
+  <div class="stab-panel" id="stab-wa">
+    <style>
+    .wa-prov{display:grid;gap:.6rem}
+    .wa-opt{display:flex;gap:.8rem;align-items:flex-start;padding:.9rem 1rem;border:1.5px solid #e3e7f5;border-radius:16px;cursor:pointer;background:#fff}
+    .wa-opt input{margin-top:.25rem;width:20px;height:20px;accent-color:#0A14E0;flex-shrink:0}
+    .wa-opt b{display:block;font-size:.95rem;color:#0B1033}.wa-opt small{font-size:.8rem;color:#565D82}
+    .wa-opt:has(input:checked){border-color:#0A14E0;background:#F3F4FF}
+    .wa-box{display:none}.wa-box.on{display:block}
+    .wa-status{display:flex;align-items:center;gap:.6rem;padding:.8rem 1rem;border-radius:14px;background:#F5F7FF;border:1px solid #e3e7f5;font-size:.88rem;font-weight:600;color:#3B4266}
+    .wa-dot{width:12px;height:12px;border-radius:50%;background:#94a3b8;flex-shrink:0}
+    .wa-dot.ok{background:#15803D}.wa-dot.bad{background:#E30613}
+    .wa-row{display:flex;gap:.5rem;flex-wrap:wrap}
+    .wa-row .sinp{flex:1;min-width:180px}
+    .wa-code{font-family:ui-monospace,Consolas,monospace;font-size:.78rem;background:#0B1033;color:#fff;border-radius:12px;padding:.75rem .9rem;word-break:break-all;white-space:pre-wrap}
+    .wa-log{width:100%;border-collapse:collapse;font-size:.8rem}
+    .wa-log td,.wa-log th{padding:.45rem .4rem;border-bottom:1px solid #eef1fa;text-align:left;vertical-align:top}
+    .wa-log th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:#565D82}
+    .wa-steps{padding-left:1.2rem;font-size:.88rem;color:#3B4266;line-height:1.6}
+    .wa-steps li{margin-bottom:.45rem}
+    .wa-steps code{background:#F0F2FF;padding:.05rem .35rem;border-radius:6px;font-size:.82rem}
+    </style>
+
+    <div class="scard">
+      <div class="scard-title">📶 Connection</div>
+      <div class="wa-status" id="waStatus" role="status"><span class="wa-dot" id="waDot"></span><span id="waStatusTxt"><?= $waProv==='off' ? 'Sending is off — choose GOWA or Meta below.' : 'Press “Check connection”.' ?></span></div>
+      <div class="wa-row" style="margin-top:.7rem">
+        <button type="button" class="sbtn sbtn-grey" onclick="waCall('wa_status')">🔄 Check connection</button>
+      </div>
+    </div>
+
+    <form method="POST">
+      <input type="hidden" name="act" value="save_whatsapp">
+      <div class="scard">
+        <div class="scard-title">💬 How should the website send WhatsApp?</div>
+        <div class="wa-prov">
+          <label class="wa-opt"><input type="radio" name="wa_provider" value="off" <?= $waProv==='off'?'checked':'' ?> onchange="waShow()"><span><b>Off</b><small>Nothing is sent automatically. Admins keep using the tap-to-send WhatsApp links.</small></span></label>
+          <label class="wa-opt"><input type="radio" name="wa_provider" value="gowa" <?= $waProv==='gowa'?'checked':'' ?> onchange="waShow()"><span><b>GOWA — free, self-hosted (recommended)</b><small>Your own GOWA server with a club WhatsApp number. Free; needs a small always-on server.</small></span></label>
+          <label class="wa-opt"><input type="radio" name="wa_provider" value="meta" <?= $waProv==='meta'?'checked':'' ?> onchange="waShow()"><span><b>Meta WhatsApp Cloud API — official</b><small>No ban risk and no server, but Meta charges per OTP / alert message and needs approved templates.</small></span></label>
+        </div>
+      </div>
+
+      <div class="scard wa-box" id="waGowa">
+        <div class="scard-title">🖥 GOWA server</div>
+        <div class="srow"><label class="slbl" for="waUrl">Server address</label>
+          <input class="sinp" id="waUrl" name="wa_gowa_url" value="<?= h($s('wa_gowa_url','')) ?>" placeholder="https://wa.yourclub.in  or  http://1.2.3.4:3000" inputmode="url"></div>
+        <div class="g2">
+          <div class="srow"><label class="slbl" for="waUser">Username</label>
+            <input class="sinp" id="waUser" name="wa_gowa_user" value="<?= h($s('wa_gowa_user','')) ?>" autocomplete="off"></div>
+          <div class="srow"><label class="slbl" for="waPass">Password</label>
+            <input class="sinp" id="waPass" name="wa_gowa_pass" type="password" value="" autocomplete="new-password" placeholder="<?= $s('wa_gowa_pass','')!=='' ? '•••••• saved — leave empty to keep' : 'From --basic-auth' ?>"></div>
+        </div>
+        <div class="srow"><label class="slbl" for="waDev">Device ID (optional)</label>
+          <input class="sinp" id="waDev" name="wa_gowa_device" value="<?= h($s('wa_gowa_device','')) ?>" placeholder="Leave empty if GOWA has only one WhatsApp number"></div>
+      </div>
+
+      <div class="scard wa-box" id="waMeta">
+        <div class="scard-title">🔵 Meta Cloud API</div>
+        <div class="srow"><label class="slbl" for="waTok">Access token</label>
+          <input class="sinp" id="waTok" name="wa_meta_token" type="password" value="" autocomplete="new-password" placeholder="<?= $s('wa_meta_token','')!=='' ? '•••••• saved — leave empty to keep' : 'Permanent token from Meta Business' ?>"></div>
+        <div class="srow"><label class="slbl" for="waPid">Phone number ID</label>
+          <input class="sinp" id="waPid" name="wa_meta_phone_id" value="<?= h($s('wa_meta_phone_id','')) ?>" inputmode="numeric"></div>
+        <div class="g2">
+          <div class="srow"><label class="slbl" for="waTo">OTP template name</label>
+            <input class="sinp" id="waTo" name="wa_meta_tpl_otp" value="<?= h($s('wa_meta_tpl_otp','')) ?>" placeholder="e.g. login_code"></div>
+          <div class="srow"><label class="slbl" for="waTn">Notice template name</label>
+            <input class="sinp" id="waTn" name="wa_meta_tpl_notice" value="<?= h($s('wa_meta_tpl_notice','')) ?>" placeholder="e.g. club_notice ({{1}} = message)"></div>
+        </div>
+        <div class="srow"><label class="slbl" for="waLang">Template language code</label>
+          <input class="sinp" id="waLang" name="wa_meta_lang" value="<?= h($s('wa_meta_lang','en')) ?>" style="max-width:140px"></div>
+      </div>
+
+      <div class="scard">
+        <div class="scard-title">📨 What to send</div>
+        <?php foreach (array(
+            'otp'=>array('Login & passkey reset codes','6-digit code on WhatsApp to log in or reset a forgotten passkey'),
+            'approve'=>array('Membership approved','Welcome message when an admin approves a member'),
+            'events'=>array('New events','Announcement to all active members when an event is added'),
+            'blood'=>array('Blood requests','Message to available donors of the same blood group'),
+            'fees'=>array('Fee reminders','7 days, 1 day and on the day a membership ends')) as $k=>$t): $on = $s('wa_on_'.$k,'1')!=='0'; ?>
+        <label class="sw"><span><b><?= $t[0] ?></b><small><?= $t[1] ?></small></span>
+          <input type="checkbox" name="wa_on_<?= $k ?>" value="1" <?= $on?'checked':'' ?>><span class="tg" aria-hidden="true"></span></label>
+        <?php endforeach; ?>
+        <div class="g2" style="margin-top:.8rem">
+          <div class="srow"><label class="slbl" for="waCc">Country code</label>
+            <input class="sinp" id="waCc" name="wa_country" value="<?= h($s('wa_country','91')) ?>" inputmode="numeric"></div>
+          <div class="srow"><label class="slbl" for="waDelay">Seconds between messages</label>
+            <input class="sinp" id="waDelay" name="wa_delay" type="number" min="2" max="30" value="<?= h($s('wa_delay','4')) ?>"></div>
+        </div>
+        <p class="hint-txt">A few seconds between messages keeps the club number safe from WhatsApp spam limits.</p>
+      </div>
+
+      <button type="submit" class="sbtn sbtn-blue" style="width:100%;justify-content:center;min-height:50px;margin-bottom:1rem">💾 Save WhatsApp settings</button>
+
+      <div class="scard">
+        <div class="scard-title">🧪 Send a test message</div>
+        <div class="wa-row">
+          <input class="sinp" id="waTestPh" type="tel" inputmode="tel" placeholder="Your WhatsApp number" aria-label="WhatsApp number for the test">
+          <button type="button" class="sbtn sbtn-green" onclick="waCall('wa_test',{phone:document.getElementById('waTestPh').value})">📤 Send test</button>
+        </div>
+        <p class="hint-txt">Save first, then test. The result appears in the log below.</p>
+      </div>
+
+      <div class="scard">
+        <div class="scard-title">📬 Message queue</div>
+        <p style="font-size:.88rem;color:#3B4266;margin-bottom:.6rem">Waiting: <b><?= $waPending ?></b> · Failed: <b><?= $waFailed ?></b></p>
+        <div class="wa-row" style="margin-bottom:.8rem">
+          <button type="button" class="sbtn sbtn-grey" onclick="waCall('wa_run')">▶ Send waiting messages now</button>
+          <?php if($waFailed): ?><button type="button" class="sbtn sbtn-grey" onclick="waCall('wa_retry')">↻ Retry failed</button><?php endif; ?>
+        </div>
+        <label class="slbl" for="waCronLine">Cron job (every minute) — paste in your hosting control panel</label>
+        <div class="wa-code" id="waCronLine">curl -s "<?= h($waCron) ?>" &gt;/dev/null</div>
+        <label style="display:flex;gap:.5rem;align-items:center;margin-top:.6rem;font-size:.82rem;color:#565D82"><input type="checkbox" name="wa_new_key" value="1"> Make a new secret key when I save (old cron line stops working)</label>
+        <p class="hint-txt">Without a cron job, waiting messages still go out a few at a time while members use the website.</p>
+      </div>
+    </form>
+
+    <div class="scard">
+      <div class="scard-title">🧾 Recent messages</div>
+      <?php if(empty($waLog)): ?><p class="hint-txt">Nothing sent yet.</p><?php else: ?>
+      <div style="overflow-x:auto" tabindex="0" role="region" aria-label="Recent WhatsApp messages">
+      <table class="wa-log"><thead><tr><th>Time</th><th>To</th><th>Type</th><th>Result</th></tr></thead><tbody>
+      <?php foreach($waLog as $l): ?>
+        <tr><td><?= date('d M H:i', strtotime($l['created_at'])) ?></td><td><?= h(wa_mask($l['phone'])) ?></td><td><?= h($l['kind']) ?></td>
+            <td style="color:<?= $l['ok']?'#166534':'#B80F0A' ?>;font-weight:600"><?= $l['ok']?'✓ ':'✗ ' ?><?= h($l['info']) ?></td></tr>
+      <?php endforeach; ?></tbody></table></div>
+      <?php endif; ?>
+    </div>
+
+    <details class="scard">
+      <summary class="scard-title" style="cursor:pointer;margin:0">📘 Setup steps (GOWA)</summary>
+      <ol class="wa-steps" style="margin-top:.8rem">
+        <li>Get a <b>separate SIM</b> for the club and install WhatsApp on a phone with it. Do not use a personal number.</li>
+        <li>Rent a small Linux server (VPS) or use a free cloud tier, and install <b>Docker</b> on it.</li>
+        <li>On the server run:<br><code>docker run -d --name whatsapp --restart always -p 3000:3000 -v whatsapp-storages:/app/storages aldinokemal2104/go-whatsapp-web-multidevice rest --basic-auth=club:CHOOSE-A-STRONG-PASSWORD</code></li>
+        <li>Best: put it behind HTTPS (for example a sub-domain like <code>wa.yourclub.in</code> with Caddy or Nginx). Otherwise use <code>http://SERVER-IP:3000</code>.</li>
+        <li>Open that address in a browser, log in with the username and password from step 3, and <b>scan the QR code</b> with the club phone (WhatsApp → Linked devices).</li>
+        <li>Here: choose <b>GOWA</b>, fill in the address, username and password, and <b>Save</b>.</li>
+        <li>Press <b>Check connection</b>, then <b>Send test</b> to your own number.</li>
+        <li>In your hosting control panel → <b>Cron Jobs</b>, add the cron line above to run every minute.</li>
+        <li>Turn on the messages you want under “What to send”. Members will now see “Get a code on WhatsApp” when they log in or forget their passkey.</li>
+      </ol>
+    </details>
+  </div>
+
+  <script>
+  function waShow(){
+    var v=(document.querySelector('input[name=wa_provider]:checked')||{}).value;
+    document.getElementById('waGowa').classList.toggle('on',v==='gowa');
+    document.getElementById('waMeta').classList.toggle('on',v==='meta');
+  }
+  waShow();
+  function waCall(action,extra){
+    var fd=new FormData(); fd.append('action',action);
+    if(extra) Object.keys(extra).forEach(function(k){ fd.append(k,extra[k]); });
+    var dot=document.getElementById('waDot'), txt=document.getElementById('waStatusTxt');
+    dot.className='wa-dot'; txt.textContent='Working…';
+    document.getElementById('waStatus').scrollIntoView({behavior:'smooth',block:'center'});
+    fetch(location.pathname,{method:'POST',body:fd,credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d){
+      dot.className='wa-dot '+(d.ok?'ok':'bad'); txt.textContent=d.msg||(d.ok?'Done':'Failed');
+    }).catch(function(){ dot.className='wa-dot bad'; txt.textContent='Network error'; });
+  }
+  </script>
+
   <div class="stab-panel" id="stab-roles">
     <?php
     $RC=['secretary'=>'#0B1033','developer'=>'#6a1b9a','president'=>'#b71c1c',

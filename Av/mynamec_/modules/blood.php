@@ -1,6 +1,7 @@
 <?php
 // modules/blood.php — PHP 7.3+ compatible
 require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/wa_gateway.php';
 // OG tags — must be set BEFORE requireLogin() so bots get logo+title
 $pageOG = [
   'title' => '🩸 Blood Hub — Aishwarya Arts & Sports Club',
@@ -32,6 +33,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['req_blood'])) {
     if ($reqBG) {
         db()->prepare('INSERT INTO blood_requests(requested_by,blood_group,patient_name,hospital,urgency)VALUES(?,?,?,?,?)')
            ->execute(array($user['id'], $reqBG, $reqPatient, $reqHospital, $reqUrgency));
+        // Message available donors of the same group automatically (WhatsApp gateway)
+        if (wa_feature_on('blood')) {
+            try {
+                $dq = db()->prepare("SELECT whatsapp_number FROM users WHERE status='active' AND blood_group=? AND id<>? AND (blood_available IS NULL OR blood_available=1)");
+                $dq->execute(array($reqBG, $user['id']));
+                wa_queue_many($dq->fetchAll(), wa_msg_blood($reqBG, $reqPatient, $reqHospital, $reqUrgency), 'blood');
+            } catch (Exception $e) {}
+        }
 
         // Build notification message
         $urgEmoji = $reqUrgency==='high' ? '🚨' : ($reqUrgency==='medium' ? '⚠️' : 'ℹ️');

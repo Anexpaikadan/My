@@ -4,6 +4,20 @@
 // ================================================================
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/whatsapp_otp.php';
+require_once __DIR__ . '/includes/wa_gateway.php';
+
+// Find a member by phone number however it was typed or stored
+function _homeFindUser($raw) {
+    $st = db()->prepare('SELECT * FROM users WHERE whatsapp_number=?');
+    $st->execute(array(normalisePhone($raw))); $row = $st->fetch();
+    if ($row) return $row;
+    $d = substr(preg_replace('/\D/', '', (string)$raw), -10);
+    if (strlen($d) < 10) return null;
+    $st = db()->prepare("SELECT * FROM users WHERE whatsapp_number LIKE ?");
+    $st->execute(array('%' . $d));
+    foreach ($st->fetchAll() as $u) { if (substr(preg_replace('/\D/', '', $u['whatsapp_number']), -10) === $d) return $u; }
+    return null;
+}
 
 // ── Create tables safely (try/catch each ALTER separately) ──────
 try { db()->exec("CREATE TABLE IF NOT EXISTS gallery_images(id INT AUTO_INCREMENT PRIMARY KEY,title VARCHAR(200),image_path VARCHAR(500) NOT NULL,category VARCHAR(80) DEFAULT 'general',is_active TINYINT(1) DEFAULT 1,is_hero TINYINT(1) DEFAULT 0,sort_order INT DEFAULT 0,uploaded_by INT,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"); } catch(Exception $e){}
@@ -57,18 +71,24 @@ if (!empty($_POST['ajax'])) {
         $name  = strtolower(trim($_POST['member_name'] ?? ''));
         if (strlen($ph) < 12) { echo json_encode(array('ok'=>false,'msg'=>'Enter your phone number.')); exit; }
         if (strlen($key) !== 6 || !ctype_digit($key)) { echo json_encode(array('ok'=>false,'msg'=>'Passkey must be exactly 6 digits.')); exit; }
-        $row = db()->prepare('SELECT * FROM users WHERE whatsapp_number=?');
-        $row->execute(array($ph)); $row = $row->fetch();
+        $row = _homeFindUser($_POST['phone'] ?? '');
         if (!$row) { echo json_encode(array('ok'=>false,'msg'=>'Phone number not registered.')); exit; }
-        if ($row['status']==='pending')  { echo json_encode(array('ok'=>false,'msg'=>'Account pending approval.')); exit; }
-        // Verify name for security
-        if (strtolower(trim($row['name'])) !== $name) {
+        if ($row['status']!=='active')  { echo json_encode(array('ok'=>false,'msg'=>'Account is not active yet.')); exit; }
+        if (wa_feature_on('otp')) {
+            // Verified by a code sent to the member's WhatsApp
+            if (!wa_otp_check($row['whatsapp_number'], 'passkey', $_POST['otp'] ?? '')) {
+                echo json_encode(array('ok'=>false,'msg'=>'Wrong or expired WhatsApp code. Ask for a new code.'));
+                exit;
+            }
+        } elseif (strtolower(trim($row['name'])) !== $name) {
+            // Verify name for security (when WhatsApp codes are not set up)
             echo json_encode(array('ok'=>false,'msg'=>'Name does not match our records.'));
             exit;
         }
         $hash = password_hash($key, PASSWORD_DEFAULT);
         db()->prepare('UPDATE users SET passkey=?,passkey_set=1 WHERE id=?')->execute(array($hash,$row['id']));
         // Auto-login after setting passkey
+        if (function_exists('session_regenerate_id')) @session_regenerate_id(true);
         $_SESSION['user_id'] = $row['id'];
         echo json_encode(array('ok'=>true,'url'=>url('dashboard.php'),'msg'=>'Passkey set! Logging you in…'));
         exit;
@@ -93,9 +113,33 @@ if (!empty($_POST['ajax'])) {
         echo json_encode(array(
             'ok'          => true,
             'has_passkey' => !empty($row['passkey_set']),
+            'wa_otp'      => wa_feature_on('otp'),
             'name_hint'   => mb_strtoupper(mb_substr($row['name'],0,1)).'***',
         ));
         exit;
+    }
+
+    // ── WhatsApp code: send (login or passkey reset) ───────────────
+    if ($act === 'send_otp') {
+        $purpose = (($_POST['purpose'] ?? '') === 'passkey') ? 'passkey' : 'login';
+        if (!wa_feature_on('otp')) { echo json_encode(array('ok'=>false,'msg'=>'WhatsApp codes are not set up yet. Ask the club admin.')); exit; }
+        $row = _homeFindUser($_POST['phone'] ?? '');
+        if (!$row) { echo json_encode(array('ok'=>false,'msg'=>'Phone number not registered.')); exit; }
+        if ($row['status'] !== 'active') { echo json_encode(array('ok'=>false,'msg'=>'Account is not active yet. Contact the Secretary.')); exit; }
+        list($ok, $m) = wa_otp_send($row['whatsapp_number'], $purpose);
+        echo json_encode(array('ok'=>$ok, 'msg'=>$m)); exit;
+    }
+
+    // ── WhatsApp code: log in ───────────────────────────────────────
+    if ($act === 'login_otp') {
+        if (!wa_feature_on('otp')) { echo json_encode(array('ok'=>false,'msg'=>'WhatsApp codes are not set up.')); exit; }
+        $row = _homeFindUser($_POST['phone'] ?? '');
+        if (!$row || $row['status'] !== 'active' || !wa_otp_check($row['whatsapp_number'], 'login', $_POST['otp'] ?? '')) {
+            echo json_encode(array('ok'=>false,'msg'=>'Wrong or expired code. Try again or ask for a new code.')); exit;
+        }
+        if (function_exists('session_regenerate_id')) @session_regenerate_id(true);
+        $_SESSION['user_id'] = $row['id'];
+        echo json_encode(array('ok'=>true,'url'=>url('dashboard.php'))); exit;
     }
 
     if ($act === 'register') {
@@ -693,6 +737,23 @@ function heroGo(i){
         <p style="text-align:center;font-size:.76rem;margin-top:.7rem">
           <a href="#" onclick="showSetPasskey();return false" style="color:var(--p);display:inline-block;padding:.5rem">Forgot passkey? Reset it</a>
         </p>
+        <p class="wa-only" style="text-align:center;font-size:.86rem;display:none">
+          <a href="#" onclick="showOtpLogin();return false" style="color:var(--p);font-weight:700;display:inline-block;padding:.4rem">💬 Get a login code on WhatsApp instead</a>
+        </p>
+      </div>
+
+      <!-- STEP 2c: Log in with a WhatsApp code -->
+      <div id="stepOtp" style="display:none">
+        <button type="button" class="fback" onclick="backStep('stepPhone')">← Change Number</button>
+        <div style="text-align:center;margin:.3rem 0 1rem">
+          <div style="font-size:1.6rem;margin-bottom:.3rem" aria-hidden="true">💬</div>
+          <div style="font-weight:800;font-size:1rem">Enter the WhatsApp code</div>
+          <div id="otpInfo" style="font-size:.85rem;color:var(--t3);margin-top:.25rem" role="status">We will send a 6-digit code to your WhatsApp.</div>
+        </div>
+        <label class="flbl" for="otpCode">6-digit code</label>
+        <input type="text" class="finp" id="otpCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" placeholder="••••••" style="text-align:center;letter-spacing:.5em;font-size:1.3rem;font-weight:800">
+        <button type="button" class="fbtn fbtn-p" id="btnOtpLogin" onclick="doOtpLogin()">Log in</button>
+        <button type="button" class="fback" id="btnOtpResend" onclick="sendOtp('login')" style="display:block;margin:.6rem auto 0">Send the code again</button>
       </div>
 
       <!-- STEP 2b: No passkey — create one -->
@@ -703,9 +764,17 @@ function heroGo(i){
           <div style="font-weight:700;font-size:.95rem;color:var(--p)">Create Your Passkey</div>
           <div style="font-size:.78rem;color:var(--t3);margin-top:.25rem">You'll use this 6-digit code every time you login</div>
         </div>
-        <!-- Name verify field -->
-        <label class="flbl" for="pkName">Your Registered Name (for verification)</label>
-        <input type="text" class="finp" id="pkName" placeholder="Enter your full name as registered" autocomplete="name">
+        <!-- Verification: WhatsApp code when the gateway is set up, otherwise the registered name -->
+        <div class="wa-only" style="display:none">
+          <button type="button" class="fbtn fbtn-g" id="btnPkOtp" onclick="sendOtp('passkey')" style="margin-bottom:.6rem">💬 Send code to my WhatsApp</button>
+          <div id="pkOtpInfo" style="font-size:.84rem;color:var(--t3);text-align:center;margin-bottom:.6rem" role="status"></div>
+          <label class="flbl" for="pkOtp">6-digit WhatsApp code</label>
+          <input type="text" class="finp" id="pkOtp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" placeholder="••••••" style="text-align:center;letter-spacing:.4em;font-weight:800">
+        </div>
+        <div class="name-only">
+          <label class="flbl" for="pkName">Your Registered Name (for verification)</label>
+          <input type="text" class="finp" id="pkName" placeholder="Enter your full name as registered" autocomplete="name">
+        </div>
         <!-- New passkey dots -->
         <div style="display:flex;justify-content:center;gap:.55rem;margin:1rem 0 .5rem" id="newPkDots" aria-hidden="true">
           <div class="pk-dot"></div><div class="pk-dot"></div><div class="pk-dot"></div>
@@ -1241,6 +1310,48 @@ var currentPhone = '';
 })();
 
 // Step 1: Check phone
+// WhatsApp codes (set up in Club Settings → WhatsApp)
+var WA_OTP = <?= wa_feature_on('otp') ? 'true' : 'false' ?>;
+function waUi(){ $('.wa-only').toggle(WA_OTP); $('.name-only').toggle(!WA_OTP); }
+waUi();
+var otpTimer = null;
+function otpCooldown(btnSel){
+  var b=$(btnSel), left=60; b.prop('disabled',true);
+  clearInterval(otpTimer);
+  otpTimer=setInterval(function(){ left--; b.text(left>0?('Send again in '+left+'s'):(btnSel==='#btnPkOtp'?'💬 Send code again':'Send the code again')); if(left<=0){ clearInterval(otpTimer); b.prop('disabled',false); } },1000);
+}
+window.sendOtp = function(purpose){
+  var info = purpose==='passkey' ? '#pkOtpInfo' : '#otpInfo';
+  $(info).text('Sending…');
+  $.ajax({ url:'', method:'POST', data:{ ajax:'1', action:'send_otp', purpose:purpose, phone:currentPhone }, dataType:'json',
+    success:function(d){
+      $(info).text(d.msg);
+      if(d.ok){ otpCooldown(purpose==='passkey'?'#btnPkOtp':'#btnOtpResend'); $(purpose==='passkey'?'#pkOtp':'#otpCode').val('').trigger('focus'); }
+    },
+    error:function(){ $(info).text('Network error. Try again.'); }
+  });
+};
+window.showOtpLogin = function(){
+  $('#stepPasskey,#stepCreatePasskey').hide(); $('#loginMsg').hide();
+  $('#stepOtp').show(); sendOtp('login');
+};
+window.doOtpLogin = function(){
+  var c=$('#otpCode').val().replace(/\D/g,'');
+  if(c.length!==6){ showMsg('#loginMsg','err','Enter the 6-digit code from WhatsApp.'); return; }
+  $('#btnOtpLogin').prop('disabled',true);
+  showMsg('#loginMsg','ok','<i class="fas fa-spinner fa-spin me-1"></i>Checking…');
+  $.ajax({ url:'', method:'POST', data:{ ajax:'1', action:'login_otp', phone:currentPhone, otp:c }, dataType:'json',
+    success:function(d){
+      $('#btnOtpLogin').prop('disabled',false);
+      if(d.ok){ showMsg('#loginMsg','ok','<i class="fas fa-check-circle me-1"></i>Welcome back!'); setTimeout(function(){ window.location.href=d.url; },600); }
+      else showMsg('#loginMsg','err','<i class="fas fa-times-circle me-1"></i>'+d.msg);
+    },
+    error:function(){ $('#btnOtpLogin').prop('disabled',false); showMsg('#loginMsg','err','Network error.'); }
+  });
+};
+$('#otpCode').on('input', function(){ var v=this.value.replace(/\D/g,'').slice(0,6); this.value=v; if(v.length===6) doOtpLogin(); });
+$('#pkOtp').on('input', function(){ this.value=this.value.replace(/\D/g,'').slice(0,6); });
+
 window.doCheckPhone = function(){
   var raw = $('#loginPhone').val().replace(/\D/g,'');
   if (raw.length < 10){ showMsg('#loginMsg','err','Enter a valid 10-digit number.'); return; }
@@ -1260,6 +1371,7 @@ window.doCheckPhone = function(){
       $('#btnNext').prop('disabled',false);
       if (d.ok) {
         $('#loginMsg').hide();
+        if (typeof d.wa_otp !== 'undefined') { WA_OTP = !!d.wa_otp; waUi(); }
         pkVal = '';
         updateDots('pkDots', pkVal);
         if (d.has_passkey) {
@@ -1309,7 +1421,7 @@ window.bioLogin = function(){
 
 // Back to phone step
 window.backStep = function(target){
-  $('#stepPasskey,#stepCreatePasskey,#stepName').hide();
+  $('#stepPasskey,#stepCreatePasskey,#stepName,#stepOtp').hide();
   $('#'+target).show();
   $('#loginMsg').hide();
   pkVal=''; pkNewVal='';
@@ -1393,11 +1505,12 @@ window.pkNewTap = function(d){
 
 // Submit create passkey
 function doSetPasskey(){
-  var name = $('#pkName').val().trim();
-  if (!name){ showMsg('#loginMsg','err','Enter your registered name.'); return; }
+  var name = $('#pkName').val().trim(), otp = $('#pkOtp').val().replace(/\D/g,'');
+  if (WA_OTP && otp.length !== 6){ showMsg('#loginMsg','err','Tap “Send code to my WhatsApp” and enter the 6-digit code first.'); pkNewVal=''; updateDots('newPkDots',''); return; }
+  if (!WA_OTP && !name){ showMsg('#loginMsg','err','Enter your registered name.'); return; }
   showMsg('#loginMsg','ok','<i class="fas fa-spinner fa-spin me-1"></i>Creating passkey…');
   $.ajax({ url:'', method:'POST',
-    data:{ ajax:'1', action:'set_passkey', phone:currentPhone, passkey:pkNewVal, member_name:name },
+    data:{ ajax:'1', action:'set_passkey', phone:currentPhone, passkey:pkNewVal, member_name:name, otp:otp },
     dataType:'json',
     success: function(d){
       if (d.ok) {
@@ -1419,7 +1532,7 @@ window.showSetPasskey = function(){
   $('#stepPasskey').hide();
   pkNewVal='';
   updateDots('newPkDots','');
-  $('#pkName').val('');
+  $('#pkName').val(''); $('#pkOtp').val(''); $('#pkOtpInfo').text('');
   $('#stepCreatePasskey').show();
 };
 

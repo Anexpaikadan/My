@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__.'/includes/config.php';
 require_once __DIR__.'/includes/whatsapp_otp.php';
+require_once __DIR__.'/includes/wa_gateway.php';
 requireAdmin();
 $user=currentUser();$pageTitle='Admin — '.setting('CLUB_NAME','Aishwarya Arts & Sports Club');
 $tab=isset($_GET['tab'])?$_GET['tab']:'pending';$msg='';
@@ -16,6 +17,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         $waApproveUrl = null;
         if ($appMember && $appMember['whatsapp_number']) {
             $waApproveUrl = makeWaLink($appMember['whatsapp_number'], memberApprovedMessage($appMember['name']));
+            if (wa_feature_on('approve') && wa_queue($appMember['whatsapp_number'], memberApprovedMessage($appMember['name']), 'approve')) $waApproveUrl = null; // sent automatically
         }
         $msg=array('t'=>'ok','m'=>'✅ Approved! '.$appMember['name'].' is now an active member.','wa'=>$waApproveUrl,'waname'=>$appMember['name']??'');
     }
@@ -57,6 +59,10 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     if(isset($_POST['adev'])){
         db()->prepare('INSERT INTO events(title,description,event_type,event_date,event_time,location,created_by)VALUES(?,?,?,?,?,?,?)')->execute(array(trim($_POST['et']),trim($_POST['ed']),$_POST['ety'],$_POST['edo'],isset($_POST['eti'])?$_POST['eti']:null,trim($_POST['el']),$user['id']));
         $msg=array('t'=>'ok','m'=>'✅ Event added!');
+        if (wa_feature_on('events')) {
+            $n = wa_queue_many(db()->query("SELECT whatsapp_number FROM users WHERE status='active' AND whatsapp_number<>''")->fetchAll(), wa_msg_event(array('title'=>trim($_POST['et']),'description'=>trim($_POST['ed']),'event_date'=>$_POST['edo'],'event_time'=>isset($_POST['eti'])?$_POST['eti']:'','location'=>trim(isset($_POST['el'])?$_POST['el']:''))), 'event');
+            if ($n) $msg['m'] .= ' WhatsApp announcement queued for '.$n.' members.';
+        }
     }
     if(isset($_POST['pann'])){db()->prepare('UPDATE announcements SET is_pinned=? WHERE id=?')->execute(array((int)$_POST['pv'],(int)$_POST['aid']));$msg=array('t'=>'ok','m'=>'Updated.');}
     if(isset($_POST['dann'])){db()->prepare('DELETE FROM announcements WHERE id=?')->execute(array((int)$_POST['aid']));$msg=array('t'=>'ok','m'=>'Deleted.');}

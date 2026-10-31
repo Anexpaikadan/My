@@ -150,6 +150,13 @@ body{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))!important}
 })();
 </script>
 
+<?php
+// WhatsApp queue: send a few waiting messages in the background while members use the site
+require_once __DIR__ . '/wa_gateway.php';
+if (!empty($_SESSION['user_id']) && wa_enabled() && (wa_queue_pending() > 0 || (wa_feature_on('fees') && wa_cfg('wa_last_daily') !== date('Y-m-d')))): ?>
+<script>try{fetch('<?= url('modules/wa_worker.php') ?>?lazy=1',{credentials:'same-origin',keepalive:true}).catch(function(){});}catch(e){}</script>
+<?php endif; ?>
+
 <!-- Push Notification JS -->
 <script>
 var PUSH_KEY = 'BPtQ21rs0CVf06l96ac3-SGEZCtWrMhgU11llT4YoVT3HMRRqELNKowuLmIlWrbzBMjmeJTTZF58pc6e5VtY9t8';

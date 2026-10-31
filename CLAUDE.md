@@ -190,6 +190,10 @@ Av/mynamec_/           club app
   sw.js manifest.php   PWA
 ```
 
+WhatsApp: send through `includes/wa_gateway.php` only — `wa_queue($phone,$text,$kind)` / `wa_queue_many($rows,…)` for
+notices (sent by `modules/wa_worker.php`), `wa_otp_send()` / `wa_otp_check()` for codes, and check `wa_feature_on('events'|…)` first.
+Never return a code to the browser.
+
 Feature pattern: each `modules/x.php` handles its own AJAX first (`if(!empty($_POST['ajax']))` →
 `echo json_encode([...]); exit;`), creates or changes its own tables with `CREATE TABLE IF NOT EXISTS`
 / `ALTER TABLE` inside `try{}`, then prints the page. Escape all output with `h()`, and use prepared

@@ -86,3 +86,8 @@ gradient on the top bar, banners and main buttons. App tiles show 3D pictures (`
 **One design on every page:** each module opens with the same logo-gradient banner, its big 3D icon (added
 automatically from `app_modules()`), and a bold uppercase title; section headings use the red-blue bar; the old
 Bebas Neue headings now use the site font (ID card and Poster Studio keep theirs because they export images/PDFs).
+
+**WhatsApp sending (2026-11):** Club Settings → WhatsApp connects a free self-hosted GOWA server or Meta's official
+Cloud API. Then the site sends login and passkey-reset codes, welcome messages on approval, new-event
+announcements, blood requests to matching donors and fee reminders by itself (queued and spaced out).
+Setup steps: [`Av/mynamec_/WHATSAPP_SETUP.md`](Av/mynamec_/WHATSAPP_SETUP.md).

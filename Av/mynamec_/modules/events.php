@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__.'/../includes/config.php';
+require_once __DIR__.'/../includes/wa_gateway.php';
 // OG tags — must be set BEFORE requireLogin() so bots get logo+title
 $pageOG = [
   'title' => '📅 Events — Aishwarya Arts & Sports Club',
@@ -65,8 +66,12 @@ if ($isAdmin && isset($_POST['ajax']) && $_POST['ajax']==='add_event') {
     if (!$t || !$dt) { echo json_encode(['ok'=>false,'msg'=>'Title and date required']); exit; }
     try {
         db()->prepare("INSERT INTO events(title,description,event_type,event_date,event_time,location,created_by) VALUES(?,?,?,?,?,?,?)")
-          ->execute([$t, trim($_POST['descr']??''), $_POST['etype']??'other', $dt, ($_POST['etime']?:null), trim($_POST['eloc']??''), $uid]);
-        echo json_encode(['ok'=>true,'msg'=>'✅ Event created!']); exit;
+          ->execute([$t, trim($_POST['descr']??''), $_POST['etype']??'other', $dt, (($_POST['etime'] ?? '') ?: null), trim($_POST['eloc']??''), $uid]);
+        $waN = 0;
+        if (wa_feature_on('events')) {
+            $waN = wa_queue_many(db()->query("SELECT whatsapp_number FROM users WHERE status='active' AND whatsapp_number<>''")->fetchAll(), wa_msg_event(array('title'=>$t,'description'=>trim($_POST['descr']??''),'event_date'=>$dt,'event_time'=>$_POST['etime']??'','location'=>trim($_POST['eloc']??''))), 'event');
+        }
+        echo json_encode(['ok'=>true,'msg'=>'✅ Event created!'.($waN?' WhatsApp announcement queued for '.$waN.' members.':'')]); exit;
     } catch (Exception $e) { echo json_encode(['ok'=>false,'msg'=>'Error: '.$e->getMessage()]); exit; }
 }
 
