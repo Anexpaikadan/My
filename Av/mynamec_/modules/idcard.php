@@ -117,8 +117,8 @@ $roleLbl = $roleMap[$user['role']] ?? 'MEMBER';
 $rclr = match($user['role'] ?? '') {
     'president'        => ['#6A1B9A','#F3E5F5','#BA68C8'],
     'vice_president'   => ['#4527A0','#EDE7F6','#9575CD'],
-    'secretary'        => ['#0F766E','#E6F4F2','#5EEAD4'],
-    'joint_secretary'  => ['#107D74','#E6F4F2','#99D8CF'],
+    'secretary'        => ['#0A14E0','#ECEEFF','#A9B0FF'],
+    'joint_secretary'  => ['#1A23C9','#ECEEFF','#B9BFFF'],
     'treasurer'        => ['#1B5E20','#E8F5E9','#81C784'],
     'committee_member' => ['#E65100','#FFF3E0','#FFCC80'],
     default            => ['#B71C1C','#FFEBEE','#EF9A9A'],
@@ -187,12 +187,12 @@ body{padding:1.1rem 1rem 3rem;display:flex;flex-direction:column;align-items:cen
 
 .topbar{width:100%;max-width:600px;display:flex;align-items:center;justify-content:space-between}
 .back{color:#475569;font-size:.82rem;font-weight:600;padding:.38rem .9rem;border:1.5px solid #cbd5e0;border-radius:8px;text-decoration:none;background:#fff;transition:all .18s}
-.back:hover{border-color:#0F766E;color:#0F766E}
+.back:hover{border-color:#0A14E0;color:#0A14E0}
 
 /* ── Tab bar ── */
 .tabs{display:flex;background:#fff;border-radius:12px;padding:.3rem;gap:.2rem;box-shadow:0 2px 10px rgba(0,0,0,.08);width:100%;max-width:600px}
 .tab-btn{flex:1;text-align:center;padding:.52rem .3rem;border-radius:9px;font-size:.75rem;font-weight:700;cursor:pointer;transition:all .2s;color:#64748b;border:none;background:none;font-family:'Plus Jakarta Sans',sans-serif;line-height:1.3}
-.tab-btn.on{background:linear-gradient(135deg,#0F766E,#107D74);color:#fff;box-shadow:0 3px 10px rgba(15,118,110,.3)}
+.tab-btn.on{background:linear-gradient(135deg,#0A14E0,#1A23C9);color:#fff;box-shadow:0 3px 10px rgba(10,20,224,.3)}
 
 .alert-ok{background:#f0fdf4;border:1.5px solid #bbf7d0;color:#16a34a;border-radius:10px;padding:.75rem 1rem;font-size:.86rem;font-weight:700;text-align:center;width:100%;max-width:600px}
 
@@ -217,7 +217,7 @@ body{padding:1.1rem 1rem 3rem;display:flex;flex-direction:column;align-items:cen
   background:linear-gradient(90deg,
     #b71c1c 0%,#d32f2f 18%,#ef5350 28%,
     #e8eef7 34%,#e8eef7 38%,
-    #107D74 44%,#0F766E 62%,#0E2A31 80%,
+    #1A23C9 44%,#0A14E0 62%,#121A5C 80%,
     #b71c1c 100%);
 }
 
@@ -226,7 +226,7 @@ body{padding:1.1rem 1rem 3rem;display:flex;flex-direction:column;align-items:cen
   position:absolute;top:6px;left:0;right:0;height:50px;z-index:10;
   overflow:hidden;
 }
-.c-hdr-blue{position:absolute;inset:0;background:linear-gradient(135deg,#0F766E 0%,#107D74 100%)}
+.c-hdr-blue{position:absolute;inset:0;background:linear-gradient(135deg,#0A14E0 0%,#1A23C9 100%)}
 .c-hdr-red{position:absolute;top:0;right:0;bottom:0;width:42%;background:#c62828;clip-path:polygon(22% 0,100% 0,100% 100%,0 100%)}
 .c-hdr-inner{position:absolute;inset:0;display:flex;align-items:center;gap:9px;padding:0 13px;z-index:5}
 .c-logo{width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.55);background:#fff;flex-shrink:0}
@@ -248,12 +248,12 @@ body{padding:1.1rem 1rem 3rem;display:flex;flex-direction:column;align-items:cen
   padding:8px 6px 6px;gap:5px;
 }
 .c-photo{width:74px;height:82px;border-radius:9px;overflow:hidden;flex-shrink:0;
-  border:2.5px solid #fff;box-shadow:0 3px 12px rgba(15,118,110,.18);
-  background:linear-gradient(135deg,#E6F4F2,#BFE6E0)}
+  border:2.5px solid #fff;box-shadow:0 3px 12px rgba(10,20,224,.18);
+  background:linear-gradient(135deg,#ECEEFF,#D6DAFF)}
 .c-photo img{width:100%;height:100%;object-fit:cover}
 .c-photo-ph{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .c-photo-ph-i{font-size:2rem;opacity:.3}
-.c-memid{font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:.11em;color:#0F766E;text-align:center;line-height:1}
+.c-memid{font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:.11em;color:#0A14E0;text-align:center;line-height:1}
 .c-qr{width:62px;height:62px;border-radius:7px;background:#fff;padding:3px;
   box-shadow:0 2px 10px rgba(0,0,0,.13);border:1px solid #dde5f0;flex-shrink:0;overflow:hidden}
 #mainQR{width:56px;height:56px;display:block}
@@ -262,7 +262,7 @@ body{padding:1.1rem 1rem 3rem;display:flex;flex-direction:column;align-items:cen
 
 /* Right col */
 .c-right{flex:1;padding:9px 12px 7px;display:flex;flex-direction:column;gap:4px;min-width:0;background:#fff}
-.c-name{font-family:'Montserrat',sans-serif;font-size:1.28rem;font-weight:900;color:#10201F;line-height:1;
+.c-name{font-family:'Montserrat',sans-serif;font-size:1.28rem;font-weight:900;color:#0B1033;line-height:1;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em}
 .c-badges{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap}
 .c-badge-role{display:inline-flex;align-items:center;gap:4px;padding:.18rem .62rem;border-radius:20px}
@@ -274,7 +274,7 @@ body{padding:1.1rem 1rem 3rem;display:flex;flex-direction:column;align-items:cen
 .c-lbl{font-size:.44rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#5d6b80;margin-bottom:1px;line-height:1}
 .c-val{font-size:.7rem;font-weight:700;color:#1e293b;line-height:1.2}
 .c-val.blood{font-size:.88rem;font-weight:900;color:#dc2626}
-.c-val.sub{color:#0F766E;font-size:.67rem}
+.c-val.sub{color:#0A14E0;font-size:.67rem}
 .c-val.exp{color:#dc2626;font-size:.58rem}
 .c-val.nosub{color:#5d6b80;font-size:.58rem;font-style:italic;font-weight:500}
 .c-full{grid-column:1/-1}
@@ -282,12 +282,12 @@ body{padding:1.1rem 1rem 3rem;display:flex;flex-direction:column;align-items:cen
 
 /* Bottom accent line */
 .c-accent-line{position:absolute;bottom:32px;left:0;right:0;height:2.5px;z-index:11;
-  background:linear-gradient(90deg,#b71c1c,#ef5350,#fff8,#107D74,#0F766E)}
+  background:linear-gradient(90deg,#b71c1c,#ef5350,#fff8,#1A23C9,#0A14E0)}
 
 /* Footer — red left diagonal, blue right */
 .c-footer{position:absolute;bottom:0;left:0;right:0;height:32px;z-index:10;overflow:hidden}
 .c-ftr-red{position:absolute;inset:0;background:#c62828}
-.c-ftr-blue{position:absolute;top:0;right:0;bottom:0;width:60%;background:#0F766E;clip-path:polygon(12% 0,100% 0,100% 100%,0 100%)}
+.c-ftr-blue{position:absolute;top:0;right:0;bottom:0;width:60%;background:#0A14E0;clip-path:polygon(12% 0,100% 0,100% 100%,0 100%)}
 .c-ftr-inner{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 14px;z-index:5}
 .c-ftr-name{font-family:'Bebas Neue',sans-serif;font-size:.76rem;letter-spacing:.1em;color:#fff}
 .c-ftr-role{font-family:'Bebas Neue',sans-serif;font-size:.7rem;letter-spacing:.12em;color:rgba(255,255,255,.85)}
@@ -298,19 +298,19 @@ body{padding:1.1rem 1rem 3rem;display:flex;flex-direction:column;align-items:cen
   padding:.72rem 1rem;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.84rem;
   cursor:pointer;border:none;transition:all .2s;text-decoration:none}
 .xbtn:hover{transform:translateY(-2px)}
-.xbtn-dl{background:linear-gradient(135deg,#0F766E,#107D74);color:#fff;box-shadow:0 5px 16px rgba(15,118,110,.32)}
+.xbtn-dl{background:linear-gradient(135deg,#0A14E0,#1A23C9);color:#fff;box-shadow:0 5px 16px rgba(10,20,224,.32)}
 .xbtn-wa{background:linear-gradient(135deg,#1b5e20,#2e7d32);color:#fff;box-shadow:0 5px 16px rgba(27,94,32,.3)}
 .xbtn-bk{background:#fff;color:#475569;border:1.5px solid #e2e8f0}
 .hint{font-size:.72rem;color:#5d6b80;text-align:center;max-width:440px;width:100%}
 
 /* ── Volunteer section ── */
 .vsec{width:100%;max-width:600px}
-.vsec-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.07em;color:#0F766E;
+.vsec-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.07em;color:#0A14E0;
   margin-bottom:.75rem;display:flex;align-items:center;gap:.6rem}
-.vsec-title::after{content:'';flex:1;height:1.5px;background:linear-gradient(90deg,#0F766E,transparent)}
+.vsec-title::after{content:'';flex:1;height:1.5px;background:linear-gradient(90deg,#0A14E0,transparent)}
 
 /* Volunteer card */
-.vol-card-wrap{background:linear-gradient(140deg,#0F766E 0%,#1a237e 40%,#b71c1c 100%);
+.vol-card-wrap{background:linear-gradient(140deg,#0A14E0 0%,#1a237e 40%,#b71c1c 100%);
   border-radius:14px;padding:1.15rem;color:#fff;position:relative;overflow:hidden;margin-bottom:.75rem}
 .vol-card-wrap::before{content:'VOLUNTEER';position:absolute;right:-10px;top:50%;
   transform:translateY(-50%) rotate(90deg);font-family:'Bebas Neue',sans-serif;
@@ -334,10 +334,10 @@ body{padding:1.1rem 1rem 3rem;display:flex;flex-direction:column;align-items:cen
 .flbl{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#475569;display:block;margin-bottom:.35rem}
 .fsel{width:100%;padding:.65rem .9rem;border:1.5px solid #e2e8f0;border-radius:9px;
   font-family:'Plus Jakarta Sans',sans-serif;font-size:.88rem;color:#1e293b;background:#f8fafc;outline:none;margin-bottom:.75rem}
-.fsel:focus{border-color:#0F766E}
+.fsel:focus{border-color:#0A14E0}
 .sbtn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;width:100%;padding:.68rem 1rem;
   border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.86rem;cursor:pointer;border:none;transition:all .2s}
-.sbtn-blue{background:#0F766E;color:#fff}.sbtn-blue:hover{background:#107D74;transform:translateY(-1px)}
+.sbtn-blue{background:#0A14E0;color:#fff}.sbtn-blue:hover{background:#1A23C9;transform:translateY(-1px)}
 .sbtn-sm{padding:.38rem .78rem;font-size:.75rem;width:auto}
 .sbtn-green{background:#1b5e20;color:#fff}.sbtn-red{background:#b71c1c;color:#fff}
 .badge-pend{background:#fffbeb;border:1px solid #fde68a;color:#d97706;border-radius:20px;padding:.18rem .65rem;font-size:.66rem;font-weight:700}
@@ -345,7 +345,7 @@ body{padding:1.1rem 1rem 3rem;display:flex;flex-direction:column;align-items:cen
 .empty div{font-size:2.5rem;margin-bottom:.5rem}
 
 /* Admin scan */
-.scan-box{background:#10201F;border-radius:14px;padding:1.2rem;text-align:center;color:#fff;width:100%;max-width:600px}
+.scan-box{background:#0B1033;border-radius:14px;padding:1.2rem;text-align:center;color:#fff;width:100%;max-width:600px}
 .scan-inp{width:100%;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);
   border-radius:9px;padding:.68rem 1rem;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;
   color:#fff;outline:none;text-align:center;letter-spacing:.1em;margin:.75rem 0}
@@ -531,7 +531,7 @@ body{padding:1.1rem 1rem 3rem;display:flex;flex-direction:column;align-items:cen
         </div>
       </div>
     </div>
-    <button onclick="dlVolCard('<?= $vcid ?>')" style="display:flex;align-items:center;justify-content:center;gap:.45rem;width:100%;padding:.72rem;background:linear-gradient(135deg,#0F766E,#107D74);color:#fff;border:none;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.86rem;cursor:pointer;transition:all .2s;margin-bottom:1rem;box-shadow:0 4px 14px rgba(15,118,110,.3)">
+    <button onclick="dlVolCard('<?= $vcid ?>')" style="display:flex;align-items:center;justify-content:center;gap:.45rem;width:100%;padding:.72rem;background:linear-gradient(135deg,#0A14E0,#1A23C9);color:#fff;border:none;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.86rem;cursor:pointer;transition:all .2s;margin-bottom:1rem;box-shadow:0 4px 14px rgba(10,20,224,.3)">
       <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
       Download Volunteer Card
     </button>
@@ -620,7 +620,7 @@ body{padding:1.1rem 1rem 3rem;display:flex;flex-direction:column;align-items:cen
       </div>
     </div>
 
-    <button id="btnCamera" onclick="startCamera()" style="background:#107D74;color:#fff;border:none;border-radius:9px;padding:.65rem 1.4rem;font-family:Inter,sans-serif;font-weight:700;font-size:.86rem;cursor:pointer;display:inline-flex;align-items:center;gap:.45rem;margin:.6rem 0">
+    <button id="btnCamera" onclick="startCamera()" style="background:#1A23C9;color:#fff;border:none;border-radius:9px;padding:.65rem 1.4rem;font-family:Inter,sans-serif;font-weight:700;font-size:.86rem;cursor:pointer;display:inline-flex;align-items:center;gap:.45rem;margin:.6rem 0">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
       Open Camera to Scan
     </button>
@@ -683,7 +683,7 @@ window.addEventListener('resize', scaleCard);
   new QRCode(el, {
     text: '<?= addslashes($profileUrl) ?>',
     width: 56, height: 56,
-    colorDark: '#10201F', colorLight: '#ffffff',
+    colorDark: '#0B1033', colorLight: '#ffffff',
     correctLevel: QRCode.CorrectLevel.M
   });
 })();
@@ -694,7 +694,7 @@ window.addEventListener('resize', scaleCard);
   var el = document.getElementById('<?= 'vqr_'.$vol['id'] ?>');
   if (!el) return;
   var url = '<?= addslashes(url('modules/idcard.php')) ?>?verify_vol=<?= urlencode($vol['qr_token']) ?>';
-  new QRCode(el, {text:url, width:60, height:60, colorDark:'#10201F', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M});
+  new QRCode(el, {text:url, width:60, height:60, colorDark:'#0B1033', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M});
 })();
 <?php endforeach; ?>
 
@@ -789,7 +789,7 @@ function verifyToken(token) {
         + '<div style="color:#16a34a;font-weight:900;font-size:1rem;margin-bottom:.6rem">✅ VALID VOLUNTEER</div>'
         + '<div style="display:flex;align-items:center;gap:.75rem">'
         + '<div style="font-size:2.5rem">🙋</div>'
-        + '<div><div style="font-size:.92rem;font-weight:800;color:#10201F">' + dat.mname + '</div>'
+        + '<div><div style="font-size:.92rem;font-weight:800;color:#0B1033">' + dat.mname + '</div>'
         + '<div style="font-size:.75rem;color:#475569;margin:.15rem 0">📅 ' + dat.etitle + '</div>'
         + '<div style="font-size:.75rem;color:#475569">' + dat.edate + '</div>'
         + (dat.mblood ? '<div style="font-size:.78rem;color:#dc2626;font-weight:700;margin-top:.2rem">🩸 Blood: ' + dat.mblood + '</div>' : '')

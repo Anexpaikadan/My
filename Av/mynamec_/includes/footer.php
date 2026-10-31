@@ -61,7 +61,7 @@ $_bnTabs  = array(
 );
 ?>
 <style>
-.app-foot{background:var(--ink);color:rgba(255,255,255,.78);padding:1.6rem 1rem 1rem;margin-top:2rem}
+.app-foot{background:var(--ink);border-top:4px solid transparent;border-image:var(--brand-grad) 1;color:rgba(255,255,255,.78);padding:1.6rem 1rem 1rem;margin-top:2rem}
 .af-in{max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:space-between}
 .af-name{font-weight:800;color:#fff;font-size:.98rem}
 .af-place{font-size:.8rem}
@@ -73,21 +73,21 @@ $_bnTabs  = array(
 /* bottom tab bar (glass) */
 #bnav{position:fixed;left:.6rem;right:.6rem;bottom:calc(.55rem + env(safe-area-inset-bottom,0px));z-index:990;
   height:66px;border-radius:24px;display:flex;align-items:center;justify-content:space-around;padding:0 .3rem;
-  background:rgba(10,26,31,.88);backdrop-filter:saturate(160%) blur(18px);-webkit-backdrop-filter:saturate(160%) blur(18px);
-  border:1px solid rgba(255,255,255,.1);box-shadow:0 14px 34px -10px rgba(10,26,31,.55);max-width:560px;margin:0 auto}
+  background:rgba(255,255,255,.92);backdrop-filter:saturate(180%) blur(18px);-webkit-backdrop-filter:saturate(180%) blur(18px);
+  border:1px solid var(--line);box-shadow:0 14px 34px -12px rgba(11,16,51,.35);max-width:560px;margin:0 auto}
 .bn{flex:1;min-width:0;height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-  color:rgba(255,255,255,.72);font-size:.68rem;font-weight:700;border-radius:18px;position:relative;transition:color .15s}
+  color:var(--text-3);font-size:.68rem;font-weight:700;border-radius:18px;position:relative;transition:color .15s}
 .bn .ic{width:23px;height:23px;transition:transform .2s}
 .bn span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px}
-.bn.on{color:#fff}
-.bn.on .ic{color:var(--primary-light);transform:translateY(-1px)}
-.bn.on::after{content:'';position:absolute;bottom:4px;width:5px;height:5px;border-radius:50%;background:var(--primary-light)}
+.bn.on{color:var(--primary)}
+.bn.on .ic{color:var(--primary);transform:translateY(-1px)}
+.bn.on::after{content:'';position:absolute;bottom:4px;width:5px;height:5px;border-radius:50%;background:var(--accent)}
 .bn:active .ic{transform:scale(.88)}
-.bn-mid{flex:0 0 auto;width:58px;height:58px;margin:0 .15rem;border-radius:20px;color:var(--ink);
-  background:linear-gradient(145deg,#FFA597,var(--accent));box-shadow:0 10px 24px -8px var(--accent),inset 0 1px 0 rgba(255,255,255,.5);transform:translateY(-12px)}
+.bn-mid{flex:0 0 auto;width:58px;height:58px;margin:0 .15rem;border-radius:50%;color:#fff;
+  background:var(--brand-grad);box-shadow:0 10px 24px -8px rgba(10,20,224,.7),0 0 0 4px #fff;transform:translateY(-14px)}
 .bn-mid span{display:none}
 .bn-mid .ic{width:26px;height:26px}
-.bn-mid.on{color:var(--ink)}.bn-mid.on::after{display:none}.bn-mid.on .ic{color:var(--ink)}
+.bn-mid.on{color:#fff}.bn-mid.on::after{display:none}.bn-mid.on .ic{color:#fff}
 body{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))!important}
 @media(min-width:960px){#bnav{display:none}body{padding-bottom:0!important}}
 </style>
@@ -175,9 +175,9 @@ function showPushPopup(){
   modal.innerHTML =
     '<div style="background:#fff;border-radius:20px;padding:1.5rem;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.3)">' +
     '<div style="font-size:2.5rem;margin-bottom:.5rem" aria-hidden="true">🔔</div>' +
-    '<div id="pushTitle" style="font-size:1.05rem;font-weight:800;color:#0A1A1F;margin-bottom:.4rem">Stay Updated!</div>' +
+    '<div id="pushTitle" style="font-size:1.05rem;font-weight:800;color:#0B1033;margin-bottom:.4rem">Stay Updated!</div>' +
     '<div style="font-size:.88rem;color:#475569;line-height:1.6;margin-bottom:1rem">Get notified about club events and announcements on your phone.</div>' +
-    '<button type="button" id="pushEnableBtn" style="width:100%;min-height:48px;padding:.65rem;background:#0F766E;color:#fff;border:none;border-radius:14px;font-weight:800;font-size:.9rem;cursor:pointer;margin-bottom:.4rem">🔔 Enable Notifications</button>' +
+    '<button type="button" id="pushEnableBtn" style="width:100%;min-height:48px;padding:.65rem;background:#0A14E0;color:#fff;border:none;border-radius:14px;font-weight:800;font-size:.9rem;cursor:pointer;margin-bottom:.4rem">🔔 Enable Notifications</button>' +
     '<button type="button" id="pushLaterBtn" style="width:100%;min-height:44px;padding:.5rem;background:#f1f5f9;border:none;border-radius:10px;font-size:.88rem;color:#475569;cursor:pointer">Maybe Later</button>' +
     '</div>';
 
@@ -206,7 +206,7 @@ function showPushToast(msg){
   var el=document.createElement('div');
   el.textContent=msg;
   el.setAttribute('role','status');
-  el.style.cssText='position:fixed;bottom:96px;left:50%;transform:translateX(-50%);background:#0A1A1F;color:#fff;padding:.6rem 1.2rem;border-radius:25px;font-size:.8rem;font-weight:700;z-index:9999;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.2)';
+  el.style.cssText='position:fixed;bottom:96px;left:50%;transform:translateX(-50%);background:#0B1033;color:#fff;padding:.6rem 1.2rem;border-radius:25px;font-size:.8rem;font-weight:700;z-index:9999;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.2)';
   document.body.appendChild(el);
   setTimeout(function(){el.remove();},3000);
 }

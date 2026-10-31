@@ -64,6 +64,11 @@ function icon_paths() {
     );
 }
 
+// 3D picture icon (assets/icons/3d/<name>.webp) — used on app tiles
+function app_img($name, $size = 40) {
+    return '<img class="app-img" src="' . url('assets/icons/3d/' . $name . '.webp') . '" alt="" width="' . (int)$size . '" height="' . (int)$size . '" loading="lazy" decoding="async">';
+}
+
 function ic($name, $cls = '') {
     return '<svg class="ic' . ($cls ? ' ' . $cls : '') . '" aria-hidden="true" focusable="false"><use href="#i-' . $name . '"/></svg>';
 }
@@ -77,39 +82,39 @@ function icon_sprite() {
 }
 
 // Every member-area module, in one place: used by the dashboard app grid,
-// the side menu and the desktop nav.  [file, label, icon, tone, group]
-// tone = tile colour: teal | coral | violet | amber | rose | sky | lime | slate
+// the side menu and the desktop nav.  [file, label, icon, tone, group, img]
+// tone = colour for line-icon tiles; img = 3D picture in assets/icons/3d/<img>.webp
 function app_modules() {
     return array(
-        array('modules/feed.php',          'Feed',          'bolt',     'coral',  'Club'),
-        array('modules/events.php',        'Events',        'calendar', 'violet', 'Club'),
-        array('modules/members.php',       'Members',       'users',    'teal',   'Club'),
-        array('modules/blood.php',         'Blood Hub',     'droplet',  'rose',   'Club'),
-        array('modules/market.php',        'Market',        'store',    'lime',   'Club'),
-        array('modules/gallery.php',       'Gallery',       'image',    'sky',    'Club'),
-        array('modules/skills.php',        'Talents',       'star',     'amber',  'Club'),
-        array('modules/football.php',      'Football',      'ball',     'lime',   'Activities'),
-        array('modules/arts_festival.php', 'Arts Festival', 'masks',    'violet', 'Activities'),
-        array('modules/onam.php',          'Onam',          'flower',   'amber',  'Activities'),
-        array('modules/fest_manager.php',  'Fests',         'tent',     'coral',  'Activities'),
-        array('modules/election.php',      'Elections',     'vote',     'sky',    'Activities'),
-        array('modules/creative_studio.php','Poster Studio','palette',  'rose',   'Activities'),
-        array('modules/donation.php',      'Donations',     'heart',    'rose',   'Support'),
-        array('modules/crowdfund.php',     'Crowd Fund',    'coins',    'amber',  'Support'),
-        array('modules/groundfund.php',    'Ground Fund',   'wallet',   'teal',   'Support'),
-        array('modules/profile.php',       'Profile',       'user',     'teal',   'Me'),
-        array('modules/idcard.php',        'ID Card',       'idcard',   'sky',    'Me'),
-        array('modules/certificate.php',   'Certificates',  'award',    'amber',  'Me'),
-        array('modules/subscription.php',  'Subscription',  'card',     'violet', 'Me'),
+        array('modules/feed.php',          'Feed',          'bolt',     'coral',  'Club', 'feed'),
+        array('modules/events.php',        'Events',        'calendar', 'violet', 'Club', 'events'),
+        array('modules/members.php',       'Members',       'users',    'teal',   'Club', 'members'),
+        array('modules/blood.php',         'Blood Hub',     'droplet',  'rose',   'Club', 'blood'),
+        array('modules/market.php',        'Market',        'store',    'lime',   'Club', 'market'),
+        array('modules/gallery.php',       'Gallery',       'image',    'sky',    'Club', 'gallery'),
+        array('modules/skills.php',        'Talents',       'star',     'amber',  'Club', 'talents'),
+        array('modules/football.php',      'Football',      'ball',     'lime',   'Activities', 'football'),
+        array('modules/arts_festival.php', 'Arts Festival', 'masks',    'violet', 'Activities', 'arts'),
+        array('modules/onam.php',          'Onam',          'flower',   'amber',  'Activities', 'onam'),
+        array('modules/fest_manager.php',  'Fests',         'tent',     'coral',  'Activities', 'fests'),
+        array('modules/election.php',      'Elections',     'vote',     'sky',    'Activities', 'elections'),
+        array('modules/creative_studio.php','Poster Studio','palette',  'rose',   'Activities', 'poster'),
+        array('modules/donation.php',      'Donations',     'heart',    'rose',   'Support', 'donations'),
+        array('modules/crowdfund.php',     'Crowd Fund',    'coins',    'amber',  'Support', 'crowdfund'),
+        array('modules/groundfund.php',    'Ground Fund',   'wallet',   'teal',   'Support', 'groundfund'),
+        array('modules/profile.php',       'Profile',       'user',     'teal',   'Me', 'profile'),
+        array('modules/idcard.php',        'ID Card',       'idcard',   'sky',    'Me', 'idcard'),
+        array('modules/certificate.php',   'Certificates',  'award',    'amber',  'Me', 'certificates'),
+        array('modules/subscription.php',  'Subscription',  'card',     'violet', 'Me', 'subscription'),
     );
 }
 
 function admin_modules() {
     return array(
-        array('admin.php',                       'Admin Panel',   'shield',    'coral'),
-        array('modules/admin_subscription.php',  'Payments',      'card',      'amber'),
-        array('modules/broadcast.php',           'WA Broadcast',  'megaphone', 'lime'),
-        array('modules/settings.php',            'Club Settings', 'settings',  'slate'),
+        array('admin.php',                       'Admin Panel',   'shield',    'coral', 'Admin', 'admin'),
+        array('modules/admin_subscription.php',  'Payments',      'card',      'amber', 'Admin', 'payments'),
+        array('modules/broadcast.php',           'WA Broadcast',  'megaphone', 'lime', 'Admin', 'broadcast'),
+        array('modules/settings.php',            'Club Settings', 'settings',  'slate', 'Admin', 'settings'),
     );
 }
 

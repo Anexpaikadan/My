@@ -82,7 +82,7 @@ try {
         description TEXT,
         reg_link    VARCHAR(500),
         info_url    VARCHAR(500),
-        color       VARCHAR(20) DEFAULT '#0F766E',
+        color       VARCHAR(20) DEFAULT '#0A14E0',
         is_active   TINYINT(1) DEFAULT 1,
         sort_order  INT DEFAULT 0,
         created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -209,7 +209,7 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
                        'home_committee_show','home_achievements_show','home_gallery_show','home_join_show') as $f) {
             saveSetting($f, isset($_POST[$f]) ? '1' : '0', 'homepage');
         }
-        foreach (array('home_primary_color'=>'#0F766E','home_accent_color'=>'#F26B5B') as $f=>$def) {
+        foreach (array('home_primary_color'=>'#0A14E0','home_accent_color'=>'#E30613') as $f=>$def) {
             $v = trim($_POST[$f] ?? '');
             saveSetting($f, preg_match('/^#[0-9a-fA-F]{6}$/', $v) ? $v : $def, 'homepage');
         }
@@ -226,7 +226,7 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
         $desc = trim($_POST['act_desc'] ?? '');
         $reg  = trim($_POST['act_reg'] ?? '');
         $info = trim($_POST['act_info'] ?? '');
-        $col  = trim($_POST['act_color'] ?? '#0F766E');
+        $col  = trim($_POST['act_color'] ?? '#0A14E0');
         $active = isset($_POST['act_active']) ? 1 : 0;
         if ($name) {
             if ($id) {
@@ -287,7 +287,7 @@ require_once __DIR__ . '/../includes/header.php';
   <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem">
     <a href="<?= url('dashboard.php') ?>" style="color:#64748b;font-size:.82rem;font-weight:600;padding:.38rem .85rem;border:1.5px solid #e2e8f0;border-radius:8px;text-decoration:none;background:#fff">← Back</a>
     <div>
-      <h1 style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:.06em;color:#0F766E;line-height:1">⚙️ CLUB SETTINGS</h1>
+      <h1 style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:.06em;color:#0A14E0;line-height:1">⚙️ CLUB SETTINGS</h1>
       <p style="font-size:.78rem;color:#556274;margin-top:.1rem">Configure website, club info and activities</p>
     </div>
   </div>
@@ -312,18 +312,18 @@ require_once __DIR__ . '/../includes/header.php';
 
   <style>
   .stab{flex:1 0 auto;white-space:nowrap;min-height:40px;text-align:center;padding:.52rem .6rem;border-radius:9px;font-size:.75rem;font-weight:700;cursor:pointer;transition:all .2s;color:#64748b;border:none;background:none;font-family:'Plus Jakarta Sans',sans-serif}
-  .stab.on{background:linear-gradient(135deg,#0F766E,#107D74);color:#fff;box-shadow:0 3px 10px rgba(15,118,110,.28)}
+  .stab.on{background:linear-gradient(135deg,#0A14E0,#1A23C9);color:#fff;box-shadow:0 3px 10px rgba(10,20,224,.28)}
   .stab-panel{display:none}.stab-panel.on{display:block}
   .scard{background:#fff;border-radius:14px;padding:1.2rem;box-shadow:0 3px 14px rgba(0,0,0,.07);border:1px solid #e2e8f0;margin-bottom:1rem}
-  .scard-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.07em;color:#0F766E;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
-  .scard-title::after{content:'';flex:1;height:1.5px;background:linear-gradient(90deg,#0F766E,transparent)}
+  .scard-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.07em;color:#0A14E0;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+  .scard-title::after{content:'';flex:1;height:1.5px;background:linear-gradient(90deg,#0A14E0,transparent)}
   .srow{margin-bottom:.85rem}
   .slbl{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#475569;display:block;margin-bottom:.35rem}
   .sinp{width:100%;padding:.65rem .9rem;border:1.5px solid #e2e8f0;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.88rem;color:#1e293b;background:#f8fafc;outline:none;transition:border-color .18s}
-  .sinp:focus{border-color:#0F766E;background:#fff}
+  .sinp:focus{border-color:#0A14E0;background:#fff}
   textarea.sinp{resize:vertical;min-height:70px}
   .sbtn{display:inline-flex;align-items:center;gap:.4rem;padding:.68rem 1.3rem;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.86rem;cursor:pointer;border:none;transition:all .2s}
-  .sbtn-blue{background:#0F766E;color:#fff;box-shadow:0 4px 14px rgba(15,118,110,.28)}.sbtn-blue:hover{background:#107D74;transform:translateY(-1px)}
+  .sbtn-blue{background:#0A14E0;color:#fff;box-shadow:0 4px 14px rgba(10,20,224,.28)}.sbtn-blue:hover{background:#1A23C9;transform:translateY(-1px)}
   .sbtn-red{background:#b71c1c;color:#fff}.sbtn-red:hover{background:#c62828}
   .sbtn-green{background:#1b5e20;color:#fff}.sbtn-green:hover{background:#2e7d32}
   .sbtn-grey{background:#f1f5f9;color:#475569;border:1.5px solid #e2e8f0}.sbtn-grey:hover{background:#e2e8f0}
@@ -332,7 +332,7 @@ require_once __DIR__ . '/../includes/header.php';
   .act-card.inactive{opacity:.55}
   .color-row{display:grid;grid-template-columns:repeat(5,1fr);gap:.4rem}
   .color-swatch{width:100%;aspect-ratio:1;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all .18s}
-  .color-swatch.sel{border-color:#0F766E;transform:scale(1.12)}
+  .color-swatch.sel{border-color:#0A14E0;transform:scale(1.12)}
   .hint-txt{font-size:.72rem;color:#5d6b80;margin-top:.3rem}
   /* ── Roles tab styles ── */
   .ra-section{background:#fff;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:.5rem;overflow:hidden}
@@ -343,7 +343,7 @@ require_once __DIR__ . '/../includes/header.php';
   .ra-body{display:none;padding:.1rem .8rem .8rem}
   .ra-body.open{display:block}
   .ra-search{width:100%;padding:.38rem .6rem;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.76rem;font-family:'Plus Jakarta Sans',sans-serif;outline:none;margin-bottom:.5rem;background:#f8fafc;box-sizing:border-box}
-  .ra-search:focus{border-color:#0F766E}
+  .ra-search:focus{border-color:#0A14E0}
   .mr{display:flex;align-items:center;gap:.4rem;padding:.38rem .3rem;border-bottom:1px solid #f5f5f5;cursor:pointer}
   .mr:last-child{border-bottom:none}
   .mr-av{width:28px;height:28px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;flex-shrink:0}
@@ -354,13 +354,13 @@ require_once __DIR__ . '/../includes/header.php';
   .rpicker-sheet.open{display:flex!important}
   .rpicker-inner{background:#fff;width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:1rem;max-height:80vh;overflow-y:auto}
   .rp-item{display:flex;align-items:center;gap:.55rem;padding:.5rem;border-radius:10px;cursor:pointer;border:1.5px solid #e0e0e0;margin-bottom:.3rem}
-  .rp-item.sel{border-color:#0F766E;background:#E6F4F2}
+  .rp-item.sel{border-color:#0A14E0;background:#ECEEFF}
   .rp-dot{width:16px;height:16px;border-radius:50%;border:2px solid #e0e0e0;flex-shrink:0}
-  .rp-item.sel .rp-dot{background:#0F766E;border-color:#0F766E}
+  .rp-item.sel .rp-dot{background:#0A14E0;border-color:#0A14E0}
   .mod-row{border:1px solid #e2e8f0;border-radius:10px;padding:.5rem .6rem;margin-bottom:.4rem}
   .mod-admins{display:flex;gap:.25rem;flex-wrap:wrap;margin-bottom:.35rem}
-  .mod-tag{display:inline-flex;align-items:center;gap:.2rem;background:#dbeafe;border-radius:20px;padding:.12rem .45rem;font-size:.62rem;font-weight:700;color:#107D74}
-  .mod-tag button{background:none;border:none;color:#107D74;cursor:pointer;font-size:.6rem;padding:0;line-height:1}
+  .mod-tag{display:inline-flex;align-items:center;gap:.2rem;background:#dbeafe;border-radius:20px;padding:.12rem .45rem;font-size:.62rem;font-weight:700;color:#1A23C9}
+  .mod-tag button{background:none;border:none;color:#1A23C9;cursor:pointer;font-size:.6rem;padding:0;line-height:1}
   .ap-row{display:flex;align-items:center;gap:.45rem;padding:.45rem .3rem;border-bottom:1px solid #f5f5f5}
   .ap-row:last-child{border-bottom:none}
   </style>
@@ -414,13 +414,13 @@ require_once __DIR__ . '/../includes/header.php';
     <style>
     .sw{display:flex;align-items:center;justify-content:space-between;gap:1rem;min-height:54px;padding:.4rem 0;border-bottom:1px solid #eef2f1;cursor:pointer}
     .sw:last-child{border-bottom:0}
-    .sw b{font-size:.9rem;color:#10201F;display:block}.sw small{font-size:.78rem;color:#566866}
+    .sw b{font-size:.9rem;color:#0B1033;display:block}.sw small{font-size:.78rem;color:#565D82}
     .sw input{position:absolute;opacity:0;width:1px;height:1px}
     .sw .tg{flex-shrink:0;width:50px;height:30px;border-radius:30px;background:#cbd5d3;position:relative;transition:background .2s}
     .sw .tg::after{content:'';position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
-    .sw input:checked + .tg{background:#0F766E}
+    .sw input:checked + .tg{background:#0A14E0}
     .sw input:checked + .tg::after{transform:translateX(20px)}
-    .sw input:focus-visible + .tg{outline:3px solid #0F766E;outline-offset:2px}
+    .sw input:focus-visible + .tg{outline:3px solid #0A14E0;outline-offset:2px}
     .clr{display:flex;align-items:center;gap:.7rem}
     .clr input[type=color]{width:52px;height:46px;border:1px solid #e2e8f0;border-radius:12px;padding:3px;background:#fff;cursor:pointer}
     </style>
@@ -438,7 +438,7 @@ require_once __DIR__ . '/../includes/header.php';
           <textarea class="sinp" id="hSub" name="hero_subtitle" rows="2" placeholder="<?= h(setting('CLUB_TAGLINE','')) ?>"><?= h($s('hero_subtitle','')) ?></textarea></div>
         <div class="srow"><label class="slbl" for="hCta">Login button text</label>
           <input class="sinp" id="hCta" name="hero_cta_text" value="<?= h($s('hero_cta_text','')) ?>" placeholder="Member login"></div>
-        <p class="hint-txt">Banner photos: in <a href="<?= url('modules/gallery.php') ?>" style="color:#0F766E;font-weight:700">Gallery</a>, tick “Use as homepage background” when uploading. Empty fields use the club name and tagline.</p>
+        <p class="hint-txt">Banner photos: in <a href="<?= url('modules/gallery.php') ?>" style="color:#0A14E0;font-weight:700">Gallery</a>, tick “Use as homepage background” when uploading. Empty fields use the club name and tagline.</p>
       </div>
 
       <div class="scard">
@@ -480,14 +480,14 @@ require_once __DIR__ . '/../includes/header.php';
       <div class="scard">
         <div class="scard-title">🎨 Look</div>
         <div class="srow"><label class="slbl" for="hPri">Main colour</label>
-          <div class="clr"><input type="color" id="hPri" name="home_primary_color" value="<?= h($s('home_primary_color','#0F766E')) ?>"><span class="hint-txt">Buttons, links, highlights</span></div></div>
+          <div class="clr"><input type="color" id="hPri" name="home_primary_color" value="<?= h($s('home_primary_color','#0A14E0')) ?>"><span class="hint-txt">Buttons, links, highlights</span></div></div>
         <div class="srow"><label class="slbl" for="hAcc">Accent colour</label>
-          <div class="clr"><input type="color" id="hAcc" name="home_accent_color" value="<?= h($s('home_accent_color','#F26B5B')) ?>"><span class="hint-txt">Login button and labels</span></div></div>
+          <div class="clr"><input type="color" id="hAcc" name="home_accent_color" value="<?= h($s('home_accent_color','#E30613')) ?>"><span class="hint-txt">Login button and labels</span></div></div>
         <div class="srow"><label class="slbl" for="hFont">Font</label>
           <select class="sinp" id="hFont" name="home_font">
             <?php foreach(array('Plus Jakarta Sans','Poppins','Manrope','Outfit') as $f): ?><option <?= $s('home_font','Plus Jakarta Sans')===$f?'selected':'' ?>><?= $f ?></option><?php endforeach; ?>
           </select></div>
-        <button type="button" class="sbtn sbtn-grey sbtn-sm" onclick="document.getElementById('hPri').value='#0F766E';document.getElementById('hAcc').value='#F26B5B';document.getElementById('hFont').value='Plus Jakarta Sans'">Reset to default look</button>
+        <button type="button" class="sbtn sbtn-grey sbtn-sm" onclick="document.getElementById('hPri').value='#0A14E0';document.getElementById('hAcc').value='#E30613';document.getElementById('hFont').value='Plus Jakarta Sans'">Reset to default look</button>
       </div>
 
       <div class="scard">
@@ -513,11 +513,11 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="act-card <?= !$act['is_active']?'inactive':'' ?>">
           <div style="font-size:1.6rem;flex-shrink:0"><?= h($act['emoji']) ?></div>
           <div style="flex:1;min-width:0">
-            <div style="font-weight:700;font-size:.9rem;color:#10201F"><?= h($act['name']) ?></div>
+            <div style="font-weight:700;font-size:.9rem;color:#0B1033"><?= h($act['name']) ?></div>
             <?php if($act['description']): ?><div style="font-size:.74rem;color:#64748b;margin-top:.1rem"><?= h(mb_strimwidth($act['description'],0,60,'…')) ?></div><?php endif; ?>
             <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.35rem">
               <?php if($act['reg_link']): ?>
-              <a href="<?= h($act['reg_link']) ?>" target="_blank" style="font-size:.65rem;color:#0F766E;text-decoration:none;background:#E6F4F2;padding:.1rem .45rem;border-radius:20px">🔗 Reg Link</a>
+              <a href="<?= h($act['reg_link']) ?>" target="_blank" style="font-size:.65rem;color:#0A14E0;text-decoration:none;background:#ECEEFF;padding:.1rem .45rem;border-radius:20px">🔗 Reg Link</a>
               <?php endif; ?>
               <?php if($act['info_url']): ?>
               <a href="<?= h($act['info_url']) ?>" target="_blank" style="font-size:.65rem;color:#6a1b9a;text-decoration:none;background:#f3e5f5;padding:.1rem .45rem;border-radius:20px">ℹ️ Info URL</a>
@@ -544,8 +544,8 @@ require_once __DIR__ . '/../includes/header.php';
       <?php endif; ?>
 
       <!-- Add / Edit Activity Form -->
-      <div style="background:#f8faff;border:1.5px solid #E0F2EF;border-radius:12px;padding:1rem" id="actForm">
-        <div style="font-weight:700;font-size:.9rem;color:#0F766E;margin-bottom:.85rem" id="actFormTitle">➕ Add New Activity</div>
+      <div style="background:#f8faff;border:1.5px solid #ECEEFF;border-radius:12px;padding:1rem" id="actForm">
+        <div style="font-weight:700;font-size:.9rem;color:#0A14E0;margin-bottom:.85rem" id="actFormTitle">➕ Add New Activity</div>
         <form method="POST" id="actFormEl">
           <input type="hidden" name="act" value="save_activity">
           <input type="hidden" name="act_id" id="actId" value="0">
@@ -575,10 +575,10 @@ require_once __DIR__ . '/../includes/header.php';
           <div class="srow">
             <label class="slbl">Card Colour</label>
             <div style="display:flex;align-items:center;gap:.75rem">
-              <input type="color" name="act_color" id="actColor" value="#0F766E"
+              <input type="color" name="act_color" id="actColor" value="#0A14E0"
                 style="width:44px;height:36px;border:none;border-radius:7px;cursor:pointer;padding:0">
               <div class="color-row" style="flex:1">
-                <?php foreach(['#0F766E','#b71c1c','#1b5e20','#6a1b9a','#e65100','#00838f','#c8922a','#37474f'] as $c): ?>
+                <?php foreach(['#0A14E0','#b71c1c','#1b5e20','#6a1b9a','#e65100','#00838f','#c8922a','#37474f'] as $c): ?>
                 <div style="width:28px;height:28px;background:<?= $c ?>;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:all .15s"
                   onclick="document.getElementById('actColor').value='<?= $c ?>'"></div>
                 <?php endforeach; ?>
@@ -602,18 +602,18 @@ require_once __DIR__ . '/../includes/header.php';
             ['🎭','Arts Festival','#6a1b9a'],
             ['🌸','Onam Celebration','#e65100'],
             ['🏏','Cricket Tournament','#b71c1c'],
-            ['🏐','Volleyball League','#0F766E'],
+            ['🏐','Volleyball League','#0A14E0'],
             ['🎤','Talent Show','#c8922a'],
             ['🩸','Blood Donation Camp','#b71c1c'],
             ['🏃','Sports Day','#1b5e20'],
             ['🎊','Annual Fest','#6a1b9a'],
-            ['📚','Quiz Competition','#0F766E'],
+            ['📚','Quiz Competition','#0A14E0'],
           ];
           foreach($presets as $p):
           ?>
           <button type="button" onclick="quickAct('<?= addslashes($p[0]) ?>','<?= addslashes($p[1]) ?>','<?= $p[2] ?>')"
             style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:20px;padding:.3rem .75rem;font-size:.74rem;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:.3rem;transition:all .18s"
-            onmouseover="this.style.borderColor='#0F766E';this.style.color='#0F766E'"
+            onmouseover="this.style.borderColor='#0A14E0';this.style.color='#0A14E0'"
             onmouseout="this.style.borderColor='#e2e8f0';this.style.color=''">
             <?= $p[0] ?> <?= $p[1] ?>
           </button>
@@ -638,9 +638,9 @@ require_once __DIR__ . '/../includes/header.php';
           <input class="sinp" name="fee_annual" type="number" value="<?= h($s('fee_annual', setting('FEE_ANNUAL',1000))) ?>" min="0" step="100">
           <p class="hint-txt">Annual fee shown to members on subscription page</p>
         </div>
-        <div style="background:#E6F4F2;border-radius:10px;padding:.85rem 1rem;margin-top:.5rem">
-          <div style="font-size:.82rem;font-weight:700;color:#0F766E;margin-bottom:.3rem">💡 Note</div>
-          <div style="font-size:.78rem;color:#107D74;line-height:1.6">After saving fees here, also update <code>setting('FEE_MONTHLY',100))</code> and <code>setting('FEE_ANNUAL',1000))</code> in <code>/av/includes/config.php</code> to match. The settings table overrides display values.</div>
+        <div style="background:#ECEEFF;border-radius:10px;padding:.85rem 1rem;margin-top:.5rem">
+          <div style="font-size:.82rem;font-weight:700;color:#0A14E0;margin-bottom:.3rem">💡 Note</div>
+          <div style="font-size:.78rem;color:#1A23C9;line-height:1.6">After saving fees here, also update <code>setting('FEE_MONTHLY',100))</code> and <code>setting('FEE_ANNUAL',1000))</code> in <code>/av/includes/config.php</code> to match. The settings table overrides display values.</div>
         </div>
       </div>
       <div class="scard">
@@ -692,7 +692,7 @@ require_once __DIR__ . '/../includes/header.php';
           'social_telegram'  => array('label'=>'Telegram Channel','ph'=>'https://t.me/yourchannel','icon'=>'fab fa-telegram','bg'=>'#0088cc'),
           'social_linkedin'  => array('label'=>'LinkedIn Page','ph'=>'https://linkedin.com/company/...','icon'=>'fab fa-linkedin-in','bg'=>'#0077b5'),
           'social_tiktok'    => array('label'=>'TikTok Profile','ph'=>'https://tiktok.com/@profile','icon'=>'fab fa-tiktok','bg'=>'#010101'),
-          'social_website'   => array('label'=>'Official Website','ph'=>'https://yourwebsite.com','icon'=>'fas fa-globe','bg'=>'#0F766E'),
+          'social_website'   => array('label'=>'Official Website','ph'=>'https://yourwebsite.com','icon'=>'fas fa-globe','bg'=>'#0A14E0'),
         );
         foreach($socDef as $skey=>$sinfo):
           $curSocVal = $s($skey,'');
@@ -708,7 +708,7 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
         <?php endforeach; ?>
 
-        <div style="background:#E6F4F2;border-radius:10px;padding:.85rem 1rem;margin-top:.5rem;font-size:.78rem;color:#107D74;line-height:1.6">
+        <div style="background:#ECEEFF;border-radius:10px;padding:.85rem 1rem;margin-top:.5rem;font-size:.78rem;color:#1A23C9;line-height:1.6">
           💡 Save → icons appear in footer instantly. Leave blank to remove icon. WhatsApp personal chat uses Club Phone from Club Info.
         </div>
       </div>
@@ -719,8 +719,8 @@ require_once __DIR__ . '/../includes/header.php';
   <!-- ═══ ROLES TAB ═══ -->
   <div class="stab-panel" id="stab-roles">
     <?php
-    $RC=['secretary'=>'#0A1A1F','developer'=>'#6a1b9a','president'=>'#b71c1c',
-         'vice_president'=>'#c62828','joint_secretary'=>'#107D74','treasurer'=>'#2e7d32',
+    $RC=['secretary'=>'#0B1033','developer'=>'#6a1b9a','president'=>'#b71c1c',
+         'vice_president'=>'#c62828','joint_secretary'=>'#1A23C9','treasurer'=>'#2e7d32',
          'sports_committee'=>'#e65100','cultural_committee'=>'#7b1fa2',
          'finance_committee'=>'#1b5e20','committee_member'=>'#37474f','member'=>'#78909c'];
     $RL=['developer'=>['Developer','🛠️','Super admin'],
@@ -856,10 +856,10 @@ require_once __DIR__ . '/../includes/header.php';
     ?>
     <div class="scard">
       <div class="scard-title">🔔 Send Push Notification</div>
-      <div style="background:#E6F4F2;border-radius:10px;padding:.65rem .8rem;margin-bottom:.8rem;display:flex;align-items:center;gap:.5rem">
+      <div style="background:#ECEEFF;border-radius:10px;padding:.65rem .8rem;margin-bottom:.8rem;display:flex;align-items:center;gap:.5rem">
         <span style="font-size:1.2rem">📱</span>
         <div>
-          <div style="font-size:.82rem;font-weight:700;color:#107D74"><?php echo $pushStats['subscribers']; ?> subscribers</div>
+          <div style="font-size:.82rem;font-weight:700;color:#1A23C9"><?php echo $pushStats['subscribers']; ?> subscribers</div>
           <div style="font-size:.62rem;color:#64748b">Members with notifications enabled</div>
         </div>
       </div>
@@ -881,7 +881,7 @@ require_once __DIR__ . '/../includes/header.php';
           <option value="all">All Members</option>
         </select>
       </div>
-      <button onclick="sendNotif()" style="width:100%;padding:.65rem;background:linear-gradient(135deg,#0A1A1F,#107D74);color:#fff;border:none;border-radius:10px;font-weight:800;font-size:.9rem;cursor:pointer">
+      <button onclick="sendNotif()" style="width:100%;padding:.65rem;background:linear-gradient(135deg,#0B1033,#1A23C9);color:#fff;border:none;border-radius:10px;font-weight:800;font-size:.9rem;cursor:pointer">
         🔔 Send Notification
       </button>
     </div>
@@ -894,7 +894,7 @@ require_once __DIR__ . '/../includes/header.php';
       <div style="padding:.5rem .3rem;border-bottom:1px solid #f5f5f5">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.15rem">
           <div style="font-size:.78rem;font-weight:700;color:#1a1a1a"><?php echo h($log['title']); ?></div>
-          <span style="font-size:.6rem;background:#E6F4F2;color:#107D74;padding:.1rem .4rem;border-radius:20px;font-weight:700"><?php echo (int)$log['total_sent']; ?> sent</span>
+          <span style="font-size:.6rem;background:#ECEEFF;color:#1A23C9;padding:.1rem .4rem;border-radius:20px;font-weight:700"><?php echo (int)$log['total_sent']; ?> sent</span>
         </div>
         <div style="font-size:.68rem;color:#64748b"><?php echo h($log['body']); ?></div>
         <div style="font-size:.58rem;color:#5d6b80;margin-top:.15rem"><?php echo h($log['sender']); ?> · <?php echo date('d M Y H:i',strtotime($log['sent_at'])); ?></div>
@@ -906,12 +906,12 @@ require_once __DIR__ . '/../includes/header.php';
 
   <!-- ═══ DATABASE BACKUP ═══ -->
   <div class="stab-panel" id="stab-backup">
-    <div style="background:#fff;border:1px solid #E2E8E7;border-radius:14px;padding:1.4rem">
-      <div style="font-size:1.05rem;font-weight:800;color:#10201F;margin-bottom:.4rem">💾 Database Backup</div>
+    <div style="background:#fff;border:1px solid #E3E7F5;border-radius:14px;padding:1.4rem">
+      <div style="font-size:1.05rem;font-weight:800;color:#0B1033;margin-bottom:.4rem">💾 Database Backup</div>
       <p style="font-size:.86rem;color:#64748b;line-height:1.6;margin-bottom:1.1rem">
         Download a complete backup of your website database as a <b>.sql</b> file. This includes every table, all members, settings, events, donations, and other data. Keep these backups safe — you can restore them later if anything goes wrong.
       </p>
-      <a href="?export_sql=1" style="display:inline-flex;align-items:center;gap:.6rem;background:linear-gradient(135deg,#0F766E,#107D74);color:#fff;padding:.8rem 1.6rem;border-radius:10px;font-weight:800;font-size:.92rem;text-decoration:none;box-shadow:0 6px 20px rgba(15,118,110,.3)">
+      <a href="?export_sql=1" style="display:inline-flex;align-items:center;gap:.6rem;background:linear-gradient(135deg,#0A14E0,#1A23C9);color:#fff;padding:.8rem 1.6rem;border-radius:10px;font-weight:800;font-size:.92rem;text-decoration:none;box-shadow:0 6px 20px rgba(10,20,224,.3)">
         ⬇️ Download Database Backup (.sql)
       </a>
       <div style="margin-top:1.2rem;padding:.85rem 1rem;background:#fff8e1;border:1px solid #ffe082;border-radius:10px;font-size:.8rem;color:#7a5c00;line-height:1.6">
@@ -943,7 +943,7 @@ require_once __DIR__ . '/../includes/header.php';
       <?php endforeach; ?>
       <div id="rpSave" style="display:none;margin-top:.6rem">
         <div id="rpPrev" style="background:#fff8e1;border:1.5px solid #ffe082;border-radius:8px;padding:.45rem .7rem;font-size:.75rem;color:#e65100;font-weight:600;margin-bottom:.4rem"></div>
-        <button onclick="saveRP()" style="width:100%;padding:.6rem;background:#0F766E;color:#fff;border:none;border-radius:10px;font-weight:800;cursor:pointer">✅ Save</button>
+        <button onclick="saveRP()" style="width:100%;padding:.6rem;background:#0A14E0;color:#fff;border:none;border-radius:10px;font-weight:800;cursor:pointer">✅ Save</button>
       </div>
     </div>
   </div>
@@ -965,7 +965,7 @@ function editAct(a) {
   document.getElementById('actDesc').value  = a.description || '';
   document.getElementById('actReg').value   = a.reg_link || '';
   document.getElementById('actInfo').value  = a.info_url || '';
-  document.getElementById('actColor').value = a.color || '#0F766E';
+  document.getElementById('actColor').value = a.color || '#0A14E0';
   document.getElementById('actFormTitle').textContent = '✏️ Edit Activity: ' + a.name;
   document.getElementById('actForm').scrollIntoView({behavior:'smooth'});
 }
@@ -976,7 +976,7 @@ function clearActForm() {
   document.getElementById('actDesc').value  = '';
   document.getElementById('actReg').value   = '';
   document.getElementById('actInfo').value  = '';
-  document.getElementById('actColor').value = '#0F766E';
+  document.getElementById('actColor').value = '#0A14E0';
   document.getElementById('actFormTitle').textContent = '➕ Add New Activity';
 }
 function quickAct(emoji, name, color) {
@@ -1002,7 +1002,7 @@ document.querySelectorAll('input[type=checkbox]').forEach(function(cb){
     var track = this.nextElementSibling;
     var thumb = track.nextElementSibling;
     if(track && thumb){
-      track.style.background = this.checked ? '#0F766E' : '#cbd5e0';
+      track.style.background = this.checked ? '#0A14E0' : '#cbd5e0';
       thumb.style.left       = this.checked ? '22px' : '2px';
     }
   });
@@ -1010,7 +1010,7 @@ document.querySelectorAll('input[type=checkbox]').forEach(function(cb){
 // ── Roles Tab JS ──────────────────────────────────────────────
 var _ud=<?php echo json_encode(array_map(function($u){return['id'=>(int)$u['id'],'name'=>$u['name'],'role'=>$u['role']];}, $_allUsers)); ?>;
 var _rl=<?php echo json_encode(array_map(function($r){return $r[0];},$RL)); ?>;
-var _rc={'secretary':'#0A1A1F','developer':'#6a1b9a','president':'#b71c1c','vice_president':'#c62828','joint_secretary':'#107D74','treasurer':'#2e7d32','sports_committee':'#e65100','cultural_committee':'#7b1fa2','finance_committee':'#1b5e20','committee_member':'#37474f','member':'#78909c'};
+var _rc={'secretary':'#0B1033','developer':'#6a1b9a','president':'#b71c1c','vice_president':'#c62828','joint_secretary':'#1A23C9','treasurer':'#2e7d32','sports_committee':'#e65100','cultural_committee':'#7b1fa2','finance_committee':'#1b5e20','committee_member':'#37474f','member':'#78909c'};
 var _rUid=0,_rName='',_rOld='',_rNew='';
 
 function toggleRa(id){
@@ -1043,7 +1043,7 @@ function closeRP(){document.getElementById('rpSheet').classList.remove('open');d
 function pickRP(rv){
   _rNew=rv;
   document.querySelectorAll('.rp-item').forEach(function(el){el.classList.remove('sel');el.querySelector('.rp-dot').style.cssText='';});
-  var rc=_rc[rv]||'#0F766E';
+  var rc=_rc[rv]||'#0A14E0';
   var el=document.getElementById('rpi_'+rv);
   if(el){el.classList.add('sel');el.querySelector('.rp-dot').style.background=rc;el.querySelector('.rp-dot').style.borderColor=rc;}
   document.getElementById('rpPrev').textContent='Change '+_rName+': '+(_rl[_rOld]||_rOld)+' → '+(_rl[rv]||rv);
@@ -1149,7 +1149,7 @@ function sendNotif(){
 function showToast(msg,t){
   var el=document.getElementById('stToast');
   if(!el){el=document.createElement('div');el.id='stToast';el.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(40px);padding:.55rem 1.2rem;border-radius:25px;font-size:.8rem;font-weight:700;z-index:9999;opacity:0;transition:all .3s;white-space:nowrap;color:#fff';document.body.appendChild(el);}
-  el.textContent=msg;el.style.background=t==='g'?'#2e7d32':t==='e'?'#b71c1c':'#0F766E';
+  el.textContent=msg;el.style.background=t==='g'?'#2e7d32':t==='e'?'#b71c1c':'#0A14E0';
   el.style.opacity='1';el.style.transform='translateX(-50%) translateY(0)';
   setTimeout(function(){el.style.opacity='0';el.style.transform='translateX(-50%) translateY(40px)';},2500);
 }

@@ -139,45 +139,47 @@ foreach (app_modules() as $m) { $groups[$m[4]][] = $m; }
 ?>
 <style>
 /* ═══ Dashboard: dark glass launcher ═══ */
-body{background:var(--ink)}
-.dk{color:#fff;position:relative;
-  background:radial-gradient(80% 40% at 0% 0%,rgba(20,184,166,.28),transparent 60%),radial-gradient(70% 35% at 100% 18%,rgba(242,107,91,.22),transparent 60%),var(--ink)}
+body{background:var(--surface)}
+.dk{color:var(--text);position:relative;background:var(--surface)}
+.hero-card{position:relative;overflow:hidden;color:#fff;border-radius:26px;padding:1.1rem 1rem 1rem;margin-bottom:.4rem;
+  background:radial-gradient(60% 90% at 100% 0%,rgba(255,255,255,.18),transparent 60%),var(--brand-grad);box-shadow:0 18px 40px -20px rgba(10,20,224,.7)}
+.hero-card .club-logo{position:absolute;right:-26px;bottom:-26px;width:150px;height:150px;border-radius:50%;opacity:.16;object-fit:cover}
 .dk-in{max-width:1100px;margin:0 auto;padding:1rem 1rem 1.5rem}
-.glass{background:var(--glass);border:1px solid var(--glass-line);border-radius:22px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.glass{background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:var(--sh-1)}
+.hero-card .glass{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28);box-shadow:none;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .hi{display:flex;align-items:center;gap:.85rem;padding:.4rem .1rem 1rem}
-.hi img,.hi .ph{width:54px;height:54px;border-radius:18px;object-fit:cover;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.18)}
-.hi small{display:block;font-size:.8rem;color:rgba(255,255,255,.72);font-weight:600}
+.hi img,.hi .ph{width:56px;height:56px;border-radius:50%;object-fit:cover;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,.85)}
+.hi small{display:block;font-size:.82rem;color:rgba(255,255,255,.9);font-weight:600}
 .hi b{font-size:1.25rem;font-weight:800;letter-spacing:-.02em;line-height:1.2}
-.hi .role{display:inline-block;margin-top:.2rem;font-size:.7rem;font-weight:700;color:var(--accent-light);background:rgba(242,107,91,.14);border:1px solid rgba(242,107,91,.3);padding:.12rem .55rem;border-radius:999px}
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:1rem}
+.hi .role{display:inline-block;margin-top:.25rem;font-size:.72rem;font-weight:700;color:var(--primary-dark);background:#fff;padding:.14rem .6rem;border-radius:999px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem}
 .kpi{padding:.75rem .4rem;text-align:center}
 .kpi b{display:block;font-size:1.45rem;font-weight:800;letter-spacing:-.02em;line-height:1.1}
-.kpi span{font-size:.68rem;font-weight:700;color:rgba(255,255,255,.72);text-transform:uppercase;letter-spacing:.05em}
-.kpi.warn b{color:var(--accent-light)}
+.kpi span{font-size:.68rem;font-weight:700;color:rgba(255,255,255,.92);text-transform:uppercase;letter-spacing:.05em}
+.kpi.warn{background:#fff!important}.kpi.warn b{color:var(--accent-ink)}.kpi.warn span{color:var(--accent-ink)}
 .dk-h{display:flex;align-items:center;justify-content:space-between;margin:1.1rem .1rem .6rem}
-.dk-h h2{font-size:.78rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.72)}
-.dk-h a{font-size:.8rem;font-weight:700;color:var(--primary-light);padding:.3rem .2rem}
+.dk-h h2{font-size:.8rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
+.dk-h a{font-size:.8rem;font-weight:700;color:var(--primary);padding:.3rem .2rem}
 /* app grid */
 .apps{display:grid;grid-template-columns:repeat(4,1fr);gap:.9rem .4rem;padding:1rem .5rem}
 @media(min-width:620px){.apps{grid-template-columns:repeat(6,1fr)}}
 @media(min-width:900px){.apps{grid-template-columns:repeat(8,1fr)}}
-.app{display:flex;flex-direction:column;align-items:center;gap:.45rem;font-size:.74rem;font-weight:600;color:rgba(255,255,255,.9);text-align:center;line-height:1.2;padding:.2rem 0;border-radius:16px;position:relative}
-.app .tile{width:58px;height:58px;border-radius:19px;transition:transform .15s}
-.app:active .tile{transform:scale(.92)}
-.app .tile .ic{width:28px;height:28px}
-.app .badge{position:absolute;top:-4px;right:calc(50% - 36px);min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--accent);color:var(--ink);font-size:.68rem;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--ink);z-index:2}
+.app{display:flex;flex-direction:column;align-items:center;gap:.45rem;font-size:.75rem;font-weight:600;color:var(--text-2);text-align:center;line-height:1.2;padding:.2rem 0;border-radius:16px;position:relative}
+.app .appic{width:62px;height:62px;border-radius:20px}
+.app .appic .app-img{width:44px;height:44px}
+.app .badge{position:absolute;top:-4px;right:calc(50% - 36px);min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--accent);color:#fff;font-size:.68rem;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid #fff;z-index:2}
 /* activity slider */
 .slides{display:flex;gap:.7rem;overflow-x:auto;scroll-snap-type:x mandatory;padding:.1rem .1rem .4rem;scrollbar-width:none}
 .slides::-webkit-scrollbar{display:none}
-.slide{flex:0 0 86%;max-width:420px;height:190px;border-radius:22px;scroll-snap-align:start;position:relative;overflow:hidden;color:#fff;display:flex;flex-direction:column;justify-content:flex-end;padding:1rem;border:1px solid var(--glass-line)}
+.slide{flex:0 0 86%;max-width:420px;height:190px;border-radius:22px;scroll-snap-align:start;position:relative;overflow:hidden;color:#fff;display:flex;flex-direction:column;justify-content:flex-end;padding:1rem;box-shadow:var(--sh-1)}
 .slide img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.slide::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,26,31,.05) 20%,rgba(10,26,31,.88));z-index:1}
+.slide::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,16,51,.05) 20%,rgba(11,16,51,.9));z-index:1}
 .slide>*{position:relative;z-index:2}
-.slide .type{font-size:.68rem;font-weight:800;letter-spacing:.1em;color:var(--accent-light)}
+.slide .type{font-size:.68rem;font-weight:800;letter-spacing:.1em;color:#fff;background:var(--accent);align-self:flex-start;padding:.1rem .5rem;border-radius:6px}
 .slide b{font-size:1.08rem;font-weight:800;line-height:1.25;margin:.15rem 0}
 .slide span{font-size:.8rem;color:rgba(255,255,255,.82)}
 /* light content area */
-.lt{background:var(--surface);color:var(--text);border-radius:28px 28px 0 0;margin-top:.4rem;position:relative}
+.lt{background:var(--surface);color:var(--text);position:relative}
 .lt-in{max-width:1100px;margin:0 auto;padding:1.3rem 1rem 1.5rem;display:grid;gap:1rem}
 @media(min-width:900px){.lt-in{grid-template-columns:1.6fr 1fr;align-items:start}}
 .panel{background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:var(--sh-1);overflow:hidden}
@@ -199,8 +201,7 @@ body{background:var(--ink)}
 .ev .date{width:46px;height:50px;border-radius:14px;background:var(--primary-soft);color:var(--primary-dark);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;line-height:1;flex-shrink:0}
 .ev .date small{font-size:.62rem;text-transform:uppercase;margin-top:.15rem}
 .ev b{font-size:.9rem;display:block}.ev span{font-size:.78rem;color:var(--text-3)}
-.mcard{border-radius:22px;padding:1.1rem;color:#fff;position:relative;overflow:hidden;
-  background:radial-gradient(100% 120% at 0% 0%,rgba(20,184,166,.45),transparent 60%),radial-gradient(80% 90% at 100% 100%,rgba(242,107,91,.4),transparent 60%),var(--ink-2)}
+.mcard{border-radius:22px;padding:1.1rem;color:#fff;position:relative;overflow:hidden;background:var(--brand-grad);box-shadow:0 14px 30px -18px rgba(10,20,224,.7)}
 .mcard .row{display:flex;align-items:center;gap:.8rem}
 .mcard img,.mcard .ph{width:56px;height:56px;border-radius:18px;object-fit:cover;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center}
 .mcard b{font-size:1.05rem;font-weight:800}
@@ -213,7 +214,7 @@ body{background:var(--ink)}
 .person span{color:var(--text-3);font-size:.7rem}
 .ach{display:flex;gap:.6rem;overflow-x:auto;scrollbar-width:none;padding-bottom:.2rem}
 .ach-i{flex:0 0 150px;border-radius:18px;background:var(--surface);border:1px solid var(--line);overflow:hidden}
-.ach-i img,.ach-i .ph{width:100%;height:96px;object-fit:cover;background:linear-gradient(145deg,#FDE68A,#F59E0B);display:flex;align-items:center;justify-content:center;color:#fff}
+.ach-i img,.ach-i .ph{width:100%;height:96px;object-fit:cover;background:linear-gradient(145deg,#FFF1C7,#FFD873);display:flex;align-items:center;justify-content:center;color:#fff}
 .ach-i div{padding:.55rem .65rem}
 .ach-i b{font-size:.8rem;display:block;line-height:1.25}
 .ach-i span{font-size:.72rem;color:var(--text-3)}
@@ -225,9 +226,11 @@ details.post summary::-webkit-details-marker{display:none}
 
 <div class="dk">
  <div class="dk-in">
+  <div class="hero-card">
+  <?php if($logoB64): ?><img class="club-logo" src="<?= $logoB64 ?>" alt=""><?php endif; ?>
   <!-- Greeting -->
   <div class="hi">
-    <?php if($myPhoto): ?><img src="<?= $myPhoto ?>" alt=""><?php else: ?><span class="ph"><?= ic('user','ic-lg') ?></span><?php endif; ?>
+    <?php if($myPhoto): ?><img src="<?= $myPhoto ?>" alt=""><?php else: ?><span class="ph"><?= app_img('profile',38) ?></span><?php endif; ?>
     <div style="min-width:0">
       <small><?= $greet ?></small>
       <b><?= h($user['name']) ?></b><br>
@@ -247,12 +250,14 @@ details.post summary::-webkit-details-marker{display:none}
     <?php endif; ?>
   </div>
 
+  </div>
+
   <!-- Activity slider -->
   <?php if(!empty($sliderItems)): ?>
   <div class="dk-h"><h2>Happening now</h2></div>
   <div class="slides" tabindex="0" role="region" aria-label="Happening now">
     <?php foreach($sliderItems as $si): ?>
-    <a class="slide" href="<?= h($si['url']) ?>" style="background:linear-gradient(145deg,<?= h($si['color']) ?>,#0A1A1F)">
+    <a class="slide" href="<?= h($si['url']) ?>" style="background:linear-gradient(145deg,<?= h($si['color']) ?>,#0B1033)">
       <?php if(!empty($si['img'])): ?><img src="<?= h($si['img']) ?>" alt="" loading="lazy" onerror="this.remove()"><?php endif; ?>
       <span class="type"><?= h($si['type']) ?></span>
       <b><?= h($si['title']) ?></b>
@@ -267,7 +272,7 @@ details.post summary::-webkit-details-marker{display:none}
   <div class="dk-h"><h2><?= h($gname) ?></h2></div>
   <div class="apps glass">
     <?php foreach($items as $m): ?>
-    <a class="app" href="<?= url($m[0]) ?>"><span class="tile tone-<?= $m[3] ?>"><?= ic($m[2]) ?></span><?= h($m[1]) ?></a>
+    <a class="app" href="<?= url($m[0]) ?>"><span class="appic"><?= app_img($m[5],44) ?></span><?= h($m[1]) ?></a>
     <?php endforeach; ?>
   </div>
   <?php endforeach; ?>
@@ -277,11 +282,11 @@ details.post summary::-webkit-details-marker{display:none}
   <div class="apps glass">
     <?php foreach(admin_modules() as $m):
       if ($m[0]==='modules/settings.php' && !isSuperAdmin($user)) continue; ?>
-    <a class="app" href="<?= url($m[0]) ?>"><span class="tile tone-<?= $m[3] ?>"><?= ic($m[2]) ?></span><?= h($m[1]) ?>
+    <a class="app" href="<?= url($m[0]) ?>"><span class="appic"><?= app_img($m[5],44) ?></span><?= h($m[1]) ?>
       <?php if($m[0]==='admin.php' && $pendingCount): ?><span class="badge" aria-label="<?= (int)$pendingCount ?> waiting"><?= (int)$pendingCount ?></span><?php endif; ?></a>
     <?php endforeach; ?>
     <?php if(canPost($user['role'])): ?>
-    <button type="button" class="app" onclick="openDashScan()" style="background:none;border:0;cursor:pointer;font-family:inherit;font-size:.74rem;font-weight:600;color:rgba(255,255,255,.9)"><span class="tile tone-sky"><?= ic('scan') ?></span>Scan QR</button>
+    <button type="button" class="app" onclick="openDashScan()" style="background:none;border:0;cursor:pointer;font-family:inherit;font-size:.75rem;font-weight:600;color:var(--text-2)"><span class="appic"><?= app_img('scan',44) ?></span>Scan QR</button>
     <?php endif; ?>
   </div>
   <?php endif; ?>
@@ -398,8 +403,8 @@ details.post summary::-webkit-details-marker{display:none}
   <!-- QR Scan Popup (admin only, no widget bar) -->
   <?php if(isAdminRole($user['role']) || canPost($user['role'])): ?>
   <div id="scanPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9000;flex-direction:column;align-items:center;justify-content:center;padding:1rem">
-    <div style="width:100%;max-width:360px;background:#0A1A1F;border-radius:18px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.5)">
-      <div style="background:#0F766E;padding:.9rem 1.1rem;display:flex;align-items:center;justify-content:space-between">
+    <div style="width:100%;max-width:360px;background:#0B1033;border-radius:18px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.5)">
+      <div style="background:#0A14E0;padding:.9rem 1.1rem;display:flex;align-items:center;justify-content:space-between">
         <div style="font-weight:800;font-size:.95rem;color:#fff">Scan volunteer QR</div>
         <button type="button" onclick="closeDashScan()" aria-label="Close scanner" style="background:rgba(255,255,255,.15);border:none;color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center">✕</button>
       </div>
@@ -408,13 +413,13 @@ details.post summary::-webkit-details-marker{display:none}
         <canvas id="dashCanvas" style="display:none"></canvas>
         <div id="dashFrame" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
           <div style="width:200px;height:200px;position:relative">
-            <div style="position:absolute;top:0;left:0;width:28px;height:28px;border-top:3px solid #5EEAD4;border-left:3px solid #5EEAD4;border-radius:3px 0 0 0"></div>
-            <div style="position:absolute;top:0;right:0;width:28px;height:28px;border-top:3px solid #5EEAD4;border-right:3px solid #5EEAD4;border-radius:0 3px 0 0"></div>
-            <div style="position:absolute;bottom:0;left:0;width:28px;height:28px;border-bottom:3px solid #5EEAD4;border-left:3px solid #5EEAD4;border-radius:0 0 0 3px"></div>
-            <div style="position:absolute;bottom:0;right:0;width:28px;height:28px;border-bottom:3px solid #5EEAD4;border-right:3px solid #5EEAD4;border-radius:0 0 3px 0"></div>
-            <div style="position:absolute;left:8px;right:8px;height:2px;background:linear-gradient(90deg,transparent,#5EEAD4,transparent);animation:scanAnim 1.8s ease-in-out infinite;top:50%"></div>
+            <div style="position:absolute;top:0;left:0;width:28px;height:28px;border-top:3px solid #A9B0FF;border-left:3px solid #A9B0FF;border-radius:3px 0 0 0"></div>
+            <div style="position:absolute;top:0;right:0;width:28px;height:28px;border-top:3px solid #A9B0FF;border-right:3px solid #A9B0FF;border-radius:0 3px 0 0"></div>
+            <div style="position:absolute;bottom:0;left:0;width:28px;height:28px;border-bottom:3px solid #A9B0FF;border-left:3px solid #A9B0FF;border-radius:0 0 0 3px"></div>
+            <div style="position:absolute;bottom:0;right:0;width:28px;height:28px;border-bottom:3px solid #A9B0FF;border-right:3px solid #A9B0FF;border-radius:0 0 3px 0"></div>
+            <div style="position:absolute;left:8px;right:8px;height:2px;background:linear-gradient(90deg,transparent,#A9B0FF,transparent);animation:scanAnim 1.8s ease-in-out infinite;top:50%"></div>
           </div>
-          <div style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);color:#5EEAD4;font-size:.68rem;font-weight:700;letter-spacing:.1em;white-space:nowrap">POINT AT QR CODE</div>
+          <div style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);color:#A9B0FF;font-size:.68rem;font-weight:700;letter-spacing:.1em;white-space:nowrap">POINT AT QR CODE</div>
         </div>
       </div>
       <div id="dashResult" style="padding:.85rem 1rem;min-height:60px">

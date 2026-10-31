@@ -197,7 +197,7 @@ require_once __DIR__ . '/../includes/header.php';
   box-shadow:0 2px 10px rgba(0,0,0,.07);margin:.9rem 1rem .7rem;
   border:1.5px solid #f0f0f0}
 .bh-search input{flex:1;border:none;outline:none;font-family:'Plus Jakarta Sans',sans-serif;
-  font-size:.88rem;color:#10201F;background:transparent}
+  font-size:.88rem;color:#0B1033;background:transparent}
 .bh-search input::placeholder{color:#bcc4cf}
 
 /* Donor cards */
@@ -222,11 +222,11 @@ require_once __DIR__ . '/../includes/header.php';
 .bh-blood-badge.unavail .bh-blood-text{color:#666666}
 
 /* Donor info */
-.bh-dname{font-weight:800;font-size:.9rem;color:#10201F;
+.bh-dname{font-weight:800;font-size:.9rem;color:#0B1033;
   margin-bottom:.3rem;line-height:1.25}
 .bh-dmeta{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap}
 .bh-role-badge{font-size:.58rem;font-weight:800;color:#fff;
-  background:#0F766E;border-radius:20px;padding:.1rem .5rem;
+  background:#0A14E0;border-radius:20px;padding:.1rem .5rem;
   white-space:nowrap}
 .bh-status{display:inline-flex;align-items:center;gap:.22rem;
   font-size:.63rem;font-weight:700;border-radius:20px;
@@ -266,7 +266,7 @@ require_once __DIR__ . '/../includes/header.php';
   display:flex;align-items:flex-start;gap:.6rem}
 .bh-alert.ok{background:#e8f5e9;border:1.5px solid #a5d6a7;color:#1b5e20}
 .bh-alert.err{background:#ffebee;border:1.5px solid #ef9a9a;color:#b71c1c}
-.bh-alert.info{background:#E6F4F2;border:1.5px solid #99D8CF;color:#0F766E}
+.bh-alert.info{background:#ECEEFF;border:1.5px solid #B9BFFF;color:#0A14E0}
 
 /* Request form */
 .bh-form-card{background:#fff;border-radius:20px;
@@ -278,9 +278,9 @@ require_once __DIR__ . '/../includes/header.php';
   letter-spacing:.07em;color:#fff}
 .bh-form-body{padding:1.1rem}
 .bh-fg2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.65rem}
-.bh-inp{width:100%;padding:.65rem .9rem;border:1.5px solid #E2E8E7;
+.bh-inp{width:100%;padding:.65rem .9rem;border:1.5px solid #E3E7F5;
   border-radius:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.88rem;
-  color:#10201F;outline:none;transition:border-color .2s;background:#f8fafc}
+  color:#0B1033;outline:none;transition:border-color .2s;background:#f8fafc}
 .bh-inp:focus{border-color:#b71c1c;background:#fff}
 .bh-lbl{font-size:.68rem;font-weight:700;text-transform:uppercase;
   letter-spacing:.08em;color:#64748b;display:block;margin-bottom:.28rem}
@@ -297,7 +297,7 @@ require_once __DIR__ . '/../includes/header.php';
   letter-spacing:.12em;color:#5d6b80;margin:.9rem 1rem .5rem;
   display:flex;align-items:center;gap:.5rem}
 .bh-sec-lbl::after{content:'';flex:1;height:1.5px;
-  background:linear-gradient(90deg,#E0F2EF,transparent)}
+  background:linear-gradient(90deg,#ECEEFF,transparent)}
 </style>
 
 <div class="bh-shell">

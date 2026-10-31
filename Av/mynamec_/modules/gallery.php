@@ -98,26 +98,26 @@ require_once __DIR__ . '/../includes/header.php';
 
 <style>
 .gal-page{max-width:1200px;margin:0 auto;padding:1.5rem 1rem}
-.gal-hero{background:linear-gradient(135deg,#0E2A31,#0F766E);padding:2.5rem 1.5rem;text-align:center;color:#fff;margin-bottom:0}
+.gal-hero{background:linear-gradient(135deg,#121A5C,#0A14E0);padding:2.5rem 1.5rem;text-align:center;color:#fff;margin-bottom:0}
 .gal-hero h1{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:.1em;margin-bottom:.3rem}
 .gal-hero p{font-size:.9rem;color:rgba(255,255,255,.65)}
 
 /* Upload card */
 .upload-card{background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.09);border:1px solid rgba(0,0,0,.07);padding:1.5rem;margin-bottom:2rem}
-.upload-area{border:2px dashed rgba(15,118,110,.25);border-radius:12px;padding:2rem;text-align:center;cursor:pointer;transition:all .25s;background:#f8f9ff;position:relative;overflow:hidden}
-.upload-area:hover{border-color:#0F766E;background:#eef1ff}
+.upload-area{border:2px dashed rgba(10,20,224,.25);border-radius:12px;padding:2rem;text-align:center;cursor:pointer;transition:all .25s;background:#f8f9ff;position:relative;overflow:hidden}
+.upload-area:hover{border-color:#0A14E0;background:#eef1ff}
 .upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .upload-preview{display:none;width:100%;height:200px;object-fit:contain;border-radius:10px;margin-top:.8rem}
 
 /* Filter tabs */
 .cat-tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin:1.5rem 0}
 .cat-tab{display:inline-block;padding:.38rem .9rem;border-radius:30px;font-size:.78rem;font-weight:700;border:1.5px solid rgba(0,0,0,.1);color:#666;transition:all .22s;cursor:pointer}
-.cat-tab:hover,.cat-tab.on{background:#0F766E;color:#fff;border-color:#0F766E}
+.cat-tab:hover,.cat-tab.on{background:#0A14E0;color:#fff;border-color:#0A14E0}
 
 /* Gallery grid */
 .gal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem}
 @media(max-width:480px){.gal-grid{grid-template-columns:repeat(2,1fr);gap:.6rem}}
-.gal-item{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:1;box-shadow:0 2px 12px rgba(0,0,0,.1);cursor:pointer;background:#F3F6F5}
+.gal-item{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:1;box-shadow:0 2px 12px rgba(0,0,0,.1);cursor:pointer;background:#F5F7FF}
 .gal-item img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
 .gal-item:hover img{transform:scale(1.07)}
 .gal-overlay{position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(0,0,0,.75));opacity:0;transition:opacity .3s;display:flex;flex-direction:column;justify-content:flex-end;padding:.8rem}
@@ -154,7 +154,7 @@ require_once __DIR__ . '/../includes/header.php';
   <h1>📸 PHOTO GALLERY</h1>
   <p><?= h(CLUB_NAME) ?> · Capturing memories from every event in <?= h(CLUB_PLACE) ?></p>
 </div>
-<div style="height:4px;background:repeating-linear-gradient(90deg,#D4A017 0,#D4A017 10px,#B71C1C 10px,#B71C1C 20px,#0F766E 20px,#0F766E 30px,#F5C842 30px,#F5C842 40px)"></div>
+<div style="height:4px;background:repeating-linear-gradient(90deg,#D4A017 0,#D4A017 10px,#B71C1C 10px,#B71C1C 20px,#0A14E0 20px,#0A14E0 30px,#F5C842 30px,#F5C842 40px)"></div>
 
 <div class="gal-page">
 
@@ -165,7 +165,7 @@ require_once __DIR__ . '/../includes/header.php';
 <!-- ── UPLOAD (Admin only) ── -->
 <?php if($isAdmin): ?>
 <div class="upload-card">
-  <h3 style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.07em;color:#0E2A31;margin-bottom:1.2rem">📤 Upload Photos</h3>
+  <h3 style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.07em;color:#121A5C;margin-bottom:1.2rem">📤 Upload Photos</h3>
   <form method="POST" action="<?= url('modules/gallery.php') ?>" enctype="multipart/form-data">
     <div class="row g-3">
       <div class="col-md-8">
@@ -173,7 +173,7 @@ require_once __DIR__ . '/../includes/header.php';
           <input type="file" name="photo" id="photoFile" accept="image/*" onchange="previewPhoto(this)" style="display:none">
           <div id="uploadPrompt">
             <div style="font-size:2.5rem;margin-bottom:.5rem">📷</div>
-            <div style="font-weight:700;color:#0E2A31;margin-bottom:.25rem">Click to Upload Photo</div>
+            <div style="font-weight:700;color:#121A5C;margin-bottom:.25rem">Click to Upload Photo</div>
             <div style="font-size:.78rem;color:#5f6880">JPG, PNG, WebP · Max 5MB</div>
           </div>
           <img id="previewImg" class="upload-preview" alt="Preview">
@@ -222,7 +222,7 @@ require_once __DIR__ . '/../includes/header.php';
             </label>
           </div>
         </div>
-        <button type="submit" name="upload_photo" class="btn btn-primary w-100" style="border-radius:8px;font-weight:700;background:#0E2A31;border-color:#0E2A31;color:#fff">
+        <button type="submit" name="upload_photo" class="btn btn-primary w-100" style="border-radius:8px;font-weight:700;background:#121A5C;border-color:#121A5C;color:#fff">
           <i class="fas fa-upload me-1"></i> Upload Photo
         </button>
       </div>
@@ -243,7 +243,7 @@ require_once __DIR__ . '/../includes/header.php';
 <?php if(empty($photos)): ?>
 <div class="gal-empty">
   <div>🖼️</div>
-  <h4 style="color:#0E2A31">No photos yet</h4>
+  <h4 style="color:#121A5C">No photos yet</h4>
   <?php if($isAdmin): ?><p>Upload photos using the form above.</p><?php else: ?><p>Gallery photos will appear here soon.</p><?php endif; ?>
 </div>
 <?php else: ?>
@@ -306,7 +306,7 @@ function previewPhoto(inp) {
   img.src = url;
   img.style.display = 'block';
   prompt.style.display = 'none';
-  document.getElementById('uploadArea').style.border = '2px solid #0F766E';
+  document.getElementById('uploadArea').style.border = '2px solid #0A14E0';
 }
 
 // Lightbox

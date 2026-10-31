@@ -79,3 +79,6 @@ built like a phone home screen (app tiles), a floating bottom tab bar, bottom-sh
 Name Slip and Henna (Mehndi) Fest modules were removed (their database tables and uploaded photos are kept).
 Club Settings → Homepage now really controls the homepage: banner texts, which sections show, about / join texts,
 colours, font and footer text. Fees from Club Settings → Fees are now used on the Subscription page.
+
+**Logo colours (2026-11):** the whole site now uses the club logo's white, red and blue, with the logo's red→blue
+gradient on the top bar, banners and main buttons. App tiles show 3D pictures (`assets/icons/3d/`, replaceable).

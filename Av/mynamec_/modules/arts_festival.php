@@ -69,7 +69,7 @@ require_once __DIR__ . '/../includes/header.php';
 <?php else: foreach($festivals as $fst):
   $progs=db()->prepare("SELECT * FROM arts_programs WHERE festival_id=? ORDER BY category,created_at");
   $progs->execute(array($fst['id']));$progs=$progs->fetchAll();
-  $catColors=array('music'=>array('🎵','#FCE4EC','#880E4F'),'dance'=>array('💃','#F3E5F5','#6A1B9A'),'drama'=>array('🎭','#E8EAF6','#283593'),'painting'=>array('🎨','#E6F4F2','#0F766E'),'poetry'=>array('📝','#E8F5E9','#1B5E20'),'quiz'=>array('🧠','#FFF3E0','#E65100'),'other'=>array('🌟','#F5F5F5','#424242'));
+  $catColors=array('music'=>array('🎵','#FCE4EC','#880E4F'),'dance'=>array('💃','#F3E5F5','#6A1B9A'),'drama'=>array('🎭','#E8EAF6','#283593'),'painting'=>array('🎨','#ECEEFF','#0A14E0'),'poetry'=>array('📝','#E8F5E9','#1B5E20'),'quiz'=>array('🧠','#FFF3E0','#E65100'),'other'=>array('🌟','#F5F5F5','#424242'));
 ?>
 <div class="card mb-3">
   <div class="card-header" style="background:linear-gradient(135deg,#4A148C,#7B1FA2)"><h3>🎭 <?=h($fst['title'])?></h3></div>

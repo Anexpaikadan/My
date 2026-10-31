@@ -83,7 +83,7 @@ $past     = array_values(array_filter($events, function($e){ return strtotime($e
 
 // Type config
 $types = [
-  ''          => ['em'=>'✨','label'=>'All',      'color'=>'#0F766E','bg'=>'#E6F4F2'],
+  ''          => ['em'=>'✨','label'=>'All',      'color'=>'#0A14E0','bg'=>'#ECEEFF'],
   'football'  => ['em'=>'⚽','label'=>'Football', 'color'=>'#1b5e20','bg'=>'#e8f5e9'],
   'cricket'   => ['em'=>'🏏','label'=>'Cricket',  'color'=>'#e65100','bg'=>'#fff3e0'],
   'charity'   => ['em'=>'🤝','label'=>'Charity',  'color'=>'#880e4f','bg'=>'#fce4ec'],
@@ -95,15 +95,15 @@ require_once __DIR__.'/../includes/header.php';
 ?>
 <style>
 /* ══ EVENTS APP ══════════════════════════════════════════ */
-.ev-shell{background:#F3F6F5;min-height:100vh;padding-bottom:5rem}
+.ev-shell{background:#F5F7FF;min-height:100vh;padding-bottom:5rem}
 
 /* Header */
 .ev-header{
-  background:linear-gradient(145deg,#10201F,#0E2A31,#0F766E);
+  background:linear-gradient(145deg,#0B1033,#121A5C,#0A14E0);
   padding:1.4rem 1.2rem 3.2rem;position:relative;overflow:hidden}
 .ev-header::before{content:'📅';position:absolute;right:-1rem;top:-1rem;font-size:9rem;opacity:.07}
 .ev-htitle{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;letter-spacing:.1em;color:#fff}
-.ev-htitle span{color:#99D8CF;font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;font-weight:600;
+.ev-htitle span{color:#B9BFFF;font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;font-weight:600;
   letter-spacing:.04em;display:block;margin-top:.2rem}
 .ev-hstats{display:flex;gap:.55rem;margin-top:1rem}
 .ev-hstat{background:rgba(255,255,255,.14);backdrop-filter:blur(8px);
@@ -119,7 +119,7 @@ require_once __DIR__.'/../includes/header.php';
 .ev-filter-row{display:flex;gap:.4rem;overflow-x:auto;scrollbar-width:none;padding-bottom:.2rem}
 .ev-filter-row::-webkit-scrollbar{display:none}
 .ev-pill{display:inline-flex;align-items:center;gap:.28rem;padding:.42rem .9rem;
-  border-radius:20px;border:1.5px solid #E0F2EF;background:#f8fafc;
+  border-radius:20px;border:1.5px solid #ECEEFF;background:#f8fafc;
   color:#475569;font-size:.74rem;font-weight:700;text-decoration:none;
   white-space:nowrap;transition:all .22s;flex-shrink:0}
 .ev-pill:active{transform:scale(.93)}
@@ -127,9 +127,9 @@ require_once __DIR__.'/../includes/header.php';
 
 /* Section label */
 .ev-sec{padding:.9rem 1rem .45rem;display:flex;align-items:center;gap:.6rem}
-.ev-sec-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.06em;color:#10201F}
+.ev-sec-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.06em;color:#0B1033}
 .ev-sec-line{flex:1;height:2px;background:linear-gradient(90deg,#c8922a,transparent);border-radius:2px}
-.ev-sec-count{font-size:.68rem;font-weight:700;color:#5d6b80;background:#F3F6F5;
+.ev-sec-count{font-size:.68rem;font-weight:700;color:#5d6b80;background:#F5F7FF;
   border-radius:20px;padding:.1rem .55rem}
 
 /* Event cards */
@@ -157,16 +157,16 @@ require_once __DIR__.'/../includes/header.php';
 .ev-countdown.normal{color:#64748b}
 @keyframes pulseFade{0%,100%{opacity:1}50%{opacity:.5}}
 .ev-title{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700;
-  color:#10201F;line-height:1.3;margin-bottom:.4rem}
+  color:#0B1033;line-height:1.3;margin-bottom:.4rem}
 .ev-desc{font-size:.8rem;color:#64748b;line-height:1.55;margin-bottom:.6rem;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .ev-meta{display:flex;flex-direction:column;gap:.22rem}
 .ev-meta-row{display:flex;align-items:center;gap:.4rem;font-size:.75rem;color:#64748b}
 .ev-meta-icon{width:20px;height:20px;border-radius:6px;display:flex;align-items:center;
-  justify-content:center;font-size:.72rem;flex-shrink:0;background:#F3F6F5}
+  justify-content:center;font-size:.72rem;flex-shrink:0;background:#F5F7FF}
 
 /* Admin actions */
-.ev-admin-bar{border-top:1px solid #F3F6F5;padding:.6rem 1rem;
+.ev-admin-bar{border-top:1px solid #F5F7FF;padding:.6rem 1rem;
   display:flex;justify-content:flex-end;gap:.4rem}
 .ev-del-btn{background:#fff5f5;border:1.5px solid #fecaca;color:#b71c1c;
   border-radius:8px;padding:.3rem .75rem;font-size:.72rem;font-weight:700;cursor:pointer;
@@ -178,7 +178,7 @@ require_once __DIR__.'/../includes/header.php';
 .ev-past-row{background:#fff;border-radius:12px;padding:.72rem .9rem;
   margin-bottom:.45rem;display:grid;grid-template-columns:1fr auto;
   gap:.5rem;align-items:center;box-shadow:0 1px 6px rgba(0,0,0,.05);opacity:.72}
-.ev-past-title{font-weight:700;font-size:.85rem;color:#10201F;margin-bottom:.18rem}
+.ev-past-title{font-weight:700;font-size:.85rem;color:#0B1033;margin-bottom:.18rem}
 .ev-past-meta{font-size:.7rem;color:#5d6b80;display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}
 .ev-past-date{font-size:.72rem;font-weight:700;color:#64748b;text-align:right}
 
@@ -188,31 +188,31 @@ require_once __DIR__.'/../includes/header.php';
 
 /* Add FAB */
 .ev-fab{position:fixed;bottom:calc(74px + env(safe-area-inset-bottom,0px));right:1.1rem;z-index:900;
-  background:linear-gradient(135deg,#0F766E,#107D74);
+  background:linear-gradient(135deg,#0A14E0,#1A23C9);
   color:#fff;height:50px;padding:0 1.2rem 0 1rem;border-radius:26px;
   display:flex;align-items:center;justify-content:center;gap:.45rem;font-size:.88rem;font-weight:800;
   font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:.01em;
-  text-decoration:none;box-shadow:0 8px 24px rgba(15,118,110,.45);
+  text-decoration:none;box-shadow:0 8px 24px rgba(10,20,224,.45);
   transition:all .22s;animation:fabIn .4s ease}
 .ev-fab .fab-plus{font-size:1.3rem;line-height:1;margin-top:-1px}
 .ev-fab:active{transform:scale(.93)}
 @keyframes fabIn{from{opacity:0;transform:translateY(20px) scale(.8)}to{opacity:1;transform:translateY(0) scale(1)}}
-.ev-rsvp{border-top:1px solid #F3F6F5;margin-top:.7rem;padding-top:.7rem}
+.ev-rsvp{border-top:1px solid #F5F7FF;margin-top:.7rem;padding-top:.7rem}
 .ev-rsvp-q{font-size:.7rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.45rem}
 .ev-rsvp-btns{display:flex;gap:.4rem}
-.ev-rsvp-b{flex:1;display:flex;flex-direction:column;align-items:center;gap:.1rem;padding:.5rem .2rem;border:1.5px solid #E2E8E7;background:#fff;border-radius:11px;font-family:inherit;font-size:.7rem;font-weight:800;color:#64748b;cursor:pointer;transition:all .15s}
+.ev-rsvp-b{flex:1;display:flex;flex-direction:column;align-items:center;gap:.1rem;padding:.5rem .2rem;border:1.5px solid #E3E7F5;background:#fff;border-radius:11px;font-family:inherit;font-size:.7rem;font-weight:800;color:#64748b;cursor:pointer;transition:all .15s}
 .ev-rsvp-b .rc{font-size:.62rem;opacity:.7;min-height:.7rem}
 .ev-rsvp-b:active{transform:scale(.94)}
 .ev-rsvp-b.going.on{background:#e8f5e9;border-color:#66bb6a;color:#1b5e20}
 .ev-rsvp-b.maybe.on{background:#fff8e1;border-color:#ffca28;color:#e65100}
 .ev-rsvp-b.no.on{background:#ffebee;border-color:#ef9a9a;color:#b71c1c}
-.ev-rsvp-admin{margin-top:.5rem;font-size:.74rem;color:#556274;background:#F6F8F8;border-radius:8px;padding:.4rem .6rem}
+.ev-rsvp-admin{margin-top:.5rem;font-size:.74rem;color:#556274;background:#F7F8FF;border-radius:8px;padding:.4rem .6rem}
 </style>
 
 <div class="ev-shell">
 <?php if($isAdmin): ?>
 <div style="padding:.8rem 1rem 0">
-  <button onclick="evOpenCreate()" style="width:100%;background:linear-gradient(135deg,#0F766E,#107D74);color:#fff;border:none;border-radius:12px;padding:.8rem;font-size:.9rem;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(15,118,110,.3)">➕ Create New Event</button>
+  <button onclick="evOpenCreate()" style="width:100%;background:linear-gradient(135deg,#0A14E0,#1A23C9);color:#fff;border:none;border-radius:12px;padding:.8rem;font-size:.9rem;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(10,20,224,.3)">➕ Create New Event</button>
 </div>
 <?php endif; ?>
 
@@ -402,20 +402,20 @@ require_once __DIR__.'/../includes/header.php';
 <!-- Create Event modal -->
 <div id="evOv" onclick="if(event.target===this)evCloseCreate()" style="display:none;position:fixed;inset:0;background:rgba(13,27,62,.6);z-index:10000;align-items:flex-end;justify-content:center">
   <div style="background:#fff;width:100%;max-width:480px;border-radius:22px 22px 0 0;padding:1.2rem 1.2rem 1.6rem;animation:evSlide .3s ease">
-    <h3 style="font-size:1.1rem;color:#10201F;margin-bottom:.9rem">➕ New Event</h3>
-    <input type="text" id="evTitle" placeholder="Event title *" style="width:100%;padding:.7rem .8rem;border:1.5px solid #E2E8E7;border-radius:11px;font-size:.9rem;box-sizing:border-box;margin-bottom:.55rem;font-family:inherit">
-    <select id="evType" style="width:100%;padding:.7rem .8rem;border:1.5px solid #E2E8E7;border-radius:11px;font-size:.9rem;box-sizing:border-box;margin-bottom:.55rem;font-family:inherit">
+    <h3 style="font-size:1.1rem;color:#0B1033;margin-bottom:.9rem">➕ New Event</h3>
+    <input type="text" id="evTitle" placeholder="Event title *" style="width:100%;padding:.7rem .8rem;border:1.5px solid #E3E7F5;border-radius:11px;font-size:.9rem;box-sizing:border-box;margin-bottom:.55rem;font-family:inherit">
+    <select id="evType" style="width:100%;padding:.7rem .8rem;border:1.5px solid #E3E7F5;border-radius:11px;font-size:.9rem;box-sizing:border-box;margin-bottom:.55rem;font-family:inherit">
       <option value="football">⚽ Football</option><option value="cricket">🏏 Cricket</option><option value="kabaddi">🤼 Kabaddi</option>
       <option value="charity">🤝 Charity</option><option value="cultural">🎭 Cultural</option><option value="meeting">📋 Meeting</option><option value="other">📌 Other</option>
     </select>
     <div style="display:flex;gap:.5rem">
-      <input type="date" id="evDate" value="<?= date('Y-m-d') ?>" style="flex:1;padding:.7rem .8rem;border:1.5px solid #E2E8E7;border-radius:11px;font-size:.9rem;box-sizing:border-box;margin-bottom:.55rem;font-family:inherit">
-      <input type="time" id="evTime" style="flex:1;padding:.7rem .8rem;border:1.5px solid #E2E8E7;border-radius:11px;font-size:.9rem;box-sizing:border-box;margin-bottom:.55rem;font-family:inherit">
+      <input type="date" id="evDate" value="<?= date('Y-m-d') ?>" style="flex:1;padding:.7rem .8rem;border:1.5px solid #E3E7F5;border-radius:11px;font-size:.9rem;box-sizing:border-box;margin-bottom:.55rem;font-family:inherit">
+      <input type="time" id="evTime" style="flex:1;padding:.7rem .8rem;border:1.5px solid #E3E7F5;border-radius:11px;font-size:.9rem;box-sizing:border-box;margin-bottom:.55rem;font-family:inherit">
     </div>
-    <input type="text" id="evLoc" placeholder="Location" style="width:100%;padding:.7rem .8rem;border:1.5px solid #E2E8E7;border-radius:11px;font-size:.9rem;box-sizing:border-box;margin-bottom:.55rem;font-family:inherit">
-    <textarea id="evDescr" rows="2" placeholder="Description (optional)" style="width:100%;padding:.7rem .8rem;border:1.5px solid #E2E8E7;border-radius:11px;font-size:.9rem;box-sizing:border-box;margin-bottom:.7rem;font-family:inherit;resize:none"></textarea>
+    <input type="text" id="evLoc" placeholder="Location" style="width:100%;padding:.7rem .8rem;border:1.5px solid #E3E7F5;border-radius:11px;font-size:.9rem;box-sizing:border-box;margin-bottom:.55rem;font-family:inherit">
+    <textarea id="evDescr" rows="2" placeholder="Description (optional)" style="width:100%;padding:.7rem .8rem;border:1.5px solid #E3E7F5;border-radius:11px;font-size:.9rem;box-sizing:border-box;margin-bottom:.7rem;font-family:inherit;resize:none"></textarea>
     <div style="display:flex;gap:.5rem">
-      <button onclick="evSaveCreate()" style="flex:1;background:linear-gradient(135deg,#0F766E,#107D74);color:#fff;border:none;border-radius:11px;padding:.75rem;font-weight:800;cursor:pointer">Create Event</button>
+      <button onclick="evSaveCreate()" style="flex:1;background:linear-gradient(135deg,#0A14E0,#1A23C9);color:#fff;border:none;border-radius:11px;padding:.75rem;font-weight:800;cursor:pointer">Create Event</button>
       <button onclick="evCloseCreate()" style="background:#eceff1;color:#546e7a;border:none;border-radius:11px;padding:.75rem 1.1rem;font-weight:700;cursor:pointer">Cancel</button>
     </div>
   </div>

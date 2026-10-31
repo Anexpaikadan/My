@@ -648,10 +648,10 @@ if ($page==='item' && $item): ?>
     $locLabel = $item['location'] ?: ($hasGeo ? 'View on map' : '');
     ?>
     <?php if($locLabel): ?>
-    <a href="<?php echo h($mapUrl); ?>" target="_blank" rel="noopener" class="mk-info-row" style="text-decoration:none;color:#107D74">
+    <a href="<?php echo h($mapUrl); ?>" target="_blank" rel="noopener" class="mk-info-row" style="text-decoration:none;color:#1A23C9">
       <span class="mk-info-icon">📍</span>
       <span style="flex:1"><?php echo h($locLabel); ?></span>
-      <span style="font-size:.72rem;color:#107D74;font-weight:800">🗺️ Map ›</span>
+      <span style="font-size:.72rem;color:#1A23C9;font-weight:800">🗺️ Map ›</span>
     </a>
     <?php endif; ?>
     <div class="mk-info-row"><span class="mk-info-icon"><?php echo $CATS[$item['category']][0]??'🛍️'; ?></span><?php echo $CATS[$item['category']][1]??'Others'; ?><?php if(!empty($item['subcategory'])): ?> <span style="margin-left:.45rem;background:#e8f5e9;color:var(--mk1);padding:.12rem .5rem;border-radius:10px;font-size:.62rem;font-weight:800">🔖 <?php echo h($item['subcategory']); ?></span><?php endif; ?></div>
@@ -690,7 +690,7 @@ if ($page==='item' && $item): ?>
 
     <div style="display:flex;gap:.4rem">
       <?php if((int)$item['user_id']===$uid||$isAdmin): ?>
-      <a href="<?php echo $SELF.'?edit='.$itemId; ?>" style="flex:1;padding:.42rem;background:#E6F4F2;color:#107D74;border:1px solid #BFE6E0;border-radius:10px;font-size:.75rem;font-weight:700;text-align:center;text-decoration:none">✏️ Edit</a>
+      <a href="<?php echo $SELF.'?edit='.$itemId; ?>" style="flex:1;padding:.42rem;background:#ECEEFF;color:#1A23C9;border:1px solid #D6DAFF;border-radius:10px;font-size:.75rem;font-weight:700;text-align:center;text-decoration:none">✏️ Edit</a>
       <?php endif; ?>
       <button onclick="mkReport(<?php echo $itemId; ?>)" class="btn-report" style="flex:<?php echo ((int)$item['user_id']===$uid||$isAdmin)?'1':'2'; ?>">⚑ Report</button>
     </div>
@@ -790,7 +790,7 @@ elseif ($page==='new' || $page==='edit'):
     <input type="hidden" name="lng" id="locLng" value="<?php echo h($fi['lng']??''); ?>">
     <div style="display:flex;gap:.4rem;margin-top:.45rem">
       <button type="button" onclick="useMyLocation(this)" style="flex:1;padding:.5rem;background:#e8f5e9;color:var(--mk1);border:1.5px solid #c8e6c9;border-radius:10px;font-size:.74rem;font-weight:800;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">📡 Use My Location</button>
-      <button type="button" onclick="pickOnMap()" style="flex:1;padding:.5rem;background:#E6F4F2;color:#107D74;border:1.5px solid #BFE6E0;border-radius:10px;font-size:.74rem;font-weight:800;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">🗺️ Pick on Map</button>
+      <button type="button" onclick="pickOnMap()" style="flex:1;padding:.5rem;background:#ECEEFF;color:#1A23C9;border:1.5px solid #D6DAFF;border-radius:10px;font-size:.74rem;font-weight:800;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">🗺️ Pick on Map</button>
     </div>
     <div id="locStatus" style="font-size:.64rem;color:#5d6b80;margin-top:.35rem"><?php echo (isset($fi['lat'])&&$fi['lat']!==null&&$fi['lat']!=='')?'📍 GPS pin saved — buyers can open it in Google Maps.':'Tap “Use My Location” to attach a Google Maps pin.'; ?></div>
   </div>
@@ -911,7 +911,7 @@ foreach($myItems as $mi) { $grps[$mi['status']??'inactive'][] = $mi; }
     <div style="font-size:.58rem;color:#5d6b80">👁 <?php echo (int)$mi['views']; ?> views · <?php echo date('d M',strtotime($mi['created_at'])); ?></div>
     <div class="mk-myitem-actions">
       <a href="<?php echo $SELF.'?p=item&id='.(int)$mi['id']; ?>" class="mk-myitem-btn">👁 View</a>
-      <a href="<?php echo $SELF.'?edit='.(int)$mi['id']; ?>" class="mk-myitem-btn" style="color:#107D74;border-color:#BFE6E0">✏️ Edit</a>
+      <a href="<?php echo $SELF.'?edit='.(int)$mi['id']; ?>" class="mk-myitem-btn" style="color:#1A23C9;border-color:#D6DAFF">✏️ Edit</a>
       <?php if($mi['status']==='active'): ?>
       <button onclick="shareToFeed(<?php echo (int)$mi['id']; ?>,this)" class="mk-myitem-btn" style="color:#01579b;border-color:#81d4fa">📰 Share to Feed</button>
       <?php endif; ?>
@@ -942,7 +942,7 @@ try {
 $allAdmItems=[];
 try { $allAdmItems=db()->query("SELECT m.*,u.name seller_name,(SELECT image_path FROM market_images WHERE item_id=m.id LIMIT 1) thumb FROM market_items m JOIN users u ON u.id=m.user_id ORDER BY m.created_at DESC LIMIT 50")->fetchAll(); } catch(Exception $e){}
 ?>
-<div style="background:linear-gradient(135deg,#0A1A1F,#0F766E);padding:.65rem .9rem">
+<div style="background:linear-gradient(135deg,#0B1033,#0A14E0);padding:.65rem .9rem">
   <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.08em;color:#fff">🛡️ ADMIN — MINI MARKET</span>
 </div>
 <div style="display:grid;grid-template-columns:repeat(4,1fr);background:#fff;border-bottom:2px solid #e0e0e0">
@@ -964,7 +964,7 @@ try { $allAdmItems=db()->query("SELECT m.*,u.name seller_name,(SELECT image_path
     <div style="font-size:.65rem;color:#5d6b80"><?php echo h($pi['seller_name']); ?> · <?php echo $CATS[$pi['category']][1]??'Others'; ?></div>
     <div style="display:flex;gap:.3rem;margin-top:.35rem">
       <button onclick="adm('admin_approve',<?php echo (int)$pi['id']; ?>,this)" style="background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;border-radius:7px;padding:.25rem .55rem;font-size:.65rem;font-weight:700;cursor:pointer">✅ Approve</button>
-      <a href="<?php echo $SELF.'?p=item&id='.(int)$pi['id']; ?>" style="background:#E6F4F2;color:#107D74;border:1px solid #BFE6E0;border-radius:7px;padding:.25rem .55rem;font-size:.65rem;font-weight:700;text-decoration:none">👁 View</a>
+      <a href="<?php echo $SELF.'?p=item&id='.(int)$pi['id']; ?>" style="background:#ECEEFF;color:#1A23C9;border:1px solid #D6DAFF;border-radius:7px;padding:.25rem .55rem;font-size:.65rem;font-weight:700;text-decoration:none">👁 View</a>
       <button onclick="adm('admin_reject',<?php echo (int)$pi['id']; ?>,this)" style="background:#ffebee;color:#b71c1c;border:1px solid #ffcdd2;border-radius:7px;padding:.25rem .55rem;font-size:.65rem;font-weight:700;cursor:pointer">🚫 Reject</button>
     </div>
   </div>

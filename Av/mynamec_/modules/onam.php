@@ -80,7 +80,7 @@ require_once __DIR__ . '/../includes/header.php';
 <?php else: foreach($onamEvents as $on):
   $programs=db()->prepare("SELECT p.*,(SELECT COUNT(*) FROM onam_registrations WHERE program_id=p.id) regc FROM onam_programs p WHERE p.onam_id=? ORDER BY p.created_at");
   $programs->execute(array($on['id']));$programs=$programs->fetchAll();
-  $ptypes=array('pookalam'=>array('🌺','Pookalam (Floral Carpet)','#F3E5F5','#6A1B9A'),'thiruvathira'=>array('💃','Thiruvathira','#FCE4EC','#880E4F'),'vallamkali'=>array('🚣','Boat Race','#E6F4F2','#0F766E'),'onasadya'=>array('🍽️','Onam Sadya','#E8F5E9','#1B5E20'),'kabaddi'=>array('🤼','Kabaddi','#FFF3E0','#E65100'),'quiz'=>array('🧠','Quiz Competition','#F3E5F5','#4A148C'),'music'=>array('🎵','Music Program','#FCE4EC','#B71C1C'),'drama'=>array('🎭','Drama/Skit','#E8EAF6','#283593'),'other'=>array('🎉','Other','#F5F5F5','#424242'));
+  $ptypes=array('pookalam'=>array('🌺','Pookalam (Floral Carpet)','#F3E5F5','#6A1B9A'),'thiruvathira'=>array('💃','Thiruvathira','#FCE4EC','#880E4F'),'vallamkali'=>array('🚣','Boat Race','#ECEEFF','#0A14E0'),'onasadya'=>array('🍽️','Onam Sadya','#E8F5E9','#1B5E20'),'kabaddi'=>array('🤼','Kabaddi','#FFF3E0','#E65100'),'quiz'=>array('🧠','Quiz Competition','#F3E5F5','#4A148C'),'music'=>array('🎵','Music Program','#FCE4EC','#B71C1C'),'drama'=>array('🎭','Drama/Skit','#E8EAF6','#283593'),'other'=>array('🎉','Other','#F5F5F5','#424242'));
 ?>
 <div class="card mb-3">
   <div class="card-header" style="background:linear-gradient(135deg,#E65100,#FF8F00);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">

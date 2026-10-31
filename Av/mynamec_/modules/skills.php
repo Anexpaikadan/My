@@ -25,7 +25,7 @@ require_once __DIR__.'/../includes/header.php';
   <div class="member-grid mb-2">
   <?php foreach($members as $m):$mp=getMemberPhoto($m['profile_photo']);$wn=preg_replace('/\D/','',$m['whatsapp_number']);?>
   <div class="member-card" data-s="<?=h(strtolower($skill))?>" data-n="<?=h(strtolower($m['name']))?>">
-    <?php if($mp):?><img src="<?=$mp?>" class="member-avatar" alt=""><?php else:?><div class="member-avatar" style="display:flex;align-items:center;justify-content:center;font-size:2rem;background:#E6F4F2">👤</div><?php endif;?>
+    <?php if($mp):?><img src="<?=$mp?>" class="member-avatar" alt=""><?php else:?><div class="member-avatar" style="display:flex;align-items:center;justify-content:center;font-size:2rem;background:#ECEEFF">👤</div><?php endif;?>
     <div class="member-name"><?=h($m['name'])?></div>
     <div class="member-pos"><?=h($m['profession']??$m['skill'])?></div>
     <span class="role-badge role-<?=h($m['role'])?>"><?=h(roleLabel($m['role']))?></span>

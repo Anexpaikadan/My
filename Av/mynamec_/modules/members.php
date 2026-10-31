@@ -41,8 +41,8 @@ function renderMemberCard($m, $user, $size = 'normal') {
     $roleColors = [
         'president'       => '#B8860B',
         'vice_president'  => '#8B6914',
-        'secretary'       => '#0F766E',
-        'joint_secretary' => '#107D74',
+        'secretary'       => '#0A14E0',
+        'joint_secretary' => '#1A23C9',
         'treasurer'       => '#2E7D32',
         'committee_member'=> '#7B1FA2',
         'member'          => '#546E7A',
@@ -57,15 +57,15 @@ function renderMemberCard($m, $user, $size = 'normal') {
         if ($photoB64) {
             echo '<img src="'.$photoB64.'" style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid '.$borderColor.';margin:0 auto .8rem;display:block" alt="">';
         } else {
-            echo '<div style="width:90px;height:90px;border-radius:50%;background:'.($canSeePhoto?'#E6F4F2':'#F5F5F5').';border:3px solid '.$borderColor.';margin:0 auto .8rem;display:flex;align-items:center;justify-content:center;font-size:2rem">'.($canSeePhoto?'👤':'🔒').'</div>';
+            echo '<div style="width:90px;height:90px;border-radius:50%;background:'.($canSeePhoto?'#ECEEFF':'#F5F5F5').';border:3px solid '.$borderColor.';margin:0 auto .8rem;display:flex;align-items:center;justify-content:center;font-size:2rem">'.($canSeePhoto?'👤':'🔒').'</div>';
         }
-        echo '<div style="font-weight:700;font-size:1rem;color:#10201F;margin-bottom:.2rem">'.h($m['name']).'</div>';
+        echo '<div style="font-weight:700;font-size:1rem;color:#0B1033;margin-bottom:.2rem">'.h($m['name']).'</div>';
         echo '<div style="font-size:.75rem;color:#7A8DB5;margin-bottom:.5rem">'.h($m['committee_position']??roleLabel($m['role'])).'</div>';
         echo '<span style="display:inline-block;padding:.2rem .7rem;border-radius:20px;font-size:.65rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:'.$borderColor.'22;color:'.$borderColor.';border:1px solid '.$borderColor.'44">'.h(roleLabel($m['role'])).'</span>';
         if ($m['blood_group']) echo '<div style="font-size:.72rem;color:#B71C1C;font-weight:700;margin-top:.4rem">🩸 '.h($m['blood_group']).'</div>';
         echo '</div>';
         if ($canSeePhone) {
-            echo '<div style="padding:.6rem 1.2rem;background:#F6F8F8;border-top:1px solid #E2E8E7;text-align:center">';
+            echo '<div style="padding:.6rem 1.2rem;background:#F7F8FF;border-top:1px solid #E3E7F5;text-align:center">';
             echo '<a href="https://wa.me/'.$wn.'" target="_blank" style="color:#25D366;font-size:.78rem;font-weight:700;text-decoration:none">💬 '.h($m['whatsapp_number']).'</a>';
             echo '</div>';
         }
@@ -77,11 +77,11 @@ function renderMemberCard($m, $user, $size = 'normal') {
         if ($photoB64) {
             echo '<img src="'.$photoB64.'" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2.5px solid '.$borderColor.';margin:0 auto .6rem;display:block" alt="">';
         } else {
-            echo '<div style="width:64px;height:64px;border-radius:50%;background:'.($canSeePhoto?'#E6F4F2':'#F5F5F5').';border:2.5px solid '.$borderColor.';margin:0 auto .6rem;display:flex;align-items:center;justify-content:center;font-size:1.5rem">'.($canSeePhoto?'👤':'🔒').'</div>';
+            echo '<div style="width:64px;height:64px;border-radius:50%;background:'.($canSeePhoto?'#ECEEFF':'#F5F5F5').';border:2.5px solid '.$borderColor.';margin:0 auto .6rem;display:flex;align-items:center;justify-content:center;font-size:1.5rem">'.($canSeePhoto?'👤':'🔒').'</div>';
         }
-        echo '<div style="font-weight:700;font-size:.88rem;color:#10201F;margin-bottom:.2rem">'.h($m['name']).'</div>';
+        echo '<div style="font-weight:700;font-size:.88rem;color:#0B1033;margin-bottom:.2rem">'.h($m['name']).'</div>';
         echo '<div style="font-size:.7rem;color:#7A8DB5;margin-bottom:.4rem">'.h($m['committee_position']??roleLabel($m['role'])).'</div>';
-        if ($m['skill']) echo '<div style="font-size:.7rem;background:#E6F4F2;color:#0A1A1F;border-radius:20px;padding:.12rem .5rem;display:inline-block;margin-bottom:.3rem">'.h($m['skill']).'</div>';
+        if ($m['skill']) echo '<div style="font-size:.7rem;background:#ECEEFF;color:#0B1033;border-radius:20px;padding:.12rem .5rem;display:inline-block;margin-bottom:.3rem">'.h($m['skill']).'</div>';
         if ($m['blood_group']) echo '<div style="font-size:.68rem;color:#B71C1C;font-weight:700;margin-bottom:.3rem">🩸 '.h($m['blood_group']).'</div>';
         echo '</div></a>';
     }
@@ -98,10 +98,10 @@ function renderMemberCard($m, $user, $size = 'normal') {
 
   <!-- Search -->
   <div style="display:flex;gap:.6rem;margin-bottom:1.5rem;flex-wrap:wrap">
-    <input type="text" id="msearch" style="flex:1;min-width:180px;padding:.68rem .9rem;border:2px solid #E2E8E7;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;outline:none;transition:border-color .18s" placeholder="🔍 Search any member…" oninput="searchMembers(this.value)">
+    <input type="text" id="msearch" style="flex:1;min-width:180px;padding:.68rem .9rem;border:2px solid #E3E7F5;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;outline:none;transition:border-color .18s" placeholder="🔍 Search any member…" oninput="searchMembers(this.value)">
     <a href="#executives" style="padding:.6rem 1rem;background:#B8860B22;color:#7a5a08;border:1px solid #B8860B44;border-radius:9px;font-size:.8rem;font-weight:700;text-decoration:none">⭐ Executive</a>
     <a href="#committee" style="padding:.6rem 1rem;background:#7B1FA222;color:#7B1FA2;border:1px solid #7B1FA244;border-radius:9px;font-size:.8rem;font-weight:700;text-decoration:none">🏛 Committee</a>
-    <a href="#members" style="padding:.6rem 1rem;background:#0F766E22;color:#0F766E;border:1px solid #0F766E44;border-radius:9px;font-size:.8rem;font-weight:700;text-decoration:none">👥 Members</a>
+    <a href="#members" style="padding:.6rem 1rem;background:#0A14E022;color:#0A14E0;border:1px solid #0A14E044;border-radius:9px;font-size:.8rem;font-weight:700;text-decoration:none">👥 Members</a>
   </div>
 
   <!-- ════ SECTION 1: EXECUTIVE COMMITTEE ════════════════════ -->
@@ -142,7 +142,7 @@ function renderMemberCard($m, $user, $size = 'normal') {
           <?php else: ?>
           <div style="width:72px;height:72px;border-radius:50%;background:#F3E5F5;border:2.5px solid #7B1FA2;margin:0 auto .65rem;display:flex;align-items:center;justify-content:center;font-size:1.6rem"><?= $canSeePhoto2?'👤':'🔒' ?></div>
           <?php endif; ?>
-          <div style="font-weight:700;font-size:.88rem;color:#10201F;margin-bottom:.2rem"><?= h($m['name']) ?></div>
+          <div style="font-weight:700;font-size:.88rem;color:#0B1033;margin-bottom:.2rem"><?= h($m['name']) ?></div>
           <div style="font-size:.7rem;color:#7A8DB5;margin-bottom:.4rem"><?= h($m['committee_position']??'Committee Member') ?></div>
           <?php if($m['committee_name']): ?><div style="font-size:.65rem;color:#7B1FA2;font-weight:700;margin-bottom:.35rem"><?= h($m['committee_name']) ?></div><?php endif; ?>
           <?php if($m['skill']): ?><div style="font-size:.67rem;background:#F3E5F5;color:#4A148C;border-radius:20px;padding:.1rem .5rem;display:inline-block;margin-bottom:.3rem"><?= h($m['skill']) ?></div><?php endif; ?>
@@ -175,7 +175,7 @@ function renderMemberCard($m, $user, $size = 'normal') {
   <?php endif; ?>
 
   <?php if(empty($allMembers)): ?>
-  <div style="background:#E6F4F2;color:#0A1A1F;border-left:4px solid #0F766E;padding:.8rem 1rem;border-radius:9px;font-size:.85rem;font-weight:600">
+  <div style="background:#ECEEFF;color:#0B1033;border-left:4px solid #0A14E0;padding:.8rem 1rem;border-radius:9px;font-size:.85rem;font-weight:600">
     ℹ️ No active members found.
   </div>
   <?php endif; ?>

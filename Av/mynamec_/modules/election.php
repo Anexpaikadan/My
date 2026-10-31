@@ -48,7 +48,7 @@ $members   = db()->query("SELECT id,name,role FROM users WHERE status='active' O
 $pageTitle = 'Elections — '.CLUB_NAME;
 require_once __DIR__ . '/../includes/header.php';
 ?>
-<div class="hero" style="padding:2rem 1.2rem 1.8rem;background:linear-gradient(135deg,#0A1A1F,#0F766E)">
+<div class="hero" style="padding:2rem 1.2rem 1.8rem;background:linear-gradient(135deg,#0B1033,#0A14E0)">
   <h1>🗳️ CLUB <span>ELECTIONS</span></h1>
   <div class="hero-place">Democratic leadership · <?= h(CLUB_NAME) ?></div>
 </div><div class="red-bar"></div>
@@ -80,7 +80,7 @@ require_once __DIR__ . '/../includes/header.php';
   $vr=db()->prepare("SELECT id FROM election_votes WHERE election_id=? AND voter_id=?");
   $vr->execute(array($el['id'],$me['id']));$voted=$vr->fetch();
   $total=array_sum(array_column($cands,'votes'));
-  $sc=array('upcoming'=>array('#FFF8E1','#E65100'),'active'=>array('#E8F5E9','#1B5E20'),'completed'=>array('#E6F4F2','#0A1A1F'));
+  $sc=array('upcoming'=>array('#FFF8E1','#E65100'),'active'=>array('#E8F5E9','#1B5E20'),'completed'=>array('#ECEEFF','#0B1033'));
   $c=$sc[$el['status']]??array('#F5F5F5','#555');
 ?>
 <div class="card mb-3">
@@ -107,7 +107,7 @@ require_once __DIR__ . '/../includes/header.php';
 
     <?php if($isAdmin): ?>
     <details style="margin-bottom:1rem"><summary style="cursor:pointer;font-size:.8rem;font-weight:700;color:var(--blue)">➕ Add Candidate</summary>
-    <form method="POST" action="<?=url('modules/election.php')?>" style="margin-top:.7rem;padding:.9rem;background:#F6F8F8;border-radius:10px">
+    <form method="POST" action="<?=url('modules/election.php')?>" style="margin-top:.7rem;padding:.9rem;background:#F7F8FF;border-radius:10px">
       <input type="hidden" name="eid" value="<?=$el['id']?>">
       <div class="g2">
         <div class="fg"><label class="lbl">Member</label><select name="uid" class="inp" required><option value="">— Select —</option><?php foreach($members as $m): ?><option value="<?=$m['id']?>"><?=h($m['name'])?> · <?=h(roleLabel($m['role']))?></option><?php endforeach;?></select></div>
@@ -126,15 +126,15 @@ require_once __DIR__ . '/../includes/header.php';
       $cp=getMemberPhoto($c2['profile_photo']);
       $pct=$total>0?round(($c2['votes']/$total)*100):0;
     ?>
-    <div style="background:#F6F8F8;border-radius:14px;padding:1.1rem;text-align:center;border:2px solid #E2E8E7">
-      <?php if($cp): ?><img src="<?=$cp?>" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2.5px solid #0F766E;margin:0 auto .5rem;display:block" alt=""><?php else: ?><div style="width:56px;height:56px;border-radius:50%;background:#E6F4F2;margin:0 auto .5rem;display:flex;align-items:center;justify-content:center;font-size:1.4rem">👤</div><?php endif;?>
+    <div style="background:#F7F8FF;border-radius:14px;padding:1.1rem;text-align:center;border:2px solid #E3E7F5">
+      <?php if($cp): ?><img src="<?=$cp?>" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2.5px solid #0A14E0;margin:0 auto .5rem;display:block" alt=""><?php else: ?><div style="width:56px;height:56px;border-radius:50%;background:#ECEEFF;margin:0 auto .5rem;display:flex;align-items:center;justify-content:center;font-size:1.4rem">👤</div><?php endif;?>
       <div style="font-weight:700;font-size:.9rem;margin-bottom:.15rem"><?=h($c2['name'])?></div>
       <div style="font-size:.7rem;color:var(--t3);margin-bottom:.5rem"><?=h($c2['post'])?></div>
       <?php if($c2['bio']): ?><div style="font-size:.72rem;color:var(--t2);margin-bottom:.6rem;line-height:1.4"><?=h($c2['bio'])?></div><?php endif;?>
-      <div style="background:#E6F4F2;border-radius:8px;padding:.5rem;margin-bottom:.6rem">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#0F766E"><?=$c2['votes']?></div>
+      <div style="background:#ECEEFF;border-radius:8px;padding:.5rem;margin-bottom:.6rem">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#0A14E0"><?=$c2['votes']?></div>
         <div style="font-size:.62rem;color:var(--t3);margin-bottom:.3rem">votes · <?=$pct?>%</div>
-        <div style="background:#BFE6E0;border-radius:4px;height:5px"><div style="background:#0F766E;height:5px;border-radius:4px;width:<?=$pct?>%"></div></div>
+        <div style="background:#D6DAFF;border-radius:4px;height:5px"><div style="background:#0A14E0;height:5px;border-radius:4px;width:<?=$pct?>%"></div></div>
       </div>
       <?php if($el['status']==='active'&&!$voted): ?>
       <form method="POST" action="<?=url('modules/election.php')?>">

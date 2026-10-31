@@ -63,7 +63,7 @@ $nowT=date('Y-m-d H:i:s');
 <div style="background:#fff;border-radius:24px 24px 0 0">
 
 <!-- Header -->
-<div style="background:linear-gradient(135deg,#0A1A1F,#0F766E);padding:.75rem 1rem;border-radius:24px 24px 0 0;display:flex;align-items:center;gap:.5rem">
+<div style="background:linear-gradient(135deg,#0B1033,#0A14E0);padding:.75rem 1rem;border-radius:24px 24px 0 0;display:flex;align-items:center;gap:.5rem">
   <div style="flex:1">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.08em;color:#fff"><?= h($fest['title']) ?></div>
     <div style="font-size:.62rem;color:rgba(255,255,255,.55)"><?= count($entries) ?> entries · <?= $totalLikes ?> likes</div>
@@ -110,8 +110,8 @@ $nowT=date('Y-m-d H:i:s');
 <?php endif; ?>
 
 <!-- My entry / Upload -->
-<div style="background:#fff;margin:.6rem;border-radius:12px;border:1.5px solid #E2E8E7;overflow:hidden">
-  <div style="background:linear-gradient(135deg,#0A1A1F,#0F766E);padding:.6rem .9rem;font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:.08em;color:#fff">
+<div style="background:#fff;margin:.6rem;border-radius:12px;border:1.5px solid #E3E7F5;overflow:hidden">
+  <div style="background:linear-gradient(135deg,#0B1033,#0A14E0);padding:.6rem .9rem;font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:.08em;color:#fff">
     📸 <?= $myEntry?'MY ENTRY':'SUBMIT YOUR ENTRY' ?>
   </div>
   <div style="padding:.8rem">
@@ -120,7 +120,7 @@ $nowT=date('Y-m-d H:i:s');
     <?php endif; ?>
     <?php if($myEntry): ?>
     <img src="<?= h($SITE.'/assets/uploads/fests/'.$fid.'/'.basename($myEntry['image_path'])) ?>" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;margin-bottom:.5rem">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#0A1A1F;text-align:center"><?= (int)$myEntry['like_count'] ?> <span style="font-size:.6rem;color:#64748b;font-family:'Plus Jakarta Sans',sans-serif">LIKES</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#0B1033;text-align:center"><?= (int)$myEntry['like_count'] ?> <span style="font-size:.6rem;color:#64748b;font-family:'Plus Jakarta Sans',sans-serif">LIKES</span></div>
     <div style="display:flex;gap:.4rem;margin-top:.5rem">
       <button onclick="shareEntry(<?= $myEntry['id'] ?>,<?= $fid ?>,'<?= h(addslashes($me['name'])) ?>','<?= h(addslashes($fest['title'])) ?>','<?= $fest['sponsor_name']?h(addslashes($fest['sponsor_name'])):'' ?>')" style="flex:1;background:#25d366;color:#fff;border:none;border-radius:8px;padding:.5rem;font-weight:700;cursor:pointer;font-size:.78rem">💚 Share</button>
       <button onclick="deleteEntry(<?= $myEntry['id'] ?>,<?= $fid ?>)" style="background:#ffebee;color:#b71c1c;border:1px solid #ffcdd2;border-radius:8px;padding:.5rem .8rem;font-weight:700;cursor:pointer;font-size:.78rem">🗑️</button>
@@ -128,12 +128,12 @@ $nowT=date('Y-m-d H:i:s');
     <?php else: ?>
     <form method="POST" enctype="multipart/form-data">
       <input type="text" name="entry_title" class="inp" placeholder="Title (optional)" style="margin-bottom:.5rem">
-      <div onclick="document.getElementById('ep_<?= $fid ?>').click()" style="border:2px dashed rgba(10,26,31,.25);border-radius:10px;padding:1.2rem;text-align:center;cursor:pointer;background:#f8faff;margin-bottom:.5rem">
+      <div onclick="document.getElementById('ep_<?= $fid ?>').click()" style="border:2px dashed rgba(11,16,51,.25);border-radius:10px;padding:1.2rem;text-align:center;cursor:pointer;background:#f8faff;margin-bottom:.5rem">
         <div id="ep_preview_<?= $fid ?>" style="display:none"><img id="ep_img_<?= $fid ?>" style="max-height:140px;border-radius:8px;max-width:100%"></div>
         <div id="ep_ph_<?= $fid ?>">📸 <strong>Tap to select photo</strong><br><small>Gallery or Camera</small></div>
       </div>
       <input type="file" id="ep_<?= $fid ?>" name="entry_photo" accept="image/*" style="display:none" onchange="previewEntryPhoto(this,<?= $fid ?>)">
-      <button type="submit" style="width:100%;background:linear-gradient(135deg,#0A1A1F,#0F766E);color:#fff;border:none;border-radius:10px;padding:.65rem;font-weight:700;cursor:pointer;font-size:.85rem">🎪 Submit Entry</button>
+      <button type="submit" style="width:100%;background:linear-gradient(135deg,#0B1033,#0A14E0);color:#fff;border:none;border-radius:10px;padding:.65rem;font-weight:700;cursor:pointer;font-size:.85rem">🎪 Submit Entry</button>
     </form>
     <?php endif; ?>
   </div>
@@ -141,7 +141,7 @@ $nowT=date('Y-m-d H:i:s');
 
 <!-- Entries grid -->
 <?php if(!empty($entries)): ?>
-<div style="padding:.4rem .8rem .2rem;font-family:'Playfair Display',serif;font-size:.95rem;font-weight:700;color:#0A1A1F">🏆 All Entries</div>
+<div style="padding:.4rem .8rem .2rem;font-family:'Playfair Display',serif;font-size:.95rem;font-weight:700;color:#0B1033">🏆 All Entries</div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;padding:.4rem .8rem .8rem">
 <?php foreach($entries as $rank=>$entry):
   $imgU=$SITE.'/assets/uploads/fests/'.$fid.'/'.basename($entry['image_path']);
@@ -149,13 +149,13 @@ $nowT=date('Y-m-d H:i:s');
   $isLiked=$myLikedId===(int)$entry['id'];
   $canLikeThis=$fest['voting_open']&&!$myLikedId&&!$isMine;
 ?>
-<div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.08);border:1.5px solid <?= $isLiked?'#e53935':($rank===0?'#f5a623':($rank===1?'#9e9e9e':($rank===2?'#cd7f32':'#E2E8E7'))) ?>;position:relative">
+<div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.08);border:1.5px solid <?= $isLiked?'#e53935':($rank===0?'#f5a623':($rank===1?'#9e9e9e':($rank===2?'#cd7f32':'#E3E7F5'))) ?>;position:relative">
   <?php if($rank<3&&$entry['like_count']>0): ?>
   <div style="position:absolute;top:6px;left:6px;width:24px;height:24px;border-radius:50%;background:<?= ['#f5a623','#9e9e9e','#cd7f32'][$rank] ?>;display:flex;align-items:center;justify-content:center;font-size:.7rem;z-index:5;box-shadow:0 2px 6px rgba(0,0,0,.2)"><?= ['🥇','🥈','🥉'][$rank] ?></div>
   <?php endif; ?>
   <img src="<?= h($imgU) ?>" style="width:100%;aspect-ratio:3/4;object-fit:cover;display:block" loading="lazy">
   <div style="padding:.4rem .5rem .5rem">
-    <div style="font-size:.68rem;font-weight:800;color:#0A1A1F;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><?= h($entry['member_name']) ?></div>
+    <div style="font-size:.68rem;font-weight:800;color:#0B1033;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><?= h($entry['member_name']) ?></div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.2rem">
       <div><span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:#e53935"><?= (int)$entry['like_count'] ?></span><span style="font-size:.55rem;color:#5d6b80;margin-left:2px">❤️</span></div>
       <?php if($isMine): ?>
@@ -247,8 +247,8 @@ function shareEntry(eid,fid,name,festTitle,sponsorName){
         var barY=H-barH;
         // Gradient bar
         var barGrad=ctx.createLinearGradient(0,barY,W,barY+barH);
-        barGrad.addColorStop(0,'rgba(10,26,31,0.85)');
-        barGrad.addColorStop(1,'rgba(15,118,110,0.85)');
+        barGrad.addColorStop(0,'rgba(11,16,51,0.85)');
+        barGrad.addColorStop(1,'rgba(10,20,224,0.85)');
         ctx.fillStyle=barGrad;
         ctx.fillRect(0,barY,W,barH);
 

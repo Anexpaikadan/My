@@ -21,19 +21,21 @@ reference.** Rewrite it as plain HTML and CSS that follow the app's own tokens a
 There are **no token files and no token pipeline**. Tokens are CSS custom properties on `:root`,
 written inside a `<style>` block in each page shell:
 
-- **Member pages:** `includes/header.php` (used by every member page). New palette (dark ink frame + glass,
-  teal primary, coral accent). Old token names (`--blue --navy --gold --t2 --t3 --bg --border --radius`) still
-  exist and point at the new colours, so older module code keeps working:
+- **Member pages:** `includes/header.php` (used by every member page). Palette = **club logo colours**:
+  white surfaces, logo red and blue, and the logo's red→blue gradient. Old token names (`--blue --navy --gold --t2
+  --t3 --bg --border --radius`) still exist and point at these colours, so older module code keeps working:
   ```css
   :root{
-    --ink:#0A1A1F; --ink-2:#0E2A31; --primary:#0F766E; --primary-dark:#115E59; --primary-light:#5EEAD4; --primary-soft:#E6F4F2;
-    --accent:#F26B5B; --accent-ink:#B23A2A; --accent-light:#FFB4A8;
-    --surface:#F3F6F5; --card:#fff; --line:#E2E8E7; --text:#10201F; --text-2:#3A4C4B; --text-3:#566866;
-    --glass:rgba(255,255,255,.07); --glass-line:rgba(255,255,255,.12); --r-lg:22px; --r:16px; --r-sm:12px;
+    --primary:#0A14E0; --primary-dark:#070FA8; --primary-light:#A9B0FF; --primary-soft:#ECEEFF;   /* logo blue */
+    --accent:#E30613;  --accent-ink:#B80F0A;   --accent-light:#FFB3B0;  --accent-soft:#FFECEC;    /* logo red  */
+    --brand-grad:linear-gradient(105deg,#D9050F 0%,#8A0A8E 50%,#0A14E0 100%);
+    --ink:#0B1033; --surface:#F5F7FF; --card:#fff; --line:#E3E7F5; --text:#0B1033; --text-2:#3B4266; --text-3:#565D82;
     --font:'Plus Jakarta Sans',system-ui,sans-serif;
   }
   ```
-  App tiles: `<span class="tile tone-teal|coral|violet|amber|rose|sky|lime|slate"><?= ic('users') ?></span>`.
+  Raw logo red `#FA0500` fails contrast with white text — use `--accent` (#E30613) for anything with text.
+  **App icons:** white tile + 3D picture: `<span class="appic"><?= app_img('football') ?></span>`
+  (images in `assets/icons/3d/*.webp`, Microsoft Fluent Emoji, MIT). Line icons `ic()` are for UI controls only.
 - **Public homepage:** `index.php` has its own `:root` (`--p --p2 --p-soft --a --a-light --a-tx --ink --surface --tx --t2 --t3`).
   `--p`, `--a` and the font come from **Club Settings → Homepage** (`home_primary_color`, `home_accent_color`, `home_font`).
   Every homepage section can be switched off there (`home_*_show` = '0'); texts: `hero_*`, `home_about_*`, `home_join_*`, `footer_text`.

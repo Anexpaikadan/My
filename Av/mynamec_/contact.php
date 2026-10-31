@@ -25,15 +25,15 @@ $wa   = preg_replace('/\D/','',CLUB_PHONE);
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--primary:#0F766E;--accent:#F26B5B;--accent2:#FFB4A8;--text:#1a1a2e;--text2:#4a5568;--text3:#5f6f86;--border:rgba(0,0,0,.08);--shadow:0 4px 24px rgba(0,0,0,.09);--radius:14px}
+:root{--primary:#0A14E0;--accent:#E30613;--accent2:#FFB3B0;--text:#1a1a2e;--text2:#4a5568;--text3:#5f6f86;--border:rgba(0,0,0,.08);--shadow:0 4px 24px rgba(0,0,0,.09);--radius:14px}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{font-family:'Plus Jakarta Sans',sans-serif;background:#fff;color:var(--text);line-height:1.65;overflow-x:hidden}
 a{text-decoration:none;color:inherit}
 /* Kerala stripe */
-.kstrip{height:4px;background:repeating-linear-gradient(90deg,#F26B5B 0,#F26B5B 10px,#b71c1c 10px,#b71c1c 20px,#0F766E 20px,#0F766E 30px,#FFB4A8 30px,#FFB4A8 40px)}
+.kstrip{height:4px;background:repeating-linear-gradient(90deg,#E30613 0,#E30613 10px,#b71c1c 10px,#b71c1c 20px,#0A14E0 20px,#0A14E0 30px,#FFB3B0 30px,#FFB3B0 40px)}
 /* Nav */
-.top-bar{background:#0A1A1F;padding:.6rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.top-bar{background:linear-gradient(105deg,#D9050F 0%,#8A0A8E 50%,#0A14E0 100%);padding:.6rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
 .nav-brand{display:flex;align-items:center;gap:.65rem;color:#fff}
 .nav-logo-img{width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid rgba(200,146,42,.5)}
 .nav-logo-ph{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.15);border:2px solid rgba(200,146,42,.4);display:flex;align-items:center;justify-content:center;font-size:.95rem}
@@ -42,7 +42,7 @@ a{text-decoration:none;color:inherit}
 .back-btn{display:inline-flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.85);padding:.42rem 1rem;border-radius:8px;font-size:.84rem;font-weight:600;transition:all .2s}
 .back-btn:hover{background:rgba(255,255,255,.22);color:#fff}
 /* Hero */
-.contact-hero{background:linear-gradient(135deg,#0F766E 0%,#0F766E 60%,#107D74 100%);padding:4.5rem 1.5rem;text-align:center;color:#fff;position:relative;overflow:hidden}
+.contact-hero{background:linear-gradient(135deg,#0A14E0 0%,#0A14E0 60%,#1A23C9 100%);padding:4.5rem 1.5rem;text-align:center;color:#fff;position:relative;overflow:hidden}
 .contact-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 70% 30%,rgba(200,146,42,.15),transparent 60%)}
 .contact-hero h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(2rem,4vw,2.8rem);font-weight:700;position:relative}
 .contact-hero p{font-size:1rem;color:rgba(255,255,255,.72);max-width:500px;margin:.7rem auto 0;position:relative}
@@ -50,11 +50,11 @@ a{text-decoration:none;color:inherit}
 .form-card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);padding:2rem}
 label.flbl{font-size:.75rem;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem;display:block}
 .finp{width:100%;background:#f7f9fc;border:1.5px solid rgba(0,0,0,.1);border-radius:10px;padding:.78rem 1rem;font-family:'Plus Jakarta Sans',sans-serif;font-size:1rem;color:var(--text);outline:none;transition:all .25s;margin-bottom:1rem}
-.finp:focus{border-color:var(--primary);background:#fff;box-shadow:0 0 0 3px rgba(15,118,110,.1)}
+.finp:focus{border-color:var(--primary);background:#fff;box-shadow:0 0 0 3px rgba(10,20,224,.1)}
 .finp::placeholder{color:#6E7A93}
 textarea.finp{resize:vertical;min-height:130px}
 .btn-send{width:100%;padding:.85rem;background:var(--primary);color:#fff;border:none;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.95rem;cursor:pointer;transition:all .25s;display:flex;align-items:center;justify-content:center;gap:.5rem}
-.btn-send:hover:not(:disabled){background:#0F766E;transform:translateY(-1px);box-shadow:0 8px 24px rgba(15,118,110,.3)}
+.btn-send:hover:not(:disabled){background:#0A14E0;transform:translateY(-1px);box-shadow:0 8px 24px rgba(10,20,224,.3)}
 .btn-send:disabled{opacity:.55;cursor:not-allowed}
 .alert-box{border-radius:9px;padding:.75rem 1rem;font-size:.86rem;font-weight:500;margin-bottom:1rem;display:none;line-height:1.45}
 .alert-box.err{background:#fff0f0;border:1px solid #fecaca;color:#991b1b;display:block}
@@ -62,7 +62,7 @@ textarea.finp{resize:vertical;min-height:130px}
 /* Info cards */
 .info-card{background:#f7f9fc;border:1px solid var(--border);border-radius:var(--radius);padding:1.4rem;display:flex;align-items:flex-start;gap:1rem;margin-bottom:1rem;transition:all .25s}
 .info-card:hover{background:#fff;box-shadow:var(--shadow);transform:translateX(4px)}
-.info-icon{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--primary),#0F766E);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;flex-shrink:0}
+.info-icon{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--primary),#0A14E0);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;flex-shrink:0}
 .info-lbl{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:.18rem}
 .info-val{font-weight:600;font-size:.9rem;color:var(--text)}
 .info-val a{color:var(--primary);transition:color .2s}
@@ -74,7 +74,7 @@ textarea.finp{resize:vertical;min-height:130px}
 .map-wrap{border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow);height:340px}
 .map-wrap iframe{width:100%;height:100%;border:none}
 /* Footer */
-.mini-footer{background:#0A1A1F;color:rgba(255,255,255,.78);text-align:center;padding:1.2rem;font-size:.78rem}
+.mini-footer{background:#0B1033;color:rgba(255,255,255,.78);text-align:center;padding:1.2rem;font-size:.78rem}
 .mini-footer b{color:var(--accent2)}
 /* Reveal */
 .rv{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
