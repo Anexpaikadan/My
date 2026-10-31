@@ -250,7 +250,7 @@ html, body {
   right: 0;
   text-align: center;
   font-size: 6pt;
-  color: #ccc;
+  color: #666666;
   letter-spacing: .05em;
 }
 </style>

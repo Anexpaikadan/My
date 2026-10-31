@@ -129,7 +129,7 @@ require_once __DIR__.'/../includes/header.php';
 .ev-sec{padding:.9rem 1rem .45rem;display:flex;align-items:center;gap:.6rem}
 .ev-sec-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.06em;color:#0d1b3e}
 .ev-sec-line{flex:1;height:2px;background:linear-gradient(90deg,#c8922a,transparent);border-radius:2px}
-.ev-sec-count{font-size:.68rem;font-weight:700;color:#94a3b8;background:#f0f4fa;
+.ev-sec-count{font-size:.68rem;font-weight:700;color:#5d6b80;background:#f0f4fa;
   border-radius:20px;padding:.1rem .55rem}
 
 /* Event cards */
@@ -179,7 +179,7 @@ require_once __DIR__.'/../includes/header.php';
   margin-bottom:.45rem;display:grid;grid-template-columns:1fr auto;
   gap:.5rem;align-items:center;box-shadow:0 1px 6px rgba(0,0,0,.05);opacity:.72}
 .ev-past-title{font-weight:700;font-size:.85rem;color:#0d1b3e;margin-bottom:.18rem}
-.ev-past-meta{font-size:.7rem;color:#94a3b8;display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}
+.ev-past-meta{font-size:.7rem;color:#5d6b80;display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}
 .ev-past-date{font-size:.72rem;font-weight:700;color:#64748b;text-align:right}
 
 /* Empty state */
@@ -270,7 +270,7 @@ require_once __DIR__.'/../includes/header.php';
 <div class="ev-empty">
   <div style="font-size:3rem;margin-bottom:.6rem">📅</div>
   <div style="font-weight:700;color:#475569;margin-bottom:.3rem">No upcoming events</div>
-  <div style="font-size:.8rem;color:#94a3b8">Stay tuned for announcements</div>
+  <div style="font-size:.8rem;color:#5d6b80">Stay tuned for announcements</div>
 </div>
 <?php else: ?>
 <div class="ev-cards">
@@ -376,7 +376,7 @@ require_once __DIR__.'/../includes/header.php';
     </div>
     <div>
       <div class="ev-past-date"><?= date('d M', strtotime($ev['event_date'])) ?></div>
-      <div style="font-size:.62rem;color:#94a3b8;text-align:right"><?= date('Y', strtotime($ev['event_date'])) ?></div>
+      <div style="font-size:.62rem;color:#5d6b80;text-align:right"><?= date('Y', strtotime($ev['event_date'])) ?></div>
       <?php if($isAdmin): ?>
       <form method="POST" style="margin-top:.3rem" onsubmit="return confirm('Delete?')">
         <input type="hidden" name="eid" value="<?= $ev['id'] ?>">
@@ -416,7 +416,7 @@ require_once __DIR__.'/../includes/header.php';
     <textarea id="evDescr" rows="2" placeholder="Description (optional)" style="width:100%;padding:.7rem .8rem;border:1.5px solid #e3e8f2;border-radius:11px;font-size:.9rem;box-sizing:border-box;margin-bottom:.7rem;font-family:inherit;resize:none"></textarea>
     <div style="display:flex;gap:.5rem">
       <button onclick="evSaveCreate()" style="flex:1;background:linear-gradient(135deg,#0d47a1,#1565c0);color:#fff;border:none;border-radius:11px;padding:.75rem;font-weight:800;cursor:pointer">Create Event</button>
-      <button onclick="evCloseCreate()" style="background:#eceff1;color:#607d8b;border:none;border-radius:11px;padding:.75rem 1.1rem;font-weight:700;cursor:pointer">Cancel</button>
+      <button onclick="evCloseCreate()" style="background:#eceff1;color:#546e7a;border:none;border-radius:11px;padding:.75rem 1.1rem;font-weight:700;cursor:pointer">Cancel</button>
     </div>
   </div>
 </div>

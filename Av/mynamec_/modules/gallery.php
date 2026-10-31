@@ -145,7 +145,7 @@ require_once __DIR__ . '/../includes/header.php';
 .lb-prev{left:1rem}.lb-next{right:1rem}
 .lb-prev:hover,.lb-next:hover{background:rgba(255,255,255,.28)}
 /* Empty */
-.gal-empty{text-align:center;padding:4rem 1rem;color:#8a93a8}
+.gal-empty{text-align:center;padding:4rem 1rem;color:#5f6880}
 .gal-empty div{font-size:3.5rem;margin-bottom:1rem}
 </style>
 
@@ -174,7 +174,7 @@ require_once __DIR__ . '/../includes/header.php';
           <div id="uploadPrompt">
             <div style="font-size:2.5rem;margin-bottom:.5rem">📷</div>
             <div style="font-weight:700;color:#1a3a6b;margin-bottom:.25rem">Click to Upload Photo</div>
-            <div style="font-size:.78rem;color:#8a93a8">JPG, PNG, WebP · Max 5MB</div>
+            <div style="font-size:.78rem;color:#5f6880">JPG, PNG, WebP · Max 5MB</div>
           </div>
           <img id="previewImg" class="upload-preview" alt="Preview">
         </div>
@@ -186,7 +186,7 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
         <div class="mb-2">
           <label style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#4a5568;display:block;margin-bottom:.3rem">Category</label>
-          <select name="category" class="form-select" style="border-radius:8px;font-size:.88rem">
+          <select name="category" class="form-select" aria-label="Photo category" style="border-radius:8px;font-size:.88rem">
             <option value="general">General</option>
             <option value="football">Football</option>
             <option value="cricket">Cricket</option>
@@ -209,7 +209,7 @@ require_once __DIR__ . '/../includes/header.php';
             <input type="checkbox" name="is_hero" id="isHero" class="form-check-input" value="1">
               <div style="margin-top:.6rem">
                 <label class="lbl" style="font-size:.65rem;margin-bottom:.25rem;display:block">🎯 Photo Focus (for hero slider)</label>
-                <select name="img_position" class="inp" style="padding:.4rem .7rem;font-size:.8rem">
+                <select name="img_position" class="inp" aria-label="Image position" style="padding:.4rem .7rem;font-size:.8rem">
                   <option value="center 20%">👤 Top — Show faces (recommended)</option>
                   <option value="center 40%">🎯 Upper-middle</option>
                   <option value="center center">⬛ Center of image</option>
@@ -217,12 +217,12 @@ require_once __DIR__ . '/../includes/header.php';
                   <option value="center top">⬆️ Top edge</option>
                 </select>
               </div>
-            <label class="form-check-label" for="isHero" style="font-size:.84rem;font-weight:600;color:#D4A017">
+            <label class="form-check-label" for="isHero" style="font-size:.84rem;font-weight:600;color:#8a6116">
               ⭐ Use as homepage background slider
             </label>
           </div>
         </div>
-        <button type="submit" name="upload_photo" class="btn btn-primary w-100" style="border-radius:8px;font-weight:700;background:#1a3a6b;border-color:#1a3a6b">
+        <button type="submit" name="upload_photo" class="btn btn-primary w-100" style="border-radius:8px;font-weight:700;background:#1a3a6b;border-color:#1a3a6b;color:#fff">
           <i class="fas fa-upload me-1"></i> Upload Photo
         </button>
       </div>

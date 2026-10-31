@@ -179,11 +179,11 @@ require_once __DIR__.'/includes/header.php';
 .db-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;position:relative;z-index:2}
 .db-stat{background:#fff;border-radius:16px;padding:.75rem .4rem;text-align:center;box-shadow:0 6px 18px rgba(0,0,0,.1);border-bottom:3px solid}
 .db-stat-n{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;line-height:1}
-.db-stat-l{font-size:.55rem;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;font-weight:700;margin-top:.14rem}
+.db-stat-l{font-size:.55rem;text-transform:uppercase;letter-spacing:.08em;color:#5d6b80;font-weight:700;margin-top:.14rem}
 
 /* ── Quick Nav Grid ── */
 .db-qnav-wrap{padding:1.1rem 1rem .3rem}
-.db-qnav-title{font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.12em;margin-bottom:.65rem;display:flex;align-items:center;gap:.5rem}
+.db-qnav-title{font-size:.68rem;font-weight:800;color:#5d6b80;text-transform:uppercase;letter-spacing:.12em;margin-bottom:.65rem;display:flex;align-items:center;gap:.5rem}
 .db-qnav-title::after{content:'';flex:1;height:1.5px;background:linear-gradient(90deg,#e0e7ff,transparent)}
 .db-qnav{display:grid;grid-template-columns:repeat(4,1fr);gap:.55rem}
 .db-qbtn{
@@ -543,9 +543,9 @@ $navItems[] = array('url'=>url('logout.php'), 'em'=>'🚪','label'=>'Logout','bg
         </div>
         <?php endif; ?>
         <div style="display:flex;align-items:center;gap:.4rem;margin-top:.35rem">
-          <span style="font-size:.62rem;color:#94a3b8"><?= $timeAgo ?></span>
+          <span style="font-size:.62rem;color:#5d6b80"><?= $timeAgo ?></span>
           <?php if($n['expires_at']): ?>
-          <span style="font-size:.6rem;color:#94a3b8">· Expires <?= date('d M',strtotime($n['expires_at'])) ?></span>
+          <span style="font-size:.6rem;color:#5d6b80">· Expires <?= date('d M',strtotime($n['expires_at'])) ?></span>
           <?php endif; ?>
         </div>
       </div>
@@ -729,12 +729,12 @@ $navItems[] = array('url'=>url('logout.php'), 'em'=>'🚪','label'=>'Logout','bg
       <?php if($actTotal>1): ?>
       <div id="actDots" style="position:absolute;bottom:.7rem;left:50%;transform:translateX(-50%);display:flex;gap:.4rem;z-index:6;align-items:center">
         <?php for($i=0;$i<$actTotal;$i++): ?>
-        <button onclick="actGo(<?=$i?>)" id="actDot<?=$i?>" style="width:<?=$i===0?'22':'7'?>px;height:7px;border-radius:10px;border:none;background:<?=$i===0?'#fff':'rgba(255,255,255,.4)'?>;cursor:pointer;transition:all .35s;padding:0;display:block"></button>
+        <button type="button" onclick="actGo(<?=$i?>)" id="actDot<?=$i?>" aria-label="Show item <?=$i+1?>" style="width:<?=$i===0?'22':'7'?>px;height:7px;border-radius:10px;border:none;background:<?=$i===0?'#fff':'rgba(255,255,255,.4)'?>;cursor:pointer;transition:all .35s;padding:0;display:block"></button>
         <?php endfor; ?>
       </div>
       <!-- Tap zones -->
-      <div onclick="actPrev()" style="position:absolute;left:0;top:0;width:30%;height:100%;z-index:5;cursor:pointer"></div>
-      <div onclick="actNext()" style="position:absolute;right:0;top:0;width:30%;height:100%;z-index:5;cursor:pointer"></div>
+      <div onclick="actPrev()" aria-label="Previous" style="position:absolute;left:0;top:0;width:30%;height:100%;z-index:5;cursor:pointer"></div>
+      <div onclick="actNext()" aria-label="Next" style="position:absolute;right:0;top:0;width:30%;height:100%;z-index:5;cursor:pointer"></div>
       <?php endif; ?>
     </div>
   </div>
@@ -827,7 +827,7 @@ $navItems[] = array('url'=>url('logout.php'), 'em'=>'🚪','label'=>'Logout','bg
           <input type="text" name="ann_title" class="inp" placeholder="📢 Announcement title…" required style="margin-bottom:.5rem;font-weight:700">
           <textarea name="ann_body" class="inp" rows="2" placeholder="Share a club update, event or news…" required style="resize:vertical;margin-bottom:.5rem"></textarea>
           <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
-            <select name="ann_cat" class="inp" style="flex:1;min-width:130px;max-width:180px">
+            <select name="ann_cat" class="inp" aria-label="Announcement category" style="flex:1;min-width:130px;max-width:180px">
               <option value="general">📢 General</option><option value="sports">⚽ Sports</option>
               <option value="cultural">🎭 Cultural</option><option value="charity">🤝 Charity</option>
               <option value="urgent">🚨 Urgent</option><option value="achievement">🏆 Achievement</option>
@@ -846,7 +846,7 @@ $navItems[] = array('url'=>url('logout.php'), 'em'=>'🚪','label'=>'Logout','bg
             <?php if($ap): ?><img src="<?=$ap?>" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #0D47A1;flex-shrink:0" alt=""><?php else: ?><div style="width:32px;height:32px;border-radius:50%;background:#E3F2FD;display:flex;align-items:center;justify-content:center;flex-shrink:0">👤</div><?php endif; ?>
             <div>
               <div style="font-weight:700;font-size:.83rem"><?=h($a['author'])?></div>
-              <div style="font-size:.68rem;color:#9E9E9E"><?=h(roleLabel($a['author_role']))?> · <?=date('d M Y',strtotime($a['created_at']))?></div>
+              <div style="font-size:.68rem;color:#666666"><?=h(roleLabel($a['author_role']))?> · <?=date('d M Y',strtotime($a['created_at']))?></div>
             </div>
           </div>
           <div style="display:flex;gap:.35rem;align-items:center">
@@ -897,7 +897,7 @@ $navItems[] = array('url'=>url('logout.php'), 'em'=>'🚪','label'=>'Logout','bg
             </div>
             <div>
               <div style="font-weight:700;font-size:.82rem"><?=h($ev['title'])?></div>
-              <?php if($ev['location']): ?><div style="font-size:.71rem;color:#9E9E9E">📍 <?=h($ev['location'])?></div><?php endif; ?>
+              <?php if($ev['location']): ?><div style="font-size:.71rem;color:#666666">📍 <?=h($ev['location'])?></div><?php endif; ?>
             </div>
           </div>
           <?php endforeach; ?>
@@ -1157,7 +1157,7 @@ document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeDashS
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem">
     <div style="display:flex;align-items:center;gap:.5rem">
       <span style="font-size:1.1rem">⚽</span>
-      <span style="font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.12em">Prediction League</span>
+      <span style="font-size:.68rem;font-weight:800;color:#5d6b80;text-transform:uppercase;letter-spacing:.12em">Prediction League</span>
     </div>
     <a href="<?= url('modules/prediction.php') ?>" style="font-size:.68rem;font-weight:700;color:#ffd700;text-decoration:none">View All →</a>
   </div>
@@ -1354,7 +1354,7 @@ $_dbHTitle    = $_dbHSettings ? ($_dbHSettings['event_title'] ?? 'Henna Fest') :
   </div>
 
   <!-- Footer link -->
-  <div style="text-align:center;padding:.4rem .5rem .6rem;font-size:.68rem;color:#94a3b8">
+  <div style="text-align:center;padding:.4rem .5rem .6rem;font-size:.68rem;color:#5d6b80">
     <a href="<?php echo url('modules/henna_fest.php'); ?>" style="color:#8B3A0F;font-weight:700;text-decoration:none">View all entries & submit yours →</a>
   </div>
 

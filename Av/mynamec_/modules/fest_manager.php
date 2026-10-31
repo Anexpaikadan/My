@@ -262,7 +262,7 @@ require_once __DIR__.'/../includes/header.php';
 .like-btn{padding:.28rem .6rem;border:none;border-radius:7px;font-size:.68rem;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif}
 .like-can{background:linear-gradient(135deg,#e53935,#b71c1c);color:#fff}
 .like-done{background:#fce4ec;color:#c62828}
-.like-no{background:#f5f5f5;color:#999}
+.like-no{background:#f5f5f5;color:#666666}
 /* Admin form */
 .af{background:#fff;margin:.7rem .8rem;border-radius:16px;box-shadow:0 3px 16px rgba(7,34,92,.1);border:1.5px solid rgba(7,34,92,.1);overflow:hidden}
 .af-head{background:linear-gradient(135deg,#07225c,#0d47a1);padding:.75rem 1rem;display:flex;align-items:center;gap:.5rem}
@@ -299,8 +299,8 @@ require_once __DIR__.'/../includes/header.php';
 
 <!-- Fest list -->
 <?php if(empty($allFests)): ?>
-<div style="text-align:center;padding:3rem 1rem;color:#94a3b8">
-  <div style="font-size:3rem;margin-bottom:.6rem">🎪</div>
+<div style="text-align:center;padding:3rem 1rem;color:#5d6b80">
+  <div style="font-size:3rem;margin-bottom:.6rem" aria-hidden="true">🎪</div>
   <p>No fests yet. <?= $isAdmin ? 'Create the first one!' : 'Check back soon!' ?></p>
 </div>
 <?php else: ?>

@@ -1306,10 +1306,10 @@ $nextMatch = isset($upcoming[0]) ? $upcoming[0] : null;
 .fxc-win .fxc-tname{color:var(--fx-gold)}
 
 /* ── Empty / notice ── */
-.fx-empty{text-align:center;padding:2.5rem 1rem;color:rgba(255,255,255,.4)}
+.fx-empty{text-align:center;padding:2.5rem 1rem;color:rgba(255,255,255,.7)}
 .fx-empty .ic{font-size:2.4rem;display:block;margin-bottom:.5rem;animation:fxTrophy 3s ease-in-out infinite}
 .fx-notice{margin:.9rem .85rem;padding:.9rem;border-radius:13px;background:rgba(255,210,74,.08);border:1px solid rgba(255,210,74,.25);font-size:.74rem;color:rgba(255,255,255,.7);line-height:1.5}
-.fx-meta{text-align:center;font-size:.58rem;color:rgba(255,255,255,.3);padding:.6rem;letter-spacing:.04em}
+.fx-meta{text-align:center;font-size:.64rem;color:rgba(255,255,255,.62);padding:.6rem;letter-spacing:.04em}
 
 /* ── Admin panel ── */
 .fx-admin{margin:.9rem .85rem;padding:1rem;border-radius:15px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)}
@@ -1647,7 +1647,7 @@ $nextMatch = isset($upcoming[0]) ? $upcoming[0] : null;
 
     <button class="fx-btn fx-btn-g" onclick="fxSaveSource()">💾 Use this source</button>
     <button class="fx-btn fx-btn-o" onclick="fxRefresh(this)" style="margin-left:.4rem">🔄 Refresh now</button>
-    <div style="font-size:.62rem;color:rgba(255,255,255,.4);margin-top:.6rem">Fixtures auto-refresh periodically. After deploying, bump your service-worker cache version so the new file loads.</div>
+    <div style="font-size:.68rem;color:rgba(255,255,255,.7);margin-top:.6rem">Fixtures auto-refresh periodically. After deploying, bump your service-worker cache version so the new file loads.</div>
   </div>
   <?php elseif(true): ?>
   <button class="fx-refresh" onclick="location.reload()">🔄 Reload fixtures</button>

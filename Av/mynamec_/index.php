@@ -920,13 +920,13 @@ function heroGo(i){
 <section id="events" style="padding:3rem 0;background:#f8fafc">
 <div class="container" style="max-width:1200px;padding:0 1rem">
   <div style="text-align:center;margin-bottom:1.8rem">
-    <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.6rem,3vw,2.2rem);font-weight:700;color:#0d1b3e">Club <span style="color:#c8922a">Events</span></h2>
+    <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.6rem,3vw,2.2rem);font-weight:700;color:#0d1b3e">Club <span style="color:var(--a-tx)">Events</span></h2>
   </div>
   <?php
   $upEv = array_filter($events??[], function($e){ return strtotime($e['event_date'])>=strtotime('today'); });
   $tconf = ['football'=>['⚽','#1b5e20','#e8f5e9'],'cricket'=>['🏏','#e65100','#fff3e0'],'charity'=>['🤝','#880e4f','#fce4ec'],'cultural'=>['🎭','#6a1b9a','#f3e5f5'],'meeting'=>['📋','#37474f','#eceff1']];
   if(empty($upEv)): ?>
-  <div style="text-align:center;padding:2rem;color:#94a3b8"><div style="font-size:2.5rem">📅</div><div>No upcoming events. Check back soon!</div></div>
+  <div style="text-align:center;padding:2rem;color:#5d6b80"><div style="font-size:2.5rem">📅</div><div>No upcoming events. Check back soon!</div></div>
   <?php else: ?>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:1rem">
   <?php foreach(array_slice(array_values($upEv),0,6) as $ev):
@@ -1270,7 +1270,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closeAchLB()
 <div class="container" style="max-width:1200px">
   <div class="text-center mb-4 rv">
     <div class="sec-label">Gallery</div>
-    <h2 class="sec-title">Club <span style="color:var(--a)">Moments</span></h2>
+    <h2 class="sec-title">Club <span style="color:var(--a-tx)">Moments</span></h2>
     <div class="sec-rule" style="margin:.75rem auto"></div>
     <p class="sec-sub" style="margin:0 auto .3rem">Memories from every event in <?= h(setting('CLUB_PLACE','Vettikkattiri')) ?></p>
     <p style="font-size:.78rem;color:var(--t3)"><i class="fas fa-hand-pointer" aria-hidden="true"></i> Hover to pause · Login to view full gallery</p>
@@ -1590,7 +1590,7 @@ function hShare(){
         <h5>Contact</h5>
         <p><i class="fas fa-map-marker-alt" aria-hidden="true" style="color:var(--a2);margin-right:.4rem"></i><?= h(setting('CLUB_PLACE','Vettikkattiri')) ?>, Kerala</p>
         <p style="margin-top:.4rem"><i class="fab fa-whatsapp" aria-hidden="true" style="color:#25d366;margin-right:.4rem"></i><?= h(setting('CLUB_PHONE','+919876543210')) ?></p>
-        <a href="https://wa.me/<?= h($wa) ?>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.45rem;margin-top:.9rem;background:#1a8d4a;color:#fff;min-height:44px;padding:.52rem 1.1rem;border-radius:8px;font-size:.82rem;font-weight:700;transition:all .22s"><i class="fab fa-whatsapp" aria-hidden="true"></i> Chat on WhatsApp</a>
+        <a href="https://wa.me/<?= h($wa) ?>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.45rem;margin-top:.9rem;background:#157a3f;color:#fff;min-height:44px;padding:.52rem 1.1rem;border-radius:8px;font-size:.82rem;font-weight:700;transition:all .22s"><i class="fab fa-whatsapp" aria-hidden="true"></i> Chat on WhatsApp</a>
       </div>
     </div>
   </div>
@@ -2157,7 +2157,7 @@ body{padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))!important}
       <div>
         <div style="font-size:1.1rem;font-weight:800;color:#07225c">Aishwarya</div>
         <div style="font-size:.72rem;color:#64748b">Aishwarya Arts &amp; Sports Club</div>
-        <div style="font-size:.65rem;color:#94a3b8;margin-top:.1rem">mynamecc.online</div>
+        <div style="font-size:.65rem;color:#5d6b80;margin-top:.1rem">mynamecc.online</div>
       </div>
     </div>
 

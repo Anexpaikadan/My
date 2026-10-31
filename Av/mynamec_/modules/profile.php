@@ -304,7 +304,7 @@ require_once __DIR__.'/../includes/header.php';
         <?php if($canSeePhone): ?>
         <a href="https://wa.me/<?= $wn ?>" target="_blank" style="font-size:.8rem;color:#2E7D32;font-weight:800;text-decoration:none"><?= h($profile['whatsapp_number']) ?></a>
         <?php else: ?>
-        <div style="font-size:.8rem;color:#9E9E9E;font-weight:700">🔒 Private</div>
+        <div style="font-size:.8rem;color:#666666;font-weight:700">🔒 Private</div>
         <?php endif; ?>
       </div>
 
@@ -369,7 +369,7 @@ require_once __DIR__.'/../includes/header.php';
       <span style="font-size:1.4rem">🏟️</span>
       <div>
         <div style="font-weight:800;font-size:.95rem;color:#0D1B3E;line-height:1.1">Ground Fund</div>
-        <div style="font-size:.68rem;color:#8a93a8">Contribution to club ground</div>
+        <div style="font-size:.68rem;color:#5f6880">Contribution to club ground</div>
       </div>
     </div>
     <a href="<?= url('modules/groundfund.php') ?>" style="font-size:.7rem;font-weight:700;color:#0d47a1;text-decoration:none">View all →</a>

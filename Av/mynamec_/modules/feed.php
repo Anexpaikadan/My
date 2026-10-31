@@ -476,10 +476,10 @@ require_once __DIR__.'/../includes/header.php';
 .fd-search-btn{width:34px;height:34px;background:rgba(255,255,255,.15);border-radius:50%;border:none;color:#fff;cursor:pointer;font-size:.85rem;flex-shrink:0}
 .fd-searchbar{display:none;align-items:center;gap:.5rem;background:#fff;padding:.5rem .8rem;border-bottom:1px solid #eceff4;position:sticky;top:52px;z-index:490}
 .fd-searchbar.on{display:flex}
-.fd-search-ic{color:#b0bec5;font-size:.85rem}
+.fd-search-ic{color:#546e7a;font-size:.85rem}
 .fd-searchbar input{flex:1;border:none;background:#f1f3f6;border-radius:20px;padding:.55rem .9rem;font-family:inherit;font-size:.88rem;outline:none}
-.fd-search-clear{background:none;border:none;color:#90a4ae;font-size:1rem;cursor:pointer;flex-shrink:0}
-.fd-search-info{text-align:center;padding:.6rem;font-size:.78rem;color:#90a4ae;font-weight:700}
+.fd-search-clear{background:none;border:none;color:#546e7a;font-size:1rem;cursor:pointer;flex-shrink:0}
+.fd-search-info{text-align:center;padding:.6rem;font-size:.78rem;color:#546e7a;font-weight:700}
 
 /* Composer */
 .fd-comp{background:#fff;margin:.7rem;border-radius:16px;box-shadow:0 2px 12px rgba(26,35,126,.08);overflow:hidden}
@@ -495,10 +495,10 @@ require_once __DIR__.'/../includes/header.php';
 .fd-video-input{display:none;margin:.4rem .9rem}
 .fd-video-input input{width:100%;padding:.6rem .8rem;border:2px solid #e3e7ff;border-radius:10px;font-family:inherit;font-size:.85rem;outline:none}
 .fd-comp-actions{display:flex;align-items:center;gap:.3rem;padding:.5rem .7rem;border-top:1px solid #f0f2fa;flex-wrap:wrap}
-.fd-act-btn{display:flex;align-items:center;gap:.35rem;padding:.45rem .7rem;border:none;background:none;border-radius:9px;cursor:pointer;font-family:inherit;font-size:.78rem;font-weight:800;color:#607d8b;transition:background .15s}
+.fd-act-btn{display:flex;align-items:center;gap:.35rem;padding:.45rem .7rem;border:none;background:none;border-radius:9px;cursor:pointer;font-family:inherit;font-size:.78rem;font-weight:800;color:#546e7a;transition:background .15s}
 .fd-act-btn:active{background:#eceff1}
-.fd-act-btn.ph{color:#43a047}
-.fd-act-btn.vid{color:#e53935}
+.fd-act-btn.ph{color:#2e7d32}
+.fd-act-btn.vid{color:#c62828}
 .fd-post-btn{margin-left:auto;padding:.5rem 1.3rem;background:linear-gradient(135deg,#0d47a1,#1565c0);color:#fff;border:none;border-radius:10px;font-family:inherit;font-weight:800;font-size:.85rem;cursor:pointer}
 .fd-post-btn:disabled{opacity:.5}
 
@@ -512,9 +512,9 @@ require_once __DIR__.'/../includes/header.php';
 .fd-ph{display:flex;align-items:center;gap:.6rem;padding:.8rem .9rem .5rem}
 .fd-ph .fd-meta{flex:1;min-width:0}
 .fd-ph .fd-name{font-size:.92rem;font-weight:800;color:#1a237e;line-height:1.1}
-.fd-ph .fd-sub{font-size:.68rem;color:#90a4ae}
+.fd-ph .fd-sub{font-size:.68rem;color:#546e7a}
 .fd-badge{font-size:.55rem;font-weight:800;color:#1565c0;background:#e3f2fd;padding:.1rem .4rem;border-radius:6px;text-transform:uppercase;letter-spacing:.04em;margin-left:.3rem}
-.fd-menu{background:none;border:none;color:#b0bec5;font-size:1.2rem;cursor:pointer;padding:.2rem .5rem;flex-shrink:0}
+.fd-menu{background:none;border:none;color:#546e7a;font-size:1.2rem;cursor:pointer;padding:.2rem .5rem;flex-shrink:0}
 .fd-menu-wrap{position:relative;flex-shrink:0}
 .fd-menu-drop{display:none;position:absolute;top:100%;right:0;background:#fff;border-radius:10px;box-shadow:0 6px 22px rgba(0,0,0,.16);border:1px solid #eceff4;min-width:150px;z-index:50;overflow:hidden}
 .fd-menu-drop.on{display:block}
@@ -550,9 +550,9 @@ require_once __DIR__.'/../includes/header.php';
 .fd-brand-name{color:#fff;font-weight:800;font-size:.9rem;text-shadow:0 1px 4px rgba(0,0,0,.4)}
 .fd-ig .play,.fd-fb .play{position:static;display:flex}
 .fd-ig .play span,.fd-fb .play span{width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.25);border:2px solid rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;margin-top:.2rem}
-.fd-stat{display:flex;align-items:center;justify-content:space-between;padding:.4rem .95rem;font-size:.72rem;color:#90a4ae}
+.fd-stat{display:flex;align-items:center;justify-content:space-between;padding:.4rem .95rem;font-size:.72rem;color:#546e7a}
 .fd-actions{display:flex;border-top:1px solid #f0f2fa;border-bottom:1px solid #f0f2fa}
-.fd-a{flex:1;display:flex;align-items:center;justify-content:center;gap:.4rem;padding:.6rem;border:none;background:none;cursor:pointer;font-family:inherit;font-size:.82rem;font-weight:800;color:#607d8b;transition:background .12s}
+.fd-a{flex:1;display:flex;align-items:center;justify-content:center;gap:.4rem;padding:.6rem;border:none;background:none;cursor:pointer;font-family:inherit;font-size:.82rem;font-weight:800;color:#546e7a;transition:background .12s}
 .fd-a:active{background:#f5f6fa}
 .fd-a.liked{color:#e53935}
 .fd-comments{padding:.5rem .9rem .2rem;display:none}
@@ -561,20 +561,20 @@ require_once __DIR__.'/../includes/header.php';
 .fd-c .fd-c-bub{background:#f0f2fa;border-radius:14px;padding:.4rem .7rem;flex:1;min-width:0}
 .fd-c .fd-c-name{font-size:.74rem;font-weight:800;color:#1a237e}
 .fd-c .fd-c-body{font-size:.82rem;color:#37474f;word-break:break-word}
-.fd-c .fd-c-meta{font-size:.6rem;color:#b0bec5;margin-top:.1rem;display:flex;gap:.6rem;align-items:center}
+.fd-c .fd-c-meta{font-size:.6rem;color:#546e7a;margin-top:.1rem;display:flex;gap:.6rem;align-items:center}
 .fd-c-del{background:none;border:none;color:#ef9a9a;font-size:.6rem;cursor:pointer;font-weight:800}
 .fd-c-form{display:flex;gap:.5rem;align-items:center;padding:.4rem 0 .6rem}
 .fd-c-form input{flex:1;border:1.5px solid #e3e7ff;border-radius:18px;padding:.5rem .85rem;font-family:inherit;font-size:.85rem;outline:none}
 .fd-c-form button{background:#1565c0;color:#fff;border:none;border-radius:50%;width:34px;height:34px;cursor:pointer;flex-shrink:0;font-size:.85rem}
 .fd-guest{background:#fff;margin:.7rem;border-radius:16px;box-shadow:0 2px 12px rgba(26,35,126,.08);padding:1.1rem;text-align:center}
 .fd-guest-ic{font-size:1.8rem;display:block;margin-bottom:.3rem}
-.fd-guest-txt{font-size:.85rem;color:#607d8b;font-weight:700;margin-bottom:.7rem}
+.fd-guest-txt{font-size:.85rem;color:#546e7a;font-weight:700;margin-bottom:.7rem}
 .fd-guest-btn{display:inline-block;background:linear-gradient(135deg,#0d47a1,#1565c0);color:#fff;text-decoration:none;padding:.6rem 1.4rem;border-radius:11px;font-weight:800;font-size:.85rem}
 .fd-av-sm{width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#e3f2fd;display:flex;align-items:center;justify-content:center;font-weight:900;color:#1565c0;font-size:.7rem}
 
-.fd-empty{text-align:center;padding:3rem 1rem;color:#b0bec5}
+.fd-empty{text-align:center;padding:3rem 1rem;color:#546e7a}
 .fd-empty .ei{font-size:2.6rem;display:block;margin-bottom:.6rem;opacity:.6}
-.fd-loader{text-align:center;padding:1.4rem;color:#90a4ae;font-size:.82rem}
+.fd-loader{text-align:center;padding:1.4rem;color:#546e7a;font-size:.82rem}
 .fd-spin{width:26px;height:26px;border:3px solid #e3e7ff;border-top-color:#1565c0;border-radius:50%;animation:fdspin .7s linear infinite;margin:0 auto .5rem}
 @keyframes fdspin{to{transform:rotate(360deg)}}
 
@@ -591,7 +591,7 @@ require_once __DIR__.'/../includes/header.php';
 
 <div class="fd">
   <div class="fd-bar">
-    <a href="<?= $isGuest ? url('index.php') : url('dashboard.php') ?>" class="fd-back"><i class="fas fa-arrow-left"></i></a>
+    <a href="<?= $isGuest ? url('index.php') : url('dashboard.php') ?>" class="fd-back" aria-label="Back"><i class="fas fa-arrow-left" aria-hidden="true"></i></a>
     <h1>🏛️ Community Feed</h1>
     <button class="fd-search-btn" onclick="toggleSearch()" aria-label="Search"><i class="fas fa-search"></i></button>
   </div>

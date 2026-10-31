@@ -80,7 +80,7 @@ require_once __DIR__.'/../includes/header.php';
   </div>
   <?php endif; ?>
 
-  <div style="background:#fff; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,.08); overflow-x:auto;">
+  <div style="background:#fff; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,.08); overflow-x:auto;" tabindex="0" role="region" aria-label="Subscriptions table">
     <div style="background:#0D1B3E; padding:1.1rem 1.5rem;">
       <h3 style="color:#fff; font-size:1.1rem; font-weight:700; margin:0;">👥 All Member Subscriptions</h3>
     </div>
@@ -98,7 +98,7 @@ require_once __DIR__.'/../includes/header.php';
       <tbody>
         <?php if(empty($allRequests)): ?>
         <tr>
-          <td colspan="5" style="padding:3rem; text-align:center; color:#9E9E9E;">No subscription requests found.</td>
+          <td colspan="5" style="padding:3rem; text-align:center; color:#666666;">No subscription requests found.</td>
         </tr>
         <?php else: ?>
         <?php foreach($allRequests as $r): 
@@ -147,7 +147,7 @@ require_once __DIR__.'/../includes/header.php';
             <span style="background:#E8EAF6; color:#283593; font-size:0.7rem; font-weight:700; padding:0.15rem 0.5rem; border-radius:4px; text-transform:uppercase;">
               <?= h($r['plan_type']) ?>
             </span>
-            <div style="font-size:0.75rem; color:#9E9E9E; margin-top:0.3rem;">Req: <?= date('d M Y', strtotime($r['requested_at'])) ?></div>
+            <div style="font-size:0.75rem; color:#666666; margin-top:0.3rem;">Req: <?= date('d M Y', strtotime($r['requested_at'])) ?></div>
           </td>
           
           <td style="padding:1rem; vertical-align:top;">
@@ -197,7 +197,7 @@ require_once __DIR__.'/../includes/header.php';
                   </form>
                 </div>
               <?php else: ?>
-                <span style="font-size:0.75rem; color:#9E9E9E;">Completed</span>
+                <span style="font-size:0.75rem; color:#666666;">Completed</span>
               <?php endif; ?>
               
             </div>

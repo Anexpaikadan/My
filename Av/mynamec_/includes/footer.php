@@ -135,6 +135,38 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))!important}
 </nav>
 <!-- ══════════════════ /BOTTOM NAV ══════════════════ -->
 
+<!-- Accessibility helper: connect each form label to the field right after it,
+     and give icon-only buttons/links a name from their title -->
+<script>
+(function(){
+  var n=0, CTRL=/^(INPUT|SELECT|TEXTAREA)$/;
+  document.querySelectorAll('label:not([for])').forEach(function(l){
+    if (l.querySelector('input,select,textarea')) return;
+    var c=l.nextElementSibling;
+    if (!c || !CTRL.test(c.tagName) || c.type==='hidden') return;
+    if (!c.id) c.id='fld-auto-'+(++n);
+    l.htmlFor=c.id;
+  });
+  // Clickable cards/tabs built from <div onclick>: make them reachable and usable by keyboard
+  document.querySelectorAll('div[onclick],span[onclick],li[onclick],td[onclick],img[onclick]').forEach(function(el){
+    var oc=el.getAttribute('onclick')||'';
+    if (/event\.target|stopPropagation/.test(oc)) return;          // backdrop "click outside" handlers
+    if (el.querySelector('a[href],button,input,select,textarea')) return; // would nest controls
+    if (!el.hasAttribute('role')) el.setAttribute('role','button');
+    if (!el.hasAttribute('tabindex')) el.tabIndex=0;
+    el.addEventListener('keydown',function(e){
+      if (e.target!==el) return;
+      if (e.key==='Enter'||e.key===' '){ e.preventDefault(); el.click(); }
+    });
+  });
+  document.querySelectorAll('button,a[href]').forEach(function(b){
+    if (b.getAttribute('aria-label') || (b.textContent||'').trim()) return;
+    if (b.querySelector('img[alt]:not([alt=""])')) return;
+    var t=b.getAttribute('title'); if (t) b.setAttribute('aria-label',t);
+  });
+})();
+</script>
+
 <!-- Push Notification JS -->
 <script>
 var PUSH_KEY = 'BPtQ21rs0CVf06l96ac3-SGEZCtWrMhgU11llT4YoVT3HMRRqELNKowuLmIlWrbzBMjmeJTTZF58pc6e5VtY9t8';
@@ -242,13 +274,14 @@ window.addEventListener('load', function(){
   text-align:center;
   padding:14px 12px;
   font-size:13px;
-  color:#6b7280;
+  color:#4b5563;
+  background:#F0F4FA;
   border-top:1px solid #eee;
   line-height:1.4;
   word-wrap:break-word;
 ">
   © 2026 · All rights reserved ·
-  <span style="color:#111; font-weight:600; display:inline-block;">
+  <span style="color:inherit; font-weight:700; display:inline-block;">
     anexpaikadan
   </span>
 </footer>

@@ -330,7 +330,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 <!-- ══ TOURNAMENT LIST ══ -->
 <?php if (empty($tournaments)): ?>
-<div style="text-align:center;padding:4rem;color:#94a3b8">
+<div style="text-align:center;padding:4rem;color:#5d6b80">
   <div style="font-size:4rem;margin-bottom:1rem">⚽</div>
   <h3 style="margin-bottom:.5rem;color:#475569">No tournaments yet</h3>
   <p style="font-size:.85rem">Football tournament announcements will appear here.</p>
@@ -423,7 +423,7 @@ require_once __DIR__ . '/../includes/header.php';
   <!-- TAB: STANDINGS -->
   <div class="tab-pane on" id="<?=$tabId?>_standings">
     <?php if (empty($teams)): ?>
-    <div style="text-align:center;padding:2rem;color:#94a3b8;font-size:.85rem">No teams yet. Admin adds teams in Manage tab.</div>
+    <div style="text-align:center;padding:2rem;color:#5d6b80;font-size:.85rem">No teams yet. Admin adds teams in Manage tab.</div>
     <?php else: ?>
     <div style="margin-bottom:.5rem;font-size:.72rem;color:#64748b">Format: <strong><?=$t['format']==='league'?'League':'Knockout'?></strong> · <?=count($teams)?> teams</div>
     <div style="overflow-x:auto;border-radius:10px;margin-bottom:.5rem">
@@ -445,7 +445,7 @@ require_once __DIR__ . '/../includes/header.php';
             <?php if ($tp): ?><img src="<?=$tp?>" class="team-avatar" alt=""><?php else: ?><div class="team-avatar-ph">⚽</div><?php endif; ?>
             <div>
               <div style="font-weight:700"><?=h($tm['team_name'])?></div>
-              <?php if ($tm['captain']): ?><div style="font-size:.65rem;color:#94a3b8">Captain: <?=h($tm['captain'])?></div><?php endif; ?>
+              <?php if ($tm['captain']): ?><div style="font-size:.65rem;color:#5d6b80">Captain: <?=h($tm['captain'])?></div><?php endif; ?>
             </div>
           </div>
         </td>
@@ -468,14 +468,14 @@ require_once __DIR__ . '/../includes/header.php';
       </tbody>
     </table>
     </div>
-    <div style="font-size:.68rem;color:#94a3b8;padding:.2rem .2rem .5rem">🥇 Top team advances · PTS = 3×Wins + Draws</div>
+    <div style="font-size:.68rem;color:#5d6b80;padding:.2rem .2rem .5rem">🥇 Top team advances · PTS = 3×Wins + Draws</div>
     <?php endif; ?>
   </div>
 
   <!-- TAB: MATCHES -->
   <div class="tab-pane" id="<?=$tabId?>_matches">
     <?php if (empty($allMatches)): ?>
-    <div style="text-align:center;padding:2rem;color:#94a3b8;font-size:.85rem">No matches scheduled yet.</div>
+    <div style="text-align:center;padding:2rem;color:#5d6b80;font-size:.85rem">No matches scheduled yet.</div>
     <?php else:
       $rounds = [];
       foreach ($allMatches as $mx) { $rounds[$mx['round']][] = $mx; }
@@ -487,7 +487,7 @@ require_once __DIR__ . '/../includes/header.php';
       $t2p = !empty($mx['t2p']) ? url('assets/uploads/teams/'.$mx['t2p']) : '';
     ?>
     <div class="match-row">
-      <div style="font-size:.68rem;color:#94a3b8;width:100%"><?=date('d M Y',strtotime($mx['match_date']))?><?php if($mx['match_time']): ?> · <?=date('g:i A',strtotime($mx['match_time']))?><?php endif; ?> <?php if($mx['venue']): ?>· <?=h($mx['venue'])?><?php endif; ?></div>
+      <div style="font-size:.68rem;color:#5d6b80;width:100%"><?=date('d M Y',strtotime($mx['match_date']))?><?php if($mx['match_time']): ?> · <?=date('g:i A',strtotime($mx['match_time']))?><?php endif; ?> <?php if($mx['venue']): ?>· <?=h($mx['venue'])?><?php endif; ?></div>
       <div style="display:flex;align-items:center;gap:.6rem;flex:1;justify-content:center">
         <div style="display:flex;align-items:center;gap:.4rem">
           <?php if ($t1p): ?><img src="<?=$t1p?>" class="team-avatar" alt=""><?php endif; ?>
@@ -534,7 +534,7 @@ require_once __DIR__ . '/../includes/header.php';
     foreach ($allMatches as $mx) { $byRound[$mx['stage']][$mx['round']][] = $mx; }
     if (empty($byRound)):
     ?>
-    <div style="text-align:center;padding:2rem;color:#94a3b8">
+    <div style="text-align:center;padding:2rem;color:#5d6b80">
       <div style="font-size:2.5rem;margin-bottom:.5rem">🔲</div>
       <p style="font-size:.85rem">No matches scheduled yet. Bracket will appear once admin schedules matches.</p>
     </div>
@@ -580,7 +580,7 @@ require_once __DIR__ . '/../includes/header.php';
             $co = $g1>$g2?'#166534':($g1<$g2?'#991b1b':'#374151');
             echo '<td style="background:'.$bg.';color:'.$co.';font-weight:700;border:1px solid #e0e7ff;text-align:center;padding:.4rem .5rem">'.$g1.'-'.$g2.'</td>';
         } else {
-            echo '<td style="border:1px solid #e0e7ff;text-align:center;color:#94a3b8;font-size:.68rem;padding:.4rem .5rem">TBD</td>';
+            echo '<td style="border:1px solid #e0e7ff;text-align:center;color:#5d6b80;font-size:.68rem;padding:.4rem .5rem">TBD</td>';
         }
         ?>
         <?php endforeach; ?>
@@ -654,7 +654,7 @@ require_once __DIR__ . '/../includes/header.php';
       <button type="submit" name="join_tournament" class="btn-g" style="padding:.65rem 1.4rem">📝 Register Now</button>
     </form>
     <?php else: ?>
-    <div style="text-align:center;padding:2rem;color:#94a3b8">
+    <div style="text-align:center;padding:2rem;color:#5d6b80">
       <div style="font-size:2rem;margin-bottom:.4rem">🔒</div>
       <div style="font-size:.85rem">Registration is currently closed.</div>
     </div>

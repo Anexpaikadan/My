@@ -369,11 +369,11 @@ require_once __DIR__.'/../includes/header.php';
 .ec-name{font-size:.68rem;font-weight:800;color:var(--h1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:.15rem}
 .vrow{display:flex;align-items:center;justify-content:space-between}
 .vc2{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--h1);line-height:1}
-.vl{font-size:.52rem;color:#94a3b8;text-transform:uppercase}
+.vl{font-size:.52rem;color:#5d6b80;text-transform:uppercase}
 .bv{padding:.28rem .6rem;border:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:.65rem;font-weight:800;cursor:pointer}
 .bv-can{background:linear-gradient(135deg,var(--hg1),var(--hg2));color:#fff}
 .bv-done{background:#fce4ec;color:#c62828}
-.bv-no{background:#f0f0f0;color:#999}
+.bv-no{background:#f0f0f0;color:#666666}
 .ea{display:flex;gap:.3rem;padding:0 .5rem .5rem}
 .bs{flex:1;padding:.3rem;background:#25d366;color:#fff;border:none;border-radius:7px;font-size:.62rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.2rem}
 .bd{padding:.3rem .4rem;background:#ffebee;color:#b71c1c;border:1px solid #ffcdd2;border-radius:7px;font-size:.62rem;font-weight:700;cursor:pointer}
@@ -393,7 +393,7 @@ require_once __DIR__.'/../includes/header.php';
 .fbtn{padding:.25rem .7rem;border:1.5px solid rgba(139,58,15,.25);background:#fff;color:#8B3A0F;border-radius:20px;font-size:.68rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
 .fbtn.active{background:linear-gradient(135deg,#8B3A0F,#C4521A);color:#fff;border-color:transparent}
 .uarea{border:2px dashed rgba(196,82,26,.3);border-radius:10px;padding:1rem;text-align:center;cursor:pointer;background:#FFF8F0;margin-bottom:.5rem}
-.empty{text-align:center;padding:2rem 1rem;color:#94a3b8}
+.empty{text-align:center;padding:2rem 1rem;color:#5d6b80}
 </style>
 
 <div class="hfw">
@@ -476,7 +476,7 @@ require_once __DIR__.'/../includes/header.php';
     <span style="font-size:.8rem;font-weight:600;color:var(--h1);flex:1"><?php echo h($pn); ?></span>
     <?php if($pw&&$pw['vote_count']>0): ?>
     <span style="font-size:.68rem;color:var(--h2);font-weight:700">— <?php echo h($pw['member_name']); ?> (<?php echo $pw['vote_count']; ?> ❤️)</span>
-    <?php else: ?><span style="font-size:.65rem;color:#ccc">TBD</span><?php endif; ?>
+    <?php else: ?><span style="font-size:.65rem;color:#666666">TBD</span><?php endif; ?>
   </div>
   <?php endforeach; ?>
   <?php if(!empty($fest['join_link'])): ?>
@@ -521,7 +521,7 @@ require_once __DIR__.'/../includes/header.php';
       <div class="fg"><label class="lbl">Your Mehandi Photo *</label>
         <div class="uarea" onclick="document.getElementById('hpi').click()">
           <div id="pp" style="display:none"><img id="pi" style="max-height:160px;border-radius:8px;max-width:100%"></div>
-          <div id="ph"><div style="font-size:1.8rem">🌿</div><div style="font-size:.8rem;font-weight:600;color:var(--h1)">Tap to select photo</div><div style="font-size:.65rem;color:#94a3b8">Gallery or Camera</div></div>
+          <div id="ph"><div style="font-size:1.8rem">🌿</div><div style="font-size:.8rem;font-weight:600;color:var(--h1)">Tap to select photo</div><div style="font-size:.65rem;color:#5d6b80">Gallery or Camera</div></div>
         </div>
         <input type="file" id="hpi" name="henna_photo" accept="image/*" style="display:none" onchange="prvPhoto(this)">
       </div>
@@ -611,7 +611,7 @@ require_once __DIR__.'/../includes/header.php';
     <div style="margin-top:.5rem">
       <button onclick="resetLikes(<?php echo $festId; ?>)" style="width:100%;background:#fff3e0;color:#e65100;border:1.5px solid #ffcc02;border-radius:10px;padding:.48rem;font-weight:700;cursor:pointer;font-size:.75rem">🔄 Reset All Likes This Season</button>
     </div>
-    <div style="font-size:.62rem;color:#94a3b8;margin-top:.3rem;text-align:center">Clears all votes and resets like counts to zero</div>
+    <div style="font-size:.62rem;color:#5d6b80;margin-top:.3rem;text-align:center">Clears all votes and resets like counts to zero</div>
     </div>
   </div>
 </div>
@@ -743,15 +743,15 @@ function opop(id,name,img,votes,isMine,isLiked,canVote,evt,spon){
   document.getElementById('popVotes').textContent=votes;
   var vw=document.getElementById('popVoteWrap');
   if(isMine){
-    vw.innerHTML='<div style="text-align:center;padding:.3rem;font-size:.78rem;color:#94a3b8">This is your entry</div>';
+    vw.innerHTML='<div style="text-align:center;padding:.3rem;font-size:.78rem;color:#5d6b80">This is your entry</div>';
   } else if(isLiked){
     vw.innerHTML='<button style="width:100%;padding:.6rem;background:#fce4ec;color:#c62828;border:2px solid #ef9a9a;border-radius:10px;font-weight:800;font-size:.85rem">❤️ You liked this!</button>';
   } else if(canVote){
     vw.innerHTML='<button onclick="cv('+id+','+FID+',this);cpop()" style="width:100%;padding:.65rem;background:linear-gradient(135deg,var(--h1),var(--h2));color:#fff;border:none;border-radius:10px;font-weight:800;font-size:.9rem;cursor:pointer">❤️ Like This Design ('+LREM+' left)</button>';
   } else if(LREM<=0&&!isMine){
-    vw.innerHTML='<button style="width:100%;padding:.6rem;background:#f5f5f5;color:#999;border:none;border-radius:10px;font-size:.82rem">All '+LPM+' likes used</button>';
+    vw.innerHTML='<button style="width:100%;padding:.6rem;background:#f5f5f5;color:#666666;border:none;border-radius:10px;font-size:.82rem">All '+LPM+' likes used</button>';
   } else {
-    vw.innerHTML='<button style="width:100%;padding:.6rem;background:#f5f5f5;color:#999;border:none;border-radius:10px;font-size:.82rem">🔒 Liking closed</button>';
+    vw.innerHTML='<button style="width:100%;padding:.6rem;background:#f5f5f5;color:#666666;border:none;border-radius:10px;font-size:.82rem">🔒 Liking closed</button>';
   }
   document.getElementById('popShareBtn').onclick=function(){shareEntry(id,FID,name,evt,spon);};
   document.getElementById('epop').style.display='flex';

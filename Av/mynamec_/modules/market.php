@@ -455,7 +455,7 @@ require_once __DIR__.'/../includes/header.php';
 .sub-chip.on{background:linear-gradient(135deg,var(--mk1),var(--mk2));color:#fff;border-color:transparent;box-shadow:0 4px 12px rgba(27,94,32,.3);transform:translateY(-1px)}
 /* Sort bar */
 .mk-sortbar{display:flex;gap:.3rem;padding:.4rem .7rem;background:#fff;border-bottom:1px solid #f0f0f0;overflow-x:auto;scrollbar-width:none;align-items:center}
-.mk-sort{flex-shrink:0;padding:.26rem .6rem;border-radius:12px;font-size:.65rem;font-weight:700;cursor:pointer;border:none;color:#888;background:transparent;font-family:'DM Sans',sans-serif;text-decoration:none}
+.mk-sort{flex-shrink:0;padding:.26rem .6rem;border-radius:12px;font-size:.65rem;font-weight:700;cursor:pointer;border:none;color:#666666;background:transparent;font-family:'DM Sans',sans-serif;text-decoration:none}
 .mk-sort.active{background:var(--mk2);color:#fff}
 /* Cards grid */
 .mk-grid{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;padding:.6rem .55rem}
@@ -468,7 +468,7 @@ require_once __DIR__.'/../includes/header.php';
 .badge-sold{background:#ffebee;color:#b71c1c}
 .mk-card-sold .mk-card-img,.mk-card-sold .mk-card-img-placeholder{opacity:.55;filter:grayscale(.4)}
 .mk-card-sold .mk-card-price{text-decoration:line-through;opacity:.6}
-.badge-inactive{background:#f5f5f5;color:#888}
+.badge-inactive{background:#f5f5f5;color:#666666}
 .badge-pending{background:#fff3e0;color:#e65100}
 .badge-featured{position:absolute;top:6px;right:6px;background:var(--mkgold);color:#000;padding:.15rem .4rem;border-radius:20px;font-size:.55rem;font-weight:800}
 .mk-fav-btn{position:absolute;bottom:calc(50% + 4px);right:6px;background:rgba(255,255,255,.92);border:none;border-radius:50%;width:26px;height:26px;font-size:.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.15)}
@@ -476,7 +476,7 @@ require_once __DIR__.'/../includes/header.php';
 .mk-card-title{font-size:.75rem;font-weight:800;color:#1a1a1a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:.15rem}
 .mk-card-price{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--mk1);line-height:1;margin-bottom:.1rem}
 .mk-card-price-free{font-size:.65rem;color:#4CAF50;font-weight:700}
-.mk-card-meta{font-size:.58rem;color:#94a3b8;display:flex;align-items:center;gap:.3rem;flex-wrap:wrap}
+.mk-card-meta{font-size:.58rem;color:#5d6b80;display:flex;align-items:center;gap:.3rem;flex-wrap:wrap}
 .mk-card-seller{display:flex;align-items:center;gap:.3rem;margin-top:.3rem;padding-top:.3rem;border-top:1px solid #f5f5f5}
 .mk-card-seller img{width:18px;height:18px;border-radius:50%;object-fit:cover}
 .mk-card-seller-name{font-size:.6rem;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -513,7 +513,7 @@ require_once __DIR__.'/../includes/header.php';
 select.inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .7rem center;padding-right:2rem}
 textarea.inp{resize:vertical;min-height:90px}
 .img-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.5rem}
-.img-slot{aspect-ratio:1;border:2px dashed #ddd;border-radius:10px;overflow:hidden;position:relative;background:#fafafa;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.5rem;color:#ccc}
+.img-slot{aspect-ratio:1;border:2px dashed #ddd;border-radius:10px;overflow:hidden;position:relative;background:#fafafa;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.5rem;color:#666666}
 .img-slot img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
 .img-slot .del-img{position:absolute;top:3px;right:3px;background:rgba(183,28,28,.85);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:5}
 /* My items */
@@ -528,15 +528,15 @@ textarea.inp{resize:vertical;min-height:90px}
 .sb{padding:.18rem .55rem;border-radius:20px;font-size:.6rem;font-weight:800;display:inline-block}
 .sb-active{background:#e8f5e9;color:#2e7d32}
 .sb-sold{background:#ffebee;color:#b71c1c}
-.sb-inactive{background:#f5f5f5;color:#888}
+.sb-inactive{background:#f5f5f5;color:#666666}
 .sb-pending{background:#fff3e0;color:#e65100}
 /* Nav */
 .mk-nav{display:flex;background:#fff;border-bottom:2px solid var(--mk3)}
-.mk-nav-btn{flex:1;padding:.55rem .3rem;text-align:center;font-size:.65rem;font-weight:700;color:#888;cursor:pointer;border:none;background:transparent;font-family:'DM Sans',sans-serif;border-bottom:2px solid transparent;margin-bottom:-2px}
+.mk-nav-btn{flex:1;padding:.55rem .3rem;text-align:center;font-size:.65rem;font-weight:700;color:#666666;cursor:pointer;border:none;background:transparent;font-family:'DM Sans',sans-serif;border-bottom:2px solid transparent;margin-bottom:-2px}
 .mk-nav-btn.active{color:var(--mk1);border-bottom-color:var(--mk1)}
 /* Top sub-nav (under header) */
 .mk-topnav{display:flex;background:#fff;border-bottom:1px solid #eef0f2;box-shadow:0 2px 6px rgba(0,0,0,.05)}
-.mk-topnav .mk-nav-btn{text-decoration:none;color:#8a8f98;line-height:1.25;border-top:2px solid transparent;border-bottom:none;margin:0;transition:color .2s,background .2s}
+.mk-topnav .mk-nav-btn{text-decoration:none;color:#666666;line-height:1.25;border-top:2px solid transparent;border-bottom:none;margin:0;transition:color .2s,background .2s}
 .mk-topnav .mk-nav-btn.active{color:var(--mk1);border-top-color:var(--mk1);background:#f4faf4}
 .mk-topnav .mk-nav-btn:active{background:#eef6ef}
 .mk-topnav .mk-nav-sell{color:#fff;background:linear-gradient(135deg,var(--mk1),var(--mk2))}
@@ -549,7 +549,7 @@ textarea.inp{resize:vertical;min-height:90px}
 .mk-related{padding:.6rem .55rem .2rem}
 /* Admin */
 .adm-card{background:#fff;border-radius:12px;border:1.5px solid #e0e0e0;padding:.7rem .8rem;margin-bottom:.5rem;display:flex;gap:.6rem;align-items:center}
-.empty{text-align:center;padding:2.5rem 1rem;color:#94a3b8}
+.empty{text-align:center;padding:2.5rem 1rem;color:#5d6b80}
 .back-btn{display:flex;align-items:center;gap:.3rem;padding:.5rem .8rem;font-size:.8rem;color:var(--mk1);font-weight:700;cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif}
 </style>
 
@@ -663,7 +663,7 @@ if ($page==='item' && $item): ?>
       <?php if($sph): ?><img src="<?php echo h($sph); ?>" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid rgba(27,94,32,.2)"><?php else: ?><div style="width:42px;height:42px;border-radius:50%;background:rgba(27,94,32,.15);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">👤</div><?php endif; ?>
       <div style="flex:1;min-width:0">
         <div style="font-size:.82rem;font-weight:800;color:var(--mk1)"><?php echo h($item['seller_name']); ?></div>
-        <div style="font-size:.62rem;color:#94a3b8">Seller</div>
+        <div style="font-size:.62rem;color:#5d6b80">Seller</div>
       </div>
     </div>
   </div>
@@ -792,7 +792,7 @@ elseif ($page==='new' || $page==='edit'):
       <button type="button" onclick="useMyLocation(this)" style="flex:1;padding:.5rem;background:#e8f5e9;color:var(--mk1);border:1.5px solid #c8e6c9;border-radius:10px;font-size:.74rem;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif">📡 Use My Location</button>
       <button type="button" onclick="pickOnMap()" style="flex:1;padding:.5rem;background:#e3f2fd;color:#1565c0;border:1.5px solid #bbdefb;border-radius:10px;font-size:.74rem;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif">🗺️ Pick on Map</button>
     </div>
-    <div id="locStatus" style="font-size:.64rem;color:#94a3b8;margin-top:.35rem"><?php echo (isset($fi['lat'])&&$fi['lat']!==null&&$fi['lat']!=='')?'📍 GPS pin saved — buyers can open it in Google Maps.':'Tap “Use My Location” to attach a Google Maps pin.'; ?></div>
+    <div id="locStatus" style="font-size:.64rem;color:#5d6b80;margin-top:.35rem"><?php echo (isset($fi['lat'])&&$fi['lat']!==null&&$fi['lat']!=='')?'📍 GPS pin saved — buyers can open it in Google Maps.':'Tap “Use My Location” to attach a Google Maps pin.'; ?></div>
   </div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
@@ -829,7 +829,7 @@ elseif ($page==='new' || $page==='edit'):
       </div>
       <?php endfor; ?>
     </div>
-    <div style="font-size:.62rem;color:#94a3b8;margin-top:.3rem"><?php echo $slots; ?> slot<?php echo $slots>1?'s':''; ?> available · JPG/PNG/WebP · Max 8MB each</div>
+    <div style="font-size:.62rem;color:#5d6b80;margin-top:.3rem"><?php echo $slots; ?> slot<?php echo $slots>1?'s':''; ?> available · JPG/PNG/WebP · Max 8MB each</div>
     <?php endif; ?>
   </div>
 
@@ -908,7 +908,7 @@ foreach($myItems as $mi) { $grps[$mi['status']??'inactive'][] = $mi; }
       <span class="sb sb-<?php echo $mi['status']; ?>"><?php echo ucfirst($mi['status']); ?></span>
       <?php if($mi['price']): ?><span style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:var(--mk1)">₹<?php echo h($mi['price']); ?></span><?php endif; ?>
     </div>
-    <div style="font-size:.58rem;color:#94a3b8">👁 <?php echo (int)$mi['views']; ?> views · <?php echo date('d M',strtotime($mi['created_at'])); ?></div>
+    <div style="font-size:.58rem;color:#5d6b80">👁 <?php echo (int)$mi['views']; ?> views · <?php echo date('d M',strtotime($mi['created_at'])); ?></div>
     <div class="mk-myitem-actions">
       <a href="<?php echo $SELF.'?p=item&id='.(int)$mi['id']; ?>" class="mk-myitem-btn">👁 View</a>
       <a href="<?php echo $SELF.'?edit='.(int)$mi['id']; ?>" class="mk-myitem-btn" style="color:#1565c0;border-color:#bbdefb">✏️ Edit</a>
@@ -949,7 +949,7 @@ try { $allAdmItems=db()->query("SELECT m.*,u.name seller_name,(SELECT image_path
   <?php foreach(['total'=>['📦','Total'],'active'=>['✅','Active'],'pending'=>['⏳','Pending'],'sellers'=>['👤','Sellers']] as $sk=>$sv): ?>
   <div style="padding:.55rem .3rem;text-align:center;border-right:1px solid #f0f0f0">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--mk1)"><?php echo $allStats[$sk]??0; ?></div>
-    <div style="font-size:.55rem;color:#94a3b8"><?php echo $sv[1]; ?></div>
+    <div style="font-size:.55rem;color:#5d6b80"><?php echo $sv[1]; ?></div>
   </div>
   <?php endforeach; ?>
 </div>
@@ -961,7 +961,7 @@ try { $allAdmItems=db()->query("SELECT m.*,u.name seller_name,(SELECT image_path
   <?php if($pi['thumb']): ?><img src="<?php echo h($SITE.'/assets/uploads/market/'.$pi['thumb']); ?>" style="width:56px;height:56px;border-radius:8px;object-fit:cover;flex-shrink:0"><?php else: ?><div style="width:56px;height:56px;border-radius:8px;background:var(--mkbg);display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0"><?php echo $CATS[$pi['category']][0]??'🛍️'; ?></div><?php endif; ?>
   <div style="flex:1;min-width:0">
     <div style="font-size:.8rem;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><?php echo h($pi['title']); ?></div>
-    <div style="font-size:.65rem;color:#94a3b8"><?php echo h($pi['seller_name']); ?> · <?php echo $CATS[$pi['category']][1]??'Others'; ?></div>
+    <div style="font-size:.65rem;color:#5d6b80"><?php echo h($pi['seller_name']); ?> · <?php echo $CATS[$pi['category']][1]??'Others'; ?></div>
     <div style="display:flex;gap:.3rem;margin-top:.35rem">
       <button onclick="adm('admin_approve',<?php echo (int)$pi['id']; ?>,this)" style="background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;border-radius:7px;padding:.25rem .55rem;font-size:.65rem;font-weight:700;cursor:pointer">✅ Approve</button>
       <a href="<?php echo $SELF.'?p=item&id='.(int)$pi['id']; ?>" style="background:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;border-radius:7px;padding:.25rem .55rem;font-size:.65rem;font-weight:700;text-decoration:none">👁 View</a>
@@ -977,7 +977,7 @@ try { $allAdmItems=db()->query("SELECT m.*,u.name seller_name,(SELECT image_path
   <?php if($ai['thumb']): ?><img src="<?php echo h($SITE.'/assets/uploads/market/'.$ai['thumb']); ?>" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0"><?php else: ?><div style="width:44px;height:44px;border-radius:8px;background:var(--mkbg);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0"><?php echo $CATS[$ai['category']][0]??'🛍️'; ?></div><?php endif; ?>
   <div style="flex:1;min-width:0">
     <div style="font-size:.75rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><?php echo h($ai['title']); ?></div>
-    <div style="font-size:.6rem;color:#94a3b8"><?php echo h($ai['seller_name']); ?> · <span class="sb sb-<?php echo $ai['status']; ?>"><?php echo ucfirst($ai['status']); ?></span></div>
+    <div style="font-size:.6rem;color:#5d6b80"><?php echo h($ai['seller_name']); ?> · <span class="sb sb-<?php echo $ai['status']; ?>"><?php echo ucfirst($ai['status']); ?></span></div>
   </div>
   <div style="display:flex;gap:.25rem;flex-shrink:0">
     <a href="<?php echo $SELF.'?p=item&id='.(int)$ai['id']; ?>" style="background:#f5f5f5;border:none;border-radius:7px;padding:.28rem .5rem;font-size:.65rem;color:#555;text-decoration:none">👁</a>
@@ -1019,7 +1019,7 @@ else: ?>
 <?php endif; ?>
 
 <div class="mk-sortbar">
-  <span style="font-size:.6rem;color:#aaa;flex-shrink:0">Sort:</span>
+  <span style="font-size:.68rem;color:#666;flex-shrink:0">Sort:</span>
   <?php foreach(['latest'=>'🆕 Latest','popular'=>'🔥 Popular','price_asc'=>'💰 Low','price_desc'=>'💸 High'] as $sk=>$sl): ?>
   <a href="<?php echo $SELF.'?sort='.$sk.($filterCat?'&cat='.$filterCat:'').($search?'&q='.urlencode($search):''); ?>" class="mk-sort<?php echo $sort===$sk?' active':''; ?>"><?php echo $sl; ?></a>
   <?php endforeach; ?>

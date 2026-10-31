@@ -69,7 +69,7 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="fg"><label class="lbl">Venue</label><input type="text" name="ovenue" class="inp"></div>
       </div>
       <div class="fg"><label class="lbl">Description</label><textarea name="odesc" class="inp" rows="2"></textarea></div>
-      <button type="submit" name="create_onam" class="btn" style="background:#E65100;color:#fff">🌸 Create Onam Event</button>
+      <button type="submit" name="create_onam" class="btn" style="background:#bf360c;color:#fff"><span aria-hidden="true">🌸</span> Create Onam Event</button>
     </form>
   </div>
 </div>

@@ -64,3 +64,13 @@ and the football-data.org token in `modules/prediction_sync.php`.
   screen reader; focus returns where it was on close; passkey can also be typed on a keyboard.
 - Slider pauses on hover/focus and doesn't auto-play with "reduce motion"; hidden slides can't be clicked.
 - Better contrast (grey and gold text, footer, labels), 16px inputs, 44px tap targets, labelled form fields.
+
+**All pages — UI/UX pass (checked with the axe accessibility checker on 34 pages):**
+- Automated problems went from 198 to 0 real ones (the 4 left are pages that need real data to render).
+- ~200 faint grey/gold/light-blue text colours darkened to meet 4.5:1 contrast (only on light backgrounds;
+  colours on dark sections were left alone or lightened instead).
+- Every form label is connected to its field; unlabelled dropdowns, sliders and icon-only buttons now have names.
+- Clickable cards and tabs built from `<div onclick>` now work with Tab + Enter/Space.
+- Closed side menu can no longer be reached with Tab.
+- No sideways scrolling on phones (Contact page, Club Settings tabs now scroll in one row).
+- ID card page allows pinch-zoom; Contact page inputs are 16px; credit footer readable on dark pages.

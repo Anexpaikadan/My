@@ -215,7 +215,7 @@ require_once __DIR__.'/../includes/header.php';
 .nsg-stats{display:grid;grid-template-columns:repeat(3,1fr);background:#fff;border-bottom:1px solid #e8ecf4}
 .nsg-stat{padding:.6rem .5rem;text-align:center}
 .nsg-stat-n{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:#1565c0;line-height:1}
-.nsg-stat-l{font-size:.58rem;color:#90a4ae;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.nsg-stat-l{font-size:.58rem;color:#546e7a;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
 
 /* ── Bottom Nav ── */
 .nsg-nav{
@@ -226,7 +226,7 @@ require_once __DIR__.'/../includes/header.php';
 }
 .nsg-ni{flex:1;display:flex;flex-direction:column;align-items:center;padding:.46rem .2rem .38rem;cursor:pointer;border:none;background:none;font-family:'DM Sans',sans-serif;position:relative}
 .nsg-ni .ic{font-size:1.2rem;line-height:1;transition:transform .2s}
-.nsg-ni .lb{font-size:.55rem;font-weight:700;color:#b0bec5;margin-top:.15rem;letter-spacing:.04em;text-transform:uppercase}
+.nsg-ni .lb{font-size:.55rem;font-weight:700;color:#546e7a;margin-top:.15rem;letter-spacing:.04em;text-transform:uppercase}
 .nsg-ni.on .lb{color:#1565c0}
 .nsg-ni.on .ic{transform:translateY(-2px)}
 .nsg-ni.on::after{content:'';position:absolute;top:0;left:22%;right:22%;height:2.5px;background:#1565c0;border-radius:0 0 3px 3px}
@@ -243,7 +243,7 @@ require_once __DIR__.'/../includes/header.php';
         margin:.85rem 0 .45rem;display:flex;align-items:center;gap:.4rem}
 
 .nsg-fi{margin-bottom:.65rem}
-.nsg-fi label{display:block;font-size:.67rem;font-weight:700;color:#607d8b;letter-spacing:.06em;text-transform:uppercase;margin-bottom:.22rem}
+.nsg-fi label{display:block;font-size:.7rem;font-weight:700;color:#546e7a;letter-spacing:.06em;text-transform:uppercase;margin-bottom:.22rem}
 .nsg-fi input,.nsg-fi select,.nsg-fi textarea{
   width:100%;padding:.7rem .9rem;border:2px solid #e3e7ff;border-radius:12px;
   font-family:'DM Sans',sans-serif;font-size:.9rem;color:#1a237e;background:#fff;
@@ -267,7 +267,7 @@ require_once __DIR__.'/../includes/header.php';
 .photo-drop.has{border-style:solid;border-color:#1565c0;box-shadow:0 0 0 3px rgba(21,101,192,.12)}
 .photo-drop img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:12px}
 .photo-drop .pd-icon{font-size:1.8rem;margin-bottom:.2rem;display:block}
-.photo-drop .pd-txt{font-size:.52rem;color:#90caf9;font-weight:700;text-align:center;padding:0 .3rem}
+.photo-drop .pd-txt{font-size:.6rem;color:#1565c0;font-weight:700;text-align:center;padding:0 .3rem}
 .photo-drop .pd-badge{
   position:absolute;bottom:-1px;left:0;right:0;background:rgba(21,101,192,.85);
   color:#fff;font-size:.48rem;font-weight:800;text-align:center;padding:.15rem 0;
@@ -465,7 +465,7 @@ require_once __DIR__.'/../includes/header.php';
 .list-filter-row{display:flex;gap:.35rem;overflow-x:auto;padding-bottom:.3rem;margin-bottom:.7rem}
 .list-filter-row::-webkit-scrollbar{display:none}
 .lfc{padding:.3rem .7rem;border-radius:20px;border:2px solid #e3e7ff;background:#fff;
-     font-size:.7rem;font-weight:800;color:#90a4ae;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s}
+     font-size:.7rem;font-weight:800;color:#546e7a;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s}
 .lfc.on{background:#1565c0;color:#fff;border-color:#1565c0}
 .slip-cards{display:grid;grid-template-columns:1fr 1fr;gap:.55rem}
 .sc{background:#fff;border-radius:13px;border:2px solid #e3e7ff;overflow:hidden;transition:all .18s;cursor:pointer}
@@ -475,7 +475,7 @@ require_once __DIR__.'/../includes/header.php';
 .sc .sc-sj{position:absolute;top:3px;right:4px;font-size:.52rem;font-weight:800;padding:.1rem .4rem;border-radius:10px;color:#fff}
 .sc .sc-body{padding:.55rem .65rem}
 .sc .sc-name{font-size:.82rem;font-weight:800;color:#1a237e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sc .sc-meta{font-size:.65rem;color:#90a4ae;margin-top:.12rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc .sc-meta{font-size:.65rem;color:#546e7a;margin-top:.12rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sc .sc-acts{display:flex;gap:.3rem;margin-top:.45rem}
 .sca{flex:1;padding:.3rem .2rem;border:none;border-radius:7px;cursor:pointer;font-size:.65rem;font-weight:700;text-align:center;transition:all .15s;font-family:'DM Sans',sans-serif}
 .sca:active{transform:scale(.92)}
@@ -483,7 +483,7 @@ require_once __DIR__.'/../includes/header.php';
 .sca-e{background:#fff8e1;color:#f57f17}
 .sca-d{background:#ffebee;color:#c62828}
 .sca-p{background:#e8f5e9;color:#2e7d32}
-.empty-state{grid-column:1/-1;text-align:center;padding:2.5rem 1rem;color:#b0bec5}
+.empty-state{grid-column:1/-1;text-align:center;padding:2.5rem 1rem;color:#546e7a}
 .empty-state .ei{display:block;font-size:2.5rem;margin-bottom:.6rem;opacity:.5}
 .empty-state p{font-size:.8rem}
 
@@ -521,7 +521,7 @@ require_once __DIR__.'/../includes/header.php';
 .cam-cvs{display:none}
 
 /* ── Drag position overlay ── */
-.photo-drag-hint{font-size:.58rem;color:#90caf9;text-align:center;margin-top:.2rem}
+.photo-drag-hint{font-size:.64rem;color:#1565c0;text-align:center;margin-top:.2rem}
 
 /* ── Toast ── */
 .nsg-toast{
@@ -566,7 +566,7 @@ $TPLS = [
 
   <!-- Header -->
   <div class="nsg-bar">
-    <a href="<?= url('dashboard.php') ?>" class="nsg-back"><i class="fas fa-arrow-left"></i></a>
+    <a href="<?= url('dashboard.php') ?>" class="nsg-back" aria-label="Back to dashboard"><i class="fas fa-arrow-left" aria-hidden="true"></i></a>
     <div class="nsg-head">
       <h1>📚 Book Name Slip Generator</h1>
       <p><?= h($CLUB) ?> · <?= h($PLACE) ?></p>
@@ -653,10 +653,10 @@ $TPLS = [
         $tpl_configs = [
           1=>['bg'=>'linear-gradient(145deg,#29b6f6,#b3e5fc)','bar'=>'#0277bd','text'=>'🐦 Sky'],
           2=>['bg'=>'linear-gradient(180deg,#87ceeb,#66bb6a)','bar'=>'#1b5e20','text'=>'🌿 Jungle'],
-          3=>['bg'=>'linear-gradient(150deg,#0a0015,#1565c0)','bar'=>'#90caf9','text'=>'🚀 Space'],
+          3=>['bg'=>'linear-gradient(150deg,#0a0015,#1565c0)','bar'=>'#90caf9','lbl'=>'#1565c0','text'=>'🚀 Space'],
           4=>['bg'=>'#fff','bar'=>'#1565c0','text'=>'✏️ School'],
           5=>['bg'=>'linear-gradient(150deg,#ff8f00,#fff8e1)','bar'=>'#bf360c','text'=>'🌺 Kerala'],
-          6=>['bg'=>'#fff','bar'=>'#e91e63','text'=>'🎨 Art'],
+          6=>['bg'=>'#fff','bar'=>'#e91e63','lbl'=>'#c2185b','text'=>'🎨 Art'],
         ];
         foreach($tpl_configs as $tid=>$t): ?>
         <div class="tp-btn <?= $tid===1?'on':'' ?>" data-id="<?= $tid ?>" onclick="pickTpl(<?= $tid ?>)">
@@ -665,7 +665,7 @@ $TPLS = [
             <div class="tp-field-line" style="background:<?= $t['bar'] ?>"></div>
             <div class="tp-field-line2" style="background:<?= $t['bar'] ?>"></div>
           </div>
-          <div class="tp-label" style="color:<?= $t['bar'] ?>;background:<?= is_string($t['bg'])&&strlen($t['bg'])<20 ? $t['bg'] : '#fff' ?>"><?= $t['text'] ?></div>
+          <div class="tp-label" style="color:<?= isset($t['lbl']) ? $t['lbl'] : $t['bar'] ?>;background:<?= is_string($t['bg'])&&strlen($t['bg'])<20 ? $t['bg'] : '#fff' ?>"><?= $t['text'] ?></div>
         </div>
         <?php endforeach; ?>
       </div>
@@ -676,7 +676,7 @@ $TPLS = [
         <button class="btn-primary" id="saveBtn" onclick="doSave()">
           <i class="fas fa-save"></i> <span id="saveTxt">Save Slip</span>
         </button>
-        <button class="btn-sec" onclick="doReset()"><i class="fas fa-redo"></i></button>
+        <button type="button" class="btn-sec" onclick="doReset()" aria-label="Start again" title="Start again"><i class="fas fa-redo" aria-hidden="true"></i></button>
       </div>
 
     </div>
@@ -771,7 +771,7 @@ $TPLS = [
       <div class="bulk-drop" onclick="document.getElementById('bulkFile').click()" id="bulkZone">
         <div style="font-size:2.4rem;margin-bottom:.5rem">📊</div>
         <div style="font-weight:800;color:#1565c0;font-size:.9rem;margin-bottom:.3rem">Upload CSV File</div>
-        <div style="font-size:.72rem;color:#90a4ae;margin-bottom:.5rem">Name | School | Class | Division | Parent | Contact | Subject</div>
+        <div style="font-size:.72rem;color:#546e7a;margin-bottom:.5rem">Name | School | Class | Division | Parent | Contact | Subject</div>
         <div style="background:#fff;border:1px solid #bbdefb;border-radius:8px;padding:.5rem .8rem;display:inline-block;font-size:.68rem;font-family:monospace;color:#1565c0">
           Fathima,Govt HS,7th,A,Ibrahim,+919876543210,Arabic
         </div>

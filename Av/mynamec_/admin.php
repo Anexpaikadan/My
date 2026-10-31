@@ -280,7 +280,7 @@ require_once __DIR__.'/includes/header.php';
 <style>
 .mcard{background:#fff;border-radius:14px;padding:.85rem 1rem;margin-bottom:.6rem;box-shadow:0 2px 10px rgba(0,0,0,.07);display:flex;align-items:center;gap:.75rem;transition:all .2s}
 .mcard:hover{box-shadow:0 4px 18px rgba(13,71,161,.14);transform:translateY(-1px)}
-.mcard-num{width:24px;font-size:.72rem;font-weight:700;color:#94a3b8;flex-shrink:0;text-align:center}
+.mcard-num{width:24px;font-size:.72rem;font-weight:700;color:#5d6b80;flex-shrink:0;text-align:center}
 .mcard-photo{width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#e3f2fd;display:flex;align-items:center;justify-content:center;font-size:1.2rem;border:2px solid #e0e7ff}
 .mcard-photo img{width:44px;height:44px;border-radius:50%;object-fit:cover}
 .mcard-info{flex:1;min-width:0}

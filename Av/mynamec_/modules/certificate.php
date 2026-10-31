@@ -246,7 +246,7 @@ $cats = [
 .ach-member-photo{width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #e0e7ff;flex-shrink:0}
 .ach-member-ph{width:38px;height:38px;border-radius:50%;background:#e3f2fd;border:2px solid #e0e7ff;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
 .ach-member-name{font-weight:800;font-size:.9rem;color:#0d1b3e;line-height:1.2}
-.ach-member-date{font-size:.66rem;color:#94a3b8}
+.ach-member-date{font-size:.66rem;color:#5d6b80}
 .ach-title{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#0d1b3e;margin-bottom:.45rem;line-height:1.35}
 .ach-desc{font-size:.78rem;color:#64748b;line-height:1.55;margin-bottom:.7rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .ach-cat-badge{display:inline-flex;align-items:center;gap:.3rem;border-radius:20px;padding:.18rem .6rem;font-size:.65rem;font-weight:700;border:1px solid}
@@ -374,7 +374,7 @@ textarea.inp2{resize:vertical;min-height:70px}
           <option value="active" <?=($editItem['status']??'')==='active'?'selected':''?>>🟢 Public</option>
           <option value="inactive" <?=($editItem['status']??'')==='inactive'?'selected':''?>>🔴 Hidden</option>
         </select>
-        <a href="<?=url('modules/certificate.php')?>" style="font-size:.78rem;color:#94a3b8;margin-left:.5rem">Cancel edit</a>
+        <a href="<?=url('modules/certificate.php')?>" style="font-size:.78rem;color:#5d6b80;margin-left:.5rem">Cancel edit</a>
       </div>
       <?php endif; ?>
       <button type="submit" name="save_achievement" class="btn-save">
@@ -429,7 +429,7 @@ textarea.inp2{resize:vertical;min-height:70px}
 
 <!-- EMPTY STATE -->
 <?php if (empty($achievements)): ?>
-<div style="text-align:center;padding:5rem 2rem;color:#94a3b8;background:#fff;min-height:300px">
+<div style="text-align:center;padding:5rem 2rem;color:#5d6b80;background:#fff;min-height:300px">
   <div style="font-size:4.5rem;margin-bottom:1rem">🏆</div>
   <h3 style="font-size:1.1rem;color:#475569;margin-bottom:.4rem">No achievements yet</h3>
   <p style="font-size:.84rem">Member achievements and milestones will appear here.</p>
@@ -522,7 +522,7 @@ textarea.inp2{resize:vertical;min-height:70px}
       ?>
       <?php if ($a['member_id'] == $me['id'] || $isAdmin): ?>
       <div style="margin-top:.65rem;padding-top:.65rem;border-top:1px solid #f0f4f8">
-        <div style="font-size:.62rem;font-weight:800;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.45rem">Share Achievement</div>
+        <div style="font-size:.62rem;font-weight:800;color:#5d6b80;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.45rem">Share Achievement</div>
         <div style="display:flex;gap:.4rem;flex-wrap:wrap">
           <!-- WhatsApp Share -->
           <a href="<?= h($waUrl) ?>" target="_blank"

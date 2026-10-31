@@ -99,7 +99,7 @@ function renderMemberCard($m, $user, $size = 'normal') {
   <!-- Search -->
   <div style="display:flex;gap:.6rem;margin-bottom:1.5rem;flex-wrap:wrap">
     <input type="text" id="msearch" style="flex:1;min-width:180px;padding:.68rem .9rem;border:2px solid #E8ECF4;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none;transition:border-color .18s" placeholder="🔍 Search any member…" oninput="searchMembers(this.value)">
-    <a href="#executives" style="padding:.6rem 1rem;background:#B8860B22;color:#B8860B;border:1px solid #B8860B44;border-radius:9px;font-size:.8rem;font-weight:700;text-decoration:none">⭐ Executive</a>
+    <a href="#executives" style="padding:.6rem 1rem;background:#B8860B22;color:#7a5a08;border:1px solid #B8860B44;border-radius:9px;font-size:.8rem;font-weight:700;text-decoration:none">⭐ Executive</a>
     <a href="#committee" style="padding:.6rem 1rem;background:#7B1FA222;color:#7B1FA2;border:1px solid #7B1FA244;border-radius:9px;font-size:.8rem;font-weight:700;text-decoration:none">🏛 Committee</a>
     <a href="#members" style="padding:.6rem 1rem;background:#0D47A122;color:#0D47A1;border:1px solid #0D47A144;border-radius:9px;font-size:.8rem;font-weight:700;text-decoration:none">👥 Members</a>
   </div>

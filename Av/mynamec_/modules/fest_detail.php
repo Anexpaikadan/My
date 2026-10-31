@@ -103,7 +103,7 @@ $nowT=date('Y-m-d H:i:s');
     <span style="font-size:.78rem;font-weight:600;color:#b45309;flex:1"><?= h($pv[1]) ?></span>
     <?php if($pw&&$pw['like_count']>0): ?>
     <span style="font-size:.68rem;color:#d97706;font-weight:700"><?= h($pw['member_name']) ?> · <?= $pw['like_count'] ?> ❤️</span>
-    <?php else: ?><span style="font-size:.65rem;color:#ccc">TBD</span><?php endif; ?>
+    <?php else: ?><span style="font-size:.65rem;color:#666666">TBD</span><?php endif; ?>
   </div>
   <?php endforeach; ?>
 </div>
@@ -157,7 +157,7 @@ $nowT=date('Y-m-d H:i:s');
   <div style="padding:.4rem .5rem .5rem">
     <div style="font-size:.68rem;font-weight:800;color:#07225c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><?= h($entry['member_name']) ?></div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.2rem">
-      <div><span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:#e53935"><?= (int)$entry['like_count'] ?></span><span style="font-size:.55rem;color:#94a3b8;margin-left:2px">❤️</span></div>
+      <div><span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:#e53935"><?= (int)$entry['like_count'] ?></span><span style="font-size:.55rem;color:#5d6b80;margin-left:2px">❤️</span></div>
       <?php if($isMine): ?>
       <button style="padding:.25rem .5rem;background:#f1f5f9;color:#64748b;border:none;border-radius:6px;font-size:.62rem;font-weight:700">Mine</button>
       <?php elseif($isLiked): ?>
@@ -165,7 +165,7 @@ $nowT=date('Y-m-d H:i:s');
       <?php elseif($canLikeThis): ?>
       <button onclick="likeEntry(<?= $entry['id'] ?>,<?= $fid ?>,this)" style="padding:.25rem .55rem;background:linear-gradient(135deg,#e53935,#b71c1c);color:#fff;border:none;border-radius:6px;font-size:.65rem;font-weight:800;cursor:pointer">❤️ Like</button>
       <?php else: ?>
-      <button style="padding:.25rem .5rem;background:#f5f5f5;color:#999;border:none;border-radius:6px;font-size:.62rem">🔒</button>
+      <button style="padding:.25rem .5rem;background:#f5f5f5;color:#666666;border:none;border-radius:6px;font-size:.62rem">🔒</button>
       <?php endif; ?>
     </div>
   </div>
@@ -173,7 +173,7 @@ $nowT=date('Y-m-d H:i:s');
 <?php endforeach; ?>
 </div>
 <?php else: ?>
-<div style="text-align:center;padding:2rem;color:#94a3b8"><div style="font-size:2.5rem;margin-bottom:.5rem">🎪</div>No entries yet. Be first!</div>
+<div style="text-align:center;padding:2rem;color:#5d6b80"><div style="font-size:2.5rem;margin-bottom:.5rem">🎪</div>No entries yet. Be first!</div>
 <?php endif; ?>
 </div>
 

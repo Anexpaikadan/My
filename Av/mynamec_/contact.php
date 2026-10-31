@@ -18,17 +18,17 @@ $wa   = preg_replace('/\D/','',CLUB_PHONE);
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <title>Contact Us | <?= h(CLUB_NAME) ?></title>
 <?php if(defined('LOGO_URL')): ?><link rel="icon" href="<?= h(LOGO_URL) ?>"><?php endif; ?>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 <style>
-:root{--primary:#1a3a6b;--accent:#c8922a;--accent2:#e6b84a;--text:#1a1a2e;--text2:#4a5568;--text3:#8a9bae;--border:rgba(0,0,0,.08);--shadow:0 4px 24px rgba(0,0,0,.09);--radius:14px}
+:root{--primary:#1a3a6b;--accent:#c8922a;--accent2:#e6b84a;--text:#1a1a2e;--text2:#4a5568;--text3:#5f6f86;--border:rgba(0,0,0,.08);--shadow:0 4px 24px rgba(0,0,0,.09);--radius:14px}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:'Inter',sans-serif;background:#fff;color:var(--text);line-height:1.65}
+body{font-family:'Inter',sans-serif;background:#fff;color:var(--text);line-height:1.65;overflow-x:hidden}
 a{text-decoration:none;color:inherit}
 /* Kerala stripe */
 .kstrip{height:4px;background:repeating-linear-gradient(90deg,#c8922a 0,#c8922a 10px,#b71c1c 10px,#b71c1c 20px,#1a3a6b 20px,#1a3a6b 30px,#e6b84a 30px,#e6b84a 40px)}
@@ -38,7 +38,7 @@ a{text-decoration:none;color:inherit}
 .nav-logo-img{width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid rgba(200,146,42,.5)}
 .nav-logo-ph{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.15);border:2px solid rgba(200,146,42,.4);display:flex;align-items:center;justify-content:center;font-size:.95rem}
 .brand-name{font-family:'Playfair Display',serif;font-size:.95rem;font-weight:700;line-height:1.2;color:#fff}
-.brand-sub{font-size:.58rem;color:rgba(255,255,255,.5);letter-spacing:.1em}
+.brand-sub{font-size:.62rem;color:rgba(255,255,255,.75);letter-spacing:.1em}
 .back-btn{display:inline-flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.85);padding:.42rem 1rem;border-radius:8px;font-size:.84rem;font-weight:600;transition:all .2s}
 .back-btn:hover{background:rgba(255,255,255,.22);color:#fff}
 /* Hero */
@@ -49,9 +49,9 @@ a{text-decoration:none;color:inherit}
 /* Form card */
 .form-card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);padding:2rem}
 label.flbl{font-size:.75rem;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem;display:block}
-.finp{width:100%;background:#f7f9fc;border:1.5px solid rgba(0,0,0,.1);border-radius:10px;padding:.78rem 1rem;font-family:'Inter',sans-serif;font-size:.9rem;color:var(--text);outline:none;transition:all .25s;margin-bottom:1rem}
+.finp{width:100%;background:#f7f9fc;border:1.5px solid rgba(0,0,0,.1);border-radius:10px;padding:.78rem 1rem;font-family:'Inter',sans-serif;font-size:1rem;color:var(--text);outline:none;transition:all .25s;margin-bottom:1rem}
 .finp:focus{border-color:var(--primary);background:#fff;box-shadow:0 0 0 3px rgba(26,58,107,.1)}
-.finp::placeholder{color:#bcc4cf}
+.finp::placeholder{color:#6E7A93}
 textarea.finp{resize:vertical;min-height:130px}
 .btn-send{width:100%;padding:.85rem;background:var(--primary);color:#fff;border:none;border-radius:10px;font-family:'Inter',sans-serif;font-weight:700;font-size:.95rem;cursor:pointer;transition:all .25s;display:flex;align-items:center;justify-content:center;gap:.5rem}
 .btn-send:hover:not(:disabled){background:#0d47a1;transform:translateY(-1px);box-shadow:0 8px 24px rgba(26,58,107,.3)}
@@ -74,14 +74,14 @@ textarea.finp{resize:vertical;min-height:130px}
 .map-wrap{border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow);height:340px}
 .map-wrap iframe{width:100%;height:100%;border:none}
 /* Footer */
-.mini-footer{background:var(--primary);color:rgba(255,255,255,.5);text-align:center;padding:1.2rem;font-size:.78rem}
+.mini-footer{background:var(--primary);color:rgba(255,255,255,.78);text-align:center;padding:1.2rem;font-size:.78rem}
 .mini-footer b{color:var(--accent2)}
 /* Reveal */
 .rv{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
 .rv.in{opacity:1;transform:translateY(0)}
-.rl{opacity:0;transform:translateX(-24px);transition:opacity .65s ease,transform .65s ease}
+.rl{opacity:0;transform:translateY(24px);transition:opacity .65s ease,transform .65s ease}
 .rl.in{opacity:1;transform:translateX(0)}
-.rr{opacity:0;transform:translateX(24px);transition:opacity .65s ease,transform .65s ease}
+.rr{opacity:0;transform:translateY(24px);transition:opacity .65s ease,transform .65s ease}
 .rr.in{opacity:1;transform:translateX(0)}
 /* WA float */
 .wa-float{position:fixed;bottom:1.5rem;right:1.5rem;width:52px;height:52px;border-radius:50%;background:#25d366;color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.4rem;z-index:900;box-shadow:0 6px 22px rgba(37,211,102,.42);transition:all .22s;border:none;cursor:pointer;text-decoration:none}
@@ -89,7 +89,7 @@ textarea.finp{resize:vertical;min-height:130px}
 </style>
 </head>
 <body>
-<a href="https://wa.me/<?= h($wa) ?>" target="_blank" class="wa-float"><i class="fab fa-whatsapp"></i></a>
+<a href="https://wa.me/<?= h($wa) ?>" target="_blank" rel="noopener" class="wa-float" aria-label="Chat on WhatsApp"><i class="fab fa-whatsapp" aria-hidden="true"></i></a>
 <div class="kstrip"></div>
 
 <!-- Top bar nav -->
@@ -118,13 +118,13 @@ textarea.finp{resize:vertical;min-height:130px}
         <p style="font-size:.86rem;color:var(--text3);margin-bottom:1.5rem">Fill the form and we'll reply on WhatsApp shortly.</p>
         <div class="alert-box" id="contactAlert"></div>
         <div id="contactFormWrap">
-          <label class="flbl">Your Name *</label>
+          <label class="flbl" for="cName">Your Name *</label>
           <input type="text"  class="finp" id="cName" placeholder="Full name">
-          <label class="flbl">Email Address</label>
+          <label class="flbl" for="cEmail">Email Address</label>
           <input type="email" class="finp" id="cEmail" placeholder="your@email.com">
-          <label class="flbl">Subject</label>
+          <label class="flbl" for="cSubject">Subject</label>
           <input type="text"  class="finp" id="cSubject" placeholder="What is this about?">
-          <label class="flbl">Message *</label>
+          <label class="flbl" for="cMsg">Message *</label>
           <textarea           class="finp" id="cMsg" placeholder="Write your message here…"></textarea>
           <button class="btn-send" id="btnSend" onclick="sendContact()">
             <i class="fas fa-paper-plane"></i> Send Message
@@ -166,7 +166,7 @@ textarea.finp{resize:vertical;min-height:130px}
 
       <!-- Map -->
       <div class="map-wrap mt-4">
-        <iframe
+        <iframe title="Map showing the club location"
           src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3914.1234567890!2d76.0000000!3d11.0000000!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zVmV0dGlra2F0dGlyaSwgS2VyYWxh!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
           allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
         </iframe>

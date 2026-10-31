@@ -186,7 +186,7 @@ require_once __DIR__ . '/../includes/header.php';
 .bh-bg-group{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;
   color:#b71c1c;line-height:1}
 .bh-bg-btn.on .bh-bg-group{color:#fff}
-.bh-bg-count{font-size:.6rem;color:#94a3b8;font-weight:700;margin-top:.15rem}
+.bh-bg-count{font-size:.6rem;color:#5d6b80;font-weight:700;margin-top:.15rem}
 .bh-bg-btn.on .bh-bg-count{color:rgba(255,255,255,.7)}
 .bh-avail-dot{width:7px;height:7px;border-radius:50%;background:#4caf50;
   display:inline-block;margin-right:.2rem}
@@ -219,7 +219,7 @@ require_once __DIR__ . '/../includes/header.php';
 .bh-blood-badge.unavail{background:#f5f5f5;border-color:#e0e0e0}
 .bh-blood-text{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;
   color:#b71c1c;line-height:1}
-.bh-blood-badge.unavail .bh-blood-text{color:#9e9e9e}
+.bh-blood-badge.unavail .bh-blood-text{color:#666666}
 
 /* Donor info */
 .bh-dname{font-weight:800;font-size:.9rem;color:#0d1b3e;
@@ -234,7 +234,7 @@ require_once __DIR__ . '/../includes/header.php';
 .bh-status.avail{color:#1b5e20;background:#e8f5e9;border-color:#a5d6a7}
 .bh-status.unavail{color:#b71c1c;background:#ffebee;border-color:#ef9a9a}
 .bh-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
-.bh-date{font-size:.6rem;color:#94a3b8}
+.bh-date{font-size:.6rem;color:#5d6b80}
 
 /* WA Emergency button */
 .bh-wa-btn{flex-shrink:0;display:flex;flex-direction:column;
@@ -294,7 +294,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 /* Section label */
 .bh-sec-lbl{font-size:.68rem;font-weight:800;text-transform:uppercase;
-  letter-spacing:.12em;color:#94a3b8;margin:.9rem 1rem .5rem;
+  letter-spacing:.12em;color:#5d6b80;margin:.9rem 1rem .5rem;
   display:flex;align-items:center;gap:.5rem}
 .bh-sec-lbl::after{content:'';flex:1;height:1.5px;
   background:linear-gradient(90deg,#e0e7ff,transparent)}
@@ -421,7 +421,7 @@ require_once __DIR__ . '/../includes/header.php';
 <!-- ── Donor Cards ── -->
 <div class="bh-donors" id="dtb">
   <?php if(empty($donors)): ?>
-  <div style="background:#fff;border-radius:16px;padding:2.5rem;text-align:center;color:#94a3b8">
+  <div style="background:#fff;border-radius:16px;padding:2.5rem;text-align:center;color:#5d6b80">
     <div style="font-size:2.5rem;margin-bottom:.5rem">🩸</div>
     <div style="font-weight:700;font-size:.9rem">No donors found</div>
     <div style="font-size:.78rem;margin-top:.3rem">Members can add their blood group in Profile</div>

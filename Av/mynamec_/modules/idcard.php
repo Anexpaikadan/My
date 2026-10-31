@@ -175,7 +175,7 @@ $tab = $_GET['tab'] ?? 'card';
 </head>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>ID Card — <?= h($user['name']) ?> | <?= h(CLUB_NAME) ?></title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -258,7 +258,7 @@ body{padding:1.1rem 1rem 3rem;display:flex;flex-direction:column;align-items:cen
   box-shadow:0 2px 10px rgba(0,0,0,.13);border:1px solid #dde5f0;flex-shrink:0;overflow:hidden}
 #mainQR{width:56px;height:56px;display:block}
 #mainQR img,#mainQR canvas{width:56px!important;height:56px!important;display:block!important}
-.c-qr-lbl{font-size:.42rem;color:#94a3b8;letter-spacing:.09em;text-transform:uppercase;text-align:center}
+.c-qr-lbl{font-size:.42rem;color:#5d6b80;letter-spacing:.09em;text-transform:uppercase;text-align:center}
 
 /* Right col */
 .c-right{flex:1;padding:9px 12px 7px;display:flex;flex-direction:column;gap:4px;min-width:0;background:#fff}
@@ -271,12 +271,12 @@ body{padding:1.1rem 1rem 3rem;display:flex;flex-direction:column;align-items:cen
 .c-badge-status{display:inline-flex;align-items:center;gap:4px;padding:.16rem .58rem;border-radius:20px}
 .c-sep{height:1px;background:#f1f5f9;margin:2px 0}
 .c-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 8px;flex:1}
-.c-lbl{font-size:.44rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8;margin-bottom:1px;line-height:1}
+.c-lbl{font-size:.44rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#5d6b80;margin-bottom:1px;line-height:1}
 .c-val{font-size:.7rem;font-weight:700;color:#1e293b;line-height:1.2}
 .c-val.blood{font-size:.88rem;font-weight:900;color:#dc2626}
 .c-val.sub{color:#0d47a1;font-size:.67rem}
 .c-val.exp{color:#dc2626;font-size:.58rem}
-.c-val.nosub{color:#94a3b8;font-size:.58rem;font-style:italic;font-weight:500}
+.c-val.nosub{color:#5d6b80;font-size:.58rem;font-style:italic;font-weight:500}
 .c-full{grid-column:1/-1}
 .c-sep-grid{grid-column:1/-1;height:1px;background:#f1f5f9;margin:1px 0}
 
@@ -301,7 +301,7 @@ body{padding:1.1rem 1rem 3rem;display:flex;flex-direction:column;align-items:cen
 .xbtn-dl{background:linear-gradient(135deg,#0d47a1,#1565c0);color:#fff;box-shadow:0 5px 16px rgba(13,71,161,.32)}
 .xbtn-wa{background:linear-gradient(135deg,#1b5e20,#2e7d32);color:#fff;box-shadow:0 5px 16px rgba(27,94,32,.3)}
 .xbtn-bk{background:#fff;color:#475569;border:1.5px solid #e2e8f0}
-.hint{font-size:.72rem;color:#94a3b8;text-align:center;max-width:440px;width:100%}
+.hint{font-size:.72rem;color:#5d6b80;text-align:center;max-width:440px;width:100%}
 
 /* ── Volunteer section ── */
 .vsec{width:100%;max-width:600px}
@@ -341,7 +341,7 @@ body{padding:1.1rem 1rem 3rem;display:flex;flex-direction:column;align-items:cen
 .sbtn-sm{padding:.38rem .78rem;font-size:.75rem;width:auto}
 .sbtn-green{background:#1b5e20;color:#fff}.sbtn-red{background:#b71c1c;color:#fff}
 .badge-pend{background:#fffbeb;border:1px solid #fde68a;color:#d97706;border-radius:20px;padding:.18rem .65rem;font-size:.66rem;font-weight:700}
-.empty{text-align:center;padding:2rem;color:#94a3b8;font-size:.88rem}
+.empty{text-align:center;padding:2rem;color:#5d6b80;font-size:.88rem}
 .empty div{font-size:2.5rem;margin-bottom:.5rem}
 
 /* Admin scan */
@@ -568,7 +568,7 @@ body{padding:1.1rem 1rem 3rem;display:flex;flex-direction:column;align-items:cen
         </select>
         <button type="submit" name="apply_vol" class="sbtn sbtn-blue">🙋 Submit Volunteer Application</button>
       </form>
-      <p style="font-size:.74rem;color:#94a3b8;margin-top:.65rem">Admin will review. Once approved, your volunteer QR card appears above.</p>
+      <p style="font-size:.74rem;color:#5d6b80;margin-top:.65rem">Admin will review. Once approved, your volunteer QR card appears above.</p>
     </div>
     <?php else: ?>
     <div class="empty"><div>📅</div>No upcoming events to volunteer for.</div>

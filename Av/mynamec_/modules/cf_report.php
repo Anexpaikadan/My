@@ -15,7 +15,7 @@ if (!$canReport) {
   echo '<div style="font-family:sans-serif;padding:40px;text-align:center;color:#333">'
      . '<h2>🔒 Access Restricted</h2>'
      . '<p>This funding report is only available to club admins.</p>'
-     . '<p style="color:#888;font-size:.85rem">Your role: '.h($me['role']).'</p>'
+     . '<p style="color:#666666;font-size:.85rem">Your role: '.h($me['role']).'</p>'
      . '<a href="'.url('modules/crowdfund.php').'" style="color:#0d47a1">← Back to Crowd Funding</a></div>';
   exit;
 }
@@ -60,7 +60,7 @@ function rmoney($n){ return '₹'.number_format($n,2); }
   /* Summary */
   .sumgrid{display:flex;gap:12px;margin-bottom:22px;flex-wrap:wrap}
   .sumbox{flex:1;min-width:120px;border:1px solid #e3e8f2;border-radius:10px;padding:12px 14px;background:#f8f9ff}
-  .sumbox .l{font-size:.66rem;text-transform:uppercase;letter-spacing:.06em;color:#8a93a8;font-weight:700}
+  .sumbox .l{font-size:.66rem;text-transform:uppercase;letter-spacing:.06em;color:#5f6880;font-weight:700}
   .sumbox .v{font-size:1.3rem;font-weight:800;color:#0d1b3e;margin-top:3px}
   .sumbox.green .v{color:#1b5e20}.sumbox.blue .v{color:#0d47a1}.sumbox.gold .v{color:#c8922a}
   .progress{height:10px;background:#e8ecf4;border-radius:6px;overflow:hidden;margin-bottom:24px}
@@ -76,7 +76,7 @@ function rmoney($n){ return '₹'.number_format($n,2); }
   .top1 td{background:#fffaf0 !important}
   tfoot td{font-weight:800;color:#0d1b3e;border-top:2px solid #0d47a1;background:#f0f4fc}
   /* Footer */
-  .rfoot{margin-top:26px;border-top:1px solid #e3e8f2;padding-top:14px;font-size:.72rem;color:#8a93a8;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+  .rfoot{margin-top:26px;border-top:1px solid #e3e8f2;padding-top:14px;font-size:.72rem;color:#5f6880;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
   .stamp{margin-top:10px;font-size:.7rem;color:#aab2c4;font-style:italic}
   /* Print button */
   .pbar{max-width:760px;margin:0 auto 14px;display:flex;gap:10px;justify-content:flex-end}
@@ -131,7 +131,7 @@ function rmoney($n){ return '₹'.number_format($n,2); }
       <!-- Donor table -->
       <h3 class="sec">🏆 Verified Donors (highest first)</h3>
       <?php if(empty($dons)): ?>
-      <p style="font-size:.85rem;color:#8a93a8">No verified donations yet.</p>
+      <p style="font-size:.85rem;color:#5f6880">No verified donations yet.</p>
       <?php else: ?>
       <table>
         <thead>

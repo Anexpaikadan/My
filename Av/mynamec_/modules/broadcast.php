@@ -102,7 +102,7 @@ require_once __DIR__ . '/../includes/header.php';
 .bc-stat { padding: .7rem .5rem; text-align: center; border-right: 1px solid rgba(255,255,255,.1); }
 .bc-stat:last-child { border-right: none; }
 .bc-stat-n { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: #25d366; line-height: 1; }
-.bc-stat-l { font-size: .55rem; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: .08em; margin-top: .1rem; }
+.bc-stat-l { font-size: .62rem; color: rgba(255,255,255,.85); text-transform: uppercase; letter-spacing: .08em; margin-top: .1rem; }
 
 /* Main card */
 .bc-card {
@@ -145,7 +145,7 @@ require_once __DIR__ . '/../includes/header.php';
 .tmpl-btn:active { transform: scale(.97); }
 .tmpl-em { font-size: 1.2rem; display: block; margin-bottom: .2rem; }
 .tmpl-lbl { font-size: .72rem; font-weight: 700; color: #075e54; }
-.tmpl-sub { font-size: .62rem; color: #94a3b8; }
+.tmpl-sub { font-size: .62rem; color: #5d6b80; }
 
 /* Form */
 .bc-label {
@@ -207,7 +207,7 @@ require_once __DIR__ . '/../includes/header.php';
 .preview-label {
     font-size: .6rem;
     font-weight: 800;
-    color: #25d366;
+    color: #0f7a3d;
     letter-spacing: .1em;
     text-transform: uppercase;
     margin-bottom: .5rem;
@@ -229,7 +229,7 @@ require_once __DIR__ . '/../includes/header.php';
 /* Character count */
 .char-count {
     font-size: .65rem;
-    color: #94a3b8;
+    color: #5d6b80;
     text-align: right;
     margin-top: .25rem;
 }
@@ -317,7 +317,7 @@ require_once __DIR__ . '/../includes/header.php';
 .hist-item:hover { border-color: #25d366; background: #f0fdf4; }
 .hist-item:active { transform: scale(.98); }
 .hist-title { font-size: .85rem; font-weight: 800; color: #0d1b3e; margin-bottom: .2rem; }
-.hist-meta { font-size: .65rem; color: #94a3b8; display: flex; gap: .6rem; flex-wrap: wrap; }
+.hist-meta { font-size: .65rem; color: #5d6b80; display: flex; gap: .6rem; flex-wrap: wrap; }
 .hist-cat {
     display: inline-block;
     padding: .08rem .45rem;
@@ -448,7 +448,7 @@ require_once __DIR__ . '/../includes/header.php';
         <label class="bc-label">Category</label>
         <div class="cat-pills" id="catPills">
             <?php
-            $cats = ['general'=>['📢','General','#64748b','#f1f5f9'],
+            $cats = ['general'=>['📢','General','#556274','#f1f5f9'],
                      'event'=>['📅','Event','#0d47a1','#e3f2fd'],
                      'urgent'=>['🚨','Urgent','#b71c1c','#ffebee'],
                      'meeting'=>['🤝','Meeting','#1b5e20','#e8f5e9'],
@@ -663,7 +663,7 @@ function updatePreview() {
     var box = document.getElementById('previewBox');
     if (!msg.trim()) {
         box.textContent = 'Your message will appear here...';
-        box.style.color = '#94a3b8';
+        box.style.color = '#5d6b80';
         return;
     }
     box.style.color = '#0d1b3e';

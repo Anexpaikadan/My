@@ -359,10 +359,10 @@ input[type=range]{accent-color:var(--cs-gold)}
   <p class="cs-note" style="margin-top:.6rem">Text→image AI needs an image API key (OpenAI / Stability / Replicate) — wired as a server hook. Until added, this builds a prompt to paste into any AI tool, then drop the result in via <b>Image</b>.</p></div>
 <div class="cs-sheet" id="sheetBg"><div class="grab"></div><h3>✂️ Remove Background<button class="x" onclick="csCloseSheets()">×</button></h3>
   <p class="cs-note" style="margin-bottom:.6rem">Select an image first. Erases pixels near the corner colour — best for plain backgrounds.</p>
-  <div class="cs-field" style="margin-bottom:.6rem">Strength <span id="csBgVal">28</span><input type="range" id="csBgThresh" min="6" max="90" value="28" oninput="document.getElementById('csBgVal').textContent=this.value"></div>
+  <div class="cs-field" style="margin-bottom:.6rem">Strength <span id="csBgVal">28</span><input type="range" id="csBgThresh" aria-label="Background removal strength" min="6" max="90" value="28" oninput="document.getElementById('csBgVal').textContent=this.value"></div>
   <div class="cs-row"><button class="cs-btn t" onclick="csRemoveBg()">✂️ Erase</button><button class="cs-btn d" onclick="csRestoreImg()">↺ Undo</button></div></div>
 <div class="cs-sheet" id="sheetExport"><div class="grab"></div><h3>⬇️ Download & Share<button class="x" onclick="csCloseSheets()">×</button></h3>
-  <div class="cs-field" style="margin-bottom:.5rem">Quality<select id="csExpScale" class="cs-input"><option value="2">HD (2×)</option><option value="3">Ultra (3×)</option><option value="1">Standard</option></select></div>
+  <div class="cs-field" style="margin-bottom:.5rem">Quality<select id="csExpScale" class="cs-input" aria-label="Export quality"><option value="2">HD (2×)</option><option value="3">Ultra (3×)</option><option value="1">Standard</option></select></div>
   <div class="cs-grid"><div class="cs-chip" onclick="csExport('png')">PNG<br><small>transparent</small></div><div class="cs-chip" onclick="csExport('jpg')">JPG</div>
     <div class="cs-chip" onclick="csExport('webp')">WebP</div><div class="cs-chip" onclick="csExport('pdf')">PDF</div><div class="cs-chip" onclick="csShareWA()">🟢 WhatsApp</div></div></div>
 <div class="cs-sheet" id="sheetSave"><div class="grab"></div><h3>💾 Save Design<button class="x" onclick="csCloseSheets()">×</button></h3>
@@ -580,9 +580,9 @@ function csApplyTpl(i){var t=TEMPLATES[i];csCurrentId=0;curW=t.w;curH=t.h;curKin
 // text style sheet
 document.addEventListener('DOMContentLoaded',function(){var ss=document.createElement('div');ss.className='cs-sheet';ss.id='sheetTextStyle';
   ss.innerHTML='<div class="grab"></div><h3>🅣 Text Style<button class="x" onclick="csCloseSheets()">×</button></h3>'+
-  '<div class="cs-field" style="margin-bottom:.5rem">Font<select class="cs-input" onchange="csTextFont(this.value)">'+['Anton','Bebas Neue','Sora','Baloo Chettan 2','Anek Malayalam','Noto Sans Malayalam','Impact','Georgia'].map(function(f){return '<option value="'+f+'">'+f+'</option>';}).join('')+'</select></div>'+
+  '<div class="cs-field" style="margin-bottom:.5rem">Font<select class="cs-input" aria-label="Font" onchange="csTextFont(this.value)">'+['Anton','Bebas Neue','Sora','Baloo Chettan 2','Anek Malayalam','Noto Sans Malayalam','Impact','Georgia'].map(function(f){return '<option value="'+f+'">'+f+'</option>';}).join('')+'</select></div>'+
   '<div class="cs-row" style="margin-bottom:.5rem"><label class="cs-field">Colour<input type="color" class="cs-color" value="#ffffff" onchange="csTextSet(\'fill\',this.value)"></label><label class="cs-field">Outline<input type="color" class="cs-color" value="#000000" onchange="csTextSet(\'stroke\',this.value)"></label></div>'+
-  '<div class="cs-field" style="margin-bottom:.5rem">Size<input type="range" min="20" max="320" value="100" oninput="csTextSet(\'fontSize\',parseInt(this.value,10))"></div>'+
+  '<div class="cs-field" style="margin-bottom:.5rem">Size<input type="range" aria-label="Text size" min="20" max="320" value="100" oninput="csTextSet(\'fontSize\',parseInt(this.value,10))"></div>'+
   '<div class="cs-row"><button class="cs-btn d" onclick="csTextSet(\'fontWeight\',\'900\')">Bold</button><button class="cs-btn d" onclick="csTextAlign()">Align</button></div>'+
   '<p class="cs-note malayalam" style="margin-top:.6rem">മലയാളം — choose an Anek/Noto Malayalam font, then type.</p>';document.body.appendChild(ss);});
 function csTextFont(f){var o=canvas.getActiveObject();if(o){o.set('fontFamily',f);canvas.requestRenderAll();}}

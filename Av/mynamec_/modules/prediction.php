@@ -781,7 +781,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 /* ── Tabs ── */
 .tabs{display:flex;background:var(--fifa-dark);border-bottom:2px solid rgba(255,215,0,.15);position:sticky;top:66px;z-index:400;overflow-x:auto;scrollbar-width:none}
-.tab{flex:1;min-width:60px;padding:.65rem .3rem;text-align:center;font-size:.7rem;font-weight:800;color:rgba(255,255,255,.4);cursor:pointer;letter-spacing:.06em;text-transform:uppercase;transition:all .2s;border-bottom:3px solid transparent;margin-bottom:-2px}
+.tab{flex:1;min-width:60px;padding:.65rem .3rem;text-align:center;font-size:.7rem;font-weight:800;color:rgba(255,255,255,.68);cursor:pointer;letter-spacing:.06em;text-transform:uppercase;transition:all .2s;border-bottom:3px solid transparent;margin-bottom:-2px}
 .tab.on{color:var(--fifa-gold);border-bottom-color:var(--fifa-gold);background:rgba(255,215,0,.05)}
 .tab-icon{font-size:1rem;display:block;margin-bottom:.15rem}
 
@@ -1007,7 +1007,7 @@ require_once __DIR__ . '/../includes/header.php';
 .toast-fifa.err{background:linear-gradient(135deg,#b71c1c,#ef5350)}
 
 /* Empty state */
-.empty-fifa{text-align:center;padding:2.5rem 1rem;color:rgba(255,255,255,.25)}
+.empty-fifa{text-align:center;padding:2.5rem 1rem;color:rgba(255,255,255,.62)}
 .empty-fifa span{font-size:2.5rem;display:block;margin-bottom:.7rem;opacity:.4}
 .empty-fifa p{font-size:.82rem}
 
@@ -1056,7 +1056,7 @@ body{background:#020612!important}
   </div>
 
   <!-- ════ TABS ════ -->
-  <div class="tabs" style="background:#020612">
+  <div class="tabs" style="background:#020612" tabindex="0" role="region" aria-label="Sections">
     <div class="tab on" id="tab-matches" onclick="showTab('matches')">
       <span class="tab-icon">⚽</span>Matches
     </div>
@@ -1447,7 +1447,7 @@ body{background:#020612!important}
         <span style="font-size:1.4rem">⭐</span>
         <div style="flex:1">
           <div style="font-weight:800;font-size:.82rem;color:#0d1b3e">Double Points pick</div>
-          <div style="font-size:.66rem;color:#8a93a8">Doubles your points on this match. Only 1 active at a time.</div>
+          <div style="font-size:.66rem;color:#5f6880">Doubles your points on this match. Only 1 active at a time.</div>
         </div>
         <span id="dblCheck" style="width:22px;height:22px;border-radius:6px;border:2px solid #cbd5e1;display:flex;align-items:center;justify-content:center;font-size:.8rem;color:#fff"></span>
       </div>

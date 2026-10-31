@@ -17,7 +17,7 @@ require_once __DIR__.'/../includes/header.php';
 <div class="section">
   <div style="display:flex;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap">
     <input type="text" class="inp" id="nf" style="flex:1;min-width:160px" placeholder="Search name…">
-    <select class="inp" id="sf" style="min-width:150px;max-width:200px"><option value="">All Skills</option>
+    <select class="inp" id="sf" aria-label="Filter by skill" style="min-width:150px;max-width:200px"><option value="">All Skills</option>
       <?php foreach(array_keys($grouped) as $sk):?><option><?=h($sk)?></option><?php endforeach;?></select>
   </div>
   <?php foreach($grouped as $skill=>$members):?>

@@ -280,7 +280,7 @@ require_once __DIR__ . '/../includes/header.php';
     <a href="<?= url('dashboard.php') ?>" style="color:#64748b;font-size:.82rem;font-weight:600;padding:.38rem .85rem;border:1.5px solid #e2e8f0;border-radius:8px;text-decoration:none;background:#fff">← Back</a>
     <div>
       <h1 style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:.06em;color:#0d47a1;line-height:1">⚙️ CLUB SETTINGS</h1>
-      <p style="font-size:.78rem;color:#64748b;margin-top:.1rem">Configure website, club info and activities</p>
+      <p style="font-size:.78rem;color:#556274;margin-top:.1rem">Configure website, club info and activities</p>
     </div>
   </div>
 
@@ -291,7 +291,7 @@ require_once __DIR__ . '/../includes/header.php';
   <?php endif; ?>
 
   <!-- Tab Pills -->
-  <div style="display:flex;background:#fff;border-radius:12px;padding:.3rem;gap:.2rem;box-shadow:0 2px 10px rgba(0,0,0,.07);margin-bottom:1.2rem">
+  <div style="display:flex;background:#fff;border-radius:12px;padding:.3rem;gap:.2rem;box-shadow:0 2px 10px rgba(0,0,0,.07);margin-bottom:1.2rem;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none">
     <button class="stab on" onclick="switchStab('club',this)">🏛 Club Info</button>
     <button class="stab" onclick="switchStab('home',this)">🎨 Homepage</button>
     <button class="stab" onclick="switchStab('acts',this)">🏟 Activities</button>
@@ -303,7 +303,7 @@ require_once __DIR__ . '/../includes/header.php';
   </div>
 
   <style>
-  .stab{flex:1;text-align:center;padding:.52rem .3rem;border-radius:9px;font-size:.75rem;font-weight:700;cursor:pointer;transition:all .2s;color:#64748b;border:none;background:none;font-family:'Inter',sans-serif}
+  .stab{flex:1 0 auto;white-space:nowrap;min-height:40px;text-align:center;padding:.52rem .6rem;border-radius:9px;font-size:.75rem;font-weight:700;cursor:pointer;transition:all .2s;color:#64748b;border:none;background:none;font-family:'Inter',sans-serif}
   .stab.on{background:linear-gradient(135deg,#0d47a1,#1565c0);color:#fff;box-shadow:0 3px 10px rgba(13,71,161,.28)}
   .stab-panel{display:none}.stab-panel.on{display:block}
   .scard{background:#fff;border-radius:14px;padding:1.2rem;box-shadow:0 3px 14px rgba(0,0,0,.07);border:1px solid #e2e8f0;margin-bottom:1rem}
@@ -325,13 +325,13 @@ require_once __DIR__ . '/../includes/header.php';
   .color-row{display:grid;grid-template-columns:repeat(5,1fr);gap:.4rem}
   .color-swatch{width:100%;aspect-ratio:1;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all .18s}
   .color-swatch.sel{border-color:#0d47a1;transform:scale(1.12)}
-  .hint-txt{font-size:.72rem;color:#94a3b8;margin-top:.3rem}
+  .hint-txt{font-size:.72rem;color:#5d6b80;margin-top:.3rem}
   /* ── Roles tab styles ── */
   .ra-section{background:#fff;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:.5rem;overflow:hidden}
   .ra-head{display:flex;align-items:center;gap:.5rem;padding:.65rem .8rem;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;background:#fff}
   .ra-head h4{font-size:.82rem;font-weight:800;color:#1a1a1a;margin:0;flex:1}
   .ra-head .ra-count{font-size:.6rem;font-weight:700;background:#fee2e2;color:#b71c1c;padding:.12rem .45rem;border-radius:20px}
-  .ra-head .ra-arr{font-size:.65rem;color:#94a3b8;flex-shrink:0;transition:transform .2s}
+  .ra-head .ra-arr{font-size:.65rem;color:#5d6b80;flex-shrink:0;transition:transform .2s}
   .ra-body{display:none;padding:.1rem .8rem .8rem}
   .ra-body.open{display:block}
   .ra-search{width:100%;padding:.38rem .6rem;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.76rem;font-family:'Inter',sans-serif;outline:none;margin-bottom:.5rem;background:#f8fafc;box-sizing:border-box}
@@ -751,7 +751,7 @@ require_once __DIR__ . '/../includes/header.php';
             <div class="mr-name"><?php echo h($u['name']); ?></div>
             <span class="mr-badge" style="background:<?php echo $rc; ?>"><?php echo $ri; ?> <?php echo $rl; ?></span>
           </div>
-          <span style="font-size:.7rem;color:#ccc">›</span>
+          <span style="font-size:.7rem;color:#666666">›</span>
         </div>
         <?php endforeach; ?>
         </div>
@@ -803,7 +803,7 @@ require_once __DIR__ . '/../includes/header.php';
       </div>
       <div class="ra-body" id="ra-pend">
         <?php if(empty($_pending)): ?>
-        <div style="text-align:center;padding:.8rem;font-size:.78rem;color:#94a3b8">✅ No pending approvals</div>
+        <div style="text-align:center;padding:.8rem;font-size:.78rem;color:#5d6b80">✅ No pending approvals</div>
         <?php else: foreach($_pending as $p): ?>
         <div class="ap-row" id="apr_<?php echo (int)$p['id']; ?>">
           <div style="width:30px;height:30px;border-radius:50%;background:#e65100;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0">
@@ -875,7 +875,7 @@ require_once __DIR__ . '/../includes/header.php';
           <span style="font-size:.6rem;background:#e3f2fd;color:#1565c0;padding:.1rem .4rem;border-radius:20px;font-weight:700"><?php echo (int)$log['total_sent']; ?> sent</span>
         </div>
         <div style="font-size:.68rem;color:#64748b"><?php echo h($log['body']); ?></div>
-        <div style="font-size:.58rem;color:#94a3b8;margin-top:.15rem"><?php echo h($log['sender']); ?> · <?php echo date('d M Y H:i',strtotime($log['sent_at'])); ?></div>
+        <div style="font-size:.58rem;color:#5d6b80;margin-top:.15rem"><?php echo h($log['sender']); ?> · <?php echo date('d M Y H:i',strtotime($log['sent_at'])); ?></div>
       </div>
       <?php endforeach; ?>
     </div>
@@ -898,7 +898,7 @@ require_once __DIR__ . '/../includes/header.php';
         • Store the file somewhere safe (Google Drive, your computer).<br>
         • To restore: import the .sql file via Hostinger → phpMyAdmin.
       </div>
-      <div style="margin-top:.9rem;font-size:.74rem;color:#94a3b8">
+      <div style="margin-top:.9rem;font-size:.74rem;color:#5d6b80">
         Backup file name: <span style="font-family:monospace">backup_<?= h(defined('DB_NAME')?DB_NAME:'database') ?>_<?= date('Y-m-d') ?>.sql</span>
       </div>
     </div>
@@ -915,7 +915,7 @@ require_once __DIR__ . '/../includes/header.php';
       <?php foreach($RL as $rv=>$ri): ?>
       <div class="rp-item" id="rpi_<?php echo $rv; ?>" onclick="pickRP('<?php echo $rv; ?>')">
         <span style="font-size:1rem"><?php echo $ri[1]; ?></span>
-        <div style="flex:1"><div style="font-size:.78rem;font-weight:700"><?php echo $ri[0]; ?></div><div style="font-size:.58rem;color:#94a3b8"><?php echo $ri[2]; ?></div></div>
+        <div style="flex:1"><div style="font-size:.78rem;font-weight:700"><?php echo $ri[0]; ?></div><div style="font-size:.58rem;color:#5d6b80"><?php echo $ri[2]; ?></div></div>
         <div class="rp-dot"></div>
       </div>
       <?php endforeach; ?>
