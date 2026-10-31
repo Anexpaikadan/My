@@ -66,7 +66,7 @@ $pageTitle = 'Admin Subscriptions — ' . $clubName;
 require_once __DIR__.'/../includes/header.php';
 ?>
 
-<div class="hero" style="padding:2rem 1.2rem 1.8rem; background: linear-gradient(135deg, #1A237E, #0D47A1);">
+<div class="hero" style="padding:2rem 1.2rem 1.8rem; background: linear-gradient(135deg, #1A237E, #0F766E);">
   <h1>⚙️ ADMIN <span>SUBSCRIPTIONS</span></h1>
   <div class="hero-place">Review Club Member Requests & Payments</div>
 </div>
@@ -81,13 +81,13 @@ require_once __DIR__.'/../includes/header.php';
   <?php endif; ?>
 
   <div style="background:#fff; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,.08); overflow-x:auto;" tabindex="0" role="region" aria-label="Subscriptions table">
-    <div style="background:#0D1B3E; padding:1.1rem 1.5rem;">
+    <div style="background:#10201F; padding:1.1rem 1.5rem;">
       <h3 style="color:#fff; font-size:1.1rem; font-weight:700; margin:0;">👥 All Member Subscriptions</h3>
     </div>
     
-    <table style="width:100%; border-collapse:collapse; text-align:left; font-family:'DM Sans',sans-serif; font-size:0.9rem;">
+    <table style="width:100%; border-collapse:collapse; text-align:left; font-family:'Plus Jakarta Sans',sans-serif; font-size:0.9rem;">
       <thead>
-        <tr style="background:#F4F6F9; border-bottom:2px solid #E8ECF4; color:#4A5E8A; text-transform:uppercase; font-size:0.75rem; letter-spacing:0.05em;">
+        <tr style="background:#F4F6F9; border-bottom:2px solid #E2E8E7; color:#4A5E8A; text-transform:uppercase; font-size:0.75rem; letter-spacing:0.05em;">
           <th style="padding:1rem;">Member</th>
           <th style="padding:1rem;">Plan Details</th>
           <th style="padding:1rem;">Financial Balance</th>
@@ -117,7 +117,7 @@ require_once __DIR__.'/../includes/header.php';
           
           $bg = '#F5F5F5'; $txt = '#555'; $bdr = '#999'; $lbl = ucfirst($r['status']);
           if ($r['status'] === 'pending')  { $bg = '#FFF8E1'; $txt = '#E65100'; $bdr = '#FFB300'; $lbl = '⏳ Pending'; }
-          if ($r['status'] === 'partial')  { $bg = '#E3F2FD'; $txt = '#07225c'; $bdr = '#0D47A1'; $lbl = '⚠️ Partial'; }
+          if ($r['status'] === 'partial')  { $bg = '#E6F4F2'; $txt = '#0A1A1F'; $bdr = '#0F766E'; $lbl = '⚠️ Partial'; }
           if ($r['status'] === 'approved') { $bg = '#E8F5E9'; $txt = '#1B5E20'; $bdr = '#4CAF50'; $lbl = '✅ Approved'; }
           if ($r['status'] === 'rejected') { $bg = '#FFEBEE'; $txt = '#B71C1C'; $bdr = '#EF5350'; $lbl = '❌ Rejected'; }
           
@@ -130,10 +130,10 @@ require_once __DIR__.'/../includes/header.php';
                  . CLUB_BANK_DETAILS;
           $encodedMsg = rawurlencode($waMsgText);
         ?>
-        <tr style="border-bottom:1px solid #E8ECF4;">
+        <tr style="border-bottom:1px solid #E2E8E7;">
           
           <td style="padding:1rem; vertical-align:top;">
-            <div style="font-weight:700; color:#0D1B3E; font-size:0.95rem;"><?= h($r['member_name']) ?></div>
+            <div style="font-weight:700; color:#10201F; font-size:0.95rem;"><?= h($r['member_name']) ?></div>
             <?php if(!empty($rawPhone)): ?>
               <div style="font-size:0.78rem; color:#7A8DB5; margin-top:0.15rem;">📱 <?= h($rawPhone) ?></div>
             <?php else: ?>
@@ -176,7 +176,7 @@ require_once __DIR__.'/../includes/header.php';
                 <form method="POST" style="margin:0; display:inline; width:100%;">
                   <input type="hidden" name="req_id" value="<?= $r['id'] ?>">
                   <input type="hidden" name="action" value="approve">
-                  <button type="submit" style="background:#0D47A1; color:#fff; border:none; border-radius:6px; padding:0.35rem 0.7rem; font-weight:700; font-size:0.75rem; cursor:pointer; width:100%;">
+                  <button type="submit" style="background:#0F766E; color:#fff; border:none; border-radius:6px; padding:0.35rem 0.7rem; font-weight:700; font-size:0.75rem; cursor:pointer; width:100%;">
                     Approve
                   </button>
                 </form>

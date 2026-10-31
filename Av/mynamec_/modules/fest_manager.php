@@ -231,48 +231,48 @@ $pageOG = ['title'=>$pageTitle,'desc'=>'Club fests — '.$CLUB,'image'=>$SITE.'/
 require_once __DIR__.'/../includes/header.php';
 ?>
 <style>
-:root{--fm1:#07225c;--fm2:#0d47a1;--gold:#f5a623}
+:root{--fm1:#0A1A1F;--fm2:#0F766E;--gold:#f5a623}
 .fm-wrap{max-width:580px;margin:0 auto;padding-bottom:4rem}
-.fm-hero{background:linear-gradient(135deg,#07225c,#0d47a1,#1565c0);padding:1.6rem 1rem 1.2rem;text-align:center}
+.fm-hero{background:linear-gradient(135deg,#0A1A1F,#0F766E,#107D74);padding:1.6rem 1rem 1.2rem;text-align:center}
 .fm-hero h1{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:#fff;letter-spacing:.1em;margin-bottom:.2rem}
 .fm-hero p{font-size:.72rem;color:rgba(255,255,255,.6)}
-.fest-card{background:#fff;margin:.6rem .8rem;border-radius:16px;overflow:hidden;box-shadow:0 3px 16px rgba(7,34,92,.1);border:1.5px solid rgba(7,34,92,.1);cursor:pointer;transition:all .15s}
-.fest-card:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(7,34,92,.15)}
+.fest-card{background:#fff;margin:.6rem .8rem;border-radius:16px;overflow:hidden;box-shadow:0 3px 16px rgba(10,26,31,.1);border:1.5px solid rgba(10,26,31,.1);cursor:pointer;transition:all .15s}
+.fest-card:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(10,26,31,.15)}
 .fest-poster{width:100%;height:160px;object-fit:cover;display:block}
-.fest-poster-placeholder{width:100%;height:160px;background:linear-gradient(135deg,#07225c,#0d47a1);display:flex;align-items:center;justify-content:center;font-size:3rem}
+.fest-poster-placeholder{width:100%;height:160px;background:linear-gradient(135deg,#0A1A1F,#0F766E);display:flex;align-items:center;justify-content:center;font-size:3rem}
 .fest-info{padding:.75rem 1rem}
-.fest-title{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:#07225c;margin-bottom:.2rem}
+.fest-title{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:#0A1A1F;margin-bottom:.2rem}
 .fest-meta{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.4rem}
 .fest-badge{font-size:.62rem;font-weight:700;padding:.18rem .55rem;border-radius:20px;letter-spacing:.06em}
-.badge-active{background:#e3f2fd;color:#1565c0}
+.badge-active{background:#E6F4F2;color:#107D74}
 .badge-open{background:#e8f5e9;color:#2e7d32}
 .badge-closed{background:#ffebee;color:#b71c1c}
 .fest-actions{display:flex;gap:.4rem;padding:0 1rem .75rem}
-.fb{padding:.42rem .85rem;border:none;border-radius:8px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
-.fb-enter{background:linear-gradient(135deg,#07225c,#0d47a1);color:#fff;flex:1}
+.fb{padding:.42rem .85rem;border:none;border-radius:8px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif}
+.fb-enter{background:linear-gradient(135deg,#0A1A1F,#0F766E);color:#fff;flex:1}
 .fb-share{background:#25d366;color:#fff}
 .fb-edit{background:#fff3e0;color:#e65100;border:1px solid #ffe0b2}
 /* Entry grid */
 .eg{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;padding:.5rem .8rem}
-.ec{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.08);border:1.5px solid #e8ecf4;position:relative;cursor:pointer}
+.ec{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.08);border:1.5px solid #E2E8E7;position:relative;cursor:pointer}
 .ec img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
 .ec-info{padding:.4rem .5rem .5rem}
-.ec-name{font-size:.7rem;font-weight:800;color:#07225c}
+.ec-name{font-size:.7rem;font-weight:800;color:#0A1A1F}
 .ec-likes{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:#e53935}
-.like-btn{padding:.28rem .6rem;border:none;border-radius:7px;font-size:.68rem;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif}
+.like-btn{padding:.28rem .6rem;border:none;border-radius:7px;font-size:.68rem;font-weight:800;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif}
 .like-can{background:linear-gradient(135deg,#e53935,#b71c1c);color:#fff}
 .like-done{background:#fce4ec;color:#c62828}
 .like-no{background:#f5f5f5;color:#666666}
 /* Admin form */
-.af{background:#fff;margin:.7rem .8rem;border-radius:16px;box-shadow:0 3px 16px rgba(7,34,92,.1);border:1.5px solid rgba(7,34,92,.1);overflow:hidden}
-.af-head{background:linear-gradient(135deg,#07225c,#0d47a1);padding:.75rem 1rem;display:flex;align-items:center;gap:.5rem}
+.af{background:#fff;margin:.7rem .8rem;border-radius:16px;box-shadow:0 3px 16px rgba(10,26,31,.1);border:1.5px solid rgba(10,26,31,.1);overflow:hidden}
+.af-head{background:linear-gradient(135deg,#0A1A1F,#0F766E);padding:.75rem 1rem;display:flex;align-items:center;gap:.5rem}
 .af-head h3{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.08em;color:#fff;margin:0}
 .af-body{padding:1rem}
 /* Upload area */
-.upload-area{border:2px dashed rgba(7,34,92,.25);border-radius:12px;padding:1.2rem;text-align:center;cursor:pointer;background:#f8faff;transition:all .2s;margin-bottom:.5rem}
-.upload-area:hover{border-color:#0d47a1;background:#e3f2fd}
+.upload-area{border:2px dashed rgba(10,26,31,.25);border-radius:12px;padding:1.2rem;text-align:center;cursor:pointer;background:#f8faff;transition:all .2s;margin-bottom:.5rem}
+.upload-area:hover{border-color:#0F766E;background:#E6F4F2}
 /* Toast */
-.fmtoast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(40px);background:#07225c;color:#fff;padding:.6rem 1.2rem;border-radius:25px;font-size:.8rem;font-weight:700;z-index:9999;opacity:0;transition:all .3s;white-space:nowrap}
+.fmtoast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(40px);background:#0A1A1F;color:#fff;padding:.6rem 1.2rem;border-radius:25px;font-size:.8rem;font-weight:700;z-index:9999;opacity:0;transition:all .3s;white-space:nowrap}
 .fmtoast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 .fmtoast.ok{background:#2e7d32}
 .fmtoast.err{background:#b71c1c}
@@ -291,7 +291,7 @@ require_once __DIR__.'/../includes/header.php';
 <?php if($isAdmin): ?>
 <!-- Create new fest button -->
 <div style="padding:.7rem .8rem .3rem;display:flex;justify-content:flex-end">
-  <button onclick="openCreateFest()" style="background:linear-gradient(135deg,#07225c,#0d47a1);color:#fff;border:none;border-radius:12px;padding:.55rem 1.1rem;font-weight:800;font-size:.8rem;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:.4rem">
+  <button onclick="openCreateFest()" style="background:linear-gradient(135deg,#0A1A1F,#0F766E);color:#fff;border:none;border-radius:12px;padding:.55rem 1.1rem;font-weight:800;font-size:.8rem;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;display:flex;align-items:center;gap:.4rem">
     ＋ Create New Fest
   </button>
 </div>
@@ -392,7 +392,7 @@ require_once __DIR__.'/../includes/header.php';
       <div class="fg"><label class="lbl">⏰ Voting Ends</label><input type="datetime-local" id="f_vend" class="inp"></div>
     </div>
 
-    <button onclick="saveFest()" class="btn btn-block" style="background:linear-gradient(135deg,#07225c,#0d47a1);color:#fff;margin-top:.3rem">
+    <button onclick="saveFest()" class="btn btn-block" style="background:linear-gradient(135deg,#0A1A1F,#0F766E);color:#fff;margin-top:.3rem">
       💾 Save Fest
     </button>
     <div id="formMsg" style="text-align:center;padding:.5rem;font-size:.78rem;display:none"></div>

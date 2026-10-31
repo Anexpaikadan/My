@@ -340,7 +340,7 @@ input[type=range]{accent-color:var(--cs-gold)}
 <div class="cs-sheet" id="sheetCanvasBg"><div class="grab"></div><h3>🎨 Background<button class="x" onclick="csCloseSheets()">×</button></h3>
   <div class="cs-row" style="margin-bottom:.6rem"><button class="cs-btn d" onclick="csSetBg('transparent')">▣ Transparent</button>
     <button class="cs-btn d" onclick="csSetBg('#ffffff')">⬜ White</button><button class="cs-btn d" onclick="csSetBg('#070b16')">⬛ Dark</button>
-    <label class="cs-field">Pick<input type="color" class="cs-color" value="#1565c0" onchange="csSetBg(this.value)"></label></div>
+    <label class="cs-field">Pick<input type="color" class="cs-color" value="#107D74" onchange="csSetBg(this.value)"></label></div>
   <div class="cs-grid" id="csBgGrad"></div></div>
 <div class="cs-sheet" id="sheetQR"><div class="grab"></div><h3>🔳 QR Code<button class="x" onclick="csCloseSheets()">×</button></h3>
   <div class="cs-field" style="margin-bottom:.5rem">Link or text<input id="csQRtext" class="cs-input" placeholder="https://mynamecc.online"></div>
@@ -558,13 +558,13 @@ function csAddComment(){var i=document.getElementById('csCmtInput'),v=i.value.tr
 
 // ── templates ──
 var TEMPLATES=[
- {cat:'World Cup Prediction',name:'Match Day',w:1080,h:1080,bg:['#07225c','#0d47a1'],items:[{t:'text',s:'MATCH DAY',f:'Anton',size:120,fill:'#ffd34d',y:0.28,stroke:'#000',sw:5},{t:'text',s:'⚽ PREDICT & WIN',f:'Bebas Neue',size:70,fill:'#fff',y:0.5},{t:'text',s:'FIFA WC 2026',f:'Sora',size:54,fill:'#1fd6b5',y:0.66}]},
+ {cat:'World Cup Prediction',name:'Match Day',w:1080,h:1080,bg:['#0A1A1F','#0F766E'],items:[{t:'text',s:'MATCH DAY',f:'Anton',size:120,fill:'#ffd34d',y:0.28,stroke:'#000',sw:5},{t:'text',s:'⚽ PREDICT & WIN',f:'Bebas Neue',size:70,fill:'#fff',y:0.5},{t:'text',s:'FIFA WC 2026',f:'Sora',size:54,fill:'#1fd6b5',y:0.66}]},
  {cat:'Football',name:'Goal!',w:1080,h:1080,bg:['#11998e','#38ef7d'],items:[{t:'emoji',s:'⚽',size:340,y:0.34},{t:'text',s:'GOAL!!!',f:'Anton',size:150,fill:'#fff',y:0.7,stroke:'#000',sw:6}]},
  {cat:'Birthday',name:'Happy Birthday',w:1080,h:1080,bg:['#7b2ff7','#f107a3'],items:[{t:'emoji',s:'🎂',size:260,y:0.3},{t:'text',s:'HAPPY BIRTHDAY',f:'Bebas Neue',size:96,fill:'#ffd34d',y:0.62,stroke:'#000',sw:3},{t:'text',s:'From all of us 🎉',f:'Sora',size:46,fill:'#fff',y:0.76}]},
  {cat:'Congratulations',name:'Congrats',w:1080,h:1080,bg:['#fc4a1a','#f7b733'],items:[{t:'emoji',s:'🏆',size:300,y:0.32},{t:'text',s:'CONGRATS!',f:'Anton',size:130,fill:'#fff',y:0.68,stroke:'#000',sw:5}]},
  {cat:'Festivals',name:'Greetings',w:1080,h:1920,bg:['#0f2027','#2c5364'],items:[{t:'emoji',s:'🪔',size:300,y:0.3},{t:'text',s:'WARM WISHES',f:'Bebas Neue',size:110,fill:'#ffd34d',y:0.58},{t:'text',s:CS_CLUB,f:'Sora',size:44,fill:'#fff',y:0.7}]},
  {cat:'Troll',name:'Reaction',w:1080,h:1080,bg:['#222','#000'],items:[{t:'text',s:'WHEN YOU SEE IT',f:'Anton',size:84,fill:'#fff',y:0.16,stroke:'#000',sw:4},{t:'emoji',s:'😂',size:360,y:0.52},{t:'text',s:'😂😂😂',f:'Sora',size:90,fill:'#fff',y:0.86}]},
- {cat:'Club Events',name:'Event Poster',w:1240,h:1754,bg:['#1565c0','#07225c'],items:[{t:'text',s:'CLUB EVENT',f:'Anton',size:150,fill:'#ffd34d',y:0.16,stroke:'#000',sw:4},{t:'text',s:'📅 Date · 📍 Venue',f:'Sora',size:50,fill:'#fff',y:0.84},{t:'text',s:CS_CLUB,f:'Bebas Neue',size:60,fill:'#1fd6b5',y:0.92}]},
+ {cat:'Club Events',name:'Event Poster',w:1240,h:1754,bg:['#107D74','#0A1A1F'],items:[{t:'text',s:'CLUB EVENT',f:'Anton',size:150,fill:'#ffd34d',y:0.16,stroke:'#000',sw:4},{t:'text',s:'📅 Date · 📍 Venue',f:'Sora',size:50,fill:'#fff',y:0.84},{t:'text',s:CS_CLUB,f:'Bebas Neue',size:60,fill:'#1fd6b5',y:0.92}]},
  {cat:'Motivational',name:'Push',w:1080,h:1080,bg:['#0f2027','#203a43'],items:[{t:'text',s:'STAY\nFOCUSED',f:'Anton',size:130,fill:'#fff',y:0.42,stroke:'#000',sw:3},{t:'text',s:'— '+CS_CLUB,f:'Sora',size:40,fill:'#ffd34d',y:0.74}]}
 ];
 var TPL_CAT='All';
@@ -593,7 +593,7 @@ function csBuildSheets(){
   document.getElementById('csSizeGrid').innerHTML=SIZES.map(function(s){return '<div class="cs-chip" onclick="csSetSize('+s.w+','+s.h+',\''+s.k+'\',true);csFit();csCloseSheets()">'+s.n+'<br><small>'+s.w+'×'+s.h+'</small></div>';}).join('');
   var em='😀😂🤣😍😎🥳🤩😭😡🤔👍👎🙏👏💪🔥✨⭐🏆⚽🏏🥇🎉🎊❤️💛💙💚🧡💜🖤🤍🌹🌸🌟💥💢💫🎯🎁🎈🪅👑🦁🐯⚡🌈☀️🌙🎵🎶📣✅❌💯🆕🇮🇳';
   document.getElementById('csEmojiGrid').innerHTML=Array.from(em).map(function(e){return '<div class="cs-emoji" onclick="csAddEmoji(\''+e+'\');csCloseSheets()">'+e+'</div>';}).join('');
-  var grads=[['#ffd34d','#e6a800'],['#1fd6b5','#0e9e86'],['#1565c0','#07225c'],['#ff4d6d','#c9184a'],['#7b2ff7','#311b92'],['#11998e','#38ef7d'],['#fc4a1a','#f7b733'],['#0f2027','#2c5364']];
+  var grads=[['#ffd34d','#e6a800'],['#1fd6b5','#0e9e86'],['#107D74','#0A1A1F'],['#ff4d6d','#c9184a'],['#7b2ff7','#311b92'],['#11998e','#38ef7d'],['#fc4a1a','#f7b733'],['#0f2027','#2c5364']];
   document.getElementById('csBgGrad').innerHTML=grads.map(function(g){return '<div class="cs-chip" style="background:linear-gradient(135deg,'+g[0]+','+g[1]+');height:48px" onclick="csSetGrad(\''+g[0]+'\',\''+g[1]+'\')"></div>';}).join('');
   csBuildTemplates();
 }

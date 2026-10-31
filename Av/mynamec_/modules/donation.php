@@ -70,7 +70,7 @@ require_once __DIR__ . '/../includes/header.php';
   $pct=$camp['goal_amount']>0?min(100,round(($camp['raised_amount']/$camp['goal_amount'])*100)):0;
   $donations=db()->prepare("SELECT d.*,u.name dname FROM donations d JOIN users u ON u.id=d.donor_id WHERE d.campaign_id=? ORDER BY d.donated_at DESC");
   $donations->execute(array($camp['id']));$donations=$donations->fetchAll();
-  $sbc=array('active'=>array('#E8F5E9','#1B5E20'),'completed'=>array('#E3F2FD','#07225c'),'paused'=>array('#FFF8E1','#E65100'));
+  $sbc=array('active'=>array('#E8F5E9','#1B5E20'),'completed'=>array('#E6F4F2','#0A1A1F'),'paused'=>array('#FFF8E1','#E65100'));
   $sc=$sbc[$camp['status']]??array('#F5F5F5','#555');
 ?>
 <div class="card mb-3">
@@ -97,7 +97,7 @@ require_once __DIR__ . '/../includes/header.php';
 
     <!-- Donate form -->
     <?php if($camp['status']==='active'): ?>
-    <div style="background:#F8F9FC;border-radius:12px;padding:1.1rem;margin-bottom:1.2rem">
+    <div style="background:#F6F8F8;border-radius:12px;padding:1.1rem;margin-bottom:1.2rem">
       <h4 style="font-size:.88rem;font-weight:700;color:#1B5E20;margin-bottom:.8rem">💚 Make a Donation</h4>
       <?php if($camp['upi_id']): ?>
       <div style="background:#E8F5E9;border-radius:8px;padding:.6rem .9rem;margin-bottom:.7rem;font-size:.8rem;display:flex;align-items:center;gap:.5rem">
@@ -122,7 +122,7 @@ require_once __DIR__ . '/../includes/header.php';
     <?php if(!empty($donations)): ?>
     <h4 style="font-size:.8rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.6rem">Recent Donors</h4>
     <?php foreach(array_slice($donations,0,5) as $d): ?>
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem .7rem;background:#F8F9FC;border-radius:8px;margin-bottom:.35rem;font-size:.82rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem .7rem;background:#F6F8F8;border-radius:8px;margin-bottom:.35rem;font-size:.82rem">
       <div><strong><?=h($d['dname'])?></strong><?php if($d['message']): ?> <span style="color:var(--t3);font-size:.75rem">— <?=h($d['message'])?></span><?php endif;?></div>
       <div style="display:flex;align-items:center;gap:.5rem">
         <strong style="color:#2E7D32">₹<?=number_format($d['amount'])?></strong>

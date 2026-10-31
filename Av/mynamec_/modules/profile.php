@@ -190,8 +190,8 @@ $wn       = preg_replace('/\D/','',$profile['whatsapp_number']);
 $roleColors = [
     'president'       => 'linear-gradient(135deg,#B8860B,#DAA520)',
     'vice_president'  => 'linear-gradient(135deg,#8B6914,#C9A84C)',
-    'secretary'       => 'linear-gradient(135deg,#07225c,#0D47A1)',
-    'joint_secretary' => 'linear-gradient(135deg,#0a3880,#1565C0)',
+    'secretary'       => 'linear-gradient(135deg,#0A1A1F,#0F766E)',
+    'joint_secretary' => 'linear-gradient(135deg,#115E59,#107D74)',
     'treasurer'       => 'linear-gradient(135deg,#1B5E20,#2E7D32)',
     'committee_member'=> 'linear-gradient(135deg,#4A148C,#7B1FA2)',
     'member'          => 'linear-gradient(135deg,#37474F,#546E7A)',
@@ -237,7 +237,7 @@ require_once __DIR__.'/../includes/header.php';
         <?php if($photoB64): ?>
         <img src="<?= $photoB64 ?>" style="width:104px;height:104px;border-radius:50%;object-fit:cover;border:5px solid #fff;box-shadow:0 8px 22px rgba(0,0,0,.22);display:block" alt="">
         <?php else: ?>
-        <div style="width:104px;height:104px;border-radius:50%;background:linear-gradient(135deg,#E3F2FD,#BBDEFB);border:5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:2.6rem;box-shadow:0 8px 22px rgba(0,0,0,.18)">
+        <div style="width:104px;height:104px;border-radius:50%;background:linear-gradient(135deg,#E6F4F2,#BFE6E0);border:5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:2.6rem;box-shadow:0 8px 22px rgba(0,0,0,.18)">
           <?php if(!$canSeePhoto && !$isOwn): ?>🔒<?php else: ?>👤<?php endif; ?>
         </div>
         <?php endif; ?>
@@ -249,7 +249,7 @@ require_once __DIR__.'/../includes/header.php';
       </div>
 
       <div style="width:100%">
-        <h1 style="font-family:'Bebas Neue',sans-serif;font-size:1.7rem;letter-spacing:.04em;color:#0D1B3E;margin-bottom:.15rem;line-height:1.1"><?= h($profile['name']) ?></h1>
+        <h1 style="font-family:'Bebas Neue',sans-serif;font-size:1.7rem;letter-spacing:.04em;color:#10201F;margin-bottom:.15rem;line-height:1.1"><?= h($profile['name']) ?></h1>
         <?php if($profile['committee_position']): ?>
         <div style="font-size:.86rem;color:#3D4F7C;font-weight:700"><?= h($profile['committee_position']) ?></div>
         <?php endif; ?>
@@ -257,8 +257,8 @@ require_once __DIR__.'/../includes/header.php';
         <div style="font-size:.74rem;color:#7A8DB5"><?= h($profile['committee_name']) ?></div>
         <?php endif; ?>
         <?php if($isOwn): ?>
-        <button onclick="document.getElementById('editSection').style.display=document.getElementById('editSection').style.display==='none'?'block':'none';document.getElementById('editSection').scrollIntoView({behavior:'smooth'})" style="margin-top:.7rem;background:linear-gradient(135deg,#0d47a1,#1565c0);color:#fff;border:none;border-radius:22px;padding:.5rem 1.4rem;font-size:.8rem;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 12px rgba(21,101,192,.3)">✏️ Edit Profile</button>
-        <button id="bioEnrollBtn" onclick="pfBioEnroll()" style="display:none;margin-top:.5rem;margin-left:.4rem;background:#fff;border:1.5px solid #1565c0;color:#1565c0;border-radius:22px;padding:.5rem 1.2rem;font-size:.8rem;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif">👆 Enable Fingerprint Login</button>
+        <button onclick="document.getElementById('editSection').style.display=document.getElementById('editSection').style.display==='none'?'block':'none';document.getElementById('editSection').scrollIntoView({behavior:'smooth'})" style="margin-top:.7rem;background:linear-gradient(135deg,#0F766E,#107D74);color:#fff;border:none;border-radius:22px;padding:.5rem 1.4rem;font-size:.8rem;font-weight:800;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;box-shadow:0 4px 12px rgba(16,125,116,.3)">✏️ Edit Profile</button>
+        <button id="bioEnrollBtn" onclick="pfBioEnroll()" style="display:none;margin-top:.5rem;margin-left:.4rem;background:#fff;border:1.5px solid #107D74;color:#107D74;border-radius:22px;padding:.5rem 1.2rem;font-size:.8rem;font-weight:800;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">👆 Enable Fingerprint Login</button>
         <script>
         (function(){ if(window.PublicKeyCredential){ var b=document.getElementById('bioEnrollBtn'); if(b)b.style.display='inline-block'; } })();
         var PF_WA='<?= url('modules/webauthn.php') ?>';
@@ -309,9 +309,9 @@ require_once __DIR__.'/../includes/header.php';
       </div>
 
       <!-- Skill -->
-      <div class="pf-tile" style="background:linear-gradient(135deg,#f3f7ff,#e3f2fd);border:1px solid #bbdefb">
-        <div class="pf-tile-l" style="color:#0D47A1">⭐ Skill</div>
-        <div style="font-size:.84rem;font-weight:700;color:#0D1B3E"><?= h($profile['skill'] ?? '—') ?></div>
+      <div class="pf-tile" style="background:linear-gradient(135deg,#f3f7ff,#E6F4F2);border:1px solid #BFE6E0">
+        <div class="pf-tile-l" style="color:#0F766E">⭐ Skill</div>
+        <div style="font-size:.84rem;font-weight:700;color:#10201F"><?= h($profile['skill'] ?? '—') ?></div>
       </div>
 
       <!-- Member ID -->
@@ -323,7 +323,7 @@ require_once __DIR__.'/../includes/header.php';
       <?php if($profile['profession']): ?>
       <div class="pf-tile" style="background:linear-gradient(135deg,#fff8f0,#fff3e0);border:1px solid #ffe0b2">
         <div class="pf-tile-l" style="color:#E65100">💼 Profession</div>
-        <div style="font-size:.82rem;font-weight:700;color:#0D1B3E"><?= h($profile['profession']) ?></div>
+        <div style="font-size:.82rem;font-weight:700;color:#10201F"><?= h($profile['profession']) ?></div>
       </div>
       <?php endif; ?>
 
@@ -368,11 +368,11 @@ require_once __DIR__.'/../includes/header.php';
     <div style="display:flex;align-items:center;gap:.5rem">
       <span style="font-size:1.4rem">🏟️</span>
       <div>
-        <div style="font-weight:800;font-size:.95rem;color:#0D1B3E;line-height:1.1">Ground Fund</div>
+        <div style="font-weight:800;font-size:.95rem;color:#10201F;line-height:1.1">Ground Fund</div>
         <div style="font-size:.68rem;color:#5f6880">Contribution to club ground</div>
       </div>
     </div>
-    <a href="<?= url('modules/groundfund.php') ?>" style="font-size:.7rem;font-weight:700;color:#0d47a1;text-decoration:none">View all →</a>
+    <a href="<?= url('modules/groundfund.php') ?>" style="font-size:.7rem;font-weight:700;color:#0F766E;text-decoration:none">View all →</a>
   </div>
 
   <!-- Paid / Pledge / Balance tiles -->
@@ -381,9 +381,9 @@ require_once __DIR__.'/../includes/header.php';
       <div style="font-size:.56rem;font-weight:800;color:#2E7D32;text-transform:uppercase">Paid</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:1.35rem;color:#1b5e20">₹<?= number_format($gfPaid) ?></div>
     </div>
-    <div style="background:linear-gradient(135deg,#f3f7ff,#e3f2fd);border:1px solid #bbdefb;border-radius:12px;padding:.6rem;text-align:center">
-      <div style="font-size:.56rem;font-weight:800;color:#0D47A1;text-transform:uppercase">Pledged</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.35rem;color:#0d47a1">₹<?= number_format($gfPledge) ?></div>
+    <div style="background:linear-gradient(135deg,#f3f7ff,#E6F4F2);border:1px solid #BFE6E0;border-radius:12px;padding:.6rem;text-align:center">
+      <div style="font-size:.56rem;font-weight:800;color:#0F766E;text-transform:uppercase">Pledged</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.35rem;color:#0F766E">₹<?= number_format($gfPledge) ?></div>
     </div>
     <div style="background:linear-gradient(135deg,<?= $gfBalance>0?'#fff8f0,#fff3e0':'#f1faf3,#e8f5e9' ?>);border:1px solid <?= $gfBalance>0?'#ffe0b2':'#a5d6a7' ?>;border-radius:12px;padding:.6rem;text-align:center">
       <div style="font-size:.56rem;font-weight:800;color:<?= $gfBalance>0?'#E65100':'#2E7D32' ?>;text-transform:uppercase">Balance</div>
@@ -444,7 +444,7 @@ require_once __DIR__.'/../includes/header.php';
       </div>
 
       <!-- Privacy Settings -->
-      <div style="margin-top:.8rem;padding:.9rem;background:#F8F9FC;border-radius:12px;margin-bottom:.8rem">
+      <div style="margin-top:.8rem;padding:.9rem;background:#F6F8F8;border-radius:12px;margin-bottom:.8rem">
         <h4 style="font-size:.82rem;font-weight:700;color:#3D4F7C;margin-bottom:.7rem;text-transform:uppercase;letter-spacing:.06em">🔒 Privacy Settings</h4>
         <div class="g2">
           <div class="fg">
@@ -473,28 +473,28 @@ require_once __DIR__.'/../includes/header.php';
         <p style="font-size:.8rem;color:#64748b;margin-bottom:.85rem">Set whether you are available to donate blood</p>
         <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.85rem">
           <button type="button" id="btnBldAvail" onclick="setBldAvail(1)"
-            style="flex:1;padding:.6rem .9rem;border-radius:10px;font-family:'Inter',sans-serif;font-weight:700;font-size:.82rem;cursor:pointer;border:2px solid;transition:all .2s;background:<?= $bAvail?'#e8f5e9':'#f8fafc' ?>;border-color:<?= $bAvail?'#4caf50':'#e0e7ff' ?>;color:<?= $bAvail?'#1b5e20':'#64748b' ?>">
+            style="flex:1;padding:.6rem .9rem;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.82rem;cursor:pointer;border:2px solid;transition:all .2s;background:<?= $bAvail?'#e8f5e9':'#f8fafc' ?>;border-color:<?= $bAvail?'#4caf50':'#E0F2EF' ?>;color:<?= $bAvail?'#1b5e20':'#64748b' ?>">
             ✅ Available to Donate
           </button>
           <button type="button" id="btnBldUnavail" onclick="showUnavailForm()"
-            style="flex:1;padding:.6rem .9rem;border-radius:10px;font-family:'Inter',sans-serif;font-weight:700;font-size:.82rem;cursor:pointer;border:2px solid;transition:all .2s;background:<?= !$bAvail?'#ffebee':'#f8fafc' ?>;border-color:<?= !$bAvail?'#ef5350':'#e0e7ff' ?>;color:<?= !$bAvail?'#b71c1c':'#64748b' ?>">
+            style="flex:1;padding:.6rem .9rem;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.82rem;cursor:pointer;border:2px solid;transition:all .2s;background:<?= !$bAvail?'#ffebee':'#f8fafc' ?>;border-color:<?= !$bAvail?'#ef5350':'#E0F2EF' ?>;color:<?= !$bAvail?'#b71c1c':'#64748b' ?>">
             ❌ Not Available
           </button>
         </div>
         <div id="unavailForm" style="display:<?= !$bAvail?'block':'none' ?>;margin-bottom:.75rem">
-          <select id="unavailReason" style="width:100%;padding:.6rem .85rem;border:1.5px solid #ffcdd2;border-radius:9px;font-family:'Inter',sans-serif;font-size:.85rem;margin-bottom:.6rem;background:#fff;color:#1e293b">
+          <select id="unavailReason" style="width:100%;padding:.6rem .85rem;border:1.5px solid #ffcdd2;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.85rem;margin-bottom:.6rem;background:#fff;color:#1e293b">
             <option value="Recently Donated" <?= ($profile['blood_unavail_reason']??'')==='Recently Donated'?'selected':'' ?>>Recently Donated</option>
             <option value="Abroad" <?= ($profile['blood_unavail_reason']??'')==='Abroad'?'selected':'' ?>>Currently Abroad</option>
             <option value="Unwell" <?= ($profile['blood_unavail_reason']??'')==='Unwell'?'selected':'' ?>>Health Issue / Unwell</option>
             <option value="Medication" <?= ($profile['blood_unavail_reason']??'')==='Medication'?'selected':'' ?>>On Medication</option>
             <option value="Unavailable" <?= ($profile['blood_unavail_reason']??'')==='Unavailable'?'selected':'' ?>>Other Reason</option>
           </select>
-          <button type="button" onclick="setBldAvail(0)" style="width:100%;padding:.6rem;background:#b71c1c;color:#fff;border:none;border-radius:9px;font-family:'Inter',sans-serif;font-weight:700;font-size:.84rem;cursor:pointer">Save Status</button>
+          <button type="button" onclick="setBldAvail(0)" style="width:100%;padding:.6rem;background:#b71c1c;color:#fff;border:none;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.84rem;cursor:pointer">Save Status</button>
         </div>
         <div>
           <label style="font-size:.74rem;font-weight:700;color:#64748b;display:block;margin-bottom:.3rem">Last Donation Date (optional)</label>
           <input type="date" id="lastDonDate" value="<?= h($profile['blood_last_donated']??'') ?>"
-            style="width:100%;padding:.58rem .9rem;border:1.5px solid #e0e7ff;border-radius:9px;font-family:'Inter',sans-serif;font-size:.85rem;margin-bottom:.5rem">
+            style="width:100%;padding:.58rem .9rem;border:1.5px solid #E0F2EF;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.85rem;margin-bottom:.5rem">
           <p style="font-size:.72rem;color:#94a3b8">If set, system auto-marks unavailable for 90 days after donation</p>
         </div>
         <div id="bldMsg" style="font-size:.82rem;text-align:center;min-height:1.2em;margin-top:.4rem"></div>
@@ -502,15 +502,15 @@ require_once __DIR__.'/../includes/header.php';
       <?php endif; ?>
 
       <!-- Change Passkey -->
-      <div style="margin-top:1.5rem;padding:1.2rem;background:#f8fafc;border-radius:12px;border:1.5px solid #e0e7ff">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.07em;color:#0d47a1;margin-bottom:.75rem">🔑 CHANGE PASSKEY</div>
+      <div style="margin-top:1.5rem;padding:1.2rem;background:#f8fafc;border-radius:12px;border:1.5px solid #E0F2EF">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.07em;color:#0F766E;margin-bottom:.75rem">🔑 CHANGE PASSKEY</div>
         <p style="font-size:.8rem;color:#64748b;margin-bottom:.8rem">Choose a new 6-digit passkey for login</p>
         <div style="display:flex;justify-content:center;gap:.55rem;margin-bottom:.75rem" id="profPkDots">
-          <?php for($i=0;$i<6;$i++): ?><div style="width:13px;height:13px;border-radius:50%;background:#e0e7ff;border:2px solid #c7d2fe;transition:all .2s" class="ppk-dot"></div><?php endfor; ?>
+          <?php for($i=0;$i<6;$i++): ?><div style="width:13px;height:13px;border-radius:50%;background:#E0F2EF;border:2px solid #c7d2fe;transition:all .2s" class="ppk-dot"></div><?php endfor; ?>
         </div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;max-width:250px;margin:0 auto .85rem">
           <?php foreach(array('1','2','3','4','5','6','7','8','9','del','0','ok') as $pk): ?>
-          <button type="button" onclick="profPkTap('<?= $pk ?>')" style="background:<?= $pk==='ok'?'#0d47a1':($pk==='del'?'#fff0f0':'#f4f6fb') ?>;border:1.5px solid <?= $pk==='ok'?'#0d47a1':($pk==='del'?'#fecaca':'#e0e7ff') ?>;border-radius:10px;padding:.6rem;font-size:1.1rem;font-weight:700;color:<?= $pk==='ok'?'#fff':($pk==='del'?'#b71c1c':'#0d1b3e') ?>;cursor:pointer;font-family:Inter,sans-serif"><?= $pk==='del'?'⌫':($pk==='ok'?'✓':$pk) ?></button>
+          <button type="button" onclick="profPkTap('<?= $pk ?>')" style="background:<?= $pk==='ok'?'#0F766E':($pk==='del'?'#fff0f0':'#f4f6fb') ?>;border:1.5px solid <?= $pk==='ok'?'#0F766E':($pk==='del'?'#fecaca':'#E0F2EF') ?>;border-radius:10px;padding:.6rem;font-size:1.1rem;font-weight:700;color:<?= $pk==='ok'?'#fff':($pk==='del'?'#b71c1c':'#10201F') ?>;cursor:pointer;font-family:Inter,sans-serif"><?= $pk==='del'?'⌫':($pk==='ok'?'✓':$pk) ?></button>
           <?php endforeach; ?>
         </div>
         <div id="pkChgMsg" style="font-size:.82rem;text-align:center;min-height:1.2em"></div>
@@ -523,7 +523,7 @@ require_once __DIR__.'/../includes/header.php';
       var reason = avail ? '' : (document.getElementById('unavailReason').value || 'Unavailable');
       var lastDon = document.getElementById('lastDonDate').value || '';
       var m = document.getElementById('bldMsg');
-      m.style.color='#0d47a1'; m.textContent='Saving…';
+      m.style.color='#0F766E'; m.textContent='Saving…';
       fetch('',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
         body:'ajax=1&action=set_blood_avail&available='+avail+'&reason='+encodeURIComponent(reason)+'&last_donated='+encodeURIComponent(lastDon)})
       .then(function(r){return r.json();}).then(function(r){
@@ -531,11 +531,11 @@ require_once __DIR__.'/../includes/header.php';
         // Update button styles
         if(avail){
           document.getElementById('btnBldAvail').style.background='#e8f5e9';document.getElementById('btnBldAvail').style.borderColor='#4caf50';document.getElementById('btnBldAvail').style.color='#1b5e20';
-          document.getElementById('btnBldUnavail').style.background='#f8fafc';document.getElementById('btnBldUnavail').style.borderColor='#e0e7ff';document.getElementById('btnBldUnavail').style.color='#64748b';
+          document.getElementById('btnBldUnavail').style.background='#f8fafc';document.getElementById('btnBldUnavail').style.borderColor='#E0F2EF';document.getElementById('btnBldUnavail').style.color='#64748b';
           document.getElementById('unavailForm').style.display='none';
         } else {
           document.getElementById('btnBldUnavail').style.background='#ffebee';document.getElementById('btnBldUnavail').style.borderColor='#ef5350';document.getElementById('btnBldUnavail').style.color='#b71c1c';
-          document.getElementById('btnBldAvail').style.background='#f8fafc';document.getElementById('btnBldAvail').style.borderColor='#e0e7ff';document.getElementById('btnBldAvail').style.color='#64748b';
+          document.getElementById('btnBldAvail').style.background='#f8fafc';document.getElementById('btnBldAvail').style.borderColor='#E0F2EF';document.getElementById('btnBldAvail').style.color='#64748b';
         }
       }).catch(function(){m.style.color='#dc2626';m.textContent='Error. Try again.';});
     }
@@ -543,13 +543,13 @@ require_once __DIR__.'/../includes/header.php';
       document.getElementById('unavailForm').style.display='block';
     }
     var _ppk='';
-      function ppkDots(v){var d=document.querySelectorAll('.ppk-dot');d.forEach(function(x,i){x.style.background=i<v.length?'#0d47a1':'#e0e7ff';x.style.borderColor=i<v.length?'#0d47a1':'#c7d2fe';x.style.transform=i<v.length?'scale(1.18)':'scale(1)';})}
+      function ppkDots(v){var d=document.querySelectorAll('.ppk-dot');d.forEach(function(x,i){x.style.background=i<v.length?'#0F766E':'#E0F2EF';x.style.borderColor=i<v.length?'#0F766E':'#c7d2fe';x.style.transform=i<v.length?'scale(1.18)':'scale(1)';})}
       function profPkTap(d){
         if(d==='del'){_ppk=_ppk.slice(0,-1);ppkDots(_ppk);}
         else if(d==='ok'){
           if(_ppk.length<6){document.querySelectorAll('.ppk-dot').forEach(function(x){x.style.background='#ef5350';x.style.borderColor='#ef5350';});return;}
           var m=document.getElementById('pkChgMsg');
-          m.style.color='#0d47a1';m.textContent='Saving…';
+          m.style.color='#0F766E';m.textContent='Saving…';
           fetch('',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'ajax=1&action=change_passkey&passkey='+encodeURIComponent(_ppk)})
           .then(function(r){return r.json();}).then(function(r){
             m.style.color=r.ok?'#16a34a':'#dc2626';m.textContent=r.ok?'✅ '+r.msg:'❌ '+r.msg;
@@ -573,18 +573,18 @@ require_once __DIR__.'/../includes/header.php';
 :root{--t3:#7A8DB5}
 .fg{margin-bottom:.9rem}
 .lbl{display:block;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#4A5E8A;margin-bottom:.38rem}
-.inp{width:100%;padding:.68rem .9rem;border:2px solid #E8ECF4;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:.9rem;color:#0D1B3E;background:#fff;outline:none;-webkit-appearance:none;transition:border-color .18s}
-.inp:focus{border-color:#0D47A1;box-shadow:0 0 0 3px rgba(13,71,161,.1)}
+.inp{width:100%;padding:.68rem .9rem;border:2px solid #E2E8E7;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;color:#10201F;background:#fff;outline:none;-webkit-appearance:none;transition:border-color .18s}
+.inp:focus{border-color:#0F766E;box-shadow:0 0 0 3px rgba(15,118,110,.1)}
 select.inp{cursor:pointer}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
 @media(max-width:500px){.g2{grid-template-columns:1fr}}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;padding:.65rem 1.2rem;border-radius:9px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.86rem;cursor:pointer;border:2px solid transparent;transition:all .2s;text-decoration:none}
-.btn-blue{background:#0D47A1;color:#fff;border-color:#0D47A1}.btn-blue:hover{background:#0a3880}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;padding:.65rem 1.2rem;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.86rem;cursor:pointer;border:2px solid transparent;transition:all .2s;text-decoration:none}
+.btn-blue{background:#0F766E;color:#fff;border-color:#0F766E}.btn-blue:hover{background:#115E59}
 .btn-green{background:#25D366;color:#fff}.btn-green:hover{background:#128C7E}
-.btn-grey{background:#F4F6FB;color:#4A5E8A;border-color:#E8ECF4}.btn-grey:hover{background:#E8ECF4}
+.btn-grey{background:#F4F6FB;color:#4A5E8A;border-color:#E2E8E7}.btn-grey:hover{background:#E2E8E7}
 .btn-sm{padding:.36rem .75rem;font-size:.76rem}
-.card{background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(13,71,161,.1);border:1px solid #E8ECF4;overflow:hidden}
-.card-header{background:linear-gradient(135deg,#0D47A1,#1565C0);color:#fff;padding:.9rem 1.1rem}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(15,118,110,.1);border:1px solid #E2E8E7;overflow:hidden}
+.card-header{background:linear-gradient(135deg,#0F766E,#107D74);color:#fff;padding:.9rem 1.1rem}
 .card-header h3{font-size:.95rem;font-weight:700}
 .card-body{padding:1.2rem}
 .alert-ok{background:#E8F5E9;color:#1B5E20;border-left:4px solid #4CAF50;padding:.75rem 1rem;border-radius:9px;margin-bottom:.9rem;font-size:.84rem;font-weight:600}

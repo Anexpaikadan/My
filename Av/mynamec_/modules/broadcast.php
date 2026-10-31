@@ -110,7 +110,7 @@ require_once __DIR__ . '/../includes/header.php';
     margin: .9rem;
     border-radius: 16px;
     box-shadow: 0 4px 20px rgba(0,0,0,.08);
-    border: 1px solid #e8ecf4;
+    border: 1px solid #E2E8E7;
     overflow: hidden;
 }
 .bc-card-head {
@@ -133,13 +133,13 @@ require_once __DIR__ . '/../includes/header.php';
 .tmpl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-bottom: 1rem; }
 .tmpl-btn {
     padding: .6rem .7rem;
-    border: 1.5px solid #e8ecf4;
+    border: 1.5px solid #E2E8E7;
     border-radius: 10px;
     background: #f8fafc;
     cursor: pointer;
     text-align: left;
     transition: all .2s;
-    font-family: 'DM Sans', sans-serif;
+    font-family:'Plus Jakarta Sans', sans-serif;
 }
 .tmpl-btn:hover { border-color: #25d366; background: #f0fdf4; }
 .tmpl-btn:active { transform: scale(.97); }
@@ -160,11 +160,11 @@ require_once __DIR__ . '/../includes/header.php';
 .bc-inp {
     width: 100%;
     padding: .72rem .9rem;
-    border: 2px solid #e8ecf4;
+    border: 2px solid #E2E8E7;
     border-radius: 10px;
-    font-family: 'DM Sans', sans-serif;
+    font-family:'Plus Jakarta Sans', sans-serif;
     font-size: .9rem;
-    color: #0d1b3e;
+    color: #10201F;
     background: #fff;
     outline: none;
     transition: border-color .18s;
@@ -174,11 +174,11 @@ require_once __DIR__ . '/../includes/header.php';
 .bc-textarea {
     width: 100%;
     padding: .72rem .9rem;
-    border: 2px solid #e8ecf4;
+    border: 2px solid #E2E8E7;
     border-radius: 10px;
-    font-family: 'DM Sans', sans-serif;
+    font-family:'Plus Jakarta Sans', sans-serif;
     font-size: .88rem;
-    color: #0d1b3e;
+    color: #10201F;
     background: #fff;
     outline: none;
     resize: vertical;
@@ -196,9 +196,9 @@ require_once __DIR__ . '/../includes/header.php';
     padding: .85rem 1rem;
     margin: .75rem 0;
     min-height: 60px;
-    font-family: 'DM Sans', sans-serif;
+    font-family:'Plus Jakarta Sans', sans-serif;
     font-size: .82rem;
-    color: #0d1b3e;
+    color: #10201F;
     line-height: 1.65;
     white-space: pre-wrap;
     word-break: break-word;
@@ -244,7 +244,7 @@ require_once __DIR__ . '/../includes/header.php';
     color: #fff;
     border: none;
     border-radius: 12px;
-    font-family: 'DM Sans', sans-serif;
+    font-family:'Plus Jakarta Sans', sans-serif;
     font-size: .95rem;
     font-weight: 800;
     cursor: pointer;
@@ -262,18 +262,18 @@ require_once __DIR__ . '/../includes/header.php';
 .btn-save {
     width: 100%;
     padding: .7rem;
-    background: #f0f4fa;
+    background: #F3F6F5;
     color: #3d4f7c;
-    border: 1.5px solid #e8ecf4;
+    border: 1.5px solid #E2E8E7;
     border-radius: 10px;
-    font-family: 'DM Sans', sans-serif;
+    font-family:'Plus Jakarta Sans', sans-serif;
     font-size: .85rem;
     font-weight: 700;
     cursor: pointer;
     margin-top: .5rem;
     transition: all .2s;
 }
-.btn-save:hover { background: #e3f2fd; border-color: #90caf9; color: #0d47a1; }
+.btn-save:hover { background: #E6F4F2; border-color: #99D8CF; color: #0F766E; }
 
 /* Group missing warning */
 .group-warn {
@@ -294,7 +294,7 @@ require_once __DIR__ . '/../includes/header.php';
 .cat-pill {
     padding: .3rem .8rem;
     border-radius: 20px;
-    border: 1.5px solid #e8ecf4;
+    border: 1.5px solid #E2E8E7;
     background: #f8fafc;
     font-size: .72rem;
     font-weight: 700;
@@ -307,7 +307,7 @@ require_once __DIR__ . '/../includes/header.php';
 /* History */
 .hist-item {
     background: #f8fafc;
-    border: 1px solid #e8ecf4;
+    border: 1px solid #E2E8E7;
     border-radius: 12px;
     padding: .75rem .9rem;
     margin-bottom: .5rem;
@@ -316,7 +316,7 @@ require_once __DIR__ . '/../includes/header.php';
 }
 .hist-item:hover { border-color: #25d366; background: #f0fdf4; }
 .hist-item:active { transform: scale(.98); }
-.hist-title { font-size: .85rem; font-weight: 800; color: #0d1b3e; margin-bottom: .2rem; }
+.hist-title { font-size: .85rem; font-weight: 800; color: #10201F; margin-bottom: .2rem; }
 .hist-meta { font-size: .65rem; color: #5d6b80; display: flex; gap: .6rem; flex-wrap: wrap; }
 .hist-cat {
     display: inline-block;
@@ -449,7 +449,7 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="cat-pills" id="catPills">
             <?php
             $cats = ['general'=>['📢','General','#556274','#f1f5f9'],
-                     'event'=>['📅','Event','#0d47a1','#e3f2fd'],
+                     'event'=>['📅','Event','#0F766E','#E6F4F2'],
                      'urgent'=>['🚨','Urgent','#b71c1c','#ffebee'],
                      'meeting'=>['🤝','Meeting','#1b5e20','#e8f5e9'],
                      'fundraiser'=>['❤️','Fundraiser','#880e4f','#fce4ec'],
@@ -473,10 +473,10 @@ require_once __DIR__ . '/../includes/header.php';
 
         <!-- Extra fields panel -->
         <div id="extraFields" style="display:none;margin-bottom:.75rem">
-          <div style="background:#f0f9ff;border:1.5px solid #90caf9;border-radius:12px;padding:.85rem">
-            <div style="font-size:.65rem;font-weight:800;color:#0d47a1;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.6rem">📝 Fill In Details</div>
+          <div style="background:#f0f9ff;border:1.5px solid #99D8CF;border-radius:12px;padding:.85rem">
+            <div style="font-size:.65rem;font-weight:800;color:#0F766E;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.6rem">📝 Fill In Details</div>
             <div id="fieldSlots" style="display:flex;flex-direction:column;gap:.45rem"></div>
-            <button type="button" onclick="injectFields()" style="width:100%;margin-top:.65rem;padding:.6rem;background:#0d47a1;color:#fff;border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.84rem;cursor:pointer">✅ Apply to Message</button>
+            <button type="button" onclick="injectFields()" style="width:100%;margin-top:.65rem;padding:.6rem;background:#0F766E;color:#fff;border:none;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.84rem;cursor:pointer">✅ Apply to Message</button>
           </div>
         </div>
 
@@ -531,7 +531,7 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
     <div class="bc-card-body">
         <?php
-        $catColors = ['general'=>['#64748b','#f1f5f9'],'event'=>['#0d47a1','#e3f2fd'],
+        $catColors = ['general'=>['#64748b','#f1f5f9'],'event'=>['#0F766E','#E6F4F2'],
                       'urgent'=>['#b71c1c','#ffebee'],'meeting'=>['#1b5e20','#e8f5e9'],
                       'fundraiser'=>['#880e4f','#fce4ec'],'congratulations'=>['#e65100','#fff3e0']];
         foreach($history as $h):
@@ -626,7 +626,7 @@ function useTemplate(key) {
         fields.forEach(function(f,i) {
             fs.innerHTML += '<div><label style="font-size:.63rem;font-weight:700;color:#3d4f7c;display:block;margin-bottom:.18rem">'+f+'</label>'
                 +'<input type="text" id="ef_'+i+'" placeholder="Enter '+f+'"'
-                +' style="width:100%;padding:.5rem .75rem;border:1.5px solid #e8ecf4;border-radius:8px;font-family:DM Sans,sans-serif;font-size:.84rem;outline:none">'
+                +' style="width:100%;padding:.5rem .75rem;border:1.5px solid #E2E8E7;border-radius:8px;font-family:DM Sans,sans-serif;font-size:.84rem;outline:none">'
                 +'</div>';
         });
         ef.setAttribute('data-fields', JSON.stringify(fields));
@@ -666,7 +666,7 @@ function updatePreview() {
         box.style.color = '#5d6b80';
         return;
     }
-    box.style.color = '#0d1b3e';
+    box.style.color = '#10201F';
     // Render *bold* as bold
     box.innerHTML = msg
         .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
@@ -686,7 +686,7 @@ function selectCat(cat) {
     document.getElementById('selectedCat').value = cat;
     document.querySelectorAll('.cat-pill').forEach(function(p) {
         p.classList.remove('on');
-        p.style.borderColor = '#e8ecf4';
+        p.style.borderColor = '#E2E8E7';
         p.style.background  = '#f8fafc';
         p.style.color       = '#64748b';
     });

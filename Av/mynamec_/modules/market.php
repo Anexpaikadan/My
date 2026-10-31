@@ -429,13 +429,13 @@ require_once __DIR__.'/../includes/header.php';
 .mk-tagline{display:none}
 /* Top bar */
 .mk-topbar{background:#fff;padding:.55rem .8rem;display:flex;gap:.45rem;align-items:center;box-shadow:0 1px 6px rgba(0,0,0,.06);position:sticky;top:0;z-index:100}
-.mk-search{flex:1;padding:.55rem .9rem;border:none;background:#f1f3f6;border-radius:22px;font-size:.85rem;font-family:'DM Sans',sans-serif;outline:none;transition:box-shadow .15s}
+.mk-search{flex:1;padding:.55rem .9rem;border:none;background:#f1f3f6;border-radius:22px;font-size:.85rem;font-family:'Plus Jakarta Sans',sans-serif;outline:none;transition:box-shadow .15s}
 .mk-search:focus{box-shadow:0 0 0 2px var(--mk3)}
-.mk-post-btn{flex-shrink:0;background:linear-gradient(135deg,var(--mk1),var(--mk2));color:#fff;border:none;border-radius:22px;padding:.5rem 1rem;font-size:.78rem;font-weight:800;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif;box-shadow:0 3px 10px rgba(27,94,32,.25)}
+.mk-post-btn{flex-shrink:0;background:linear-gradient(135deg,var(--mk1),var(--mk2));color:#fff;border:none;border-radius:22px;padding:.5rem 1rem;font-size:.78rem;font-weight:800;cursor:pointer;white-space:nowrap;font-family:'Plus Jakarta Sans',sans-serif;box-shadow:0 3px 10px rgba(27,94,32,.25)}
 /* Categories scroll */
 .mk-cats{display:flex;gap:.45rem;overflow-x:auto;padding:.6rem .7rem;background:#fff;border-bottom:1px solid #f0f0f0;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .mk-cats::-webkit-scrollbar{display:none}
-.mk-cat{position:relative;flex-shrink:0;padding:.44rem .85rem;border-radius:20px;font-size:.72rem;font-weight:700;cursor:pointer;border:1.5px solid #eceff3;color:#566;background:#f5f7fa;font-family:'DM Sans',sans-serif;white-space:nowrap;text-decoration:none;display:flex;align-items:center;gap:.25rem;transition:transform .18s cubic-bezier(.34,1.56,.64,1),background .2s,color .2s,box-shadow .2s,border-color .2s;animation:catIn .4s both;will-change:transform}
+.mk-cat{position:relative;flex-shrink:0;padding:.44rem .85rem;border-radius:20px;font-size:.72rem;font-weight:700;cursor:pointer;border:1.5px solid #eceff3;color:#566;background:#f5f7fa;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;text-decoration:none;display:flex;align-items:center;gap:.25rem;transition:transform .18s cubic-bezier(.34,1.56,.64,1),background .2s,color .2s,box-shadow .2s,border-color .2s;animation:catIn .4s both;will-change:transform}
 .mk-cat:active{transform:scale(.91)}
 .mk-cat:hover{border-color:#cfe3d0;background:#eef6ef;color:var(--mk1)}
 .mk-cat.active{background:linear-gradient(135deg,var(--mk1),var(--mk3));color:#fff;border-color:transparent;box-shadow:0 5px 14px rgba(27,94,32,.32);transform:translateY(-1px)}
@@ -450,12 +450,12 @@ require_once __DIR__.'/../includes/header.php';
 .mk-subchip.on{background:var(--mk2);color:#fff;border-color:transparent;box-shadow:0 3px 9px rgba(46,125,50,.3)}
 /* Subcategory chips (post form) */
 .sub-chips{display:flex;flex-wrap:wrap;gap:.4rem}
-.sub-chip{padding:.44rem .82rem;border-radius:12px;font-size:.74rem;font-weight:700;border:1.5px solid #e0e0e0;background:#fff;color:#555;cursor:pointer;transition:transform .15s cubic-bezier(.34,1.56,.64,1),background .2s,color .2s,border-color .2s,box-shadow .2s;font-family:'DM Sans',sans-serif;animation:catIn .3s both}
+.sub-chip{padding:.44rem .82rem;border-radius:12px;font-size:.74rem;font-weight:700;border:1.5px solid #e0e0e0;background:#fff;color:#555;cursor:pointer;transition:transform .15s cubic-bezier(.34,1.56,.64,1),background .2s,color .2s,border-color .2s,box-shadow .2s;font-family:'Plus Jakarta Sans',sans-serif;animation:catIn .3s both}
 .sub-chip:active{transform:scale(.9)}
 .sub-chip.on{background:linear-gradient(135deg,var(--mk1),var(--mk2));color:#fff;border-color:transparent;box-shadow:0 4px 12px rgba(27,94,32,.3);transform:translateY(-1px)}
 /* Sort bar */
 .mk-sortbar{display:flex;gap:.3rem;padding:.4rem .7rem;background:#fff;border-bottom:1px solid #f0f0f0;overflow-x:auto;scrollbar-width:none;align-items:center}
-.mk-sort{flex-shrink:0;padding:.26rem .6rem;border-radius:12px;font-size:.65rem;font-weight:700;cursor:pointer;border:none;color:#666666;background:transparent;font-family:'DM Sans',sans-serif;text-decoration:none}
+.mk-sort{flex-shrink:0;padding:.26rem .6rem;border-radius:12px;font-size:.65rem;font-weight:700;cursor:pointer;border:none;color:#666666;background:transparent;font-family:'Plus Jakarta Sans',sans-serif;text-decoration:none}
 .mk-sort.active{background:var(--mk2);color:#fff}
 /* Cards grid */
 .mk-grid{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;padding:.6rem .55rem}
@@ -475,7 +475,7 @@ require_once __DIR__.'/../includes/header.php';
 .mk-card-body{padding:.45rem .5rem .55rem}
 .mk-card-title{font-size:.75rem;font-weight:800;color:#1a1a1a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:.15rem}
 .mk-card-price{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--mk1);line-height:1;margin-bottom:.1rem}
-.mk-card-price-free{font-size:.65rem;color:#4CAF50;font-weight:700}
+.mk-card-price-free{font-size:.7rem;color:#2E7D32;font-weight:700}
 .mk-card-meta{font-size:.58rem;color:#5d6b80;display:flex;align-items:center;gap:.3rem;flex-wrap:wrap}
 .mk-card-seller{display:flex;align-items:center;gap:.3rem;margin-top:.3rem;padding-top:.3rem;border-top:1px solid #f5f5f5}
 .mk-card-seller img{width:18px;height:18px;border-radius:50%;object-fit:cover}
@@ -508,7 +508,7 @@ require_once __DIR__.'/../includes/header.php';
 .mk-form{padding:.8rem}
 .fg{margin-bottom:.75rem}
 .lbl{display:block;font-size:.72rem;font-weight:700;color:#555;margin-bottom:.3rem}
-.inp{width:100%;padding:.52rem .7rem;border:1.5px solid #e0e0e0;border-radius:10px;font-size:.82rem;font-family:'DM Sans',sans-serif;outline:none;background:#fff}
+.inp{width:100%;padding:.52rem .7rem;border:1.5px solid #e0e0e0;border-radius:10px;font-size:.82rem;font-family:'Plus Jakarta Sans',sans-serif;outline:none;background:#fff}
 .inp:focus{border-color:var(--mk3)}
 select.inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .7rem center;padding-right:2rem}
 textarea.inp{resize:vertical;min-height:90px}
@@ -523,7 +523,7 @@ textarea.inp{resize:vertical;min-height:90px}
 .mk-myitem-body{flex:1;padding:.5rem .5rem .5rem 0;min-width:0}
 .mk-myitem-title{font-size:.8rem;font-weight:800;color:#1a1a1a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:.2rem}
 .mk-myitem-actions{display:flex;gap:.3rem;margin-top:.35rem;flex-wrap:wrap}
-.mk-myitem-btn{padding:.22rem .5rem;border-radius:7px;font-size:.62rem;font-weight:700;cursor:pointer;border:1px solid #ddd;background:#fff;color:#555;font-family:'DM Sans',sans-serif}
+.mk-myitem-btn{padding:.22rem .5rem;border-radius:7px;font-size:.62rem;font-weight:700;cursor:pointer;border:1px solid #ddd;background:#fff;color:#555;font-family:'Plus Jakarta Sans',sans-serif}
 /* Status badges */
 .sb{padding:.18rem .55rem;border-radius:20px;font-size:.6rem;font-weight:800;display:inline-block}
 .sb-active{background:#e8f5e9;color:#2e7d32}
@@ -532,7 +532,7 @@ textarea.inp{resize:vertical;min-height:90px}
 .sb-pending{background:#fff3e0;color:#e65100}
 /* Nav */
 .mk-nav{display:flex;background:#fff;border-bottom:2px solid var(--mk3)}
-.mk-nav-btn{flex:1;padding:.55rem .3rem;text-align:center;font-size:.65rem;font-weight:700;color:#666666;cursor:pointer;border:none;background:transparent;font-family:'DM Sans',sans-serif;border-bottom:2px solid transparent;margin-bottom:-2px}
+.mk-nav-btn{flex:1;padding:.55rem .3rem;text-align:center;font-size:.65rem;font-weight:700;color:#666666;cursor:pointer;border:none;background:transparent;font-family:'Plus Jakarta Sans',sans-serif;border-bottom:2px solid transparent;margin-bottom:-2px}
 .mk-nav-btn.active{color:var(--mk1);border-bottom-color:var(--mk1)}
 /* Top sub-nav (under header) */
 .mk-topnav{display:flex;background:#fff;border-bottom:1px solid #eef0f2;box-shadow:0 2px 6px rgba(0,0,0,.05)}
@@ -550,7 +550,7 @@ textarea.inp{resize:vertical;min-height:90px}
 /* Admin */
 .adm-card{background:#fff;border-radius:12px;border:1.5px solid #e0e0e0;padding:.7rem .8rem;margin-bottom:.5rem;display:flex;gap:.6rem;align-items:center}
 .empty{text-align:center;padding:2.5rem 1rem;color:#5d6b80}
-.back-btn{display:flex;align-items:center;gap:.3rem;padding:.5rem .8rem;font-size:.8rem;color:var(--mk1);font-weight:700;cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif}
+.back-btn{display:flex;align-items:center;gap:.3rem;padding:.5rem .8rem;font-size:.8rem;color:var(--mk1);font-weight:700;cursor:pointer;background:none;border:none;font-family:'Plus Jakarta Sans',sans-serif}
 </style>
 
 <div class="mkw">
@@ -648,10 +648,10 @@ if ($page==='item' && $item): ?>
     $locLabel = $item['location'] ?: ($hasGeo ? 'View on map' : '');
     ?>
     <?php if($locLabel): ?>
-    <a href="<?php echo h($mapUrl); ?>" target="_blank" rel="noopener" class="mk-info-row" style="text-decoration:none;color:#1565c0">
+    <a href="<?php echo h($mapUrl); ?>" target="_blank" rel="noopener" class="mk-info-row" style="text-decoration:none;color:#107D74">
       <span class="mk-info-icon">📍</span>
       <span style="flex:1"><?php echo h($locLabel); ?></span>
-      <span style="font-size:.72rem;color:#1565c0;font-weight:800">🗺️ Map ›</span>
+      <span style="font-size:.72rem;color:#107D74;font-weight:800">🗺️ Map ›</span>
     </a>
     <?php endif; ?>
     <div class="mk-info-row"><span class="mk-info-icon"><?php echo $CATS[$item['category']][0]??'🛍️'; ?></span><?php echo $CATS[$item['category']][1]??'Others'; ?><?php if(!empty($item['subcategory'])): ?> <span style="margin-left:.45rem;background:#e8f5e9;color:var(--mk1);padding:.12rem .5rem;border-radius:10px;font-size:.62rem;font-weight:800">🔖 <?php echo h($item['subcategory']); ?></span><?php endif; ?></div>
@@ -690,7 +690,7 @@ if ($page==='item' && $item): ?>
 
     <div style="display:flex;gap:.4rem">
       <?php if((int)$item['user_id']===$uid||$isAdmin): ?>
-      <a href="<?php echo $SELF.'?edit='.$itemId; ?>" style="flex:1;padding:.42rem;background:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;border-radius:10px;font-size:.75rem;font-weight:700;text-align:center;text-decoration:none">✏️ Edit</a>
+      <a href="<?php echo $SELF.'?edit='.$itemId; ?>" style="flex:1;padding:.42rem;background:#E6F4F2;color:#107D74;border:1px solid #BFE6E0;border-radius:10px;font-size:.75rem;font-weight:700;text-align:center;text-decoration:none">✏️ Edit</a>
       <?php endif; ?>
       <button onclick="mkReport(<?php echo $itemId; ?>)" class="btn-report" style="flex:<?php echo ((int)$item['user_id']===$uid||$isAdmin)?'1':'2'; ?>">⚑ Report</button>
     </div>
@@ -789,8 +789,8 @@ elseif ($page==='new' || $page==='edit'):
     <input type="hidden" name="lat" id="locLat" value="<?php echo h($fi['lat']??''); ?>">
     <input type="hidden" name="lng" id="locLng" value="<?php echo h($fi['lng']??''); ?>">
     <div style="display:flex;gap:.4rem;margin-top:.45rem">
-      <button type="button" onclick="useMyLocation(this)" style="flex:1;padding:.5rem;background:#e8f5e9;color:var(--mk1);border:1.5px solid #c8e6c9;border-radius:10px;font-size:.74rem;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif">📡 Use My Location</button>
-      <button type="button" onclick="pickOnMap()" style="flex:1;padding:.5rem;background:#e3f2fd;color:#1565c0;border:1.5px solid #bbdefb;border-radius:10px;font-size:.74rem;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif">🗺️ Pick on Map</button>
+      <button type="button" onclick="useMyLocation(this)" style="flex:1;padding:.5rem;background:#e8f5e9;color:var(--mk1);border:1.5px solid #c8e6c9;border-radius:10px;font-size:.74rem;font-weight:800;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">📡 Use My Location</button>
+      <button type="button" onclick="pickOnMap()" style="flex:1;padding:.5rem;background:#E6F4F2;color:#107D74;border:1.5px solid #BFE6E0;border-radius:10px;font-size:.74rem;font-weight:800;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">🗺️ Pick on Map</button>
     </div>
     <div id="locStatus" style="font-size:.64rem;color:#5d6b80;margin-top:.35rem"><?php echo (isset($fi['lat'])&&$fi['lat']!==null&&$fi['lat']!=='')?'📍 GPS pin saved — buyers can open it in Google Maps.':'Tap “Use My Location” to attach a Google Maps pin.'; ?></div>
   </div>
@@ -911,7 +911,7 @@ foreach($myItems as $mi) { $grps[$mi['status']??'inactive'][] = $mi; }
     <div style="font-size:.58rem;color:#5d6b80">👁 <?php echo (int)$mi['views']; ?> views · <?php echo date('d M',strtotime($mi['created_at'])); ?></div>
     <div class="mk-myitem-actions">
       <a href="<?php echo $SELF.'?p=item&id='.(int)$mi['id']; ?>" class="mk-myitem-btn">👁 View</a>
-      <a href="<?php echo $SELF.'?edit='.(int)$mi['id']; ?>" class="mk-myitem-btn" style="color:#1565c0;border-color:#bbdefb">✏️ Edit</a>
+      <a href="<?php echo $SELF.'?edit='.(int)$mi['id']; ?>" class="mk-myitem-btn" style="color:#107D74;border-color:#BFE6E0">✏️ Edit</a>
       <?php if($mi['status']==='active'): ?>
       <button onclick="shareToFeed(<?php echo (int)$mi['id']; ?>,this)" class="mk-myitem-btn" style="color:#01579b;border-color:#81d4fa">📰 Share to Feed</button>
       <?php endif; ?>
@@ -942,7 +942,7 @@ try {
 $allAdmItems=[];
 try { $allAdmItems=db()->query("SELECT m.*,u.name seller_name,(SELECT image_path FROM market_images WHERE item_id=m.id LIMIT 1) thumb FROM market_items m JOIN users u ON u.id=m.user_id ORDER BY m.created_at DESC LIMIT 50")->fetchAll(); } catch(Exception $e){}
 ?>
-<div style="background:linear-gradient(135deg,#07225c,#0d47a1);padding:.65rem .9rem">
+<div style="background:linear-gradient(135deg,#0A1A1F,#0F766E);padding:.65rem .9rem">
   <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.08em;color:#fff">🛡️ ADMIN — MINI MARKET</span>
 </div>
 <div style="display:grid;grid-template-columns:repeat(4,1fr);background:#fff;border-bottom:2px solid #e0e0e0">
@@ -964,7 +964,7 @@ try { $allAdmItems=db()->query("SELECT m.*,u.name seller_name,(SELECT image_path
     <div style="font-size:.65rem;color:#5d6b80"><?php echo h($pi['seller_name']); ?> · <?php echo $CATS[$pi['category']][1]??'Others'; ?></div>
     <div style="display:flex;gap:.3rem;margin-top:.35rem">
       <button onclick="adm('admin_approve',<?php echo (int)$pi['id']; ?>,this)" style="background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;border-radius:7px;padding:.25rem .55rem;font-size:.65rem;font-weight:700;cursor:pointer">✅ Approve</button>
-      <a href="<?php echo $SELF.'?p=item&id='.(int)$pi['id']; ?>" style="background:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;border-radius:7px;padding:.25rem .55rem;font-size:.65rem;font-weight:700;text-decoration:none">👁 View</a>
+      <a href="<?php echo $SELF.'?p=item&id='.(int)$pi['id']; ?>" style="background:#E6F4F2;color:#107D74;border:1px solid #BFE6E0;border-radius:7px;padding:.25rem .55rem;font-size:.65rem;font-weight:700;text-decoration:none">👁 View</a>
       <button onclick="adm('admin_reject',<?php echo (int)$pi['id']; ?>,this)" style="background:#ffebee;color:#b71c1c;border:1px solid #ffcdd2;border-radius:7px;padding:.25rem .55rem;font-size:.65rem;font-weight:700;cursor:pointer">🚫 Reject</button>
     </div>
   </div>

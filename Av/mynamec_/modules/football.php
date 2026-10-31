@@ -248,33 +248,33 @@ require_once __DIR__ . '/../includes/header.php';
 .t-banner-info{position:absolute;bottom:.8rem;left:1rem;right:1rem;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:.4rem;z-index:2}
 .t-banner-title{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:#fff;letter-spacing:.05em;line-height:1.1}
 .t-badge{border-radius:20px;padding:.2rem .8rem;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
-.t-admin-bar{background:#f8f9fc;border-bottom:1px solid #e8ecf4;padding:.6rem 1rem;display:flex;gap:.4rem;flex-wrap:wrap;align-items:center}
-.tab-pill{padding:.35rem .85rem;border-radius:20px;border:1.5px solid #e0e7ff;font-size:.74rem;font-weight:700;cursor:pointer;background:#fff;color:#0d47a1;transition:all .2s}
-.tab-pill.on{background:#0d47a1;color:#fff;border-color:#0d47a1}
+.t-admin-bar{background:#F6F8F8;border-bottom:1px solid #E2E8E7;padding:.6rem 1rem;display:flex;gap:.4rem;flex-wrap:wrap;align-items:center}
+.tab-pill{padding:.35rem .85rem;border-radius:20px;border:1.5px solid #E0F2EF;font-size:.74rem;font-weight:700;cursor:pointer;background:#fff;color:#0F766E;transition:all .2s}
+.tab-pill.on{background:#0F766E;color:#fff;border-color:#0F766E}
 .tab-pane{display:none;padding:1rem}.tab-pane.on{display:block}
 .reg-card{background:#f8fafc;border-radius:10px;padding:.7rem .9rem;margin-bottom:.5rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap}
 .bracket-wrap{overflow-x:auto;padding:.5rem 0}
 .bracket{display:flex;gap:1.5rem;align-items:flex-start;min-width:max-content}
 .bracket-round{display:flex;flex-direction:column;gap:.6rem;min-width:160px}
-.bracket-round h5{font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#0d47a1;text-align:center;padding:.3rem;background:#e3f2fd;border-radius:6px;margin-bottom:.2rem}
-.bracket-match{background:#fff;border:1.5px solid #e0e7ff;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)}
-.bracket-team{display:flex;align-items:center;justify-content:space-between;padding:.45rem .7rem;font-size:.8rem;font-weight:700;border-bottom:1px solid #f0f4f8;gap:.4rem}
+.bracket-round h5{font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#0F766E;text-align:center;padding:.3rem;background:#E6F4F2;border-radius:6px;margin-bottom:.2rem}
+.bracket-match{background:#fff;border:1.5px solid #E0F2EF;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.bracket-team{display:flex;align-items:center;justify-content:space-between;padding:.45rem .7rem;font-size:.8rem;font-weight:700;border-bottom:1px solid #F3F6F5;gap:.4rem}
 .bracket-team:last-child{border-bottom:none}
 .bracket-team.winner{background:#f1f8e9;color:#1b5e20}
-.bracket-score{background:#0d47a1;color:#fff;border-radius:5px;padding:.1rem .45rem;font-size:.78rem;min-width:22px;text-align:center}
+.bracket-score{background:#0F766E;color:#fff;border-radius:5px;padding:.1rem .45rem;font-size:.78rem;min-width:22px;text-align:center}
 .league-table{width:100%;border-collapse:collapse;font-size:.82rem}
 .league-table th{background:#1b5e20;color:#fff;padding:.55rem .6rem;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em}
-.league-table td{padding:.55rem .6rem;border-bottom:1px solid #f0f4f8;vertical-align:middle}
+.league-table td{padding:.55rem .6rem;border-bottom:1px solid #F3F6F5;vertical-align:middle}
 .league-table tr:first-child td{background:#f1f8e9;font-weight:700}
 .league-table tr:nth-child(2) td{background:#fafffe}
 .match-row{background:#f8fafc;border-radius:10px;padding:.7rem 1rem;margin-bottom:.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
-.score-box{background:#0d47a1;color:#fff;border-radius:8px;padding:.25rem .9rem;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.06em}
-.team-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid #e0e7ff}
-.team-avatar-ph{width:36px;height:36px;border-radius:50%;background:#e3f2fd;display:flex;align-items:center;justify-content:center;font-size:1rem;border:2px solid #e0e7ff;flex-shrink:0}
-.inp-sm{padding:.45rem .7rem;border:1.5px solid #e0e7ff;border-radius:8px;font-family:Inter,sans-serif;font-size:.85rem;width:100%;outline:none}
-.inp-sm:focus{border-color:#0d47a1}
+.score-box{background:#0F766E;color:#fff;border-radius:8px;padding:.25rem .9rem;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.06em}
+.team-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid #E0F2EF}
+.team-avatar-ph{width:36px;height:36px;border-radius:50%;background:#E6F4F2;display:flex;align-items:center;justify-content:center;font-size:1rem;border:2px solid #E0F2EF;flex-shrink:0}
+.inp-sm{padding:.45rem .7rem;border:1.5px solid #E0F2EF;border-radius:8px;font-family:Inter,sans-serif;font-size:.85rem;width:100%;outline:none}
+.inp-sm:focus{border-color:#0F766E}
 .btn-g{background:#1b5e20;color:#fff;border:none;border-radius:8px;padding:.5rem 1rem;font-weight:700;font-size:.8rem;cursor:pointer}
-.btn-b{background:#0d47a1;color:#fff;border:none;border-radius:8px;padding:.5rem 1rem;font-weight:700;font-size:.8rem;cursor:pointer}
+.btn-b{background:#0F766E;color:#fff;border:none;border-radius:8px;padding:.5rem 1rem;font-weight:700;font-size:.8rem;cursor:pointer}
 .btn-r{background:#b71c1c;color:#fff;border:none;border-radius:8px;padding:.4rem .8rem;font-weight:700;font-size:.75rem;cursor:pointer}
 .btn-o{background:#e65100;color:#fff;border:none;border-radius:8px;padding:.5rem 1rem;font-weight:700;font-size:.8rem;cursor:pointer}
 .fg-row{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.6rem}
@@ -357,7 +357,7 @@ require_once __DIR__ . '/../includes/header.php';
     $mr = db()->prepare("SELECT * FROM tournament_registrations WHERE tournament_id=? AND user_id=?");
     $mr->execute([$tid,$uid]); $myReg = $mr->fetch();
   } catch(Exception $e){}
-  $sc = ['upcoming'=>['#FFF8E1','#E65100'],'ongoing'=>['#E8F5E9','#1B5E20'],'completed'=>['#E3F2FD','#07225c']];
+  $sc = ['upcoming'=>['#FFF8E1','#E65100'],'ongoing'=>['#E8F5E9','#1B5E20'],'completed'=>['#E6F4F2','#0A1A1F']];
   $s  = $sc[$t['status']] ?? ['#F5F5F5','#555'];
   $tabId = 'tc'.$tid;
 ?>
@@ -388,7 +388,7 @@ require_once __DIR__ . '/../includes/header.php';
     <form method="POST" style="display:inline">
       <input type="hidden" name="status_tid" value="<?=$tid?>">
       <input type="hidden" name="set_status" value="1">
-      <select name="new_status" onchange="this.form.submit()" style="font-size:.72rem;padding:.25rem .5rem;border-radius:8px;border:1.5px solid #e0e7ff;font-weight:700;cursor:pointer;background:#fff">
+      <select name="new_status" onchange="this.form.submit()" style="font-size:.72rem;padding:.25rem .5rem;border-radius:8px;border:1.5px solid #E0F2EF;font-weight:700;cursor:pointer;background:#fff">
         <option value="upcoming"  <?=$t['status']==='upcoming' ?'selected':''?>>Upcoming</option>
         <option value="ongoing"   <?=$t['status']==='ongoing'  ?'selected':''?>>Ongoing</option>
         <option value="completed" <?=$t['status']==='completed'?'selected':''?>>Completed</option>
@@ -410,7 +410,7 @@ require_once __DIR__ . '/../includes/header.php';
   <?php endif; ?>
 
   <!-- Tabs -->
-  <div style="display:flex;gap:.3rem;padding:.7rem 1rem .3rem;border-bottom:1px solid #f0f4f8;overflow-x:auto;scrollbar-width:none">
+  <div style="display:flex;gap:.3rem;padding:.7rem 1rem .3rem;border-bottom:1px solid #F3F6F5;overflow-x:auto;scrollbar-width:none">
     <button class="tab-pill on" onclick="switchTab('<?=$tabId?>','standings',this)">🏆 Table</button>
     <button class="tab-pill" onclick="switchTab('<?=$tabId?>','matches',this)">📅 Matches</button>
     <button class="tab-pill" onclick="switchTab('<?=$tabId?>','bracket',this)">🔲 Bracket</button>
@@ -454,7 +454,7 @@ require_once __DIR__ . '/../includes/header.php';
         <td style="text-align:center;color:#b71c1c"><?=$tm['losses']?></td>
         <td style="text-align:center"><?=$tm['goals_for']?></td>
         <td style="text-align:center"><?=$tm['goals_against']?></td>
-        <td style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:#0d47a1"><?=$tm['pts']?></td>
+        <td style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:#0F766E"><?=$tm['pts']?></td>
         <?php if ($isAdmin): ?>
         <td>
           <form method="POST" style="display:inline" onsubmit="return confirm('Delete team?')">
@@ -481,7 +481,7 @@ require_once __DIR__ . '/../includes/header.php';
       foreach ($allMatches as $mx) { $rounds[$mx['round']][] = $mx; }
       foreach ($rounds as $rname=>$rmatches):
     ?>
-    <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#0d47a1;margin-bottom:.4rem;margin-top:.8rem"><?=h($rname)?></div>
+    <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#0F766E;margin-bottom:.4rem;margin-top:.8rem"><?=h($rname)?></div>
     <?php foreach ($rmatches as $mx):
       $t1p = !empty($mx['t1p']) ? url('assets/uploads/teams/'.$mx['t1p']) : '';
       $t2p = !empty($mx['t2p']) ? url('assets/uploads/teams/'.$mx['t2p']) : '';
@@ -498,7 +498,7 @@ require_once __DIR__ . '/../includes/header.php';
         <?php elseif ($mx['status']==='live'): ?>
         <span style="background:#e65100;color:#fff;border-radius:8px;padding:.2rem .8rem;font-size:.75rem;font-weight:800;animation:livePulse 1.2s ease-in-out infinite">🔴 LIVE</span>
         <?php else: ?>
-        <span style="background:#f0f4f8;color:#64748b;border-radius:8px;padding:.2rem .8rem;font-size:.78rem">VS</span>
+        <span style="background:#F3F6F5;color:#64748b;border-radius:8px;padding:.2rem .8rem;font-size:.78rem">VS</span>
         <?php endif; ?>
         <div style="display:flex;align-items:center;gap:.4rem">
           <span style="font-weight:700;font-size:.9rem"><?=h($mx['t2n'])?></span>
@@ -541,7 +541,7 @@ require_once __DIR__ . '/../includes/header.php';
     <?php else: ?>
     <?php if ($t['format']==='league' || $t['format']==='group_knockout'): ?>
     <!-- League table is in standings tab, show match grid here -->
-    <div style="font-size:.75rem;font-weight:700;color:#0d47a1;margin-bottom:.75rem">📊 Match Grid</div>
+    <div style="font-size:.75rem;font-weight:700;color:#0F766E;margin-bottom:.75rem">📊 Match Grid</div>
     <?php
     $n = count($teams);
     if ($n > 1):
@@ -550,20 +550,20 @@ require_once __DIR__ . '/../includes/header.php';
     <table style="border-collapse:collapse;font-size:.72rem;min-width:max-content">
       <thead>
         <tr>
-          <th style="background:#e3f2fd;color:#0d47a1;padding:.4rem .5rem;border:1px solid #c7d2fe;font-size:.65rem">Team</th>
+          <th style="background:#E6F4F2;color:#0F766E;padding:.4rem .5rem;border:1px solid #c7d2fe;font-size:.65rem">Team</th>
           <?php foreach ($teams as $th): ?>
-          <th style="background:#e3f2fd;color:#0d47a1;padding:.4rem .5rem;border:1px solid #c7d2fe;font-size:.62rem;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><?=h(mb_strimwidth($th['team_name'],0,8,'…'))?></th>
+          <th style="background:#E6F4F2;color:#0F766E;padding:.4rem .5rem;border:1px solid #c7d2fe;font-size:.62rem;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><?=h(mb_strimwidth($th['team_name'],0,8,'…'))?></th>
           <?php endforeach; ?>
         </tr>
       </thead>
       <tbody>
       <?php foreach ($teams as $row): ?>
       <tr>
-        <td style="background:#f8fafc;font-weight:700;padding:.4rem .5rem;border:1px solid #e0e7ff;white-space:nowrap"><?=h($row['team_name'])?></td>
+        <td style="background:#f8fafc;font-weight:700;padding:.4rem .5rem;border:1px solid #E0F2EF;white-space:nowrap"><?=h($row['team_name'])?></td>
         <?php foreach ($teams as $col): ?>
         <?php
         if ($row['id'] === $col['id']) {
-            echo '<td style="background:#e3f2fd;border:1px solid #e0e7ff;text-align:center;color:#0d47a1;font-weight:900">—</td>';
+            echo '<td style="background:#E6F4F2;border:1px solid #E0F2EF;text-align:center;color:#0F766E;font-weight:900">—</td>';
             continue;
         }
         $found = null;
@@ -572,15 +572,15 @@ require_once __DIR__ . '/../includes/header.php';
                 $found=$mx; break;
             }
         }
-        if (!$found) { echo '<td style="border:1px solid #e0e7ff;text-align:center;color:#c7d2fe;padding:.4rem .5rem">·</td>'; }
+        if (!$found) { echo '<td style="border:1px solid #E0F2EF;text-align:center;color:#c7d2fe;padding:.4rem .5rem">·</td>'; }
         elseif ($found['status']==='completed') {
             $g1 = ($found['team1_id']==$row['id']) ? $found['team1_goals'] : $found['team2_goals'];
             $g2 = ($found['team1_id']==$row['id']) ? $found['team2_goals'] : $found['team1_goals'];
             $bg = $g1>$g2?'#f0fdf4':($g1<$g2?'#fff0f0':'#f8fafc');
             $co = $g1>$g2?'#166534':($g1<$g2?'#991b1b':'#374151');
-            echo '<td style="background:'.$bg.';color:'.$co.';font-weight:700;border:1px solid #e0e7ff;text-align:center;padding:.4rem .5rem">'.$g1.'-'.$g2.'</td>';
+            echo '<td style="background:'.$bg.';color:'.$co.';font-weight:700;border:1px solid #E0F2EF;text-align:center;padding:.4rem .5rem">'.$g1.'-'.$g2.'</td>';
         } else {
-            echo '<td style="border:1px solid #e0e7ff;text-align:center;color:#5d6b80;font-size:.68rem;padding:.4rem .5rem">TBD</td>';
+            echo '<td style="border:1px solid #E0F2EF;text-align:center;color:#5d6b80;font-size:.68rem;padding:.4rem .5rem">TBD</td>';
         }
         ?>
         <?php endforeach; ?>
@@ -662,8 +662,8 @@ require_once __DIR__ . '/../includes/header.php';
 
     <!-- Registrations list (admin only) -->
     <?php if ($isAdmin && !empty($regs)): ?>
-    <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #f0f4f8">
-      <div style="font-size:.78rem;font-weight:700;color:#0d47a1;margin-bottom:.6rem">📋 Registrations (<?=count($regs)?>)</div>
+    <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #F3F6F5">
+      <div style="font-size:.78rem;font-weight:700;color:#0F766E;margin-bottom:.6rem">📋 Registrations (<?=count($regs)?>)</div>
       <?php foreach ($regs as $rg): ?>
       <div class="reg-card">
         <div>
@@ -731,8 +731,8 @@ require_once __DIR__ . '/../includes/header.php';
 
     <!-- Auto-generate fixtures -->
     <?php if (count($teams) >= 2): ?>
-    <div style="background:#e3f2fd;border-radius:12px;padding:1rem;margin-bottom:1rem">
-      <div style="font-weight:700;font-size:.85rem;color:#0d47a1;margin-bottom:.4rem">📅 Auto-Generate Fixtures</div>
+    <div style="background:#E6F4F2;border-radius:12px;padding:1rem;margin-bottom:1rem">
+      <div style="font-weight:700;font-size:.85rem;color:#0F766E;margin-bottom:.4rem">📅 Auto-Generate Fixtures</div>
       <div style="font-size:.78rem;color:#374151;margin-bottom:.75rem">Creates all <?=count($teams)*(count($teams)-1)/2?> matches for <?=count($teams)?> teams (everyone plays everyone once).</div>
       <form method="POST">
         <input type="hidden" name="fix_tid" value="<?=$tid?>">
@@ -748,7 +748,7 @@ require_once __DIR__ . '/../includes/header.php';
     <!-- Schedule single match -->
     <?php if (count($teams) >= 2): ?>
     <div style="background:#f8fafc;border-radius:12px;padding:1rem">
-      <div style="font-weight:700;font-size:.85rem;color:#0d47a1;margin-bottom:.75rem">📝 Schedule Single Match</div>
+      <div style="font-weight:700;font-size:.85rem;color:#0F766E;margin-bottom:.75rem">📝 Schedule Single Match</div>
       <form method="POST" action="<?=url('modules/football.php')?>">
         <input type="hidden" name="mid_t" value="<?=$tid?>">
         <div class="fg-row">

@@ -157,7 +157,7 @@ require_once __DIR__ . '/../includes/header.php';
 .bh-title{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;
   letter-spacing:.1em;color:#fff;line-height:1}
 .bh-title span{color:#ffcdd2;font-size:1rem;font-weight:400;
-  font-family:'Inter',sans-serif;letter-spacing:.05em;display:block;margin-top:.2rem}
+  font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:.05em;display:block;margin-top:.2rem}
 .bh-hstats{display:flex;gap:.6rem;margin-top:1rem}
 .bh-hstat{background:rgba(255,255,255,.15);backdrop-filter:blur(8px);
   border:1px solid rgba(255,255,255,.2);border-radius:12px;
@@ -196,8 +196,8 @@ require_once __DIR__ . '/../includes/header.php';
   background:#fff;border-radius:14px;padding:.7rem 1rem;
   box-shadow:0 2px 10px rgba(0,0,0,.07);margin:.9rem 1rem .7rem;
   border:1.5px solid #f0f0f0}
-.bh-search input{flex:1;border:none;outline:none;font-family:'Inter',sans-serif;
-  font-size:.88rem;color:#0d1b3e;background:transparent}
+.bh-search input{flex:1;border:none;outline:none;font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:.88rem;color:#10201F;background:transparent}
 .bh-search input::placeholder{color:#bcc4cf}
 
 /* Donor cards */
@@ -222,11 +222,11 @@ require_once __DIR__ . '/../includes/header.php';
 .bh-blood-badge.unavail .bh-blood-text{color:#666666}
 
 /* Donor info */
-.bh-dname{font-weight:800;font-size:.9rem;color:#0d1b3e;
+.bh-dname{font-weight:800;font-size:.9rem;color:#10201F;
   margin-bottom:.3rem;line-height:1.25}
 .bh-dmeta{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap}
 .bh-role-badge{font-size:.58rem;font-weight:800;color:#fff;
-  background:#0d47a1;border-radius:20px;padding:.1rem .5rem;
+  background:#0F766E;border-radius:20px;padding:.1rem .5rem;
   white-space:nowrap}
 .bh-status{display:inline-flex;align-items:center;gap:.22rem;
   font-size:.63rem;font-weight:700;border-radius:20px;
@@ -266,7 +266,7 @@ require_once __DIR__ . '/../includes/header.php';
   display:flex;align-items:flex-start;gap:.6rem}
 .bh-alert.ok{background:#e8f5e9;border:1.5px solid #a5d6a7;color:#1b5e20}
 .bh-alert.err{background:#ffebee;border:1.5px solid #ef9a9a;color:#b71c1c}
-.bh-alert.info{background:#e3f2fd;border:1.5px solid #90caf9;color:#0d47a1}
+.bh-alert.info{background:#E6F4F2;border:1.5px solid #99D8CF;color:#0F766E}
 
 /* Request form */
 .bh-form-card{background:#fff;border-radius:20px;
@@ -278,15 +278,15 @@ require_once __DIR__ . '/../includes/header.php';
   letter-spacing:.07em;color:#fff}
 .bh-form-body{padding:1.1rem}
 .bh-fg2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.65rem}
-.bh-inp{width:100%;padding:.65rem .9rem;border:1.5px solid #e8ecf4;
-  border-radius:12px;font-family:'Inter',sans-serif;font-size:.88rem;
-  color:#0d1b3e;outline:none;transition:border-color .2s;background:#f8fafc}
+.bh-inp{width:100%;padding:.65rem .9rem;border:1.5px solid #E2E8E7;
+  border-radius:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.88rem;
+  color:#10201F;outline:none;transition:border-color .2s;background:#f8fafc}
 .bh-inp:focus{border-color:#b71c1c;background:#fff}
 .bh-lbl{font-size:.68rem;font-weight:700;text-transform:uppercase;
   letter-spacing:.08em;color:#64748b;display:block;margin-bottom:.28rem}
 .bh-submit{width:100%;padding:.85rem;background:linear-gradient(135deg,#b71c1c,#c62828);
   color:#fff;border:none;border-radius:14px;
-  font-family:'Inter',sans-serif;font-weight:800;font-size:.92rem;
+  font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:.92rem;
   cursor:pointer;box-shadow:0 6px 22px rgba(183,28,28,.4);
   display:flex;align-items:center;justify-content:center;gap:.5rem;
   transition:all .25s}
@@ -297,7 +297,7 @@ require_once __DIR__ . '/../includes/header.php';
   letter-spacing:.12em;color:#5d6b80;margin:.9rem 1rem .5rem;
   display:flex;align-items:center;gap:.5rem}
 .bh-sec-lbl::after{content:'';flex:1;height:1.5px;
-  background:linear-gradient(90deg,#e0e7ff,transparent)}
+  background:linear-gradient(90deg,#E0F2EF,transparent)}
 </style>
 
 <div class="bh-shell">

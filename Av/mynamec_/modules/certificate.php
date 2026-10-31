@@ -191,12 +191,12 @@ $medals = [
   'silver'        => ['icon'=>'🥈','label'=>'Silver',  'bg'=>'linear-gradient(135deg,#d0d0d0,#8a8a8a,#c0c0c0)','shadow'=>'rgba(100,100,100,.35)','text'=>'#1a1a1a'],
   'bronze'        => ['icon'=>'🥉','label'=>'Bronze',  'bg'=>'linear-gradient(135deg,#d4935a,#8b4513,#c87941)','shadow'=>'rgba(139,69,19,.4)','text'=>'#3a1500'],
   'special'       => ['icon'=>'🏅','label'=>'Special', 'bg'=>'linear-gradient(135deg,#667eea,#764ba2,#a855f7)','shadow'=>'rgba(118,75,162,.4)','text'=>'#fff'],
-  'participation' => ['icon'=>'🎖️','label'=>'Honor',  'bg'=>'linear-gradient(135deg,#0d47a1,#1565c0,#1976d2)','shadow'=>'rgba(13,71,161,.38)','text'=>'#fff'],
+  'participation' => ['icon'=>'🎖️','label'=>'Honor',  'bg'=>'linear-gradient(135deg,#0F766E,#107D74,#0F766E)','shadow'=>'rgba(15,118,110,.38)','text'=>'#fff'],
 ];
 $cats = [
   'sports'    => ['icon'=>'⚽','label'=>'Sports',       'color'=>'#1b5e20','bg'=>'#e8f5e9'],
   'arts'      => ['icon'=>'🎭','label'=>'Arts',         'color'=>'#6a1b9a','bg'=>'#f3e5f5'],
-  'education' => ['icon'=>'📚','label'=>'Education',    'color'=>'#0d47a1','bg'=>'#e3f2fd'],
+  'education' => ['icon'=>'📚','label'=>'Education',    'color'=>'#0F766E','bg'=>'#E6F4F2'],
   'club'      => ['icon'=>'🏛','label'=>'Club Activity','color'=>'#e65100','bg'=>'#fff3e0'],
   'special'   => ['icon'=>'⭐','label'=>'Special Award','color'=>'#b71c1c','bg'=>'#ffebee'],
 ];
@@ -204,7 +204,7 @@ $cats = [
 
 <style>
 /* ══ ACHIEVEMENTS MODULE ══ */
-.ach-hero{background:linear-gradient(135deg,#0d1b3e 0%,#1a3a6b 50%,#0d47a1 100%);padding:2.5rem 1.2rem 2rem;text-align:center;position:relative;overflow:hidden}
+.ach-hero{background:linear-gradient(135deg,#10201F 0%,#0E2A31 50%,#0F766E 100%);padding:2.5rem 1.2rem 2rem;text-align:center;position:relative;overflow:hidden}
 .ach-hero::before{content:'🏆';position:absolute;right:-1rem;top:-1rem;font-size:9rem;opacity:.07;transform:rotate(15deg)}
 .ach-hero::after{content:'🥇';position:absolute;left:-1rem;bottom:-1rem;font-size:7rem;opacity:.07;transform:rotate(-15deg)}
 .ach-hero h1{font-family:'Bebas Neue',sans-serif;font-size:2.1rem;letter-spacing:.1em;color:#fff;margin-bottom:.3rem}
@@ -218,9 +218,9 @@ $cats = [
 .ach-stat-lbl{font-size:.62rem;color:rgba(255,255,255,.6);font-weight:700;text-transform:uppercase;letter-spacing:.08em}
 
 /* Filters */
-.filter-bar{background:#fff;border-bottom:1px solid #e8ecf4;padding:.75rem 1rem;display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;position:sticky;top:60px;z-index:90;box-shadow:0 2px 8px rgba(0,0,0,.06)}
-.filter-pill{padding:.3rem .8rem;border-radius:20px;border:1.5px solid #e0e7ff;font-size:.74rem;font-weight:700;cursor:pointer;background:#fff;color:#0d47a1;transition:all .2s;white-space:nowrap;text-decoration:none;display:inline-block}
-.filter-pill:hover,.filter-pill.on{background:#0d47a1;color:#fff;border-color:#0d47a1}
+.filter-bar{background:#fff;border-bottom:1px solid #E2E8E7;padding:.75rem 1rem;display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;position:sticky;top:60px;z-index:90;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.filter-pill{padding:.3rem .8rem;border-radius:20px;border:1.5px solid #E0F2EF;font-size:.74rem;font-weight:700;cursor:pointer;background:#fff;color:#0F766E;transition:all .2s;white-space:nowrap;text-decoration:none;display:inline-block}
+.filter-pill:hover,.filter-pill.on{background:#0F766E;color:#fff;border-color:#0F766E}
 .filter-pill.gold-pill.on{background:linear-gradient(135deg,#c8922a,#e6b84a);border-color:#c8922a;color:#5c3a00}
 .filter-pill.silver-pill.on{background:#8a8a8a;border-color:#8a8a8a;color:#fff}
 .filter-pill.bronze-pill.on{background:#8b4513;border-color:#8b4513;color:#fff}
@@ -243,25 +243,25 @@ $cats = [
 /* Card body */
 .ach-card-body{padding:1.1rem 1.1rem 1.3rem}
 .ach-member-row{display:flex;align-items:center;gap:.6rem;margin-bottom:.7rem}
-.ach-member-photo{width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #e0e7ff;flex-shrink:0}
-.ach-member-ph{width:38px;height:38px;border-radius:50%;background:#e3f2fd;border:2px solid #e0e7ff;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
-.ach-member-name{font-weight:800;font-size:.9rem;color:#0d1b3e;line-height:1.2}
+.ach-member-photo{width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #E0F2EF;flex-shrink:0}
+.ach-member-ph{width:38px;height:38px;border-radius:50%;background:#E6F4F2;border:2px solid #E0F2EF;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.ach-member-name{font-weight:800;font-size:.9rem;color:#10201F;line-height:1.2}
 .ach-member-date{font-size:.66rem;color:#5d6b80}
-.ach-title{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#0d1b3e;margin-bottom:.45rem;line-height:1.35}
+.ach-title{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#10201F;margin-bottom:.45rem;line-height:1.35}
 .ach-desc{font-size:.78rem;color:#64748b;line-height:1.55;margin-bottom:.7rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .ach-cat-badge{display:inline-flex;align-items:center;gap:.3rem;border-radius:20px;padding:.18rem .6rem;font-size:.65rem;font-weight:700;border:1px solid}
-.ach-admin-btns{display:flex;gap:.35rem;margin-top:.75rem;padding-top:.65rem;border-top:1px solid #f0f4f8}
+.ach-admin-btns{display:flex;gap:.35rem;margin-top:.75rem;padding-top:.65rem;border-top:1px solid #F3F6F5}
 .ach-btn{padding:.3rem .7rem;border-radius:8px;border:none;font-size:.72rem;font-weight:700;cursor:pointer;transition:all .2s}
 
 /* Timeline view */
 .timeline{padding:1.2rem;max-width:680px;margin:0 auto}
-.timeline-year{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.08em;color:#0d47a1;margin:1.5rem 0 .8rem;display:flex;align-items:center;gap:.6rem}
-.timeline-year::after{content:'';flex:1;height:2px;background:linear-gradient(90deg,#0d47a1,transparent)}
+.timeline-year{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.08em;color:#0F766E;margin:1.5rem 0 .8rem;display:flex;align-items:center;gap:.6rem}
+.timeline-year::after{content:'';flex:1;height:2px;background:linear-gradient(90deg,#0F766E,transparent)}
 .tl-item{display:flex;gap:1rem;margin-bottom:1.2rem;position:relative}
-.tl-item::before{content:'';position:absolute;left:18px;top:38px;bottom:-14px;width:2px;background:linear-gradient(to bottom,#e0e7ff,transparent);z-index:0}
+.tl-item::before{content:'';position:absolute;left:18px;top:38px;bottom:-14px;width:2px;background:linear-gradient(to bottom,#E0F2EF,transparent);z-index:0}
 .tl-icon{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.15);z-index:1;position:relative}
 .tl-content{background:#fff;border-radius:14px;padding:.85rem 1rem;box-shadow:0 3px 14px rgba(0,0,0,.08);border-left:3px solid;flex:1}
-.tl-content h4{font-weight:800;font-size:.9rem;color:#0d1b3e;margin-bottom:.2rem}
+.tl-content h4{font-weight:800;font-size:.9rem;color:#10201F;margin-bottom:.2rem}
 .tl-content .tl-sub{font-size:.74rem;color:#64748b;margin-bottom:.3rem}
 .tl-content .tl-desc{font-size:.78rem;color:#64748b;line-height:1.5}
 
@@ -270,12 +270,12 @@ $cats = [
 .ach-form-header{padding:.85rem 1.1rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
 .fg2{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;margin-bottom:.65rem}
 @media(max-width:480px){.fg2{grid-template-columns:1fr}}
-.inp2{width:100%;padding:.6rem .85rem;border:1.5px solid #e0e7ff;border-radius:9px;font-family:Inter,sans-serif;font-size:.86rem;color:#0d1b3e;outline:none;transition:border-color .2s;background:#f8fafc}
-.inp2:focus{border-color:#0d47a1;background:#fff}
+.inp2{width:100%;padding:.6rem .85rem;border:1.5px solid #E0F2EF;border-radius:9px;font-family:Inter,sans-serif;font-size:.86rem;color:#10201F;outline:none;transition:border-color .2s;background:#f8fafc}
+.inp2:focus{border-color:#0F766E;background:#fff}
 textarea.inp2{resize:vertical;min-height:70px}
 .lbl2{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#64748b;display:block;margin-bottom:.28rem}
-.btn-save{background:linear-gradient(135deg,#0d47a1,#1565c0);color:#fff;border:none;border-radius:10px;padding:.7rem 1.6rem;font-family:Inter,sans-serif;font-weight:700;font-size:.88rem;cursor:pointer;box-shadow:0 4px 16px rgba(13,71,161,.3);transition:all .25s}
-.btn-save:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(13,71,161,.4)}
+.btn-save{background:linear-gradient(135deg,#0F766E,#107D74);color:#fff;border:none;border-radius:10px;padding:.7rem 1.6rem;font-family:Inter,sans-serif;font-weight:700;font-size:.88rem;cursor:pointer;box-shadow:0 4px 16px rgba(15,118,110,.3);transition:all .25s}
+.btn-save:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(15,118,110,.4)}
 </style>
 
 <!-- HERO -->
@@ -308,7 +308,7 @@ textarea.inp2{resize:vertical;min-height:70px}
 <!-- ADMIN: ADD / EDIT FORM -->
 <?php if ($isAdmin): ?>
 <div class="ach-form-card" style="margin:1rem 1rem 0">
-  <div class="ach-form-header" onclick="toggleForm()" style="background:linear-gradient(135deg,#0d47a1,#1565c0)">
+  <div class="ach-form-header" onclick="toggleForm()" style="background:linear-gradient(135deg,#0F766E,#107D74)">
     <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.08em;color:#fff">
       <?= $editItem ? '✏️ EDIT ACHIEVEMENT' : '➕ ADD NEW ACHIEVEMENT' ?>
     </span>
@@ -386,18 +386,18 @@ textarea.inp2{resize:vertical;min-height:70px}
 <?php endif; ?>
 
 <!-- MY ACHIEVEMENTS TAB -->
-<div style="display:flex;align-items:center;gap:.5rem;padding:.6rem 1rem;background:#fff;border-bottom:1px solid #f0f4f8;overflow-x:auto;scrollbar-width:none">
+<div style="display:flex;align-items:center;gap:.5rem;padding:.6rem 1rem;background:#fff;border-bottom:1px solid #F3F6F5;overflow-x:auto;scrollbar-width:none">
   <a href="?<?= http_build_query(array_merge(array_diff_key($_GET,['mine'=>'']),[]) )?>"
      style="display:inline-flex;align-items:center;gap:.35rem;padding:.38rem .9rem;border-radius:20px;font-size:.78rem;font-weight:700;text-decoration:none;white-space:nowrap;border:1.5px solid;
-     <?= !$fMine ? 'background:#0d47a1;color:#fff;border-color:#0d47a1' : 'background:#f8fafc;color:#64748b;border-color:#e8ecf4' ?>">
+     <?= !$fMine ? 'background:#0F766E;color:#fff;border-color:#0F766E' : 'background:#f8fafc;color:#64748b;border-color:#E2E8E7' ?>">
     🏆 All Achievements
   </a>
   <a href="?mine=1"
      style="display:inline-flex;align-items:center;gap:.35rem;padding:.38rem .9rem;border-radius:20px;font-size:.78rem;font-weight:700;text-decoration:none;white-space:nowrap;border:1.5px solid;
-     <?= $fMine ? 'background:#0d47a1;color:#fff;border-color:#0d47a1' : 'background:#f8fafc;color:#64748b;border-color:#e8ecf4' ?>">
+     <?= $fMine ? 'background:#0F766E;color:#fff;border-color:#0F766E' : 'background:#f8fafc;color:#64748b;border-color:#E2E8E7' ?>">
     ⭐ My Achievements
     <?php if($myAchCount > 0): ?>
-    <span style="background:<?= $fMine ? 'rgba(255,255,255,.3)' : '#0d47a1' ?>;color:<?= $fMine ? '#fff' : '#fff' ?>;border-radius:20px;padding:.05rem .45rem;font-size:.65rem;font-weight:900"><?= $myAchCount ?></span>
+    <span style="background:<?= $fMine ? 'rgba(255,255,255,.3)' : '#0F766E' ?>;color:<?= $fMine ? '#fff' : '#fff' ?>;border-radius:20px;padding:.05rem .45rem;font-size:.65rem;font-weight:900"><?= $myAchCount ?></span>
     <?php endif; ?>
   </a>
 </div>
@@ -405,7 +405,7 @@ textarea.inp2{resize:vertical;min-height:70px}
 <!-- FILTER BAR -->
 <div class="filter-bar">
   <input type="text" id="searchQ" placeholder="🔍 Search member…" value="<?=h($fSearch)?>"
-    style="padding:.38rem .85rem;border:1.5px solid #e0e7ff;border-radius:20px;font-size:.78rem;outline:none;min-width:0;flex:1;max-width:200px"
+    style="padding:.38rem .85rem;border:1.5px solid #E0F2EF;border-radius:20px;font-size:.78rem;outline:none;min-width:0;flex:1;max-width:200px"
     oninput="filterCards()">
   <!-- Category pills -->
   <a href="?<?=http_build_query(array_merge($_GET,['cat'=>'','page'=>1]))?>" class="filter-pill <?=$fCat===''?'on':''?>">All</a>
@@ -420,7 +420,7 @@ textarea.inp2{resize:vertical;min-height:70px}
 </div>
 
 <!-- Medal filter row -->
-<div style="padding:.5rem 1rem;display:flex;gap:.4rem;overflow-x:auto;scrollbar-width:none;background:#f8fafc;border-bottom:1px solid #f0f4f8">
+<div style="padding:.5rem 1rem;display:flex;gap:.4rem;overflow-x:auto;scrollbar-width:none;background:#f8fafc;border-bottom:1px solid #F3F6F5">
   <a href="?<?=http_build_query(array_merge($_GET,['medal'=>'']))?>" class="filter-pill <?=$fMedal===''?'on':''?>" style="font-size:.7rem">All Medals</a>
   <?php foreach ($medals as $mk=>$mv): ?>
   <a href="?<?=http_build_query(array_merge($_GET,['medal'=>$mk]))?>" class="filter-pill <?=$mk?>-pill <?=$fMedal===$mk?'on':''?>" style="font-size:.7rem"><?=$mv['icon']?> <?=$mv['label']?></a>
@@ -450,7 +450,7 @@ textarea.inp2{resize:vertical;min-height:70px}
     data-medal="<?=h($a['medal_type'])?>">
 
     <!-- Medal header -->
-    <?php $mStyle = isset($m['bg']) ? 'background:'.$m['bg'] : 'background:#0d47a1'; ?>
+    <?php $mStyle = isset($m['bg']) ? 'background:'.$m['bg'] : 'background:#0F766E'; ?>
     <div class="ach-medal-header" style="<?=$mStyle?>">
       <?php if (!empty($a['image'])): ?>
       <?php
@@ -521,7 +521,7 @@ textarea.inp2{resize:vertical;min-height:70px}
         $waUrl = 'https://wa.me/?text='.rawurlencode($waMsg);
       ?>
       <?php if ($a['member_id'] == $me['id'] || $isAdmin): ?>
-      <div style="margin-top:.65rem;padding-top:.65rem;border-top:1px solid #f0f4f8">
+      <div style="margin-top:.65rem;padding-top:.65rem;border-top:1px solid #F3F6F5">
         <div style="font-size:.62rem;font-weight:800;color:#5d6b80;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.45rem">Share Achievement</div>
         <div style="display:flex;gap:.4rem;flex-wrap:wrap">
           <!-- WhatsApp Share -->
@@ -532,7 +532,7 @@ textarea.inp2{resize:vertical;min-height:70px}
           </a>
           <!-- Copy Link -->
           <button onclick="copyAchLink('<?= h($shareUrl) ?>','<?= h(addslashes($shareTitle)) ?>')"
-             style="display:inline-flex;align-items:center;gap:.3rem;padding:.38rem .75rem;background:#f0f4fa;color:#0d47a1;border:1px solid #e0e7ff;border-radius:8px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">
+             style="display:inline-flex;align-items:center;gap:.3rem;padding:.38rem .75rem;background:#F3F6F5;color:#0F766E;border:1px solid #E0F2EF;border-radius:8px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">
             🔗 Copy Link
           </button>
           <!-- Download Photo (if has image) -->
@@ -543,7 +543,7 @@ textarea.inp2{resize:vertical;min-height:70px}
           </a>
           <!-- Native share WITH image -->
           <button onclick="shareAchImg('<?= h($achImgFull) ?>','<?= h(addslashes($shareDesc)) ?>','<?= h($shareUrl) ?>')"
-             style="display:inline-flex;align-items:center;gap:.3rem;padding:.38rem .75rem;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:8px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">
+             style="display:inline-flex;align-items:center;gap:.3rem;padding:.38rem .75rem;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:8px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">
             📤 Share Photo + Link
           </button>
           <?php endif; ?>
@@ -551,7 +551,7 @@ textarea.inp2{resize:vertical;min-height:70px}
           <form method="POST" style="display:inline">
             <input type="hidden" name="share_ach_id" value="<?= (int)$a['id'] ?>">
             <button type="submit" name="share_ach_feed"
-               style="display:inline-flex;align-items:center;gap:.3rem;padding:.38rem .75rem;background:#e3f2fd;color:#0d47a1;border:1px solid #90caf9;border-radius:8px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">
+               style="display:inline-flex;align-items:center;gap:.3rem;padding:.38rem .75rem;background:#E6F4F2;color:#0F766E;border:1px solid #99D8CF;border-radius:8px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">
               📰 Share to Feed
             </button>
           </form>
@@ -562,14 +562,14 @@ textarea.inp2{resize:vertical;min-height:70px}
       <!-- Admin controls -->
       <?php if ($isAdmin): ?>
       <div class="ach-admin-btns" style="margin-top:.5rem">
-        <a href="?edit=<?=$a['id']?>" class="ach-btn" style="background:#e3f2fd;color:#0d47a1">✏️ Edit</a>
+        <a href="?edit=<?=$a['id']?>" class="ach-btn" style="background:#E6F4F2;color:#0F766E">✏️ Edit</a>
         <form method="POST" style="display:inline" onsubmit="return confirm('Delete this achievement?')">
           <input type="hidden" name="del_id" value="<?=$a['id']?>">
           <button type="submit" name="del_achievement" class="ach-btn" style="background:#ffebee;color:#b71c1c">🗑</button>
         </form>
         <form method="POST" style="display:inline">
           <input type="hidden" name="tog_id" value="<?=$a['id']?>">
-          <button type="submit" name="toggle_status" class="ach-btn" style="background:#f0f4f8;color:#64748b" title="Toggle visibility">
+          <button type="submit" name="toggle_status" class="ach-btn" style="background:#F3F6F5;color:#64748b" title="Toggle visibility">
             <?=$a['status']==='active'?'👁':'🙈'?>
           </button>
         </form>
@@ -601,10 +601,10 @@ textarea.inp2{resize:vertical;min-height:70px}
     $borderColor = str_replace(['linear-gradient(135deg,',')',',','#','0-9a-f ','   '], '', $m['bg']);
     // Extract first color from gradient for border
     preg_match('/#([0-9a-f]{6})/i', $m['bg'], $bm);
-    $borderC = isset($bm[0]) ? $bm[0] : '#0d47a1';
+    $borderC = isset($bm[0]) ? $bm[0] : '#0F766E';
   ?>
   <div class="tl-item" data-name="<?=strtolower(h($a['member_name']))?>" data-cat="<?=$a['category']?>">
-    <?php $tiStyle = isset($m['bg']) ? 'background:'.$m['bg'] : 'background:#0d47a1'; ?>
+    <?php $tiStyle = isset($m['bg']) ? 'background:'.$m['bg'] : 'background:#0F766E'; ?>
     <div class="tl-icon" style="<?=$tiStyle?>">
       <span style="font-size:1.1rem"><?=$m['icon']?></span>
     </div>
@@ -612,7 +612,7 @@ textarea.inp2{resize:vertical;min-height:70px}
       <div style="display:flex;align-items:center;justify-content:space-between;gap:.4rem;margin-bottom:.35rem;flex-wrap:wrap">
         <div style="display:flex;align-items:center;gap:.5rem">
           <?php if ($photo): ?><img src="<?=$photo?>" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1.5px solid <?=$borderC?>"><?php endif; ?>
-          <span style="font-weight:800;font-size:.85rem;color:#0d1b3e"><?=h($a['member_name'])?></span>
+          <span style="font-weight:800;font-size:.85rem;color:#10201F"><?=h($a['member_name'])?></span>
         </div>
         <div style="display:flex;align-items:center;gap:.35rem">
           <span class="ach-cat-badge" style="color:<?=$cv['color']?>;background:<?=$cv['bg']?>;border-color:<?=$cv['color']?>33;font-size:.62rem"><?=$cv['icon']?></span>
@@ -625,7 +625,7 @@ textarea.inp2{resize:vertical;min-height:70px}
       <?php endif; ?>
       <?php if ($isAdmin): ?>
       <div style="display:flex;gap:.3rem;margin-top:.5rem">
-        <a href="?edit=<?=$a['id']?>" class="ach-btn" style="background:#e3f2fd;color:#0d47a1;padding:.25rem .6rem;border-radius:7px;font-size:.7rem;font-weight:700;text-decoration:none">✏️</a>
+        <a href="?edit=<?=$a['id']?>" class="ach-btn" style="background:#E6F4F2;color:#0F766E;padding:.25rem .6rem;border-radius:7px;font-size:.7rem;font-weight:700;text-decoration:none">✏️</a>
         <form method="POST" style="display:inline" onsubmit="return confirm('Delete?')">
           <input type="hidden" name="del_id" value="<?=$a['id']?>">
           <button name="del_achievement" style="background:#ffebee;color:#b71c1c;border:none;border-radius:7px;padding:.25rem .6rem;font-size:.7rem;font-weight:700;cursor:pointer">🗑</button>

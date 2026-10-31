@@ -73,11 +73,11 @@ require_once __DIR__.'/includes/header.php';
 <style>
 /* ── ADMIN APP SHELL ─────────────────────────────────── */
 *{box-sizing:border-box}
-.adm-shell{background:#f0f4fa;min-height:100vh}
+.adm-shell{background:#F3F6F5;min-height:100vh}
 
 /* Top header card */
 .adm-header{
-  background:linear-gradient(135deg,#0d1b3e 0%,#1a3a6b 60%,#0d47a1 100%);
+  background:linear-gradient(135deg,#10201F 0%,#0E2A31 60%,#0F766E 100%);
   padding:1.4rem 1.2rem 1rem;
   position:relative;overflow:hidden;
 }
@@ -85,7 +85,7 @@ require_once __DIR__.'/includes/header.php';
 .adm-hrow{display:flex;align-items:center;justify-content:space-between;margin-bottom:.9rem}
 .adm-hname{font-family:'Bebas Neue',sans-serif;font-size:.85rem;letter-spacing:.12em;color:rgba(255,255,255,.55)}
 .adm-hrole{font-size:.72rem;color:rgba(255,255,255,.4);margin-top:.1rem}
-.adm-havatar{width:40px;height:40px;border-radius:50%;border:2.5px solid rgba(200,146,42,.6);object-fit:cover;background:#1a3a6b;display:flex;align-items:center;justify-content:center;font-size:1.1rem;overflow:hidden}
+.adm-havatar{width:40px;height:40px;border-radius:50%;border:2.5px solid rgba(200,146,42,.6);object-fit:cover;background:#0E2A31;display:flex;align-items:center;justify-content:center;font-size:1.1rem;overflow:hidden}
 
 /* Stats strip */
 .adm-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:0;padding:0}
@@ -106,7 +106,7 @@ require_once __DIR__.'/includes/header.php';
   display:grid;
   grid-template-columns:repeat(4,1fr);
   gap:0;
-  border-bottom:1px solid #e8ecf4;
+  border-bottom:1px solid #E2E8E7;
   position:sticky;top:60px;z-index:90;
   box-shadow:0 3px 14px rgba(0,0,0,.09);
   padding:.6rem .7rem;
@@ -120,7 +120,7 @@ require_once __DIR__.'/includes/header.php';
   border:1.5px solid #e8eef8;
   color:#475569;
   font-size:.58rem;font-weight:800;
-  font-family:'Inter',sans-serif;
+  font-family:'Plus Jakarta Sans',sans-serif;
   text-decoration:none;
   text-align:center;
   transition:all .2s;
@@ -131,10 +131,10 @@ require_once __DIR__.'/includes/header.php';
 .adm-tab-em{font-size:1.3rem;line-height:1;display:block;margin-bottom:.05rem}
 .adm-tab:active{transform:scale(.93)}
 .adm-tab.on{
-  background:linear-gradient(145deg,#0d47a1,#1565c0);
+  background:linear-gradient(145deg,#0F766E,#107D74);
   color:#fff;
   border-color:transparent;
-  box-shadow:0 4px 16px rgba(13,71,161,.35);
+  box-shadow:0 4px 16px rgba(15,118,110,.35);
 }
 .adm-tab.on .adm-tab-em{filter:drop-shadow(0 2px 4px rgba(0,0,0,.2))}
 .adm-tab.red{background:#fff5f5;border-color:#ffd5d5;color:#c62828}
@@ -153,8 +153,8 @@ require_once __DIR__.'/includes/header.php';
 .adm-wrap{max-width:960px;margin:0 auto;padding:.9rem 1rem 5rem}
 
 /* Section head */
-.adm-head{display:flex;align-items:center;gap:.7rem;margin:1rem 0 .9rem;padding-bottom:.55rem;border-bottom:2px solid #e8ecf4}
-.adm-head h2{font-family:'Bebas Neue',sans-serif;font-size:1.25rem;letter-spacing:.06em;color:#0d1b3e}
+.adm-head{display:flex;align-items:center;gap:.7rem;margin:1rem 0 .9rem;padding-bottom:.55rem;border-bottom:2px solid #E2E8E7}
+.adm-head h2{font-family:'Bebas Neue',sans-serif;font-size:1.25rem;letter-spacing:.06em;color:#10201F}
 .adm-head-line{flex:1;height:2px;background:linear-gradient(90deg,#c8922a 0%,transparent 100%)}
 </style>
 
@@ -244,7 +244,7 @@ require_once __DIR__.'/includes/header.php';
   <span><?= h($msg['m']) ?></span>
   <?php if(!empty($msg['wa'])): ?>
   <a href="<?= h($msg['wa']) ?>" target="_blank"
-    style="display:inline-flex;align-items:center;gap:.4rem;background:#25d366;color:#fff;border-radius:10px;padding:.45rem 1.1rem;font-family:'Inter',sans-serif;font-weight:700;font-size:.82rem;text-decoration:none;box-shadow:0 3px 12px rgba(37,211,102,.4);flex-shrink:0">
+    style="display:inline-flex;align-items:center;gap:.4rem;background:#25d366;color:#fff;border-radius:10px;padding:.45rem 1.1rem;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.82rem;text-decoration:none;box-shadow:0 3px 12px rgba(37,211,102,.4);flex-shrink:0">
     <i class="fab fa-whatsapp"></i>
     📲 Send WhatsApp to <?= h($msg['waname'] ?? '') ?>
   </a>
@@ -279,16 +279,16 @@ require_once __DIR__.'/includes/header.php';
 <div class="search-row"><input type="text" class="inp" id="ms" placeholder="Search…" oninput="ft()" style="flex:1;min-width:160px"><select class="inp" id="mr" onchange="ft()" style="max-width:155px"><option value="">All Roles</option><?php foreach($roles as $rv=>$rl):?><option value="<?=$rv?>"><?=$rl?></option><?php endforeach;?></select><select class="inp" id="mst" onchange="ft()" style="max-width:130px"><option value="">All Status</option><option value="active">Active</option><option value="pending">Pending</option><option value="inactive">Inactive</option></select></div>
 <style>
 .mcard{background:#fff;border-radius:14px;padding:.85rem 1rem;margin-bottom:.6rem;box-shadow:0 2px 10px rgba(0,0,0,.07);display:flex;align-items:center;gap:.75rem;transition:all .2s}
-.mcard:hover{box-shadow:0 4px 18px rgba(13,71,161,.14);transform:translateY(-1px)}
+.mcard:hover{box-shadow:0 4px 18px rgba(15,118,110,.14);transform:translateY(-1px)}
 .mcard-num{width:24px;font-size:.72rem;font-weight:700;color:#5d6b80;flex-shrink:0;text-align:center}
-.mcard-photo{width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#e3f2fd;display:flex;align-items:center;justify-content:center;font-size:1.2rem;border:2px solid #e0e7ff}
+.mcard-photo{width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#E6F4F2;display:flex;align-items:center;justify-content:center;font-size:1.2rem;border:2px solid #E0F2EF}
 .mcard-photo img{width:44px;height:44px;border-radius:50%;object-fit:cover}
 .mcard-info{flex:1;min-width:0}
-.mcard-name{font-weight:800;font-size:.92rem;color:#0d47a1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;display:block}
-.mcard-name:hover{color:#1565c0}
+.mcard-name{font-weight:800;font-size:.92rem;color:#0F766E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;display:block}
+.mcard-name:hover{color:#107D74}
 .mcard-meta{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-top:.2rem}
 .mcard-blood{font-size:.72rem;font-weight:800;color:#b71c1c}
-.mcard-role{font-size:.65rem;font-weight:700;padding:.1rem .45rem;border-radius:20px;background:#e3f2fd;color:#0d47a1}
+.mcard-role{font-size:.65rem;font-weight:700;padding:.1rem .45rem;border-radius:20px;background:#E6F4F2;color:#0F766E}
 .mcard-status-active{background:#e8f5e9;color:#2e7d32}
 .mcard-status-pending{background:#fff8e1;color:#f57f17}
 .mcard-status-inactive,.mcard-status-rejected{background:#ffebee;color:#b71c1c}
@@ -331,7 +331,7 @@ require_once __DIR__.'/includes/header.php';
 </div>
 <div id="em" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;align-items:center;justify-content:center;padding:1rem">
   <div style="background:#fff;border-radius:14px;padding:1.4rem;max-width:460px;width:100%;max-height:90vh;overflow-y:auto">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem"><h3 style="color:#0D47A1">✏️ Edit Member</h3><button onclick="document.getElementById('em').style.display='none'" style="background:none;border:none;font-size:1.3rem;cursor:pointer">✕</button></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem"><h3 style="color:#0F766E">✏️ Edit Member</h3><button onclick="document.getElementById('em').style.display='none'" style="background:none;border:none;font-size:1.3rem;cursor:pointer">✕</button></div>
     <form method="POST" action="<?=url('admin.php')?>?tab=members"><input type="hidden" name="mid" id="ei"><input type="hidden" name="upd" value="1">
       <div class="g2">
         <div class="fg"><label class="lbl">Role</label><select name="role" id="er" class="inp"><?php foreach($roles as $rv=>$rl):?><option value="<?=$rv?>"><?=$rl?></option><?php endforeach;?></select></div>
@@ -411,8 +411,8 @@ $pc=(int)db()->query("SELECT COUNT(*) FROM users WHERE status='pending'")->fetch
   <div class="stat"><div class="stat-num"><?=count($allU)?></div><div class="stat-lbl">Total</div></div>
 </div>
 <div class="g2 mt-2">
-  <div class="card"><div class="card-header"><h3>🩸 Blood Groups</h3></div><div class="card-body"><?php foreach($bgC as $b):?><div style="display:flex;justify-content:space-between;padding:.38rem 0;border-bottom:1px solid #E8ECF4"><strong style="color:#B71C1C"><?=h($b['blood_group'])?></strong><span><?=$b['c']?></span></div><?php endforeach;?></div></div>
-  <div class="card"><div class="card-header"><h3>🏛 Committees</h3></div><div class="card-body"><?php foreach($comC as $c):?><div style="display:flex;justify-content:space-between;padding:.38rem 0;border-bottom:1px solid #E8ECF4"><span style="font-size:.83rem"><?=h($c['committee_name'])?></span><strong style="color:#0D47A1"><?=$c['c']?></strong></div><?php endforeach;?></div></div>
+  <div class="card"><div class="card-header"><h3>🩸 Blood Groups</h3></div><div class="card-body"><?php foreach($bgC as $b):?><div style="display:flex;justify-content:space-between;padding:.38rem 0;border-bottom:1px solid #E2E8E7"><strong style="color:#B71C1C"><?=h($b['blood_group'])?></strong><span><?=$b['c']?></span></div><?php endforeach;?></div></div>
+  <div class="card"><div class="card-header"><h3>🏛 Committees</h3></div><div class="card-body"><?php foreach($comC as $c):?><div style="display:flex;justify-content:space-between;padding:.38rem 0;border-bottom:1px solid #E2E8E7"><span style="font-size:.83rem"><?=h($c['committee_name'])?></span><strong style="color:#0F766E"><?=$c['c']?></strong></div><?php endforeach;?></div></div>
 </div>
 <?php endif;?>
 </main></div>

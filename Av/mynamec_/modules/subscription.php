@@ -141,7 +141,7 @@ require_once __DIR__.'/../includes/header.php';
     $barPct   = max(0, min(100, ($daysLeft / ($activeSub['plan_type']==='annual'?365:30)) * 100));
     $barColor = $daysLeft > 30 ? '#4CAF50' : ($daysLeft > 7 ? '#FF9800' : '#F44336');
   ?>
-  <div style="background:linear-gradient(135deg,#07225c,#0D47A1);border-radius:18px;padding:1.5rem;margin-bottom:1.5rem;color:#fff;position:relative;overflow:hidden;box-shadow:0 8px 28px rgba(13,71,161,.3)">
+  <div style="background:linear-gradient(135deg,#0A1A1F,#0F766E);border-radius:18px;padding:1.5rem;margin-bottom:1.5rem;color:#fff;position:relative;overflow:hidden;box-shadow:0 8px 28px rgba(15,118,110,.3)">
     <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.05)"></div>
     <div style="position:absolute;bottom:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#B71C1C,#FFC107,#B71C1C)"></div>
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
@@ -177,9 +177,9 @@ require_once __DIR__.'/../includes/header.php';
   <!-- ── PLAN CARDS ──────────────────────────────────────────── -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
     <!-- Monthly Plan -->
-    <div style="background:#fff;border-radius:14px;padding:1.3rem;box-shadow:0 3px 14px rgba(0,0,0,.08);border:2px solid #E8ECF4;position:relative;transition:all .2s" id="planMonthly">
+    <div style="background:#fff;border-radius:14px;padding:1.3rem;box-shadow:0 3px 14px rgba(0,0,0,.08);border:2px solid #E2E8E7;position:relative;transition:all .2s" id="planMonthly">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:.05em;color:#3D4F7C">MONTHLY</div>
-      <div style="font-size:2rem;font-weight:700;color:#0D47A1;margin:.3rem 0">₹<?= number_format(FEE_MONTHLY) ?></div>
+      <div style="font-size:2rem;font-weight:700;color:#0F766E;margin:.3rem 0">₹<?= number_format(FEE_MONTHLY) ?></div>
       <div style="font-size:.78rem;color:#666666;margin-bottom:.8rem">per month · Auto-renew available</div>
       <ul style="font-size:.8rem;color:#3D4F7C;padding-left:1.2rem;margin-bottom:.8rem;line-height:1.8">
         <li>Full club access</li>
@@ -188,8 +188,8 @@ require_once __DIR__.'/../includes/header.php';
       </ul>
     </div>
     <!-- Annual Plan — recommended -->
-    <div style="background:linear-gradient(160deg,#07225c,#0D47A1);border-radius:14px;padding:1.3rem;box-shadow:0 6px 20px rgba(13,71,161,.3);border:2px solid #1565C0;position:relative;color:#fff" id="planAnnual">
-      <div style="position:absolute;top:-1px;right:12px;background:#FFC107;color:#0D1B3E;font-size:.62rem;font-weight:700;padding:.2rem .7rem;border-radius:0 0 8px 8px;letter-spacing:.05em">RECOMMENDED</div>
+    <div style="background:linear-gradient(160deg,#0A1A1F,#0F766E);border-radius:14px;padding:1.3rem;box-shadow:0 6px 20px rgba(15,118,110,.3);border:2px solid #107D74;position:relative;color:#fff" id="planAnnual">
+      <div style="position:absolute;top:-1px;right:12px;background:#FFC107;color:#10201F;font-size:.62rem;font-weight:700;padding:.2rem .7rem;border-radius:0 0 8px 8px;letter-spacing:.05em">RECOMMENDED</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:.05em;color:#FFC107">ANNUAL</div>
       <div style="font-size:2rem;font-weight:700;color:#fff;margin:.3rem 0">₹<?= number_format(FEE_ANNUAL) ?></div>
       <div style="font-size:.78rem;color:rgba(255,255,255,.6);margin-bottom:.8rem">per year · Best value</div>
@@ -207,26 +207,26 @@ require_once __DIR__.'/../includes/header.php';
   <?php
     $balance  = $pendingReq['amount_due'] - $pendingReq['total_paid_calc'];
     $paidPct  = $pendingReq['amount_due'] > 0 ? ($pendingReq['total_paid_calc'] / $pendingReq['amount_due'] * 100) : 0;
-    $statusColors = ['pending'=>['#FFF8E1','#E65100','#FFB300'],'partial'=>['#E3F2FD','#07225c','#0D47A1'],'approved'=>['#E8F5E9','#1B5E20','#4CAF50'],'rejected'=>['#FFEBEE','#B71C1C','#EF5350']];
+    $statusColors = ['pending'=>['#FFF8E1','#E65100','#FFB300'],'partial'=>['#E6F4F2','#0A1A1F','#0F766E'],'approved'=>['#E8F5E9','#1B5E20','#4CAF50'],'rejected'=>['#FFEBEE','#B71C1C','#EF5350']];
     [$sbg,$stxt,$sbdr] = $statusColors[$pendingReq['status']] ?? ['#F5F5F5','#555','#999'];
   ?>
   <div style="background:#fff;border-radius:16px;box-shadow:0 3px 14px rgba(0,0,0,.09);overflow:hidden;margin-bottom:1.5rem">
-    <div style="background:linear-gradient(135deg,#0D47A1,#1565C0);padding:.9rem 1.2rem;display:flex;justify-content:space-between;align-items:center">
+    <div style="background:linear-gradient(135deg,#0F766E,#107D74);padding:.9rem 1.2rem;display:flex;justify-content:space-between;align-items:center">
       <h3 style="color:#fff;font-size:.95rem;font-weight:700">📋 Current Request #<?= $pendingReq['id'] ?></h3>
       <span style="background:<?= $sbg ?>;color:<?= $stxt ?>;border:1.5px solid <?= $sbdr ?>;border-radius:20px;padding:.2rem .8rem;font-size:.7rem;font-weight:700;text-transform:uppercase"><?= $pendingReq['status'] === 'partial' ? '⚠️ Partial' : ($pendingReq['status']==='approved'?'✅ Approved':ucfirst($pendingReq['status'])) ?></span>
     </div>
     <div style="padding:1.2rem">
       <!-- Amount breakdown -->
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-bottom:1rem">
-        <div style="text-align:center;padding:.7rem;background:#F8F9FC;border-radius:10px">
+        <div style="text-align:center;padding:.7rem;background:#F6F8F8;border-radius:10px">
           <div style="font-size:.62rem;color:#666666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.2rem">Plan</div>
-          <div style="font-weight:700;color:#0D1B3E;font-size:.95rem"><?= h(ucfirst($pendingReq['plan_type'])) ?></div>
+          <div style="font-weight:700;color:#10201F;font-size:.95rem"><?= h(ucfirst($pendingReq['plan_type'])) ?></div>
         </div>
-        <div style="text-align:center;padding:.7rem;background:#F8F9FC;border-radius:10px">
+        <div style="text-align:center;padding:.7rem;background:#F6F8F8;border-radius:10px">
           <div style="font-size:.62rem;color:#666666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.2rem">Total Due</div>
-          <div style="font-weight:700;color:#0D1B3E;font-size:.95rem">₹<?= number_format($pendingReq['amount_due']) ?></div>
+          <div style="font-weight:700;color:#10201F;font-size:.95rem">₹<?= number_format($pendingReq['amount_due']) ?></div>
         </div>
-        <div style="text-align:center;padding:.7rem;background:#F8F9FC;border-radius:10px">
+        <div style="text-align:center;padding:.7rem;background:#F6F8F8;border-radius:10px">
           <div style="font-size:.62rem;color:#666666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.2rem">Paid So Far</div>
           <div style="font-weight:700;color:#2E7D32;font-size:.95rem">₹<?= number_format($pendingReq['total_paid_calc']) ?></div>
         </div>
@@ -245,8 +245,8 @@ require_once __DIR__.'/../includes/header.php';
       <?php endif; ?>
 
       <!-- Progress bar -->
-      <div style="background:#E8ECF4;border-radius:20px;height:10px;overflow:hidden;margin-bottom:.4rem">
-        <div style="background:<?= $paidPct >= 100 ? '#4CAF50' : '#0D47A1' ?>;width:<?= min($paidPct,100) ?>%;height:100%;border-radius:20px;transition:width .5s"></div>
+      <div style="background:#E2E8E7;border-radius:20px;height:10px;overflow:hidden;margin-bottom:.4rem">
+        <div style="background:<?= $paidPct >= 100 ? '#4CAF50' : '#0F766E' ?>;width:<?= min($paidPct,100) ?>%;height:100%;border-radius:20px;transition:width .5s"></div>
       </div>
       <div style="font-size:.7rem;color:#666666;margin-bottom:1rem">₹<?= number_format($pendingReq['total_paid_calc']) ?> paid of ₹<?= number_format($pendingReq['amount_due']) ?> (<?= round($paidPct) ?>%)</div>
 
@@ -255,7 +255,7 @@ require_once __DIR__.'/../includes/header.php';
       <div style="margin-bottom:1rem">
         <div style="font-size:.75rem;font-weight:700;color:#3D4F7C;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">💰 Payment History</div>
         <?php foreach($pendingPayments as $pay): ?>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .7rem;background:#F8F9FC;border-radius:8px;margin-bottom:.3rem;font-size:.8rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem .7rem;background:#F6F8F8;border-radius:8px;margin-bottom:.3rem;font-size:.8rem">
           <span>₹<?= number_format($pay['amount']) ?> via <?= h(ucfirst($pay['payment_method'])) ?><?= $pay['upi_ref']?' (Ref: '.h($pay['upi_ref']).')':'' ?></span>
           <span style="color:#666666"><?= date('d M Y', strtotime($pay['paid_at'])) ?></span>
         </div>
@@ -265,20 +265,20 @@ require_once __DIR__.'/../includes/header.php';
 
       <!-- Pay Balance Form -->
       <?php if($balance > 0 && $pendingReq['status'] !== 'approved'): ?>
-      <div style="background:#F0F7FF;border:1.5px solid #BBDEFB;border-radius:12px;padding:1rem">
-        <div style="font-size:.8rem;font-weight:700;color:#07225c;margin-bottom:.8rem">💸 Pay Balance Amount</div>
+      <div style="background:#F0F7FF;border:1.5px solid #BFE6E0;border-radius:12px;padding:1rem">
+        <div style="font-size:.8rem;font-weight:700;color:#0A1A1F;margin-bottom:.8rem">💸 Pay Balance Amount</div>
         <form method="POST" action="<?= url('modules/subscription.php') ?>">
           <input type="hidden" name="req_id" value="<?= $pendingReq['id'] ?>">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.6rem">
             <div>
               <label style="font-size:.68rem;font-weight:700;color:#4A5E8A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.3rem">Amount (₹) *</label>
               <input type="number" name="pay_amount" min="1" max="<?= $balance ?>" step="0.01" required
-                     style="width:100%;padding:.65rem .8rem;border:2px solid #E8ECF4;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none"
+                     style="width:100%;padding:.65rem .8rem;border:2px solid #E2E8E7;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;outline:none"
                      placeholder="₹<?= number_format($balance) ?>" value="<?= $balance ?>">
             </div>
             <div>
               <label style="font-size:.68rem;font-weight:700;color:#4A5E8A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.3rem">Payment Method</label>
-              <select name="pay_method" style="width:100%;padding:.65rem .8rem;border:2px solid #E8ECF4;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none;cursor:pointer">
+              <select name="pay_method" style="width:100%;padding:.65rem .8rem;border:2px solid #E2E8E7;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;outline:none;cursor:pointer">
                 <option value="cash">💵 Cash</option>
                 <option value="upi">📱 UPI / GPay / PhonePe</option>
                 <option value="bank_transfer">🏦 Bank Transfer</option>
@@ -287,8 +287,8 @@ require_once __DIR__.'/../includes/header.php';
             </div>
           </div>
           <input type="text" name="pay_upi" placeholder="UPI / Transaction Reference (optional)"
-                 style="width:100%;padding:.65rem .8rem;border:2px solid #E8ECF4;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none;margin-bottom:.6rem">
-          <button type="submit" name="pay_balance" style="width:100%;padding:.75rem;background:#0D47A1;color:#fff;border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.88rem;cursor:pointer">
+                 style="width:100%;padding:.65rem .8rem;border:2px solid #E2E8E7;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;outline:none;margin-bottom:.6rem">
+          <button type="submit" name="pay_balance" style="width:100%;padding:.75rem;background:#0F766E;color:#fff;border:none;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.88rem;cursor:pointer">
             💳 Submit Balance Payment
           </button>
         </form>
@@ -320,7 +320,7 @@ require_once __DIR__.'/../includes/header.php';
           <div>
             <label style="font-size:.68rem;font-weight:700;color:#4A5E8A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.4rem">Plan Type *</label>
             <select name="plan_type" id="planSelect" aria-label="Plan" onchange="updateAmount(this.value)"
-                    style="width:100%;padding:.68rem .9rem;border:2px solid #E8ECF4;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none;cursor:pointer">
+                    style="width:100%;padding:.68rem .9rem;border:2px solid #E2E8E7;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;outline:none;cursor:pointer">
               <option value="annual">Annual — ₹<?= number_format(FEE_ANNUAL) ?> (Recommended)</option>
               <option value="monthly">Monthly — ₹<?= number_format(FEE_MONTHLY) ?></option>
             </select>
@@ -328,7 +328,7 @@ require_once __DIR__.'/../includes/header.php';
           <div>
             <label style="font-size:.68rem;font-weight:700;color:#4A5E8A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.4rem">Payment Method</label>
             <select name="payment_method" aria-label="Payment method"
-                    style="width:100%;padding:.68rem .9rem;border:2px solid #E8ECF4;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none;cursor:pointer">
+                    style="width:100%;padding:.68rem .9rem;border:2px solid #E2E8E7;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;outline:none;cursor:pointer">
               <option value="cash">💵 Cash</option>
               <option value="upi">📱 UPI / GPay / PhonePe</option>
               <option value="bank_transfer">🏦 Bank Transfer</option>
@@ -338,23 +338,23 @@ require_once __DIR__.'/../includes/header.php';
           </div>
         </div>
 
-        <div style="background:#E3F2FD;border-radius:10px;padding:.8rem 1rem;margin-bottom:.8rem;display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:.85rem;color:#07225c;font-weight:600">Total Due:</span>
-          <span id="totalDue" style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:#0D47A1">₹<?= number_format(FEE_ANNUAL) ?></span>
+        <div style="background:#E6F4F2;border-radius:10px;padding:.8rem 1rem;margin-bottom:.8rem;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:.85rem;color:#0A1A1F;font-weight:600">Total Due:</span>
+          <span id="totalDue" style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:#0F766E">₹<?= number_format(FEE_ANNUAL) ?></span>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem">
           <div>
             <label style="font-size:.68rem;font-weight:700;color:#4A5E8A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.4rem">Initial Payment (₹)</label>
             <input type="number" name="initial_payment" id="initPay" min="0"
-                   style="width:100%;padding:.68rem .9rem;border:2px solid #E8ECF4;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none"
+                   style="width:100%;padding:.68rem .9rem;border:2px solid #E2E8E7;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;outline:none"
                    placeholder="0 for full payment later" value="0" oninput="updateBalance(this.value)">
             <div style="font-size:.7rem;color:#666666;margin-top:.25rem">Enter 0 if paying cash to secretary</div>
           </div>
           <div>
             <label style="font-size:.68rem;font-weight:700;color:#4A5E8A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.4rem">UPI / Transaction Ref</label>
             <input type="text" name="upi_ref"
-                   style="width:100%;padding:.68rem .9rem;border:2px solid #E8ECF4;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none"
+                   style="width:100%;padding:.68rem .9rem;border:2px solid #E2E8E7;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;outline:none"
                    placeholder="Optional UPI/transaction ID">
           </div>
         </div>
@@ -368,16 +368,16 @@ require_once __DIR__.'/../includes/header.php';
         <div>
           <label style="font-size:.68rem;font-weight:700;color:#4A5E8A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.4rem">Notes (Optional)</label>
           <textarea name="notes" rows="2"
-                    style="width:100%;padding:.68rem .9rem;border:2px solid #E8ECF4;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none;resize:vertical"
+                    style="width:100%;padding:.68rem .9rem;border:2px solid #E2E8E7;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;outline:none;resize:vertical"
                     placeholder="Any message for the Secretary…"></textarea>
         </div>
 
         <button type="submit" name="req_sub"
-                style="width:100%;padding:.82rem;background:linear-gradient(135deg,#0D47A1,#1565C0);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.92rem;cursor:pointer;margin-top:.8rem;box-shadow:0 4px 14px rgba(13,71,161,.3)">
+                style="width:100%;padding:.82rem;background:linear-gradient(135deg,#0F766E,#107D74);color:#fff;border:none;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.92rem;cursor:pointer;margin-top:.8rem;box-shadow:0 4px 14px rgba(15,118,110,.3)">
           📤 Submit Subscription Request
         </button>
 
-        <div style="background:#F8F9FC;border-radius:10px;padding:.8rem;margin-top:.8rem;font-size:.78rem;color:#55678F;text-align:center;line-height:1.5">
+        <div style="background:#F6F8F8;border-radius:10px;padding:.8rem;margin-top:.8rem;font-size:.78rem;color:#55678F;text-align:center;line-height:1.5">
           ℹ️ After submitting, the Secretary will review your request and approve it.<br>
           You can pay the full amount now or make partial payments later.
         </div>
@@ -386,11 +386,11 @@ require_once __DIR__.'/../includes/header.php';
   </div>
   <?php elseif($activeSub): ?>
   <!-- Renew option -->
-  <div style="background:#F8F9FC;border:2px dashed #C5CEE0;border-radius:14px;padding:1.2rem;text-align:center;margin-bottom:1.5rem">
+  <div style="background:#F6F8F8;border:2px dashed #C5CEE0;border-radius:14px;padding:1.2rem;text-align:center;margin-bottom:1.5rem">
     <div style="font-size:1.5rem;margin-bottom:.5rem">🔄</div>
     <div style="font-weight:700;color:#3D4F7C;margin-bottom:.3rem">Early Renewal Available</div>
     <div style="font-size:.82rem;color:#666666;margin-bottom:.8rem">Submit a renewal request before your subscription expires</div>
-    <a href="?renew=1" style="display:inline-block;background:#0D47A1;color:#fff;border-radius:9px;padding:.6rem 1.3rem;font-weight:700;font-size:.85rem;text-decoration:none">Request Early Renewal</a>
+    <a href="?renew=1" style="display:inline-block;background:#0F766E;color:#fff;border-radius:9px;padding:.6rem 1.3rem;font-weight:700;font-size:.85rem;text-decoration:none">Request Early Renewal</a>
   </div>
   <?php endif; ?>
 
@@ -402,12 +402,12 @@ require_once __DIR__.'/../includes/header.php';
     </div>
     <div style="padding:.5rem">
       <?php foreach($myRequests as $r):
-        $statusMap=['pending'=>['#FFF8E1','#E65100','⏳'],'partial'=>['#E3F2FD','#07225c','⚠️'],'approved'=>['#E8F5E9','#1B5E20','✅'],'rejected'=>['#FFEBEE','#B71C1C','❌']];
+        $statusMap=['pending'=>['#FFF8E1','#E65100','⏳'],'partial'=>['#E6F4F2','#0A1A1F','⚠️'],'approved'=>['#E8F5E9','#1B5E20','✅'],'rejected'=>['#FFEBEE','#B71C1C','❌']];
         [$sbg,$stxt,$sico]=$statusMap[$r['status']]??['#F5F5F5','#555','•'];
       ?>
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:.9rem;border-bottom:1px solid #E8ECF4;flex-wrap:wrap;gap:.4rem">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:.9rem;border-bottom:1px solid #E2E8E7;flex-wrap:wrap;gap:.4rem">
         <div>
-          <div style="font-weight:700;font-size:.9rem;color:#0D1B3E"><?= ucfirst($r['plan_type']) ?> Plan — ₹<?= number_format($r['amount_due']) ?></div>
+          <div style="font-weight:700;font-size:.9rem;color:#10201F"><?= ucfirst($r['plan_type']) ?> Plan — ₹<?= number_format($r['amount_due']) ?></div>
           <div style="font-size:.75rem;color:#9E9E9E;margin-top:.15rem">
             Requested: <?= date('d M Y', strtotime($r['requested_at'])) ?>
             <?php if($r['approved_at']): ?> · Approved: <?= date('d M Y', strtotime($r['approved_at'])) ?><?php endif; ?>

@@ -137,15 +137,15 @@ if (($_GET['view'] ?? '')==='report') {
   *{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a2238;background:#e9edf4;padding:18px}
   .sheet{max-width:780px;margin:0 auto;background:#fff;border-radius:10px;box-shadow:0 6px 30px rgba(0,0,0,.15);position:relative;overflow:hidden}
   .wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;opacity:.06}.wm img{width:60%;max-width:420px;transform:rotate(-18deg)}
-  .wm-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;opacity:.05;font-size:2.6rem;font-weight:900;color:#0d1b3e;transform:rotate(-18deg);text-align:center;padding:0 20px}
+  .wm-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;opacity:.05;font-size:2.6rem;font-weight:900;color:#10201F;transform:rotate(-18deg);text-align:center;padding:0 20px}
   .content{position:relative;z-index:1;padding:30px 32px 38px}
-  .rhead{display:flex;align-items:center;gap:15px;border-bottom:3px solid #0d47a1;padding-bottom:15px}.rhead img{width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid #c8922a}.rhead h1{font-size:1.3rem;color:#0d1b3e}.rhead .sub{font-size:.8rem;color:#5a6680;margin-top:2px}
-  .rtag{display:inline-block;background:#0d47a1;color:#fff;font-size:.66rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 12px;border-radius:20px;margin:14px 0 10px}
-  .sumgrid{display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap}.sumbox{flex:1;min-width:110px;border:1px solid #e3e8f2;border-radius:9px;padding:11px 13px;background:#f8f9ff}.sumbox .l{font-size:.64rem;text-transform:uppercase;color:#5f6880;font-weight:700}.sumbox .v{font-size:1.25rem;font-weight:800;margin-top:3px}.green .v{color:#1b5e20}.blue .v{color:#0d47a1}.red .v{color:#c62828}.gold .v{color:#c8922a}
-  h3.sec{font-size:.92rem;color:#0d1b3e;margin:18px 0 10px;border-left:4px solid #c8922a;padding-left:8px}
-  table{width:100%;border-collapse:collapse;font-size:.8rem;margin-bottom:8px}th{background:#0d1b3e;color:#fff;text-align:left;padding:7px 9px;font-size:.7rem}th.r,td.r{text-align:right}td{padding:7px 9px;border-bottom:1px solid #eef1f6}tr:nth-child(even) td{background:#fafbfe}.due{color:#e65100;font-weight:700}.clear{color:#1b5e20;font-weight:700}tfoot td{font-weight:800;border-top:2px solid #0d47a1;background:#f0f4fc}
-  .rfoot{margin-top:24px;border-top:1px solid #e3e8f2;padding-top:13px;font-size:.72rem;color:#5f6880;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}.stamp{margin-top:9px;font-size:.68rem;color:#aab2c4;font-style:italic}
-  .pbar{max-width:780px;margin:0 auto 14px;display:flex;gap:10px;justify-content:flex-end}.pbtn{background:#0d47a1;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:.85rem;font-weight:700;cursor:pointer}.pbtn.alt{background:#5a6680}
+  .rhead{display:flex;align-items:center;gap:15px;border-bottom:3px solid #0F766E;padding-bottom:15px}.rhead img{width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid #c8922a}.rhead h1{font-size:1.3rem;color:#10201F}.rhead .sub{font-size:.8rem;color:#5a6680;margin-top:2px}
+  .rtag{display:inline-block;background:#0F766E;color:#fff;font-size:.66rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 12px;border-radius:20px;margin:14px 0 10px}
+  .sumgrid{display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap}.sumbox{flex:1;min-width:110px;border:1px solid #E2E8E7;border-radius:9px;padding:11px 13px;background:#f8f9ff}.sumbox .l{font-size:.64rem;text-transform:uppercase;color:#5f6880;font-weight:700}.sumbox .v{font-size:1.25rem;font-weight:800;margin-top:3px}.green .v{color:#1b5e20}.blue .v{color:#0F766E}.red .v{color:#c62828}.gold .v{color:#c8922a}
+  h3.sec{font-size:.92rem;color:#10201F;margin:18px 0 10px;border-left:4px solid #c8922a;padding-left:8px}
+  table{width:100%;border-collapse:collapse;font-size:.8rem;margin-bottom:8px}th{background:#10201F;color:#fff;text-align:left;padding:7px 9px;font-size:.7rem}th.r,td.r{text-align:right}td{padding:7px 9px;border-bottom:1px solid #eef1f6}tr:nth-child(even) td{background:#fafbfe}.due{color:#e65100;font-weight:700}.clear{color:#1b5e20;font-weight:700}tfoot td{font-weight:800;border-top:2px solid #0F766E;background:#f0f4fc}
+  .rfoot{margin-top:24px;border-top:1px solid #E2E8E7;padding-top:13px;font-size:.72rem;color:#5f6880;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}.stamp{margin-top:9px;font-size:.68rem;color:#aab2c4;font-style:italic}
+  .pbar{max-width:780px;margin:0 auto 14px;display:flex;gap:10px;justify-content:flex-end}.pbtn{background:#0F766E;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:.85rem;font-weight:700;cursor:pointer}.pbtn.alt{background:#5a6680}
   @media print{
     body{background:#fff;padding:0}
     .pbar{display:none}
@@ -196,9 +196,9 @@ $filter = $_GET['filter'] ?? 'all';
 require_once __DIR__.'/../includes/header.php';
 ?>
 <style>
-:root{--gf1:#0d47a1;--gf2:#1565c0;--gfg:#1b5e20;--gfgold:#c8922a}
-.gf-shell{background:#f0f4fa;min-height:100vh;padding-bottom:6rem}
-.gf-hero{background:linear-gradient(135deg,#0a1f3d,#1a3a6b 55%,#1565c0);padding:1.8rem 1.1rem 1.5rem;text-align:center;color:#fff;position:relative;overflow:hidden}
+:root{--gf1:#0F766E;--gf2:#107D74;--gfg:#1b5e20;--gfgold:#c8922a}
+.gf-shell{background:#F3F6F5;min-height:100vh;padding-bottom:6rem}
+.gf-hero{background:linear-gradient(135deg,#0a1f3d,#0E2A31 55%,#107D74);padding:1.8rem 1.1rem 1.5rem;text-align:center;color:#fff;position:relative;overflow:hidden}
 .gf-hero::before{content:'🏟️';position:absolute;font-size:8rem;opacity:.06;right:-10px;top:-10px}
 .gf-hero h1{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:.05em;margin-bottom:.2rem;position:relative}
 .gf-hero p{font-size:.76rem;color:rgba(255,255,255,.72);position:relative}
@@ -210,27 +210,27 @@ require_once __DIR__.'/../includes/header.php';
 .gf-sum-box .l{font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#5f6880;margin-bottom:.2rem}
 .gf-sum-box .v{font-family:'Bebas Neue',sans-serif;font-size:1.55rem}
 .v-paid{color:var(--gfg)}.v-pledge{color:var(--gf1)}.v-exp{color:#c62828}.v-bal{color:#8a6116}
-.gf-search{display:flex;align-items:center;gap:.5rem;background:#fff;border:1.5px solid #e3e8f2;border-radius:24px;padding:.55rem .9rem;margin-bottom:.7rem;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.gf-search{display:flex;align-items:center;gap:.5rem;background:#fff;border:1.5px solid #E2E8E7;border-radius:24px;padding:.55rem .9rem;margin-bottom:.7rem;box-shadow:0 2px 8px rgba(0,0,0,.04)}
 .gf-search input{border:none;outline:none;flex:1;font-size:.9rem;font-family:inherit;background:none}
 .gf-filters{display:flex;gap:.4rem;overflow-x:auto;padding-bottom:.4rem;margin-bottom:.8rem;scrollbar-width:none}.gf-filters::-webkit-scrollbar{display:none}
-.gf-chip{flex-shrink:0;padding:.4rem .85rem;border-radius:20px;background:#fff;border:1.5px solid #e3e8f2;font-size:.76rem;font-weight:700;color:#64748b;text-decoration:none;white-space:nowrap}
+.gf-chip{flex-shrink:0;padding:.4rem .85rem;border-radius:20px;background:#fff;border:1.5px solid #E2E8E7;font-size:.76rem;font-weight:700;color:#64748b;text-decoration:none;white-space:nowrap}
 .gf-chip.on{background:var(--gf1);border-color:var(--gf1);color:#fff}
 .gf-card{background:#fff;border-radius:16px;box-shadow:0 3px 14px rgba(13,27,62,.06);margin-bottom:.6rem;overflow:hidden}
 .gf-row{display:flex;align-items:center;gap:.7rem;padding:.85rem .9rem;cursor:pointer;transition:background .15s}
 .gf-row:active{background:#f6f8fc}
 .gf-av{width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0;background:linear-gradient(135deg,var(--gf1),var(--gf2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800}
-.gf-name{font-weight:800;font-size:.92rem;color:#0d1b3e}.gf-role{font-size:.66rem;color:#5f6880}
+.gf-name{font-weight:800;font-size:.92rem;color:#10201F}.gf-role{font-size:.66rem;color:#5f6880}
 .gf-amt{text-align:right;flex-shrink:0}.gf-paid{font-family:'Bebas Neue',sans-serif;font-size:1.25rem;color:var(--gfg);line-height:1}
 .gf-bal-pill{display:inline-block;font-size:.6rem;font-weight:800;padding:.12rem .5rem;border-radius:10px;margin-top:.15rem}
 .bal-due{background:#fff3e0;color:#e65100}.bal-clear{background:#e8f5e9;color:#1b5e20}.bal-none{background:#eceff1;color:#546e7a}
 .gf-chev{color:#cbd5e1;font-size:.9rem;transition:transform .25s}.gf-card.open .gf-chev{transform:rotate(90deg)}
-.gf-detail{display:none;border-top:1px solid #f0f4f8;padding:.9rem;background:#fafbff}
+.gf-detail{display:none;border-top:1px solid #F3F6F5;padding:.9rem;background:#fafbff}
 .gf-card.open .gf-detail{display:block;animation:gfUp .25s}
 .gf-prof{display:flex;gap:.7rem;align-items:center;margin-bottom:.7rem}
 .gf-prof-tiles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.4rem;margin-bottom:.7rem}
 .gf-tile{background:#fff;border:1px solid #eef1f6;border-radius:10px;padding:.5rem;text-align:center}
-.gf-tile .tl{font-size:.55rem;color:#5f6880;font-weight:800;text-transform:uppercase}.gf-tile .tv{font-size:.82rem;font-weight:800;color:#0d1b3e;margin-top:.1rem}
-.gf-pay-item{display:flex;justify-content:space-between;align-items:center;font-size:.78rem;padding:.4rem 0;border-bottom:1px dashed #e8ecf4}
+.gf-tile .tl{font-size:.55rem;color:#5f6880;font-weight:800;text-transform:uppercase}.gf-tile .tv{font-size:.82rem;font-weight:800;color:#10201F;margin-top:.1rem}
+.gf-pay-item{display:flex;justify-content:space-between;align-items:center;font-size:.78rem;padding:.4rem 0;border-bottom:1px dashed #E2E8E7}
 .gf-mini-btn{background:linear-gradient(135deg,var(--gfg),#2e7d32);color:#fff;border:none;border-radius:10px;padding:.5rem .9rem;font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit}
 .gf-mini-btn.blue{background:linear-gradient(135deg,var(--gf1),var(--gf2))}
 .gf-sec-title{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.05em;color:var(--gf1);margin:1.3rem 0 .6rem;display:flex;align-items:center;justify-content:space-between}
@@ -240,9 +240,9 @@ require_once __DIR__.'/../includes/header.php';
 .gf-ov.on{display:flex}
 .gf-modal{background:#fff;width:100%;max-width:480px;border-radius:22px 22px 0 0;padding:1.2rem 1.2rem 1.6rem;animation:gfSlide .3s ease}
 @keyframes gfSlide{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.gf-modal h3{font-size:1.05rem;color:#0d1b3e;margin-bottom:.1rem;display:flex;align-items:center;gap:.4rem}
+.gf-modal h3{font-size:1.05rem;color:#10201F;margin-bottom:.1rem;display:flex;align-items:center;gap:.4rem}
 .gf-modal .who{font-size:.76rem;color:#5f6880;margin-bottom:.9rem}
-.inp{width:100%;padding:.7rem .8rem;border:1.5px solid #e3e8f2;border-radius:11px;font-size:.9rem;font-family:inherit;box-sizing:border-box;margin-bottom:.55rem}
+.inp{width:100%;padding:.7rem .8rem;border:1.5px solid #E2E8E7;border-radius:11px;font-size:.9rem;font-family:inherit;box-sizing:border-box;margin-bottom:.55rem}
 .gf-modal-btns{display:flex;gap:.5rem;margin-top:.4rem}
 .gf-submit{flex:1;background:linear-gradient(135deg,var(--gf1),var(--gf2));color:#fff;border:none;border-radius:11px;padding:.75rem;font-weight:800;font-size:.9rem;cursor:pointer}
 .gf-cancel{background:#eceff1;color:#546e7a;border:none;border-radius:11px;padding:.75rem 1.1rem;font-weight:700;cursor:pointer}
@@ -314,7 +314,7 @@ require_once __DIR__.'/../includes/header.php';
       <div class="gf-detail">
         <div class="gf-prof">
           <?php if($photo): ?><img src="<?= $photo ?>" style="width:54px;height:54px;border-radius:50%;object-fit:cover" alt=""><?php else: ?><div class="gf-av" style="width:54px;height:54px;font-size:1.3rem"><?= strtoupper(substr($r['name'],0,1)) ?></div><?php endif; ?>
-          <div><div style="font-weight:800;color:#0d1b3e"><?= h($r['name']) ?></div><div style="font-size:.72rem;color:#5f6880"><?= h(roleLabel($r['role'])) ?> · AV<?= str_pad($r['id'],4,'0',STR_PAD_LEFT) ?></div></div>
+          <div><div style="font-weight:800;color:#10201F"><?= h($r['name']) ?></div><div style="font-size:.72rem;color:#5f6880"><?= h(roleLabel($r['role'])) ?> · AV<?= str_pad($r['id'],4,'0',STR_PAD_LEFT) ?></div></div>
         </div>
         <div class="gf-prof-tiles">
           <div class="gf-tile"><div class="tl">Pledged</div><div class="tv">₹<?= number_format($r['pledge']) ?></div></div>
@@ -351,7 +351,7 @@ require_once __DIR__.'/../includes/header.php';
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.7rem">
       <div style="background:#fff;border-radius:12px;padding:.6rem;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.04)">
         <div style="font-size:.56rem;font-weight:800;color:#5f6880;text-transform:uppercase">Entries</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#0d1b3e"><?= $expCount ?></div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#10201F"><?= $expCount ?></div>
       </div>
       <div style="background:#fff;border-radius:12px;padding:.6rem;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.04)">
         <div style="font-size:.56rem;font-weight:800;color:#5f6880;text-transform:uppercase">This Month</div>
@@ -359,7 +359,7 @@ require_once __DIR__.'/../includes/header.php';
       </div>
       <div style="background:#fff;border-radius:12px;padding:.6rem;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.04)">
         <div style="font-size:.56rem;font-weight:800;color:#5f6880;text-transform:uppercase">Average</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#0d1b3e">₹<?= number_format($expAvg) ?></div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#10201F">₹<?= number_format($expAvg) ?></div>
       </div>
     </div>
     <!-- Expense time filter -->
@@ -377,7 +377,7 @@ require_once __DIR__.'/../includes/header.php';
       $ePeriodY = ($ex['spent_date'] && substr($ex['spent_date'],0,4)===$curYear) ? '1' : '0';
     ?>
     <div class="gf-exp-row" data-month="<?= $ePeriodM ?>" data-year="<?= $ePeriodY ?>">
-      <div><div style="font-weight:700;font-size:.86rem;color:#0d1b3e"><?= h($ex['title']) ?></div><div style="font-size:.68rem;color:#5f6880"><?= $ex['spent_date']?date('d M Y',strtotime($ex['spent_date'])):'' ?><?= $ex['note']?' · '.h($ex['note']):'' ?></div></div>
+      <div><div style="font-weight:700;font-size:.86rem;color:#10201F"><?= h($ex['title']) ?></div><div style="font-size:.68rem;color:#5f6880"><?= $ex['spent_date']?date('d M Y',strtotime($ex['spent_date'])):'' ?><?= $ex['note']?' · '.h($ex['note']):'' ?></div></div>
       <div style="display:flex;align-items:center;gap:.5rem"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.15rem;color:#c62828">₹<?= number_format($ex['amount']) ?></div><?php if($isAdmin): ?><button onclick="gfDelExp(<?= $ex['id'] ?>)" style="background:none;border:none;color:#b71c1c;cursor:pointer">🗑</button><?php endif; ?></div>
     </div>
     <?php endforeach; endif; ?>
