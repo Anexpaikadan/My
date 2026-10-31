@@ -21,21 +21,23 @@ reference.** Rewrite it as plain HTML and CSS that follow the app's own tokens a
 There are **no token files and no token pipeline**. Tokens are CSS custom properties on `:root`,
 written inside a `<style>` block in each page shell:
 
-- **Member pages:** `includes/header.php` (used by 28 pages). Use these tokens:
+- **Member pages:** `includes/header.php` (used by every member page). New palette (dark ink frame + glass,
+  teal primary, coral accent). Old token names (`--blue --navy --gold --t2 --t3 --bg --border --radius`) still
+  exist and point at the new colours, so older module code keeps working:
   ```css
   :root{
-    --blue:#0D47A1; --blue2:#1565C0; --navy:#07225c;
-    --red:#B71C1C;  --gold:#D4A017;  --gold2:#FFC107;
-    --green:#1B5E20; --purple:#7B1FA2;
-    --t2:#3D4F7C;   --t3:#55678F;          /* secondary / muted text (both pass 4.5:1) */
-    --bg:#F0F4FA;   --card:#fff; --border:#E8ECF4;
-    --shadow:0 2px 12px rgba(13,71,161,.09); --shadow-lg:0 8px 32px rgba(13,71,161,.15);
-    --radius:14px; --radius-sm:9px;
-    --focus:#FFC107; --focus-dark:#0D47A1;
+    --ink:#0A1A1F; --ink-2:#0E2A31; --primary:#0F766E; --primary-dark:#115E59; --primary-light:#5EEAD4; --primary-soft:#E6F4F2;
+    --accent:#F26B5B; --accent-ink:#B23A2A; --accent-light:#FFB4A8;
+    --surface:#F3F6F5; --card:#fff; --line:#E2E8E7; --text:#10201F; --text-2:#3A4C4B; --text-3:#566866;
+    --glass:rgba(255,255,255,.07); --glass-line:rgba(255,255,255,.12); --r-lg:22px; --r:16px; --r-sm:12px;
+    --font:'Plus Jakarta Sans',system-ui,sans-serif;
   }
   ```
-- **Public homepage:** `index.php` has its own set: `--p:#1a3a6b --p2:#0d47a1 --a:#c8922a --a2:#e6b84a
-  --a-tx:#8a6116 (gold for small text) --t2:#4a5568 --t3:#5f6f86 --rad:14px --rad-s:8px --tr:.28s cubic-bezier(.4,0,.2,1)`.
+  App tiles: `<span class="tile tone-teal|coral|violet|amber|rose|sky|lime|slate"><?= ic('users') ?></span>`.
+- **Public homepage:** `index.php` has its own `:root` (`--p --p2 --p-soft --a --a-light --a-tx --ink --surface --tx --t2 --t3`).
+  `--p`, `--a` and the font come from **Club Settings → Homepage** (`home_primary_color`, `home_accent_color`, `home_font`).
+  Every homepage section can be switched off there (`home_*_show` = '0'); texts: `hero_*`, `home_about_*`, `home_join_*`, `footer_text`.
+  Do not use the class name `.grid` on the homepage: `av-splash.php` defines a global `.grid` overlay.
 - **Contact page:** `contact.php` has `--primary --accent --text --text2 --text3`.
 - Many modules also use hard-coded hex values in inline `style=""` attributes. When you add new
   code, use the `var(--…)` tokens instead.
@@ -131,14 +133,13 @@ require_once __DIR__ . '/../includes/header.php';
 
 ## 5. Icons
 
-- **Club:** **Font Awesome 6.5 webfont** (`<i class="fas fa-…">`, `fab fa-whatsapp`), loaded once in the
-  shell `<head>`. Do not also add the FA JS build. Many menus and tiles use **emoji as icons**.
-  For every new icon:
-  ```html
-  <button type="button" class="btn btn-blue"><i class="fas fa-plus" aria-hidden="true"></i> Add</button>
-  <a href="…" aria-label="WhatsApp"><i class="fab fa-whatsapp" aria-hidden="true"></i></a>   <!-- icon-only -->
-  <span aria-hidden="true">⚽</span> Football                                                <!-- emoji -->
-  ```
+- **Club:** one SVG line-icon set in `includes/icons.php` (24×24, stroke 2, `currentColor`). The header prints the
+  sprite once; use `<?= ic('calendar') ?>` / `ic('users','ic-sm')`. Names: home users calendar droplet store star image
+  user idcard award card trophy ball masks flower vote heart coins megaphone shield settings logout menu x back chevron
+  next bell bolt wallet palette tent file plus search globe qr sparkle chart whatsapp clipboard check download scan login
+  phone map mail eye edit layout install. **To add one,** add its `<path>` to `icon_paths()`.
+  The module list for the menu, desktop nav and dashboard lives in `app_modules()` / `admin_modules()` — add new modules there.
+  Font Awesome 6.5 CSS is still loaded for older module markup and brand logos (`fab fa-whatsapp`).
 - **Daybill:** inline SVG line icons from `icon($name)` in `daybill/lib.php` (24×24 viewBox,
   `stroke="currentColor"`, stroke width 1.9, class `.i`). Names are short and lowercase (`jobs`, `qr`,
   `settings`, `back`, `doc`, `photo`, `tag`, `user`, `shop`). **To add an icon from Figma,** export it as

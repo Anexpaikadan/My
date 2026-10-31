@@ -4,6 +4,9 @@
 //  Member Subscription Request, Payment Tracking & Status
 // ============================================================
 require_once __DIR__.'/../includes/config.php';
+// Fees come from Club Settings → Fees (fallback: config.php)
+$feeMonthly = max(0,(int)setting('FEE_MONTHLY', FEE_MONTHLY));
+$feeAnnual  = max(0,(int)setting('FEE_ANNUAL',  FEE_ANNUAL));
 // OG tags — must be set BEFORE requireLogin() so bots get logo+title
 $pageOG = [
   'title' => '💳 Subscription — Aishwarya Arts & Sports Club',
@@ -18,7 +21,7 @@ $msg = '';
 // ── Member submits a new subscription request ────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['req_sub'])) {
     $plan   = $_POST['plan_type'] === 'monthly' ? 'monthly' : 'annual';
-    $amount = $plan === 'annual' ? FEE_ANNUAL : FEE_MONTHLY;
+    $amount = $plan === 'annual' ? $feeAnnual : $feeMonthly;
     $paid   = floatval($_POST['initial_payment'] ?? 0);
     $paid   = max(0, min($paid, $amount));
     $method = $_POST['payment_method'] ?? 'cash';
@@ -179,7 +182,7 @@ require_once __DIR__.'/../includes/header.php';
     <!-- Monthly Plan -->
     <div style="background:#fff;border-radius:14px;padding:1.3rem;box-shadow:0 3px 14px rgba(0,0,0,.08);border:2px solid #E2E8E7;position:relative;transition:all .2s" id="planMonthly">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:.05em;color:#3D4F7C">MONTHLY</div>
-      <div style="font-size:2rem;font-weight:700;color:#0F766E;margin:.3rem 0">₹<?= number_format(FEE_MONTHLY) ?></div>
+      <div style="font-size:2rem;font-weight:700;color:#0F766E;margin:.3rem 0">₹<?= number_format($feeMonthly) ?></div>
       <div style="font-size:.78rem;color:#666666;margin-bottom:.8rem">per month · Auto-renew available</div>
       <ul style="font-size:.8rem;color:#3D4F7C;padding-left:1.2rem;margin-bottom:.8rem;line-height:1.8">
         <li>Full club access</li>
@@ -191,13 +194,13 @@ require_once __DIR__.'/../includes/header.php';
     <div style="background:linear-gradient(160deg,#0A1A1F,#0F766E);border-radius:14px;padding:1.3rem;box-shadow:0 6px 20px rgba(15,118,110,.3);border:2px solid #107D74;position:relative;color:#fff" id="planAnnual">
       <div style="position:absolute;top:-1px;right:12px;background:#FFC107;color:#10201F;font-size:.62rem;font-weight:700;padding:.2rem .7rem;border-radius:0 0 8px 8px;letter-spacing:.05em">RECOMMENDED</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:.05em;color:#FFC107">ANNUAL</div>
-      <div style="font-size:2rem;font-weight:700;color:#fff;margin:.3rem 0">₹<?= number_format(FEE_ANNUAL) ?></div>
+      <div style="font-size:2rem;font-weight:700;color:#fff;margin:.3rem 0">₹<?= number_format($feeAnnual) ?></div>
       <div style="font-size:.78rem;color:rgba(255,255,255,.6);margin-bottom:.8rem">per year · Best value</div>
       <ul style="font-size:.8rem;color:rgba(255,255,255,.8);padding-left:1.2rem;margin-bottom:.8rem;line-height:1.8">
         <li>Full club access</li>
         <li>Priority event entry</li>
         <li>Digital ID card</li>
-        <li style="color:#FFC107;font-weight:700">Save ₹<?= number_format((FEE_MONTHLY*12) - FEE_ANNUAL) ?>/year</li>
+        <li style="color:#FFC107;font-weight:700">Save ₹<?= number_format(($feeMonthly*12) - $feeAnnual) ?>/year</li>
       </ul>
     </div>
   </div>
@@ -321,8 +324,8 @@ require_once __DIR__.'/../includes/header.php';
             <label style="font-size:.68rem;font-weight:700;color:#4A5E8A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.4rem">Plan Type *</label>
             <select name="plan_type" id="planSelect" aria-label="Plan" onchange="updateAmount(this.value)"
                     style="width:100%;padding:.68rem .9rem;border:2px solid #E2E8E7;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;outline:none;cursor:pointer">
-              <option value="annual">Annual — ₹<?= number_format(FEE_ANNUAL) ?> (Recommended)</option>
-              <option value="monthly">Monthly — ₹<?= number_format(FEE_MONTHLY) ?></option>
+              <option value="annual">Annual — ₹<?= number_format($feeAnnual) ?> (Recommended)</option>
+              <option value="monthly">Monthly — ₹<?= number_format($feeMonthly) ?></option>
             </select>
           </div>
           <div>
@@ -340,7 +343,7 @@ require_once __DIR__.'/../includes/header.php';
 
         <div style="background:#E6F4F2;border-radius:10px;padding:.8rem 1rem;margin-bottom:.8rem;display:flex;justify-content:space-between;align-items:center">
           <span style="font-size:.85rem;color:#0A1A1F;font-weight:600">Total Due:</span>
-          <span id="totalDue" style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:#0F766E">₹<?= number_format(FEE_ANNUAL) ?></span>
+          <span id="totalDue" style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:#0F766E">₹<?= number_format($feeAnnual) ?></span>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem">
@@ -434,7 +437,7 @@ require_once __DIR__.'/../includes/header.php';
 </div>
 
 <script>
-var fees={annual:<?= FEE_ANNUAL ?>,monthly:<?= FEE_MONTHLY ?>};
+var fees={annual:<?= $feeAnnual ?>,monthly:<?= $feeMonthly ?>};
 function updateAmount(plan){
   var due=fees[plan]||fees.annual;
   document.getElementById('totalDue').textContent='₹'+due.toLocaleString('en-IN');

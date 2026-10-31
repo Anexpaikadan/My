@@ -199,15 +199,23 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
         $msg = ['t'=>'ok','m'=>'Club settings saved!'];
     }
 
-    // Save homepage settings
+    // Save homepage settings (every field here is used by index.php)
     if ($act === 'save_home') {
-        $fields = ['home_stats_show','home_gallery_show','home_events_show',
-                   'home_hero_style','home_primary_color','home_accent_color',
-                   'home_font','footer_text'];
-        foreach ($fields as $f) {
-            if (isset($_POST[$f])) saveSetting($f, trim($_POST[$f]), 'homepage');
+        $text = array('hero_badge','hero_title','hero_subtitle','hero_cta_text','home_about_title','home_about_text',
+                      'home_join_title','home_join_text','footer_text');
+        foreach ($text as $f) { if (isset($_POST[$f])) saveSetting($f, trim($_POST[$f]), 'homepage'); }
+        // switches: an unticked box is not sent, so store 0 for it
+        foreach (array('home_stats_show','home_about_show','home_activities_show','home_events_show','home_notices_show',
+                       'home_committee_show','home_achievements_show','home_gallery_show','home_join_show') as $f) {
+            saveSetting($f, isset($_POST[$f]) ? '1' : '0', 'homepage');
         }
-        $msg = ['t'=>'ok','m'=>'Homepage settings saved!'];
+        foreach (array('home_primary_color'=>'#0F766E','home_accent_color'=>'#F26B5B') as $f=>$def) {
+            $v = trim($_POST[$f] ?? '');
+            saveSetting($f, preg_match('/^#[0-9a-fA-F]{6}$/', $v) ? $v : $def, 'homepage');
+        }
+        $font = $_POST['home_font'] ?? '';
+        saveSetting('home_font', in_array($font, array('Plus Jakarta Sans','Poppins','Manrope','Outfit'), true) ? $font : 'Plus Jakarta Sans', 'homepage');
+        $msg = ['t'=>'ok','m'=>'Homepage settings saved — open the website to see them.'];
     }
 
     // Save activity
@@ -397,84 +405,98 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
       </div>
 
-      <div class="scard">
-        <div class="scard-title">🎯 Hero Section Text</div>
-        <div class="srow">
-          <label class="slbl">Hero Title</label>
-          <input class="sinp" name="hero_title" value="<?= h($s('hero_title','AISHWARYA ARTS & SPORTS CLUB')) ?>" placeholder="Your club heading">
-        </div>
-        <div class="srow">
-          <label class="slbl">Hero Subtitle</label>
-          <textarea class="sinp" name="hero_subtitle" rows="2" placeholder="Welcome message"><?= h($s('hero_subtitle','')) ?></textarea>
-        </div>
-      </div>
-
       <button type="submit" class="sbtn sbtn-blue" style="width:100%">💾 Save Club Settings</button>
     </form>
   </div>
 
   <!-- ══ TAB: HOMEPAGE ══ -->
   <div class="stab-panel" id="stab-home">
+    <style>
+    .sw{display:flex;align-items:center;justify-content:space-between;gap:1rem;min-height:54px;padding:.4rem 0;border-bottom:1px solid #eef2f1;cursor:pointer}
+    .sw:last-child{border-bottom:0}
+    .sw b{font-size:.9rem;color:#10201F;display:block}.sw small{font-size:.78rem;color:#566866}
+    .sw input{position:absolute;opacity:0;width:1px;height:1px}
+    .sw .tg{flex-shrink:0;width:50px;height:30px;border-radius:30px;background:#cbd5d3;position:relative;transition:background .2s}
+    .sw .tg::after{content:'';position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
+    .sw input:checked + .tg{background:#0F766E}
+    .sw input:checked + .tg::after{transform:translateX(20px)}
+    .sw input:focus-visible + .tg{outline:3px solid #0F766E;outline-offset:2px}
+    .clr{display:flex;align-items:center;gap:.7rem}
+    .clr input[type=color]{width:52px;height:46px;border:1px solid #e2e8f0;border-radius:12px;padding:3px;background:#fff;cursor:pointer}
+    </style>
     <form method="POST">
       <input type="hidden" name="act" value="save_home">
+      <a href="<?= url('index.php') ?>" target="_blank" rel="noopener" class="sbtn sbtn-grey" style="width:100%;justify-content:center;margin-bottom:1rem">👁 Open the website in a new tab</a>
 
       <div class="scard">
-        <div class="scard-title">🎨 Colour Theme</div>
-        <div class="srow">
-          <label class="slbl">Primary Colour</label>
-          <div style="display:flex;align-items:center;gap:.75rem">
-            <input type="color" name="home_primary_color" value="<?= h($s('home_primary_color','#0F766E')) ?>"
-              style="width:48px;height:40px;border:none;border-radius:8px;cursor:pointer;padding:0">
-            <input class="sinp" id="priColorTxt" value="<?= h($s('home_primary_color','#0F766E')) ?>" style="flex:1;font-family:monospace" placeholder="#0F766E" oninput="document.querySelector('[name=home_primary_color]').value=this.value">
-          </div>
-          <div class="color-row" style="margin-top:.6rem">
-            <?php foreach(['#0F766E','#b71c1c','#1b5e20','#6a1b9a','#e65100','#00838f','#37474f','#880e4f','#1a237e','#33691e'] as $clr): ?>
-            <div class="color-swatch <?= $s('home_primary_color','#0F766E')===$clr?'sel':'' ?>"
-              style="background:<?= $clr ?>" onclick="pickColor('<?= $clr ?>')"></div>
-            <?php endforeach; ?>
-          </div>
-        </div>
-        <div class="srow">
-          <label class="slbl">Accent / Highlight Colour</label>
-          <div style="display:flex;align-items:center;gap:.75rem">
-            <input type="color" name="home_accent_color" value="<?= h($s('home_accent_color','#c8922a')) ?>"
-              style="width:48px;height:40px;border:none;border-radius:8px;cursor:pointer;padding:0">
-            <input class="sinp" value="<?= h($s('home_accent_color','#c8922a')) ?>" style="flex:1;font-family:monospace" placeholder="#c8922a" oninput="document.querySelector('[name=home_accent_color]').value=this.value">
-          </div>
-        </div>
+        <div class="scard-title">🎯 Top banner (hero)</div>
+        <div class="srow"><label class="slbl" for="hBadge">Small label above the title</label>
+          <input class="sinp" id="hBadge" name="hero_badge" value="<?= h($s('hero_badge','')) ?>" placeholder="<?= h(setting('CLUB_PLACE','Vettikkattiri')) ?> · Kerala"></div>
+        <div class="srow"><label class="slbl" for="hTitle">Title</label>
+          <input class="sinp" id="hTitle" name="hero_title" value="<?= h($s('hero_title','')) ?>" placeholder="<?= h(setting('CLUB_NAME','Club name')) ?>"></div>
+        <div class="srow"><label class="slbl" for="hSub">Subtitle</label>
+          <textarea class="sinp" id="hSub" name="hero_subtitle" rows="2" placeholder="<?= h(setting('CLUB_TAGLINE','')) ?>"><?= h($s('hero_subtitle','')) ?></textarea></div>
+        <div class="srow"><label class="slbl" for="hCta">Login button text</label>
+          <input class="sinp" id="hCta" name="hero_cta_text" value="<?= h($s('hero_cta_text','')) ?>" placeholder="Member login"></div>
+        <p class="hint-txt">Banner photos: in <a href="<?= url('modules/gallery.php') ?>" style="color:#0F766E;font-weight:700">Gallery</a>, tick “Use as homepage background” when uploading. Empty fields use the club name and tagline.</p>
       </div>
 
       <div class="scard">
-        <div class="scard-title">📐 Homepage Sections</div>
+        <div class="scard-title">📐 Sections on the homepage</div>
         <?php
-        $toggles = [
-            'home_stats_show'   => 'Show Stats Bar (members, active, donors)',
-            'home_gallery_show' => 'Show Gallery Section',
-            'home_events_show'  => 'Show Upcoming Events',
-        ];
-        foreach ($toggles as $k=>$label):
-          $val = $s($k,'1');
-        ?>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid #f1f5f9">
-          <span style="font-size:.86rem;font-weight:600;color:#1e293b"><?= $label ?></span>
-          <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer">
-            <input type="checkbox" name="<?= $k ?>" value="1" <?= $val?'checked':'' ?> style="opacity:0;width:0;height:0">
-            <span style="position:absolute;inset:0;background:<?= $val?'#0F766E':'#cbd5e0' ?>;border-radius:34px;transition:.3s"></span>
-            <span style="position:absolute;top:2px;left:<?= $val?'22':'2' ?>px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.3s"></span>
-          </label>
-        </div>
+        $toggles = array(
+          'home_stats_show'        => array('Numbers bar','Members, active members, events, donors'),
+          'home_about_show'        => array('About us','Text you write below'),
+          'home_activities_show'   => array('Club activities','From the Activities tab (active ones only)'),
+          'home_events_show'       => array('Upcoming events','From Events'),
+          'home_notices_show'      => array('Notice board','Latest notices posted on the dashboard'),
+          'home_committee_show'    => array('Committee','President, secretary, treasurer and committee'),
+          'home_achievements_show' => array('Achievements','From Certificates & achievements'),
+          'home_gallery_show'      => array('Gallery','Latest gallery photos'),
+          'home_join_show'         => array('“Join the club” box','Shown to visitors who are not logged in'),
+        );
+        foreach ($toggles as $k=>$t): $on = $s($k,'1') !== '0'; ?>
+        <label class="sw"><span><b><?= $t[0] ?></b><small><?= $t[1] ?></small></span>
+          <input type="checkbox" name="<?= $k ?>" value="1" <?= $on?'checked':'' ?>><span class="tg" aria-hidden="true"></span></label>
         <?php endforeach; ?>
       </div>
 
       <div class="scard">
-        <div class="scard-title">📝 Footer</div>
-        <div class="srow">
-          <label class="slbl">Footer Custom Text</label>
-          <textarea class="sinp" name="footer_text" rows="2" placeholder="Optional footer message"><?= h($s('footer_text','')) ?></textarea>
-        </div>
+        <div class="scard-title">📝 About us</div>
+        <div class="srow"><label class="slbl" for="hAbT">Heading</label>
+          <input class="sinp" id="hAbT" name="home_about_title" value="<?= h($s('home_about_title','')) ?>" placeholder="Uniting <?= h(setting('CLUB_PLACE','our village')) ?> through sports, arts and service"></div>
+        <div class="srow"><label class="slbl" for="hAbX">Text</label>
+          <textarea class="sinp" id="hAbX" name="home_about_text" rows="4" placeholder="Tell visitors about the club"><?= h($s('home_about_text','')) ?></textarea></div>
       </div>
 
-      <button type="submit" class="sbtn sbtn-blue" style="width:100%">💾 Save Homepage Settings</button>
+      <div class="scard">
+        <div class="scard-title">🤝 “Join the club” box</div>
+        <div class="srow"><label class="slbl" for="hJT">Heading</label>
+          <input class="sinp" id="hJT" name="home_join_title" value="<?= h($s('home_join_title','')) ?>" placeholder="Be part of the club"></div>
+        <div class="srow"><label class="slbl" for="hJX">Text</label>
+          <textarea class="sinp" id="hJX" name="home_join_text" rows="2" placeholder="Apply in one minute…"><?= h($s('home_join_text','')) ?></textarea></div>
+      </div>
+
+      <div class="scard">
+        <div class="scard-title">🎨 Look</div>
+        <div class="srow"><label class="slbl" for="hPri">Main colour</label>
+          <div class="clr"><input type="color" id="hPri" name="home_primary_color" value="<?= h($s('home_primary_color','#0F766E')) ?>"><span class="hint-txt">Buttons, links, highlights</span></div></div>
+        <div class="srow"><label class="slbl" for="hAcc">Accent colour</label>
+          <div class="clr"><input type="color" id="hAcc" name="home_accent_color" value="<?= h($s('home_accent_color','#F26B5B')) ?>"><span class="hint-txt">Login button and labels</span></div></div>
+        <div class="srow"><label class="slbl" for="hFont">Font</label>
+          <select class="sinp" id="hFont" name="home_font">
+            <?php foreach(array('Plus Jakarta Sans','Poppins','Manrope','Outfit') as $f): ?><option <?= $s('home_font','Plus Jakarta Sans')===$f?'selected':'' ?>><?= $f ?></option><?php endforeach; ?>
+          </select></div>
+        <button type="button" class="sbtn sbtn-grey sbtn-sm" onclick="document.getElementById('hPri').value='#0F766E';document.getElementById('hAcc').value='#F26B5B';document.getElementById('hFont').value='Plus Jakarta Sans'">Reset to default look</button>
+      </div>
+
+      <div class="scard">
+        <div class="scard-title">📄 Footer</div>
+        <div class="srow"><label class="slbl" for="hFoot">Footer text</label>
+          <textarea class="sinp" id="hFoot" name="footer_text" rows="2" placeholder="Uniting the village through sports, arts and community service."><?= h($s('footer_text','')) ?></textarea></div>
+      </div>
+
+      <button type="submit" class="sbtn sbtn-blue" style="width:100%;justify-content:center;min-height:50px">💾 Save homepage settings</button>
     </form>
   </div>
 

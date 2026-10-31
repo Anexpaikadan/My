@@ -73,3 +73,9 @@ crowdfunding, ID cards, certificates, gallery, subscriptions…).
 - Closed side menu can no longer be reached with Tab.
 - No sideways scrolling on phones (Contact page, Club Settings tabs now scroll in one row).
 - ID card page allows pinch-zoom; Contact page inputs are 16px; credit footer readable on dark pages.
+
+**New design (2026-11):** dark glass app frame with a fresh teal/coral palette, one SVG icon set, a dashboard
+built like a phone home screen (app tiles), a floating bottom tab bar, bottom-sheet popups, and a redesigned public homepage.
+Name Slip and Henna (Mehndi) Fest modules were removed (their database tables and uploaded photos are kept).
+Club Settings → Homepage now really controls the homepage: banner texts, which sections show, about / join texts,
+colours, font and footer text. Fees from Club Settings → Fees are now used on the Subscription page.

@@ -206,7 +206,7 @@ require_once __DIR__.'/../includes/header.php';
 .ev-rsvp-b.going.on{background:#e8f5e9;border-color:#66bb6a;color:#1b5e20}
 .ev-rsvp-b.maybe.on{background:#fff8e1;border-color:#ffca28;color:#e65100}
 .ev-rsvp-b.no.on{background:#ffebee;border-color:#ef9a9a;color:#b71c1c}
-.ev-rsvp-admin{margin-top:.5rem;font-size:.72rem;color:#64748b;background:#F6F8F8;border-radius:8px;padding:.4rem .6rem}
+.ev-rsvp-admin{margin-top:.5rem;font-size:.74rem;color:#556274;background:#F6F8F8;border-radius:8px;padding:.4rem .6rem}
 </style>
 
 <div class="ev-shell">

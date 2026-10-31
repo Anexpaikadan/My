@@ -244,17 +244,42 @@ try {
 
 $logo = getLogoB64();
 $wa   = preg_replace('/\D/', '', setting('CLUB_PHONE','+919876543210'));
+require_once __DIR__.'/includes/icons.php';
+// ── Homepage settings (Club Settings → Homepage) ─────────────────
+$HS = array();
+try { foreach (db()->query("SELECT setting_key,setting_value FROM club_settings")->fetchAll() as $r) $HS[$r['setting_key']] = $r['setting_value']; } catch(Exception $e){}
+$hs  = function($k, $d = '') use ($HS) { return (isset($HS[$k]) && $HS[$k] !== '') ? $HS[$k] : $d; };
+$hon = function($k) use ($HS) { return !isset($HS[$k]) || $HS[$k] !== '0'; };   // sections are on unless switched off
+$hexOk = function($c, $d) { return preg_match('/^#[0-9a-fA-F]{6}$/', (string)$c) ? $c : $d; };
+$homePrimary = $hexOk($hs('home_primary_color'), '#0F766E');
+$homeAccent  = $hexOk($hs('home_accent_color'),  '#F26B5B');
+$homeFonts   = array('Plus Jakarta Sans','Poppins','Manrope','Outfit');
+$homeFont    = in_array($hs('home_font'), $homeFonts, true) ? $hs('home_font') : 'Plus Jakarta Sans';
+$clubName    = setting('CLUB_NAME','Aishwarya Arts & Sports Club');
+$clubPlace   = setting('CLUB_PLACE','Vettikkattiri');
+$clubTag     = setting('CLUB_TAGLINE','Unity · Sports · Culture · Community');
+$heroTitle   = $hs('hero_title', $clubName);
+$heroSub     = $hs('hero_subtitle', $clubTag);
+$heroBadge   = $hs('hero_badge', $clubPlace . ' · Kerala');
+$clubActs = array();
+try { $clubActs = db()->query("SELECT * FROM club_activities WHERE is_active=1 ORDER BY sort_order,id")->fetchAll(); } catch(Exception $e){}
+$upEvents = array_values(array_filter(isset($events) ? $events : array(), function($e){ return strtotime($e['event_date']) >= strtotime('today'); }));
+usort($upEvents, function($a,$b){ return strcmp($a['event_date'],$b['event_date']); });
+$_pLoggedIn = !empty($_SESSION['user_id']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<?php $pageTitle = isset($pageTitle) ? $pageTitle : setting('CLUB_NAME','Aishwarya Arts & Sports Club').' · '.setting('CLUB_PLACE','Vettikkattiri'); ?>
+<?php $pageTitle = isset($pageTitle) ? $pageTitle : $clubName.' · '.$clubPlace; ?>
 <title><?= h($pageTitle) ?></title>
-<meta name="description" content="<?= h(setting('CLUB_NAME','Aishwarya Arts & Sports Club').', '.setting('CLUB_PLACE','Vettikkattiri').', Kerala — sports, arts and community service. Events, gallery and member portal.') ?>">
+<meta name="description" content="<?= h($clubName.', '.$clubPlace.', Kerala — '.$clubTag.'. Events, gallery and member portal.') ?>">
+<meta property="og:title" content="<?= h($clubName) ?>">
+<meta property="og:description" content="<?= h($heroSub) ?>">
+<?php if(defined('LOGO_URL')): ?><meta property="og:image" content="<?= h(LOGO_URL) ?>"><link rel="icon" href="<?= h(LOGO_URL) ?>"><?php endif; ?>
 <link rel="manifest" href="/manifest.php">
-<meta name="theme-color" content="#07225c">
+<meta name="theme-color" content="#0A1A1F">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -262,357 +287,254 @@ $wa   = preg_replace('/\D/', '', setting('CLUB_PHONE','+919876543210'));
 <link rel="apple-touch-icon" href="/assets/logo.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=<?= urlencode($homeFont) ?>:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
-/* ══════════════════════════════════════════
-   AASC — Public Homepage  |  Clean Build
-   ══════════════════════════════════════════ */
 :root{
-  --p:#1a3a6b; --p2:#0d47a1;
-  --a:#c8922a; --a2:#e6b84a;
-  --r:#b71c1c; --g:#1b5e20;
-  --tx:#1a1a2e; --t2:#4a5568; --t3:#5f6f86; /* 5.1:1 (was 2.9:1) */
-  --a-tx:#8a6116; /* gold for small text on light bg, 5.2:1 */
-  --bd:rgba(0,0,0,.08);
-  --sh:0 4px 24px rgba(0,0,0,.09);
-  --sh2:0 12px 48px rgba(0,0,0,.14);
-  --rad:14px; --rad-s:8px;
-  --tr:.28s cubic-bezier(.4,0,.2,1);
+  --ink:#0A1A1F; --ink-2:#0E2A31;
+  --p:<?= $homePrimary ?>; --p2:color-mix(in srgb,var(--p) 80%,#000); --p-soft:color-mix(in srgb,var(--p) 10%,#fff);
+  --a:<?= $homeAccent ?>; --a-light:color-mix(in srgb,var(--a) 45%,#fff);
+  --a-tx:color-mix(in srgb,var(--a) 62%,#000);
+  --surface:#F3F6F5; --line:#E2E8E7; --tx:#10201F; --t2:#3A4C4B; --t3:#566866;
+  --glass:rgba(255,255,255,.08); --glass-line:rgba(255,255,255,.14);
+  --rad:20px; --rad-s:14px; --sh:0 1px 2px rgba(10,26,31,.05),0 6px 20px rgba(10,26,31,.07); --sh2:0 18px 50px rgba(10,26,31,.2);
+  --tr:.25s cubic-bezier(.2,.8,.2,1);
+  --font:'<?= h($homeFont) ?>',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{font-family:'Inter',sans-serif;color:var(--tx);background:#fff;overflow-x:hidden;line-height:1.65}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:var(--font);color:var(--tx);background:var(--surface);line-height:1.6;overflow-x:hidden;-webkit-tap-highlight-color:transparent}
 a{text-decoration:none;color:inherit}
 img{display:block;max-width:100%}
-::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--a);border-radius:3px}
+button,input,select,textarea{font-family:inherit}
+.ic{width:22px;height:22px;flex-shrink:0;display:inline-block;vertical-align:middle}.ic-sm{width:18px;height:18px}.ic-lg{width:28px;height:28px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.skip-link{position:absolute;left:.75rem;top:-100px;z-index:20000;background:#fff;color:var(--ink);font-weight:700;padding:.7rem 1rem;border-radius:12px}
+.skip-link:focus{top:.75rem}
+:focus{outline:none}
+:focus-visible{outline:3px solid var(--p);outline-offset:2px;border-radius:8px}
+.dark :focus-visible,#mainNav :focus-visible,#footer :focus-visible,.lb-ov :focus-visible,#pub-bnav :focus-visible{outline-color:#FFB4A8}
+.wrap{max-width:1160px;margin:0 auto;padding:0 1rem}
 
-/* ── Kerala Stripe ── */
-.kstripe{height:4px;background:repeating-linear-gradient(90deg,#c8922a 0,#c8922a 10px,#b71c1c 10px,#b71c1c 20px,#1a3a6b 20px,#1a3a6b 30px,#e6b84a 30px,#e6b84a 40px)}
+/* ═══ Top bar ═══ */
+.navbar{position:fixed;top:0;left:0;right:0;z-index:1000;padding-top:env(safe-area-inset-top,0px);color:#fff;transition:background var(--tr),border-color var(--tr)}
+.navbar.scrolled,.navbar.solid{background:rgba(10,26,31,.86);backdrop-filter:saturate(160%) blur(18px);-webkit-backdrop-filter:saturate(160%) blur(18px);border-bottom:1px solid rgba(255,255,255,.08)}
+.nav-inner{max-width:1160px;margin:0 auto;height:64px;padding:0 .75rem;display:flex;align-items:center;gap:.4rem}
+.nav-brand{display:flex;align-items:center;gap:.6rem;margin-right:auto;min-width:0}
+.nav-logo{width:40px;height:40px;border-radius:13px;object-fit:cover;background:#fff}
+.nav-club-name{font-weight:800;font-size:1rem;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav-club-sub{font-size:.72rem;color:rgba(255,255,255,.75)}
+.nav-links{display:none;list-style:none;gap:.15rem}
+.nav-links a{display:block;font-size:.88rem;font-weight:600;color:rgba(255,255,255,.82);padding:.5rem .85rem;border-radius:12px}
+.nav-links a:hover,.nav-links a.on{color:#fff;background:rgba(255,255,255,.1)}
+@media(min-width:900px){.nav-links{display:flex}.hb{display:none!important}}
+.btn-login{display:inline-flex;align-items:center;gap:.45rem;min-height:42px;padding:0 1.1rem;border-radius:14px;border:0;cursor:pointer;font-weight:800;font-size:.88rem;color:var(--ink);background:linear-gradient(145deg,var(--a-light),var(--a));box-shadow:0 8px 20px -10px var(--a)}
+.btn-login:active{transform:scale(.97)}
+.hb{width:44px;height:44px;border-radius:14px;border:0;background:transparent;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.hb .x{display:none}.hb.open .m{display:none}.hb.open .x{display:inline-block}
+.mob-menu{display:none;position:absolute;top:calc(100% + .4rem);left:.6rem;right:.6rem;background:rgba(10,26,31,.96);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--glass-line);border-radius:22px;padding:.5rem;box-shadow:var(--sh2)}
+.mob-menu.open{display:block;animation:pop .18s ease-out}
+.mob-menu a{display:flex;align-items:center;gap:.75rem;min-height:50px;padding:0 .8rem;border-radius:14px;font-weight:600;color:#fff}
+.mob-menu a:hover{background:var(--glass)}
+.mob-menu .btn-login{width:100%;justify-content:center;margin-top:.4rem;min-height:50px}
+@keyframes pop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 
-/* ══ NAVBAR ══ */
-.navbar{position:fixed;top:4px;left:0;right:0;z-index:1000;
-  background:rgba(255,255,255,.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  border-bottom:2px solid rgba(200,146,42,.3);height:62px;display:flex;align-items:center;
-  transition:all .3s ease;box-shadow:0 2px 20px rgba(0,0,0,.1)}
-.navbar.scrolled{box-shadow:var(--sh)}
-.nav-inner{width:100%;max-width:1200px;margin:0 auto;padding:0 1.4rem;display:flex;align-items:center;gap:.5rem}
-.nav-brand{display:flex;align-items:center;gap:.65rem;flex-shrink:0;margin-right:auto}
-.nav-logo{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid var(--a);background:#f5f5f5}
-.nav-logo-ph{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--p2));border:2px solid var(--a);display:flex;align-items:center;justify-content:center;font-size:1rem;color:#fff}
-.nav-club{line-height:1.2}
-.nav-club-name{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.09em;color:#1a3a6b}
-.nav-club-sub{font-size:.62rem;color:#5f6f86;letter-spacing:.1em;text-transform:uppercase}
-.nav-links{display:none;list-style:none;gap:.1rem;align-items:center;margin:0;padding:0}
-.nav-links a{font-size:.84rem;font-weight:600;color:#4a5568;padding:.42rem .8rem;border-radius:8px;transition:all .25s;white-space:nowrap;text-decoration:none}
-.nav-links a:hover,.nav-links a.on{color:var(--p);background:rgba(26,58,107,.08)}
-.btn-login{background:var(--p);color:#fff;border:none;border-radius:var(--rad-s);padding:.46rem 1.15rem;font-family:'Inter',sans-serif;font-size:.84rem;font-weight:700;cursor:pointer;transition:all var(--tr);display:inline-flex;align-items:center;gap:.4rem;white-space:nowrap}
-.btn-login:hover{background:var(--p2);transform:translateY(-1px);box-shadow:0 6px 18px rgba(26,58,107,.3)}
-.hb{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4.5px;background:none;border:none;cursor:pointer;width:44px;height:44px;padding:0;border-radius:10px;flex-shrink:0}
-.hb span{width:22px;height:2px;background:var(--p);border-radius:2px;display:block;transition:all .25s}
-.hb.open span:nth-child(1){transform:rotate(45deg) translate(4.5px,4.5px)}
-.hb.open span:nth-child(2){opacity:0}
-.hb.open span:nth-child(3){transform:rotate(-45deg) translate(4.5px,-4.5px)}
-@media(min-width:860px){.nav-links{display:flex}.hb{display:none}}
+/* ═══ Hero ═══ */
+#hero{position:relative;min-height:min(100svh,820px);display:flex;align-items:flex-end;color:#fff;overflow:hidden;background:var(--ink)}
+.hslide{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity 1.1s ease,visibility 1.1s}
+.hslide.on{opacity:1;visibility:visible}
+.hslide-bg{position:absolute;inset:0;background-size:cover;background-position:center;transform:scale(1.04);transition:transform 7s ease}
+.hslide.on .hslide-bg{transform:scale(1)}
+.hero-shade{position:absolute;inset:0;z-index:2;background:radial-gradient(80% 60% at 0% 0%,color-mix(in srgb,var(--p) 55%,transparent),transparent 60%),radial-gradient(60% 50% at 100% 30%,color-mix(in srgb,var(--a) 35%,transparent),transparent 60%),linear-gradient(180deg,rgba(10,26,31,.35) 0%,rgba(10,26,31,.55) 45%,rgba(10,26,31,.96) 100%)}
+.hcontent{position:relative;z-index:3;width:100%;max-width:1160px;margin:0 auto;padding:110px 1.1rem 3.2rem}
+.hbadge{display:inline-flex;align-items:center;gap:.4rem;font-size:.76rem;font-weight:700;letter-spacing:.06em;color:#fff;background:var(--glass);border:1px solid var(--glass-line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:.35rem .85rem;border-radius:999px;margin-bottom:1rem}
+.hbadge i{width:8px;height:8px;border-radius:50%;background:var(--a);box-shadow:0 0 0 4px color-mix(in srgb,var(--a) 30%,transparent)}
+.htitle{font-weight:800;font-size:clamp(2.2rem,7vw,4.4rem);line-height:1.04;letter-spacing:-.035em;max-width:14ch;margin-bottom:.9rem}
+.hsub{font-size:clamp(1rem,2.4vw,1.2rem);color:rgba(255,255,255,.86);max-width:560px;margin-bottom:1.6rem}
+.hcta{display:flex;gap:.7rem;flex-wrap:wrap}
+.btn-hero-p,.btn-hero-s{display:inline-flex;align-items:center;gap:.5rem;min-height:52px;padding:0 1.4rem;border-radius:16px;font-weight:800;font-size:.95rem;cursor:pointer;border:0;transition:transform .12s}
+.btn-hero-p{color:var(--ink);background:linear-gradient(145deg,var(--a-light),var(--a));box-shadow:0 14px 30px -12px var(--a)}
+.btn-hero-s{color:#fff;background:var(--glass);border:1px solid var(--glass-line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.btn-hero-p:active,.btn-hero-s:active{transform:scale(.97)}
+.hdots{position:absolute;right:1.1rem;bottom:1.4rem;z-index:4;display:flex;gap:.4rem}
+.hdot{width:9px;height:9px;border-radius:9px;border:0;background:rgba(255,255,255,.45);cursor:pointer;transition:width .3s,background .3s;position:relative;padding:0}
+.hdot::after{content:'';position:absolute;inset:-14px -6px}
+.hdot.on{width:26px;background:#fff}
 
-/* Mobile menu */
-.mob-menu{display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border-bottom:1px solid var(--bd);padding:.8rem 1.4rem 1.1rem;box-shadow:var(--sh)}
-.mob-menu.open{display:block}
-.mob-menu a{display:block;font-size:.95rem;font-weight:500;color:var(--t2);padding:.8rem .4rem;border-bottom:1px solid rgba(0,0,0,.05);transition:color var(--tr)}
-.mob-menu a:hover{color:var(--p)}
-.mob-menu .btn-login{width:100%;justify-content:center;margin-top:.8rem}
+/* ═══ Stats ═══ */
+.stats-bar{position:relative;z-index:5;max-width:1160px;margin:-1.6rem auto 0;padding:0 1rem;display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem}
+.stat-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:.9rem .4rem;text-align:center;box-shadow:var(--sh)}
+.stat-num{display:block;font-weight:800;font-size:1.6rem;letter-spacing:-.03em;line-height:1.1;color:var(--p2)}
+.stat-lbl{font-size:.7rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em}
+@media(max-width:420px){.stat-num{font-size:1.3rem}.stat-lbl{font-size:.62rem}}
 
-/* ══ LOGIN MODAL ══ */
-.overlay{display:none;position:fixed;inset:0;z-index:10002;background:rgba(10,20,40,.6);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:1rem}
+/* ═══ Sections ═══ */
+.sec{padding:3.6rem 0}
+.sec.dark{background:radial-gradient(70% 60% at 0% 0%,color-mix(in srgb,var(--p) 35%,transparent),transparent 60%),radial-gradient(60% 60% at 100% 100%,color-mix(in srgb,var(--a) 22%,transparent),transparent 60%),var(--ink);color:#fff}
+.sec.white{background:#fff}
+.eyebrow{display:inline-block;font-size:.74rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--a-tx);margin-bottom:.5rem}
+.dark .eyebrow{color:#FFB4A8}
+.sec-title{font-weight:800;font-size:clamp(1.6rem,4vw,2.4rem);letter-spacing:-.03em;line-height:1.12;margin-bottom:.6rem}
+.sec-sub{font-size:1rem;color:var(--t2);max-width:620px}
+.dark .sec-sub{color:rgba(255,255,255,.8)}
+.sec-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:1.6rem}
+.link-more{display:inline-flex;align-items:center;gap:.3rem;font-weight:700;font-size:.9rem;color:var(--p2);min-height:44px}
+.dark .link-more{color:#5EEAD4}
+.cgrid{display:grid;gap:1rem}
+.g-2{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.g-3{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+.g-p{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--rad);box-shadow:var(--sh);overflow:hidden}
+.gcard{background:var(--glass);border:1px solid var(--glass-line);border-radius:var(--rad);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+/* about */
+.about{display:grid;gap:1.6rem;align-items:center}
+@media(min-width:860px){.about{grid-template-columns:1.1fr 1fr}}
+.about p{white-space:pre-line;color:var(--t2);font-size:1.02rem}
+.pillars{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+.pillar{padding:1rem;border-radius:18px;background:var(--surface);border:1px solid var(--line)}
+.pillar .tile{margin-bottom:.6rem}
+.pillar b{display:block;font-size:.95rem}
+.pillar span{font-size:.82rem;color:var(--t3)}
+/* app tiles */
+.tile{width:48px;height:48px;border-radius:16px;display:flex;align-items:center;justify-content:center;color:#fff;position:relative;background:linear-gradient(145deg,var(--t1),var(--t2c));box-shadow:0 8px 18px -8px var(--t2c),inset 0 1px 0 rgba(255,255,255,.35)}
+.tile .ic{width:24px;height:24px;position:relative;z-index:1}
+.tile::after{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(180deg,rgba(255,255,255,.28),transparent 55%)}
+.tone-teal{--t1:#14B8A6;--t2c:#0F766E}.tone-coral{--t1:#FB8A7B;--t2c:#E1503F}.tone-violet{--t1:#A78BFA;--t2c:#6D28D9}
+.tone-amber{--t1:#FBBF24;--t2c:#D97706}.tone-rose{--t1:#FB7185;--t2c:#BE123C}.tone-sky{--t1:#38BDF8;--t2c:#0369A1}.tone-lime{--t1:#84CC16;--t2c:#3F8F0E}
+/* activities */
+.act{padding:1.2rem;display:flex;flex-direction:column;gap:.55rem;height:100%}
+.act-em{width:52px;height:52px;border-radius:17px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;background:color-mix(in srgb,var(--c) 22%,transparent);border:1px solid color-mix(in srgb,var(--c) 45%,transparent)}
+.act b{font-size:1.05rem}
+.act p{font-size:.88rem;color:rgba(255,255,255,.8);flex:1}
+.act-links{display:flex;gap:.5rem;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:.35rem;min-height:40px;padding:0 .9rem;border-radius:12px;font-size:.82rem;font-weight:700}
+.chip-a{background:#fff;color:var(--ink)}.chip-g{border:1px solid var(--glass-line);color:#fff}
+/* events */
+.ev{display:flex;gap:1rem;padding:1rem;align-items:flex-start}
+.ev-date{width:62px;flex-shrink:0;text-align:center;border-radius:16px;padding:.5rem 0;background:var(--p-soft);color:var(--p2);font-weight:800;line-height:1}
+.ev-date b{display:block;font-size:1.6rem;letter-spacing:-.03em}
+.ev-date small{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em}
+.ev h3{font-size:1.02rem;font-weight:800;line-height:1.3}
+.ev p{font-size:.86rem;color:var(--t2);margin-top:.2rem}
+.ev .meta{display:flex;flex-wrap:wrap;gap:.6rem;font-size:.8rem;color:var(--t3);margin-top:.45rem}
+.ev .meta span{display:inline-flex;align-items:center;gap:.25rem}
+.soon{display:inline-block;font-size:.7rem;font-weight:800;padding:.12rem .5rem;border-radius:999px;background:#FDECE9;color:#9A2D1F;margin-left:.3rem}
+/* notices */
+.note{padding:1rem 1.1rem;display:flex;gap:.8rem}
+.note b{display:block;font-size:.98rem}
+.note p{font-size:.88rem;color:rgba(255,255,255,.82);white-space:pre-line;margin-top:.15rem}
+.note small{font-size:.76rem;color:rgba(255,255,255,.65)}
+.pill{display:inline-block;font-size:.68rem;font-weight:800;padding:.1rem .5rem;border-radius:999px;margin-left:.3rem;background:#FFE4DE;color:#8A2416;vertical-align:middle}
+/* people */
+.person{text-align:center;padding:1rem .6rem}
+.person img,.person .ph{width:78px;height:78px;border-radius:24px;object-fit:cover;margin:0 auto .6rem;background:var(--p-soft);color:var(--p2);display:flex;align-items:center;justify-content:center}
+.person b{display:block;font-size:.92rem;line-height:1.25}
+.person span{font-size:.78rem;color:var(--t3)}
+/* achievements */
+.ach-row{display:flex;gap:.8rem;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:.4rem;scrollbar-width:none}
+.ach-row::-webkit-scrollbar{display:none}
+.ach{flex:0 0 220px;scroll-snap-align:start;cursor:pointer;text-align:left;border:0;padding:0;color:inherit;font:inherit}
+.ach .img{height:150px;background:linear-gradient(145deg,#FBBF24,#D97706);display:flex;align-items:center;justify-content:center;font-size:2.6rem}
+.ach .img img{width:100%;height:100%;object-fit:cover}
+.ach .body{padding:.8rem .9rem}
+.ach b{display:block;font-size:.92rem;line-height:1.3}
+.ach span{font-size:.78rem;color:rgba(255,255,255,.72)}
+/* gallery */
+.gal{display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem}
+@media(min-width:640px){.gal{grid-template-columns:repeat(4,1fr)}}
+.gal-cell{aspect-ratio:1;border-radius:18px;overflow:hidden;position:relative;cursor:pointer;background:var(--surface);border:1px solid var(--line)}
+.gal-cell img{width:100%;height:100%;object-fit:cover;transition:transform .5s}
+.gal-cell:hover img{transform:scale(1.05)}
+.gal-cell-ph{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3rem;font-size:2rem;color:var(--t3)}
+.gal-cell-ph span{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+/* join CTA */
+.join{border-radius:28px;padding:2rem 1.4rem;color:#fff;text-align:center;position:relative;overflow:hidden;
+  background:radial-gradient(80% 100% at 0% 0%,color-mix(in srgb,var(--p) 70%,transparent),transparent 60%),radial-gradient(80% 100% at 100% 100%,color-mix(in srgb,var(--a) 50%,transparent),transparent 60%),var(--ink)}
+.join p{color:rgba(255,255,255,.85);max-width:520px;margin:0 auto 1.3rem}
+.join .hcta{justify-content:center}
+.empty{color:var(--t3);text-align:center;padding:1.4rem;font-size:.95rem}
+.dark .empty{color:rgba(255,255,255,.72)}
+
+/* ═══ Footer ═══ */
+#footer{background:var(--ink);color:rgba(255,255,255,.8);padding:2.6rem 0 1.2rem}
+.foot{display:grid;gap:1.6rem}
+@media(min-width:760px){.foot{grid-template-columns:1.4fr 1fr 1fr 1.2fr}}
+.foot h2{font-size:.76rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.65);margin-bottom:.6rem}
+.foot a.fl{display:flex;align-items:center;min-height:40px;font-size:.92rem;color:rgba(255,255,255,.88)}
+.foot a.fl:hover{color:#fff}
+.foot-brand{display:flex;align-items:center;gap:.7rem;margin-bottom:.7rem}
+.foot-brand img{width:46px;height:46px;border-radius:15px;object-fit:cover;background:#fff}
+.foot-brand b{display:block;color:#fff}
+.sicons{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.8rem}
+.sicon{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem}
+.foot-btm{border-top:1px solid rgba(255,255,255,.1);margin-top:1.8rem;padding-top:1rem;text-align:center;font-size:.8rem;color:rgba(255,255,255,.72)}
+.foot-btm b{color:#fff}
+
+/* ═══ Login modal (logic unchanged) ═══ */
+.overlay{display:none;position:fixed;inset:0;z-index:10002;background:rgba(5,14,17,.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);align-items:flex-end;justify-content:center}
 .overlay.show{display:flex}
-.modal{background:#fff;border-radius:20px;width:100%;max-width:430px;box-shadow:0 30px 80px rgba(0,0,0,.25);overflow:hidden;max-height:92vh;display:flex;flex-direction:column;animation:mpop .3s cubic-bezier(.34,1.56,.64,1) both}
-@keyframes mpop{from{opacity:0;transform:scale(.85) translateY(24px)}to{opacity:1;transform:scale(1) translateY(0)}}
-.modal-bar{height:4px;background:linear-gradient(90deg,var(--a),var(--p),var(--a2));flex-shrink:0}
-.modal-head{display:flex;align-items:center;justify-content:space-between;padding:1.2rem 1.4rem .75rem;flex-shrink:0}
-.modal-head h3{font-family:'Playfair Display',serif;font-size:1.35rem;color:var(--p);margin:0}
-.modal-x{background:rgba(0,0,0,.06);border:none;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:.9rem;color:var(--t2);display:flex;align-items:center;justify-content:center;transition:all var(--tr)}
-.modal-x:hover{background:rgba(183,28,28,.12);color:var(--r)}
-.modal-tabs{display:flex;padding:0 1.4rem;border-bottom:2px solid rgba(0,0,0,.06);flex-shrink:0}
-.mtab{flex:1;padding:.68rem .5rem;text-align:center;font-size:.84rem;font-weight:600;color:var(--t3);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-2px;transition:all var(--tr)}
-.mtab.on{color:var(--p);border-bottom-color:var(--p)}
-.modal-body{padding:1.35rem 1.4rem 1.5rem;overflow-y:auto}
+.modal{background:#fff;width:100%;max-width:440px;border-radius:26px 26px 0 0;box-shadow:var(--sh2);overflow:hidden;max-height:94vh;display:flex;flex-direction:column;animation:sheetUp .3s cubic-bezier(.2,.8,.2,1) both;padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(min-width:600px){.overlay{align-items:center;padding:1rem}.modal{border-radius:26px;animation:pop .2s ease-out both}}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+.modal-bar{height:5px;width:44px;border-radius:5px;background:#d5dedc;margin:.6rem auto 0;flex-shrink:0}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.3rem .6rem;flex-shrink:0}
+.modal-head h3{font-weight:800;font-size:1.25rem;letter-spacing:-.02em;color:var(--tx);margin:0}
+.modal-x{background:var(--surface);border:none;width:44px;height:44px;border-radius:14px;cursor:pointer;color:var(--t2);display:flex;align-items:center;justify-content:center}
+.modal-tabs{display:flex;gap:.3rem;margin:0 1.3rem;padding:.3rem;background:var(--surface);border-radius:16px;flex-shrink:0}
+.mtab{flex:1;min-height:44px;border:0;border-radius:12px;background:none;font-weight:700;font-size:.88rem;color:var(--t3);cursor:pointer}
+.mtab.on{background:#fff;color:var(--tx);box-shadow:var(--sh)}
+.modal-body{padding:1.2rem 1.3rem 1.4rem;overflow-y:auto}
 .mpanel{display:none}.mpanel.on{display:block}
-/* Form elements */
-.flbl{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--t2);display:block;margin-bottom:.35rem}
-.finp{width:100%;background:#f7f9fc;border:1.5px solid rgba(0,0,0,.1);border-radius:10px;padding:.72rem .95rem;font-family:'Inter',sans-serif;font-size:1rem;color:var(--tx);outline:none;transition:all var(--tr);margin-bottom:.9rem}
-.finp:focus{border-color:var(--p);background:#fff;box-shadow:0 0 0 3px rgba(26,58,107,.09)}
-.finp::placeholder{color:#6E7A93}
+.flbl{font-size:.8rem;font-weight:700;color:var(--t2);display:block;margin-bottom:.4rem}
+.finp{width:100%;min-height:50px;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:.7rem 1rem;font-size:1rem;color:var(--tx);outline:none;margin-bottom:.9rem;transition:border-color .15s,box-shadow .15s}
+.finp:focus{border-color:var(--p);box-shadow:0 0 0 4px var(--p-soft)}
+.finp::placeholder{color:#6E7F7D}
 .frow{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
-/* OTP */
 .otp-wrap{display:flex;gap:.4rem;justify-content:center;margin:.6rem 0 1.1rem}
-.otp-cell{width:44px;height:52px;border:1.5px solid rgba(0,0,0,.12);border-radius:10px;text-align:center;font-size:1.25rem;font-weight:700;color:var(--p);font-family:'Inter',sans-serif;outline:none;background:#f7f9fc;transition:all var(--tr)}
-.otp-cell:focus{border-color:var(--p);background:#fff;box-shadow:0 0 0 3px rgba(26,58,107,.09)}
-/* Buttons */
-.fbtn{width:100%;padding:.82rem;border:none;border-radius:10px;font-family:'Inter',sans-serif;font-weight:700;font-size:.92rem;cursor:pointer;transition:all var(--tr);display:flex;align-items:center;justify-content:center;gap:.5rem}
-.fbtn-p{background:var(--p);color:#fff}.fbtn-p:hover:not(:disabled){background:var(--p2);transform:translateY(-1px);box-shadow:0 8px 24px rgba(26,58,107,.3)}
-.fbtn-g{background:linear-gradient(135deg,#2e7d32,#1b5e20);color:#fff}.fbtn-g:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 24px rgba(27,94,32,.3)}
+.otp-cell{width:46px;height:54px;border:1.5px solid var(--line);border-radius:14px;text-align:center;font-size:1.3rem;font-weight:800;color:var(--tx);outline:none}
+.otp-cell:focus{border-color:var(--p);box-shadow:0 0 0 4px var(--p-soft)}
+.fbtn{width:100%;min-height:52px;padding:.8rem;border:none;border-radius:16px;font-weight:800;font-size:.98rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.5rem;transition:transform .12s}
+.fbtn:active:not(:disabled){transform:scale(.98)}
+.fbtn-p{background:var(--ink);color:#fff}
+.fbtn-g{background:var(--p);color:#fff}
 .fbtn:disabled{opacity:.55;cursor:not-allowed}
-.fmsg{border-radius:9px;padding:.7rem 1rem;font-size:.83rem;font-weight:500;margin-bottom:.9rem;display:none;line-height:1.45}
-.fmsg.ok{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;display:block}
-.fmsg.err{background:#fff0f0;border:1px solid #fecaca;color:#991b1b;display:block}
-.fhint{font-size:.75rem;color:var(--t3);text-align:center;margin-top:.75rem;line-height:1.5}
-.fhint a{color:var(--p);font-weight:600}
-.fback{background:none;border:none;color:var(--t3);font-size:.8rem;cursor:pointer;padding:.2rem 0;font-family:'Inter',sans-serif;text-decoration:underline;transition:color var(--tr)}
-.fback:hover{color:var(--p)}
-.success-panel{text-align:center;padding:.5rem 0 .8rem}
-.success-em{font-size:3.5rem;margin-bottom:.8rem}
-
-/* ══ HERO SLIDER ══ */
-/* ══ PAGE ANIMATIONS ══ */
-@keyframes fadeInUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fadeInLeft{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:translateX(0)}}
-@keyframes fadeInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
-@keyframes scaleIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
-@keyframes slideDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
-@keyframes countUp{from{opacity:0}to{opacity:1}}
-@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
-@keyframes floatUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-
-.anim-fade-up{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease}
-.anim-fade-left{opacity:0;transform:translateX(-30px);transition:opacity .7s ease,transform .7s ease}
-.anim-fade-right{opacity:0;transform:translateX(30px);transition:opacity .7s ease,transform .7s ease}
-.anim-scale{opacity:0;transform:scale(.92);transition:opacity .6s ease,transform .6s ease}
-.anim-visible{opacity:1!important;transform:none!important}
-
-/* Hero content animations */
-.hbadge{display:inline-block;background:rgba(200,146,42,.2);border:1px solid rgba(200,146,42,.5);color:#f5d060 !important;border-radius:30px;padding:.3rem 1rem;font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-bottom:1.2rem}
-.htitle{font-family:'Playfair Display',Georgia,serif;font-size:clamp(2.2rem,5.5vw,4rem);font-weight:700;line-height:1.14;margin-bottom:.9rem;text-shadow:0 2px 12px rgba(0,0,0,.3);color:#fff}
-.hsub{font-size:clamp(.95rem,2.3vw,1.15rem);color:rgba(255,255,255,.75);line-height:1.65;max-width:560px;margin:0 auto 2rem}
-.hcta{display:flex;gap:.85rem;flex-wrap:wrap;justify-content:center}
-
-/* Stats bar */
-.stat-num{animation:fadeInUp .6s both}
-
-/* Section titles */
-.sec-label{animation:slideDown .5s both}
-.sec-title{}
-
-/* Cards hover lift */
-.ev-card,.gal-cell,.stat{transition:transform .25s,box-shadow .25s}
-.ev-card:hover{transform:translateY(-6px)!important;box-shadow:0 16px 40px rgba(0,0,0,.18)!important}
-
-/* Floating logo */
-.hero-logo-wrap img{animation:floatUp 3s ease-in-out infinite}
-
-#hero{position:relative;height:100vh;min-height:600px;overflow:hidden}
-.hslide{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity 1.1s ease,visibility 1.1s;display:flex;align-items:center;justify-content:center}
-.hslide.on{opacity:1;visibility:visible;z-index:2}
-.hslide-bg{position:absolute;inset:0;background-size:cover;background-position:center}
-.hslide-ov{position:absolute;inset:0;background:linear-gradient(160deg,rgba(5,15,40,.78) 0%,rgba(5,15,40,.42) 60%,rgba(5,15,40,.6) 100%)}
-.hcontent{position:relative;z-index:3;text-align:center;color:#fff;padding:80px 1.5rem 2rem;max-width:800px;width:100%}
-.hbadge{display:inline-block;background:rgba(200,146,42,.2);border:1px solid rgba(200,146,42,.5);color:var(--a2);border-radius:30px;padding:.3rem 1rem;font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-bottom:1.2rem}
-.htitle{font-family:'Playfair Display',Georgia,serif;font-size:clamp(2.2rem,5.5vw,4rem);font-weight:700;line-height:1.14;margin-bottom:.9rem;text-shadow:0 2px 12px rgba(0,0,0,.3)}
-.hsub{font-size:clamp(.95rem,2.3vw,1.15rem);color:rgba(255,255,255,.75);line-height:1.65;max-width:560px;margin:0 auto 2rem}
-.hcta{display:flex;gap:.85rem;flex-wrap:wrap;justify-content:center}
-.btn-hero-p{background:var(--a);color:#1a1a2e;border:none;border-radius:10px;padding:.82rem 2rem;font-family:'Inter',sans-serif;font-weight:700;font-size:.92rem;cursor:pointer;transition:all var(--tr)}
-.btn-hero-p:hover{background:var(--a2);color:var(--tx);transform:translateY(-2px);box-shadow:0 8px 24px rgba(200,146,42,.4)}
-.btn-hero-s{background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.35);color:#fff;border-radius:10px;padding:.8rem 2rem;font-family:'Inter',sans-serif;font-weight:600;font-size:.92rem;cursor:pointer;transition:all var(--tr)}
-.btn-hero-s:hover{background:rgba(255,255,255,.22);transform:translateY(-2px)}
-/* Dots */
-.hdots{position:absolute;bottom:1.8rem;left:50%;transform:translateX(-50%);display:flex;gap:.5rem;z-index:10}
-.hdot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.38);border:none;cursor:pointer;transition:all .4s;padding:0}
-.hdot.on{background:var(--a2);width:24px;border-radius:4px}
-/* Arrows */
-.harr{position:absolute;top:50%;transform:translateY(-50%);z-index:10;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.25);color:#fff;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--tr);font-size:1rem;backdrop-filter:blur(4px)}
-.harr:hover{background:rgba(255,255,255,.25)}
-.harr-l{left:1.2rem}.harr-r{right:1.2rem}
-
-/* ══ STATS BAR ══ */
-.stats-bar{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;
-  padding:.85rem 1rem 1.1rem;
-  background:linear-gradient(135deg,#0d1b3e,#1a3a6b);
-  position:relative;z-index:1;
-}
-.stat-card{
-  background:rgba(255,255,255,.07);
-  border:1px solid rgba(255,255,255,.12);
-  border-radius:14px;
-  padding:.7rem .4rem;
-  text-align:center;
-  backdrop-filter:blur(6px);
-  transition:transform .2s;
-}
-.stat-card:active{transform:scale(.95)}
-.stat-num{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:1.8rem;line-height:1;
-  color:#f5d060;
-  display:block;
-}
-.stat-icon{font-size:1.1rem;display:block;margin-bottom:.15rem}
-.stat-lbl{
-  font-size:.66rem;color:rgba(255,255,255,.8);
-  text-transform:uppercase;letter-spacing:.09em;
-  font-weight:700;margin-top:.18rem;display:block;
-}
-.stat-sep{display:none}
-
-/* ══ SECTIONS ══ */
-.sec{padding:5rem 0}
-.sec-bg{background:#fafbff}
-.sec-label{display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--a-tx);background:rgba(200,146,42,.1);border:1px solid rgba(200,146,42,.25);padding:.28rem .9rem;border-radius:30px;margin-bottom:.85rem}
-.sec-title{font-family:'Playfair Display',serif;font-size:clamp(1.85rem,3.5vw,2.7rem);font-weight:700;color:var(--p);line-height:1.2;margin-bottom:.5rem}
-.sec-rule{width:48px;height:3px;background:linear-gradient(90deg,var(--a),var(--a2));border-radius:2px;margin:.75rem 0}
-.sec-sub{font-size:.95rem;color:var(--t2);line-height:1.7;max-width:500px}
-/* Reveal */
-/* Scroll reveal - visible by default, animate when .in added */
-.rv{opacity:1;transform:none;transition:opacity .65s ease,transform .65s ease}
-.rl{opacity:1;transform:none;transition:opacity .65s ease,transform .65s ease}
-.rr{opacity:1;transform:none;transition:opacity .65s ease,transform .65s ease}
-/* scroll reveal disabled - always visible */
-.rv.in,.rl.in,.rr.in{opacity:1!important;transform:none!important}
-
-/* ══ EVENTS ══ */
-.ev-track-wrap{overflow:hidden;position:relative}
-.ev-track{display:flex;gap:20px;transition:transform .55s cubic-bezier(.4,0,.2,1)}
-.ev-card{flex-shrink:0;width:290px;background:#fff;border-radius:var(--rad);box-shadow:var(--sh);border:1px solid var(--bd);overflow:hidden;transition:all var(--tr)}
-.ev-card:hover{transform:translateY(-6px);box-shadow:var(--sh2);border-color:rgba(26,58,107,.1)}
-.ev-thumb{height:175px;overflow:hidden;position:relative;background:#f0f4f8}
-.ev-thumb img{width:100%;height:100%;object-fit:cover;transition:transform .5s ease}
-.ev-card:hover .ev-thumb img{transform:scale(1.07)}
-.ev-ph{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem}
-.ev-badge{position:absolute;top:.7rem;left:.7rem;font-size:.63rem;font-weight:700;padding:.2rem .6rem;border-radius:20px;text-transform:uppercase;letter-spacing:.06em;color:#fff}
-.ev-body{padding:1.15rem 1.2rem 1.3rem}
-.ev-date{font-size:.72rem;font-weight:700;color:var(--a-tx);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.42rem;display:flex;align-items:center;gap:.3rem}
-.ev-title{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--tx);margin-bottom:.4rem;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.ev-desc{font-size:.81rem;color:var(--t2);line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:.85rem}
-.ev-more{display:inline-flex;align-items:center;gap:.4rem;font-size:.81rem;font-weight:600;color:var(--p);padding:.4rem .85rem;border:1.5px solid rgba(26,58,107,.2);border-radius:var(--rad-s);transition:all var(--tr)}
-.ev-more:hover{background:var(--p);color:#fff;border-color:var(--p)}
-/* Slider controls */
-.sl-ctrl{display:flex;align-items:center;justify-content:center;gap:.75rem;margin-top:1.8rem}
-.sl-btn{width:44px;height:44px;border-radius:50%;background:#fff;border:1.5px solid var(--bd);color:var(--t2);cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:all var(--tr);box-shadow:0 2px 8px rgba(0,0,0,.06)}
-.sl-btn:hover{background:var(--p);color:#fff;border-color:var(--p)}
-.sl-dots{display:flex;gap:.42rem;align-items:center}
-.sl-dot{width:7px;height:7px;border-radius:50%;background:rgba(0,0,0,.15);cursor:pointer;border:none;transition:all .3s;padding:0}
-.sl-dot.on{background:var(--p);width:20px;border-radius:4px}
-
-/* ══ GALLERY ══ */
-.gal-wrap{overflow:hidden;position:relative;border-radius:var(--rad)}
-.gal-wrap::before,.gal-wrap::after{content:'';position:absolute;top:0;bottom:0;width:60px;z-index:3;pointer-events:none}
-.gal-wrap::before{left:0;background:linear-gradient(to right,#fff 30%,transparent)}
-.gal-wrap::after{right:0;background:linear-gradient(to left,#fff 30%,transparent)}
-.gal-track{display:flex;gap:12px;animation:galscroll 30s linear infinite;width:max-content}
-.gal-track:hover{animation-play-state:paused}
-@keyframes galscroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-.gal-cell{width:185px;height:185px;border-radius:var(--rad);overflow:hidden;flex-shrink:0;position:relative;cursor:pointer;border:1px solid var(--bd);background:#f0f4f8}
-.gal-cell img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
-.gal-cell:hover img{transform:scale(1.08)}
-.gal-cell-ph{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;background:linear-gradient(135deg,#f0f4f8,#e8edf5)}
-.gal-cell-ov{position:absolute;inset:0;background:rgba(26,58,107,.6);opacity:0;transition:opacity .3s;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4rem}
-.gal-cell:hover .gal-cell-ov{opacity:1}
-@media(max-width:576px){.gal-cell{width:155px;height:155px}}
-
-/* ══ MODULE SECTIONS ══ */
-.mod-sec{padding:5rem 0;position:relative;overflow:hidden}
-.mod-bg{position:absolute;inset:0;background-size:cover;background-position:center;filter:brightness(.22)}
-.mod-inner{position:relative;z-index:2;max-width:1180px;margin:0 auto;padding:0 1.5rem}
-.mod-label{display:inline-block;font-size:.67rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--a2);background:rgba(200,146,42,.12);border:1px solid rgba(200,146,42,.28);padding:.28rem .9rem;border-radius:30px;margin-bottom:.85rem}
-.mod-title{font-family:'Playfair Display',serif;font-size:clamp(1.9rem,4vw,2.8rem);font-weight:700;color:#fff;line-height:1.2;margin-bottom:.5rem}
-.mod-rule{width:50px;height:3px;background:linear-gradient(90deg,var(--a),var(--a2));border-radius:2px;margin:.75rem 0 1.2rem}
-.mod-sub{font-size:.95rem;color:rgba(255,255,255,.65);line-height:1.65;max-width:500px;margin-bottom:1.8rem}
-.mod-btn{display:inline-flex;align-items:center;gap:.5rem;padding:.78rem 1.8rem;border-radius:10px;font-family:'Inter',sans-serif;font-weight:700;font-size:.9rem;transition:all var(--tr);border:none;cursor:pointer;text-decoration:none}
-.mod-btn:hover{transform:translateY(-3px)}
-/* Dark cards */
-.dk-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:var(--rad);padding:1rem;transition:all var(--tr);backdrop-filter:blur(4px)}
-.dk-card:hover{background:rgba(255,255,255,.13);border-color:rgba(200,146,42,.35);transform:translateY(-4px)}
-/* Football table */
-.ft-tbl{width:100%;border-collapse:collapse;font-size:.84rem}
-.ft-tbl thead th{background:rgba(0,0,0,.35);color:#a5d6a7;padding:.62rem .8rem;text-align:left;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em}
-.ft-tbl tbody td{padding:.6rem .8rem;color:rgba(255,255,255,.82);border-bottom:1px solid rgba(255,255,255,.06)}
-.ft-tbl tbody tr:first-child td{color:#ffd700;font-weight:700}
-/* Progress */
-.prog-bar{background:rgba(255,255,255,.15);border-radius:8px;height:8px;overflow:hidden;margin:.4rem 0}
-.prog-fill{height:100%;border-radius:8px;background:linear-gradient(90deg,var(--a),var(--a2));transition:width 1.5s ease}
-/* Program chips */
-.prog-chip{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.13);border-radius:10px;padding:.6rem .85rem;font-size:.82rem;font-weight:600;color:#fff;transition:all .22s;display:flex;align-items:center;gap:.5rem}
-.prog-chip:hover{background:rgba(200,146,42,.2);border-color:rgba(200,146,42,.4)}
-
-/* ══ FOOTER ══ */
-#footer{background:var(--p);color:rgba(255,255,255,.65)}
-.foot-inner{max-width:1200px;margin:0 auto;padding:3rem 1.5rem 1.5rem}
-.foot-logo{display:flex;align-items:center;gap:.65rem;margin-bottom:1rem}
-.foot-logo img{width:44px;height:44px;border-radius:50%;border:2px solid rgba(200,146,42,.4);object-fit:cover}
-.foot-logo-ph{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid rgba(200,146,42,.35);display:flex;align-items:center;justify-content:center;font-size:1.05rem}
-.foot-name{font-family:'Playfair Display',serif;font-size:.95rem;color:#fff;font-weight:700}
-.foot-tag{font-size:.72rem;color:rgba(255,255,255,.72);letter-spacing:.07em}
-.foot-col h5{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:rgba(255,255,255,.72);margin-bottom:.75rem}
-.foot-col a{display:block;font-size:.88rem;color:rgba(255,255,255,.82);padding:.45rem 0;transition:all .2s}
-.foot-col a:hover{color:var(--a2);padding-left:.22rem}
-.foot-col p{font-size:.88rem;color:rgba(255,255,255,.82);margin:.1rem 0}
-.sicon{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.65);display:flex;align-items:center;justify-content:center;font-size:.88rem;transition:all .22s}
-.sicon:hover{background:var(--a);border-color:var(--a);color:#fff;transform:translateY(-2px)}
-.foot-btm{border-top:1px solid rgba(255,255,255,.07);padding:1.2rem 1.5rem;text-align:center;font-size:.76rem;color:rgba(255,255,255,.72);max-width:1200px;margin:0 auto}
-
-/* WA float */
-.wa-float{position:fixed;bottom:1.5rem;right:1.5rem;width:50px;height:50px;border-radius:50%;background:#25d366;color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.35rem;z-index:900;box-shadow:0 6px 22px rgba(37,211,102,.42);transition:all .22s;border:none;cursor:pointer;text-decoration:none}
-.wa-float:hover{background:#1ebe5d;transform:scale(1.1);color:#fff}
-@media(max-width:576px){.sec{padding:3.8rem 0}.mod-sec{padding:3.8rem 0}}
-
-/* ══ GALLERY LIGHTBOX ══ */
-.lb-ov{display:none;position:fixed;inset:0;z-index:10002;background:rgba(0,0,0,.96);align-items:center;justify-content:center;flex-direction:column;padding:0}
-.lb-ov.on{display:flex}
-.lb-img-wrap{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:60px 0 80px}
-.lb-img-wrap img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;box-shadow:0 24px 80px rgba(0,0,0,.8);transition:opacity .2s}
-.lb-close{position:fixed;top:1rem;right:1rem;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.2);color:#fff;font-size:1.15rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;z-index:9001}
-.lb-close:hover{background:rgba(255,255,255,.25)}
-.lb-caption{position:fixed;bottom:1.2rem;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.7);font-size:.84rem;font-weight:500;text-align:center;letter-spacing:.04em;max-width:90vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:9001}
-
-/* ── PASSKEY KEYPAD ── */
-.num-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;max-width:280px;margin:0 auto}
-.num-keypad button{background:#f4f6fb;border:1.5px solid #e0e7ff;border-radius:12px;min-height:54px;padding:.7rem .4rem;font-size:1.25rem;font-weight:700;color:#0d1b3e;cursor:pointer;justify-content:center;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:0;line-height:1;font-family:'Inter',sans-serif}
-.num-keypad button:active{background:#0d47a1;color:#fff;border-color:#0d47a1;transform:scale(.94)}
-.num-keypad button span{font-size:.55rem;font-weight:600;letter-spacing:.08em;color:#5f6f86;margin-top:.12rem;display:block}
-.num-keypad button:active span{color:rgba(255,255,255,.65)}
-.num-keypad .pk-del{background:#fff0f0;border-color:#fecaca;color:#b71c1c}
-.num-keypad .pk-del:active{background:#b71c1c;color:#fff;border-color:#b71c1c}
-.num-keypad .pk-ok{background:linear-gradient(135deg,#0d47a1,#1565c0);color:#fff;border-color:#0d47a1}
-.pk-dot{width:14px;height:14px;border-radius:50%;background:#e0e7ff;border:2px solid #c7d2fe;transition:all .2s}
-.pk-dot.filled{background:#0d47a1;border-color:#0d47a1;transform:scale(1.18)}
-.pk-dot.err{background:#ef5350;border-color:#ef5350}
+.fmsg{border-radius:12px;padding:.75rem 1rem;font-size:.88rem;font-weight:500;margin-bottom:.9rem;display:none;line-height:1.45}
+.fmsg.ok{background:#ECFDF3;border:1px solid #BBF7D0;color:#166534;display:block}
+.fmsg.err{background:#FEF2F2;border:1px solid #FECACA;color:#991B1B;display:block}
+.fhint{font-size:.8rem;color:var(--t3);text-align:center;margin-top:.8rem;line-height:1.5}
+.fback{background:none;border:none;color:var(--t2);font-size:.86rem;font-weight:600;cursor:pointer;min-height:40px;margin-bottom:.4rem}
+.success-panel{text-align:center;padding:.5rem 0 .8rem}.success-em{font-size:3rem;margin-bottom:.6rem}
+.num-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:.55rem;max-width:300px;margin:0 auto}
+.num-keypad button{background:var(--surface);border:1px solid var(--line);border-radius:18px;min-height:58px;font-size:1.35rem;font-weight:700;color:var(--tx);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;transition:transform .08s,background .1s}
+.num-keypad button:active{background:var(--ink);color:#fff;transform:scale(.95)}
+.num-keypad button span{font-size:.55rem;font-weight:700;letter-spacing:.1em;color:var(--t3);margin-top:.15rem}
+.num-keypad .pk-del{background:#FDECE9;color:#9A2D1F;border-color:#F8D3CC}
+.num-keypad .pk-ok{background:var(--p);color:#fff;border-color:var(--p)}
+.pk-dot{width:14px;height:14px;border-radius:50%;background:var(--line);transition:all .15s}
+.pk-dot.filled{background:var(--ink);transform:scale(1.15)}
+.pk-dot.err{background:#E1503F}
 @keyframes pkShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 
-.lb-login-hint{position:fixed;bottom:3.5rem;left:50%;transform:translateX(-50%);z-index:9001}
-.lb-login-hint button{background:var(--p);color:#fff;border:none;border-radius:8px;padding:.55rem 1.3rem;font-family:'Inter',sans-serif;font-size:.84rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:.45rem;transition:all .2s}
-.lb-login-hint button:hover{background:var(--p2);transform:translateY(-2px)}
-/* Touch/swipe indicator on mobile */
-.lb-swipe-hint{position:fixed;top:1rem;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.72);font-size:.72rem;letter-spacing:.06em;z-index:9001;pointer-events:none}
+/* ═══ Lightbox ═══ */
+.lb-ov{display:none;position:fixed;inset:0;z-index:10002;background:rgba(5,10,12,.96);align-items:center;justify-content:center;flex-direction:column}
+.lb-ov.on{display:flex}
+.lb-img-wrap{width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:64px 12px 110px}
+.lb-img-wrap img{max-width:100%;max-height:100%;object-fit:contain;border-radius:14px}
+.lb-close{position:fixed;top:calc(env(safe-area-inset-top,0px) + 1rem);right:1rem;width:46px;height:46px;border-radius:15px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.lb-caption{position:fixed;bottom:1.2rem;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.8);font-size:.88rem;max-width:90vw;text-align:center}
+.lb-login-hint{position:fixed;bottom:3.4rem;left:50%;transform:translateX(-50%)}
+.lb-login-hint button{background:#fff;color:var(--ink);border:none;border-radius:14px;min-height:46px;padding:0 1.2rem;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:.45rem}
+.lb-swipe-hint{position:fixed;top:calc(env(safe-area-inset-top,0px) + 1.4rem);left:50%;transform:translateX(-50%);color:rgba(255,255,255,.72);font-size:.75rem}
 @media(min-width:600px){.lb-swipe-hint{display:none}}
-/* ══ UX / ACCESSIBILITY LAYER ══ */
-.skip-link{position:absolute;left:.75rem;top:-100px;z-index:20000;background:#fff;color:var(--p);font-weight:700;padding:.7rem 1rem;border-radius:10px;box-shadow:var(--sh2)}
-.skip-link:focus{top:.75rem}
-.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-:focus{outline:none}
-:focus-visible{outline:3px solid var(--p2);outline-offset:2px;border-radius:6px}
-#hero :focus-visible,#footer :focus-visible,.lb-ov :focus-visible,.mod-sec :focus-visible{outline-color:#ffc107}
-.finp:focus-visible,.otp-cell:focus-visible{outline:none}
-.mtab{background:none;border:0;border-bottom:2.5px solid transparent;font-family:inherit;min-height:44px}
-.mtab.on{border-bottom-color:var(--p)}
-.btn-login{min-height:40px}
-/* Bigger tap area for slider dots without changing their look */
-.hdot{position:relative}.hdot::after{content:'';position:absolute;inset:-14px -6px}
-.sl-dot{position:relative}.sl-dot::after{content:'';position:absolute;inset:-14px -6px}
-.gal-wrap:focus-within .gal-track{animation-play-state:paused}
-/* Footer grid (the markup uses Bootstrap class names, but Bootstrap is not loaded) */
-#footer .row{display:grid;grid-template-columns:1fr 1fr;gap:1.6rem 1.2rem}
-#footer .row>.col-sm-12{grid-column:1/-1}
-@media(min-width:768px){#footer .row{grid-template-columns:4fr 2fr 2fr 3fr;gap:2rem}#footer .row>.col-sm-12{grid-column:auto}}
-/* Install-the-app sheet (had no styles, so it always showed at the page bottom) */
-#iosSheet{display:none;position:fixed;inset:0;z-index:10003;background:rgba(10,20,40,.55);align-items:flex-end;justify-content:center}
+
+/* ═══ Install sheet ═══ */
+#iosSheet{display:none;position:fixed;inset:0;z-index:10003;background:rgba(5,14,17,.55);align-items:flex-end;justify-content:center}
 #iosSheet.open{display:flex}
 #iosSheet>div{animation:sheetUp .28s ease both;max-height:92vh;overflow-y:auto}
-@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
-/* Respect the phone's "reduce motion" setting */
+
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
-  .gal-track{animation:none!important}
-  .gal-wrap{overflow-x:auto}
 }
 </style>
 <script>
@@ -661,42 +583,40 @@ function heroGo(i){
 </script>
 </head>
 <body>
+<?= icon_sprite() ?>
 <a href="#main" class="skip-link">Skip to content</a>
-
-<!-- ══════════════════ NAVBAR ══════════════════ -->
 <?php include 'av-splash.php'; ?>
 
-<nav class="navbar" id="mainNav" style="top:4px" aria-label="Main">
+<!-- ══════════════════ TOP BAR ══════════════════ -->
+<nav class="navbar" id="mainNav" aria-label="Main">
 <div class="nav-inner">
-  <a href="#hero" class="nav-brand" aria-label="<?= h(setting('CLUB_NAME','Aishwarya Arts & Sports Club')) ?> — home">
-    <?php if($logo): ?><img src="<?= $logo ?>" class="nav-logo" alt="" width="40" height="40"><?php else: ?><div class="nav-logo-ph" aria-hidden="true">⚜</div><?php endif; ?>
-    <div class="nav-club">
-      <div class="nav-club-name"><?= h(setting('CLUB_NAME','Aishwarya A&S Club')) ?></div>
-      <div class="nav-club-sub"><?= h(setting('CLUB_PLACE','Vettikkattiri')) ?> · Kerala</div>
-    </div>
+  <a href="#hero" class="nav-brand" aria-label="<?= h($clubName) ?> — home">
+    <?php if($logo): ?><img src="<?= $logo ?>" class="nav-logo" alt="" width="40" height="40"><?php endif; ?>
+    <span style="min-width:0"><span class="nav-club-name"><?= h($clubName) ?></span><br><span class="nav-club-sub"><?= h($clubPlace) ?> · Kerala</span></span>
   </a>
   <ul class="nav-links" id="navLinks">
     <li><a href="#hero" class="on" id="nl-home" aria-current="true">Home</a></li>
-    <li><a href="#events" id="nl-events">Events</a></li>
-    <li><a href="#gallery" id="nl-gallery">Gallery</a></li>
-    <li><a href="<?= url('modules/market.php') ?>"><span aria-hidden="true">🛍️</span> Market</a></li>
+    <?php if($hon('home_events_show')): ?><li><a href="#events">Events</a></li><?php endif; ?>
+    <?php if($hon('home_gallery_show')): ?><li><a href="#gallery">Gallery</a></li><?php endif; ?>
+    <li><a href="<?= url('modules/market.php') ?>">Market</a></li>
     <li><a href="<?= url('contact.php') ?>">Contact</a></li>
   </ul>
-  <div style="display:flex;align-items:center;gap:.5rem">
-    <button type="button" class="btn-login" id="openLogin"><i class="fas fa-sign-in-alt" aria-hidden="true"></i> Login</button>
-    <button type="button" class="hb" id="hb" onclick="toggleMob()" aria-label="Open menu" aria-expanded="false" aria-controls="mobMenu"><span></span><span></span><span></span></button>
-  </div>
+  <?php if($_pLoggedIn): ?>
+    <a class="btn-login" href="<?= url('dashboard.php') ?>"><?= ic('home','ic-sm') ?> Dashboard</a>
+  <?php else: ?>
+    <button type="button" class="btn-login" id="openLogin"><?= ic('login','ic-sm') ?> Login</button>
+  <?php endif; ?>
+  <button type="button" class="hb" id="hb" onclick="toggleMob()" aria-label="Open menu" aria-expanded="false" aria-controls="mobMenu"><span class="m"><?= ic('menu') ?></span><span class="x"><?= ic('x') ?></span></button>
 </div>
 <div class="mob-menu" id="mobMenu">
-  <a href="#hero"    onclick="closeMob()"><span aria-hidden="true">🏠</span> Home</a>
-  <a href="#events"  onclick="closeMob()"><span aria-hidden="true">📅</span> Events</a>
-  <a href="#gallery" onclick="closeMob()"><span aria-hidden="true">🖼️</span> Gallery</a>
-  <a href="<?= url('modules/market.php') ?>" onclick="closeMob()"><span aria-hidden="true">🛍️</span> Mini Market</a>
-  <a href="<?= url('contact.php') ?>" onclick="closeMob()"><span aria-hidden="true">📞</span> Contact</a>
-  <button type="button" class="btn-login" onclick="closeMob();openModal('login')"><i class="fas fa-sign-in-alt" aria-hidden="true"></i> Member Login</button>
+  <a href="#hero" onclick="closeMob()"><?= ic('home') ?> Home</a>
+  <?php if($hon('home_events_show')): ?><a href="#events" onclick="closeMob()"><?= ic('calendar') ?> Events</a><?php endif; ?>
+  <?php if($hon('home_gallery_show')): ?><a href="#gallery" onclick="closeMob()"><?= ic('image') ?> Gallery</a><?php endif; ?>
+  <a href="<?= url('modules/market.php') ?>" onclick="closeMob()"><?= ic('store') ?> Mini Market</a>
+  <a href="<?= url('contact.php') ?>" onclick="closeMob()"><?= ic('phone') ?> Contact</a>
+  <?php if(!$_pLoggedIn): ?><button type="button" class="btn-login" onclick="closeMob();openModal('login')"><?= ic('login','ic-sm') ?> Member login</button><?php endif; ?>
 </div>
 </nav>
-
 
 <!-- ══════════════════ LOGIN MODAL ══════════════════ -->
 <div class="overlay" id="loginOverlay" onclick="if(event.target===this)closeModal()">
@@ -859,530 +779,262 @@ function heroGo(i){
 </div>
 
 
-<!-- ══════════════════ HERO SLIDER ══════════════════ -->
+<!-- ══════════════════ HERO ══════════════════ -->
 <main id="main" tabindex="-1" style="outline:none">
-<section id="hero" style="height:100vh!important;min-height:600px;position:relative;overflow:hidden" aria-roledescription="carousel" aria-label="Highlights">
+<section id="hero" aria-roledescription="carousel" aria-label="Highlights">
   <?php foreach($heroSlides as $i=>$sl): ?>
   <div class="hslide <?= $i===0?'on':'' ?>" data-idx="<?= $i ?>" role="group" aria-roledescription="slide" aria-label="<?= ($i+1).' of '.count($heroSlides) ?>"<?= $i===0?'':' aria-hidden="true"' ?>>
-    <div class="hslide-bg" style="<?php
-      if (!empty($sl['img'])):
-        echo "background-image:url('".h($sl['img'])."');background-size:cover;background-position:center";
-      else:
-        echo "background:linear-gradient(".$sl['grad'].")";
-      endif;
-    ?>"></div>
-    <div class="hslide-ov"></div>
-    <div class="hcontent">
-      <div class="hbadge"><span aria-hidden="true">🏆</span> <?= h(setting('CLUB_PLACE','Vettikkattiri')) ?> · Kerala</div>
-      <?php $_ht = $i===0 ? 'h1' : 'h2'; ?><<?= $_ht ?> class="htitle"><?= h($sl['title']) ?></<?= $_ht ?>>
-      <p class="hsub"><?= h($sl['subtitle']) ?></p>
-      <div class="hcta">
-        <button type="button" class="btn-hero-p" onclick="openModal('login')"><span aria-hidden="true">🔐</span> Member Login</button>
-      </div>
-    </div>
+    <div class="hslide-bg" style="<?= !empty($sl['img']) ? "background-image:url('".h($sl['img'])."')" : 'background:linear-gradient('.h($sl['grad']).')' ?>"></div>
   </div>
   <?php endforeach; ?>
-  <button type="button" class="harr harr-l" onclick="heroMove(-1)" aria-label="Previous slide"><i class="fas fa-chevron-left" aria-hidden="true"></i></button>
-  <button type="button" class="harr harr-r" onclick="heroMove(1)" aria-label="Next slide"><i class="fas fa-chevron-right" aria-hidden="true"></i></button>
+  <div class="hero-shade"></div>
+  <div class="hcontent">
+    <div class="hbadge"><i aria-hidden="true"></i><?= h($heroBadge) ?></div>
+    <h1 class="htitle"><?= h($heroTitle) ?></h1>
+    <p class="hsub"><?= h($heroSub) ?></p>
+    <div class="hcta">
+      <?php if($_pLoggedIn): ?>
+        <a class="btn-hero-p" href="<?= url('dashboard.php') ?>"><?= ic('home') ?> Open dashboard</a>
+      <?php else: ?>
+        <button type="button" class="btn-hero-p" onclick="openModal('login')"><?= ic('login') ?> <?= h($hs('hero_cta_text','Member login')) ?></button>
+        <button type="button" class="btn-hero-s" onclick="openModal('register')"><?= ic('plus') ?> Join the club</button>
+      <?php endif; ?>
+    </div>
+  </div>
+  <?php if(count($heroSlides) > 1): ?>
   <div class="hdots" id="heroDots">
     <?php foreach($heroSlides as $i=>$sl): ?>
     <button type="button" class="hdot <?= $i===0?'on':'' ?>" data-idx="<?= $i ?>" onclick="heroGo(<?= $i ?>)" aria-label="Show slide <?= $i+1 ?>"<?= $i===0?' aria-current="true"':'' ?>></button>
     <?php endforeach; ?>
   </div>
-</section>
-
-<!-- Stats Bar -->
-<div class="stats-bar">
-  <div class="stat-card">
-    <span class="stat-icon" aria-hidden="true">👥</span>
-    <span class="stat-num" data-target="<?=(int)($stats['total']??0)?>"><?=(int)($stats['total']??0)?></span>
-    <span class="stat-lbl">Members</span>
-  </div>
-  <div class="stat-card">
-    <span class="stat-icon" aria-hidden="true">✅</span>
-    <span class="stat-num" data-target="<?=(int)($stats['active']??0)?>"><?=(int)($stats['active']??0)?></span>
-    <span class="stat-lbl">Active</span>
-  </div>
-  <div class="stat-card">
-    <span class="stat-icon" aria-hidden="true">⚽</span>
-    <span class="stat-num" data-target="5">5</span>
-    <span class="stat-lbl">Sports</span>
-  </div>
-  <div class="stat-card">
-    <span class="stat-icon" aria-hidden="true">🩸</span>
-    <span class="stat-num" data-target="<?=(int)($stats['donors']??0)?>"><?=(int)($stats['donors']??0)?></span>
-    <span class="stat-lbl">Donors</span>
-  </div>
-</div>
-</div>
-
-<!-- EVENTS -->
-<section id="events" style="padding:3rem 0;background:#f8fafc">
-<div class="container" style="max-width:1200px;padding:0 1rem">
-  <div style="text-align:center;margin-bottom:1.8rem">
-    <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.6rem,3vw,2.2rem);font-weight:700;color:#0d1b3e">Club <span style="color:var(--a-tx)">Events</span></h2>
-  </div>
-  <?php
-  $upEv = array_filter($events??[], function($e){ return strtotime($e['event_date'])>=strtotime('today'); });
-  $tconf = ['football'=>['⚽','#1b5e20','#e8f5e9'],'cricket'=>['🏏','#e65100','#fff3e0'],'charity'=>['🤝','#880e4f','#fce4ec'],'cultural'=>['🎭','#6a1b9a','#f3e5f5'],'meeting'=>['📋','#37474f','#eceff1']];
-  if(empty($upEv)): ?>
-  <div style="text-align:center;padding:2rem;color:#5d6b80"><div style="font-size:2.5rem">📅</div><div>No upcoming events. Check back soon!</div></div>
-  <?php else: ?>
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:1rem">
-  <?php foreach(array_slice(array_values($upEv),0,6) as $ev):
-    $diff=ceil((strtotime($ev['event_date'])-time())/86400);
-    $tc=$tconf[$ev['event_type']]??['📅','#0d47a1','#e3f2fd'];
-    $cd=$diff===0?'🔥 Today':($diff===1?'⚡ Tomorrow':"In {$diff}d");
-    $cc=$diff<=1?'#b71c1c':($diff<=7?'#e65100':'#475569');
-  ?>
-  <div style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);border-top:4px solid <?=$tc[1]?>">
-    <div style="padding:.85rem 1rem">
-      <div style="display:flex;justify-content:space-between;margin-bottom:.5rem">
-        <span style="background:<?=$tc[2]?>;color:<?=$tc[1]?>;border-radius:20px;padding:.08rem .55rem;font-size:.64rem;font-weight:800"><?=$tc[0]?> <?=h(ucfirst($ev['event_type']??''))?></span>
-        <span style="font-size:.7rem;font-weight:800;color:<?=$cc?>"><?=$cd?></span>
-      </div>
-      <div style="font-weight:700;font-size:.95rem;color:#0d1b3e;margin-bottom:.3rem"><?=h($ev['title'])?></div>
-      <?php if($ev['description']??''): ?><div style="font-size:.77rem;color:#64748b;margin-bottom:.45rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden"><?=h($ev['description'])?></div><?php endif; ?>
-      <div style="font-size:.73rem;color:#64748b">📅 <?=date('d M Y',strtotime($ev['event_date']))?><?php if($ev['event_time']??''): ?> · <?=date('g:i A',strtotime($ev['event_time']))?><?php endif; ?></div>
-      <?php if($ev['location']??''): ?><div style="font-size:.73rem;color:#64748b;margin-top:.15rem">📍 <?=h($ev['location'])?></div><?php endif; ?>
-    </div>
-  </div>
-  <?php endforeach; ?>
-  </div>
   <?php endif; ?>
-  <div style="text-align:center;margin-top:1.4rem">
-    <a href="<?=url('modules/events.php')?>" style="display:inline-flex;align-items:center;gap:.4rem;background:#0d47a1;color:#fff;border-radius:25px;padding:.5rem 1.3rem;font-size:.82rem;font-weight:700;text-decoration:none">📅 View All Events →</a>
-  </div>
-</div>
 </section>
 
-<!-- ══ DIGITAL NOTICE BOARD ══ -->
-<?php if(!empty($homeNotices)): ?>
-<section style="padding:3.5rem 0;background:#0d1b3e;position:relative;overflow:hidden">
-  <div style="position:absolute;inset:0;opacity:.04;background:repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%);background-size:20px 20px"></div>
-  <div class="container" style="max-width:1200px;position:relative;z-index:1">
+<?php if($hon('home_stats_show')): ?>
+<div class="stats-bar" aria-label="Club in numbers">
+  <div class="stat-card"><span class="stat-num" data-target="<?= (int)($stats['total']??0) ?>"><?= (int)($stats['total']??0) ?></span><span class="stat-lbl">Members</span></div>
+  <div class="stat-card"><span class="stat-num" data-target="<?= (int)($stats['active']??0) ?>"><?= (int)($stats['active']??0) ?></span><span class="stat-lbl">Active</span></div>
+  <div class="stat-card"><span class="stat-num" data-target="<?= count($upEvents) ?>"><?= count($upEvents) ?></span><span class="stat-lbl">Events</span></div>
+  <div class="stat-card"><span class="stat-num" data-target="<?= (int)($stats['donors']??0) ?>"><?= (int)($stats['donors']??0) ?></span><span class="stat-lbl">Donors</span></div>
+</div>
+<?php endif; ?>
 
-    <!-- Header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.4rem;padding:0 .5rem">
-      <div>
-        <div style="display:inline-flex;align-items:center;gap:.45rem;background:rgba(200,146,42,.15);
-             border:1px solid rgba(200,146,42,.35);border-radius:30px;
-             padding:.28rem 1rem;margin-bottom:.6rem">
-          <span style="width:7px;height:7px;border-radius:50%;background:#f5d060;
-                 animation:nbPulse 1.5s ease-in-out infinite;display:inline-block"></span>
-          <span style="font-size:.67rem;font-weight:700;letter-spacing:.16em;
-                 text-transform:uppercase;color:#e6b84a">Live Notices</span>
-        </div>
-        <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.6rem,3.5vw,2.2rem);
-             font-weight:700;color:#fff;line-height:1.2">
-          📢 Digital <span style="color:#f5d060">Notice Board</span>
-        </h2>
-      </div>
+<?php if($hon('home_about_show')): ?>
+<!-- ══ ABOUT ══ -->
+<section class="sec" id="about" aria-labelledby="aboutH">
+  <div class="wrap about">
+    <div>
+      <span class="eyebrow">About us</span>
+      <h2 class="sec-title" id="aboutH"><?= h($hs('home_about_title', 'Uniting '.$clubPlace.' through sports, arts and service')) ?></h2>
+      <p><?= h($hs('home_about_text', $clubName.' brings people of '.$clubPlace.' together — football and games, arts and festivals, blood donation and community help. Join us and be part of it.')) ?></p>
     </div>
+    <div class="pillars">
+      <div class="pillar"><span class="tile tone-lime"><?= ic('ball') ?></span><b>Sports</b><span>Tournaments and training</span></div>
+      <div class="pillar"><span class="tile tone-violet"><?= ic('masks') ?></span><b>Arts &amp; culture</b><span>Festivals and talent</span></div>
+      <div class="pillar"><span class="tile tone-rose"><?= ic('droplet') ?></span><b>Blood donors</b><span>Help when it matters</span></div>
+      <div class="pillar"><span class="tile tone-amber"><?= ic('heart') ?></span><b>Community</b><span>Charity and support</span></div>
+    </div>
+  </div>
+</section>
+<?php endif; ?>
 
-    <!-- Ticker for urgent/emergency -->
-    <?php $urgHN = array_filter($homeNotices, function($n){ return in_array($n['priority']??'',['urgent','emergency']); });
-    if(!empty($urgHN)): ?>
-    <div style="background:linear-gradient(135deg,#b71c1c,#c62828);
-         border-radius:14px;padding:.6rem 1rem;margin-bottom:1.1rem;
-         display:flex;align-items:center;gap:.75rem;overflow:hidden">
-      <span style="background:rgba(255,255,255,.2);border-radius:6px;
-             padding:.14rem .55rem;font-size:.62rem;font-weight:800;
-             color:#fff;white-space:nowrap;letter-spacing:.07em">🔴 URGENT</span>
-      <div style="overflow:hidden;flex:1">
-        <div style="display:flex;gap:2.5rem;white-space:nowrap;
-             animation:nbScroll 16s linear infinite">
-          <?php foreach(array_merge(array_values($urgHN),array_values($urgHN)) as $un): ?>
-          <span style="font-size:.8rem;font-weight:700;color:#fff">
-            <?= ($un['priority']=='emergency')?'🚨':'⚡' ?> <?= h($un['title']) ?>
-          </span>
-          <?php endforeach; ?>
+<?php if($hon('home_activities_show') && !empty($clubActs)): ?>
+<!-- ══ ACTIVITIES (Club Settings → Activities) ══ -->
+<section class="sec dark" id="activities" aria-labelledby="actH">
+  <div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">What we do</span><h2 class="sec-title" id="actH">Club activities</h2></div></div>
+    <div class="cgrid g-3">
+      <?php foreach($clubActs as $ca): $c = preg_match('/^#[0-9a-fA-F]{6}$/',(string)$ca['color']) ? $ca['color'] : '#14B8A6'; ?>
+      <article class="gcard act" style="--c:<?= h($c) ?>">
+        <div class="act-em" aria-hidden="true"><?= h($ca['emoji'] ?: '🏆') ?></div>
+        <b><?= h($ca['name']) ?></b>
+        <?php if(!empty($ca['description'])): ?><p><?= h($ca['description']) ?></p><?php endif; ?>
+        <div class="act-links">
+          <?php if(!empty($ca['reg_link'])): ?><a class="chip chip-a" href="<?= h($ca['reg_link']) ?>" target="_blank" rel="noopener">Register</a><?php endif; ?>
+          <?php if(!empty($ca['info_url'])): ?><a class="chip chip-g" href="<?= h($ca['info_url']) ?>" target="_blank" rel="noopener">Details</a><?php endif; ?>
         </div>
-      </div>
+      </article>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</section>
+<?php endif; ?>
+
+<?php if($hon('home_events_show')): ?>
+<!-- ══ EVENTS ══ -->
+<section class="sec" id="events" aria-labelledby="evH">
+  <div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">Coming up</span><h2 class="sec-title" id="evH">Upcoming events</h2></div>
+      <a class="link-more" href="<?= $_pLoggedIn ? url('modules/events.php') : '#' ?>"<?= $_pLoggedIn ? '' : ' onclick="openModal(\'login\');return false"' ?>>All events <?= ic('next','ic-sm') ?></a></div>
+    <?php if(empty($upEvents)): ?>
+      <div class="card empty">No upcoming events right now. Check back soon.</div>
+    <?php else: ?>
+    <div class="cgrid g-2">
+      <?php foreach(array_slice($upEvents,0,6) as $ev): $d = (int)ceil((strtotime($ev['event_date'])-strtotime('today'))/86400); ?>
+      <article class="card ev">
+        <div class="ev-date"><b><?= date('d',strtotime($ev['event_date'])) ?></b><small><?= date('M',strtotime($ev['event_date'])) ?></small></div>
+        <div style="min-width:0">
+          <h3><?= h($ev['title']) ?><?php if($d<=1): ?><span class="soon"><?= $d===0?'Today':'Tomorrow' ?></span><?php elseif($d<=7): ?><span class="soon">In <?= $d ?> days</span><?php endif; ?></h3>
+          <?php if(!empty($ev['description'])): ?><p><?= h(mb_strimwidth($ev['description'],0,120,'…')) ?></p><?php endif; ?>
+          <div class="meta">
+            <?php if(!empty($ev['event_time'])): ?><span><?= ic('calendar','ic-sm') ?><?= h($ev['event_time']) ?></span><?php endif; ?>
+            <?php if(!empty($ev['location'])): ?><span><?= ic('map','ic-sm') ?><?= h($ev['location']) ?></span><?php endif; ?>
+          </div>
+        </div>
+      </article>
+      <?php endforeach; ?>
     </div>
     <?php endif; ?>
-
-    <!-- Notice cards grid -->
-    <?php
-    $hnConf = [
-      'general'  => ['em'=>'📋','c'=>'#90caf9','bg'=>'rgba(144,202,249,.12)'],
-      'match'    => ['em'=>'⚽','c'=>'#a5d6a7','bg'=>'rgba(165,214,167,.12)'],
-      'meeting'  => ['em'=>'🤝','c'=>'#ffcc80','bg'=>'rgba(255,204,128,.12)'],
-      'festival' => ['em'=>'🎭','c'=>'#ce93d8','bg'=>'rgba(206,147,216,.12)'],
-      'blood'    => ['em'=>'🩸','c'=>'#ef9a9a','bg'=>'rgba(239,154,154,.12)'],
-      'emergency'=> ['em'=>'🚨','c'=>'#ef5350','bg'=>'rgba(239,83,80,.15)'],
-      'urgent'   => ['em'=>'⚠️','c'=>'#ffb74d','bg'=>'rgba(255,183,77,.12)'],
-    ];
-    ?>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(285px,1fr));gap:.85rem">
-    <?php foreach($homeNotices as $hn):
-      $hc = $hnConf[$hn['category']??'general'] ?? $hnConf['general'];
-      $hdiff = time() - strtotime($hn['created_at']);
-      $hago  = $hdiff<3600?floor($hdiff/60).'m ago':($hdiff<86400?floor($hdiff/3600).'h ago':date('d M',strtotime($hn['created_at'])));
-    ?>
-    <div style="background:<?= $hc['bg'] ?>;border:1px solid rgba(255,255,255,.1);
-         border-radius:16px;padding:.9rem 1rem;
-         transition:all .25s;cursor:default;
-         <?= $hn['priority']=='emergency'?'border-color:rgba(239,83,80,.4);':''?>">
-      <!-- Top row -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.55rem">
-        <div style="display:flex;align-items:center;gap:.4rem">
-          <span style="font-size:1.15rem"><?= $hc['em'] ?></span>
-          <span style="font-size:.62rem;font-weight:800;color:<?= $hc['c'] ?>;
-                 text-transform:uppercase;letter-spacing:.07em">
-            <?= h($hn['category']??'General') ?>
-          </span>
-          <?php if($hn['is_pinned']): ?>
-          <span style="font-size:.7rem">📌</span>
-          <?php endif; ?>
-        </div>
-        <span style="font-size:.62rem;color:rgba(255,255,255,.4)"><?= $hago ?></span>
-      </div>
-      <!-- Title -->
-      <div style="font-weight:800;font-size:.92rem;color:#fff;line-height:1.35;
-           margin-bottom:<?= $hn['body']?'.35rem':'0' ?>">
-        <?= h($hn['title']) ?>
-      </div>
-      <?php if($hn['body']): ?>
-      <div style="font-size:.76rem;color:rgba(255,255,255,.6);line-height:1.55;
-           display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">
-        <?= h($hn['body']) ?>
-      </div>
-      <?php endif; ?>
-      <?php if($hn['expires_at']): ?>
-      <div style="margin-top:.45rem;font-size:.62rem;color:rgba(255,255,255,.35)">
-        Expires: <?= date('d M Y', strtotime($hn['expires_at'])) ?>
-      </div>
-      <?php endif; ?>
-    </div>
-    <?php endforeach; ?>
-    </div>
-
   </div>
 </section>
-<style>
-@keyframes nbScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-@keyframes nbPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.7)}}
-</style>
 <?php endif; ?>
 
-
-
-
-<!-- ══ COMMITTEE / LEADERSHIP ══ -->
-<?php if(!empty($committee)): ?>
-<section style="padding:4rem 0 3.5rem;background:#fff">
-  <div class="container" style="max-width:1200px">
-
-    <!-- Section header -->
-    <div style="text-align:center;margin-bottom:2rem" class="rv">
-      <div style="display:inline-flex;align-items:center;gap:.45rem;
-           background:rgba(13,71,161,.08);border:1px solid rgba(13,71,161,.2);
-           border-radius:30px;padding:.28rem 1rem;margin-bottom:.7rem">
-        <span style="font-size:.67rem;font-weight:700;letter-spacing:.16em;
-               text-transform:uppercase;color:#0d47a1">Club Leadership</span>
-      </div>
-      <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.7rem,3.5vw,2.3rem);
-           font-weight:700;color:#0d1b3e;line-height:1.2;margin-bottom:.4rem">
-        Our <span style="color:#c8922a">Committee</span>
-      </h2>
-      <p style="font-size:.88rem;color:#64748b;max-width:400px;margin:0 auto">
-        <?= h(setting('CLUB_NAME','Aishwarya Arts & Sports Club')) ?> · <?= h(setting('CLUB_PLACE','Vettikkattiri')) ?>, Kerala
-      </p>
-    </div>
-
-    <!-- Leader cards grid -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
-         gap:1rem;padding:0 .5rem">
-    <?php
-    $roleConf = [
-      'president'       => ['label'=>'President',       'color'=>'#b71c1c','bg'=>'#ffebee','border'=>'#ef9a9a','icon'=>'👑'],
-      'vice_president'  => ['label'=>'Vice President',  'color'=>'#e65100','bg'=>'#fff3e0','border'=>'#ffcc80','icon'=>'⭐'],
-      'secretary'       => ['label'=>'Secretary',       'color'=>'#0d47a1','bg'=>'#e3f2fd','border'=>'#90caf9','icon'=>'📋'],
-      'joint_secretary' => ['label'=>'Jt. Secretary',   'color'=>'#1565c0','bg'=>'#e3f2fd','border'=>'#90caf9','icon'=>'📝'],
-      'treasurer'       => ['label'=>'Treasurer',       'color'=>'#1b5e20','bg'=>'#e8f5e9','border'=>'#a5d6a7','icon'=>'💰'],
-      'committee_member'=> ['label'=>'Committee',       'color'=>'#37474f','bg'=>'#eceff1','border'=>'#b0bec5','icon'=>'🤝'],
-    ];
-    foreach($committee as $ci=>$cm):
-      $rc  = $roleConf[$cm['role']] ?? $roleConf['committee_member'];
-      $pos = !empty($cm['committee_position']) ? $cm['committee_position'] : $rc['label'];
-      $photo = !empty($cm['profile_photo']) ? getMemberPhoto($cm['profile_photo']) : '';
-    ?>
-    <div style="text-align:center;animation:cmFadeIn .5s <?= $ci*0.08 ?>s both"
-         class="rv">
-      <!-- Photo circle -->
-      <div style="position:relative;display:inline-block;margin-bottom:.65rem">
-        <div style="width:90px;height:90px;border-radius:50%;overflow:hidden;
-             border:3px solid <?= $rc['border'] ?>;
-             box-shadow:0 4px 18px rgba(0,0,0,.12);
-             margin:0 auto;
-             background:<?= $rc['bg'] ?>;
-             display:flex;align-items:center;justify-content:center">
-          <?php if($photo): ?>
-          <img src="<?= $photo ?>" alt="<?= h($cm['name']) ?>"
-               style="width:100%;height:100%;object-fit:cover;display:block">
-          <?php else: ?>
-          <span style="font-size:2rem;opacity:.6"><?= $rc['icon'] ?></span>
-          <?php endif; ?>
+<?php if($hon('home_notices_show') && !empty($homeNotices)): ?>
+<!-- ══ NOTICE BOARD ══ -->
+<section class="sec dark" id="notices" aria-labelledby="nbH">
+  <div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">Latest</span><h2 class="sec-title" id="nbH">Notice board</h2></div></div>
+    <div class="cgrid g-2">
+      <?php foreach(array_slice($homeNotices,0,6) as $hn): $pr = $hn['priority'] ?? 'normal'; ?>
+      <article class="gcard note">
+        <span class="tile <?= $pr==='emergency'?'tone-rose':($pr==='urgent'?'tone-amber':'tone-teal') ?>"><?= ic('megaphone') ?></span>
+        <div style="min-width:0">
+          <b><?= h($hn['title']) ?><?php if(!empty($hn['is_pinned'])): ?><span class="pill">Pinned</span><?php endif; ?><?php if($pr==='urgent'||$pr==='emergency'): ?><span class="pill"><?= ucfirst($pr) ?></span><?php endif; ?></b>
+          <p><?= h(mb_strimwidth($hn['body'],0,220,'…')) ?></p>
+          <small><?= date('d M Y', strtotime($hn['created_at'])) ?></small>
         </div>
-        <!-- Role badge -->
-        <div style="position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);
-             background:<?= $rc['color'] ?>;color:#fff;
-             border-radius:20px;padding:.1rem .5rem;
-             font-size:.54rem;font-weight:800;letter-spacing:.04em;
-             white-space:nowrap;border:2px solid #fff;
-             box-shadow:0 2px 6px rgba(0,0,0,.15)">
-          <?= $rc['icon'] ?> <?= h($rc['label']) ?>
-        </div>
-      </div>
-      <!-- Name -->
-      <div style="font-weight:800;font-size:.82rem;color:#0d1b3e;
-           line-height:1.3;margin-bottom:.18rem;padding:0 .25rem">
-        <?= h($cm['name']) ?>
-      </div>
-      <!-- Position if different from role -->
-      <?php if(!empty($cm['committee_position']) && $cm['committee_position'] !== $rc['label']): ?>
-      <div style="font-size:.66rem;color:#64748b;line-height:1.3">
-        <?= h($cm['committee_position']) ?>
-      </div>
-      <?php endif; ?>
-    </div>
-    <?php endforeach; ?>
-    </div>
-
-  </div>
-</section>
-<style>
-@keyframes cmFadeIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
-</style>
-<?php endif; ?>
-
-<!-- ══ ACHIEVEMENTS SECTION ══ -->
-<?php if(!empty($pubAch)): ?>
-<!-- Achievement lightbox -->
-<div id="achLB" style="display:none;position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.95);align-items:center;justify-content:center;flex-direction:column;padding:1rem" onclick="if(event.target===this)closeAchLB()">
-  <button onclick="closeAchLB()" style="position:fixed;top:1rem;right:1rem;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.25);color:#fff;width:44px;height:44px;border-radius:50%;font-size:1.1rem;cursor:pointer">✕</button>
-  <img id="achLBImg" src="" alt="" style="max-width:96vw;max-height:75vh;object-fit:contain;border-radius:12px;box-shadow:0 24px 80px rgba(0,0,0,.8)">
-  <div id="achLBInfo" style="margin-top:1rem;text-align:center;max-width:420px">
-    <div id="achLBMedal" style="font-size:2rem;margin-bottom:.4rem"></div>
-    <div id="achLBTitle" style="font-weight:800;font-size:1rem;color:#fff;margin-bottom:.3rem"></div>
-    <div id="achLBMember" style="font-size:.82rem;color:rgba(255,255,255,.55)"></div>
-    <div id="achLBDate" style="font-size:.72rem;color:rgba(255,255,255,.35);margin-top:.2rem"></div>
-  </div>
-</div>
-
-<section style="padding:4rem 0;background:linear-gradient(180deg,#0d1b3e 0%,#1a3a6b 100%);overflow:hidden">
-  <div class="container" style="max-width:1200px">
-    <div style="text-align:center;margin-bottom:2rem" class="rv">
-      <div style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(200,146,42,.15);border:1px solid rgba(200,146,42,.35);border-radius:30px;padding:.28rem 1rem;margin-bottom:.75rem">
-        <span style="font-size:.68rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#e6b84a">🏆 Club Achievements</span>
-      </div>
-      <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.7rem,3.5vw,2.4rem);font-weight:700;color:#fff;line-height:1.2;margin-bottom:.5rem">
-        Celebrating Our <span style="color:#f5d060">Members</span>
-      </h2>
-      <p style="font-size:.9rem;color:rgba(255,255,255,.55);max-width:440px;margin:0 auto"><?= h(setting('CLUB_NAME','Aishwarya Arts & Sports Club')) ?> · Pride & Recognition</p>
-    </div>
-
-    <!-- Achievement cards grid -->
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.85rem;padding:0 .5rem 1.2rem" id="achHomeGrid">
-      <?php
-      $achM=['gold'=>['🥇','linear-gradient(135deg,#f5d060,#c8922a,#e6b84a)','#5c3a00'],'silver'=>['🥈','linear-gradient(135deg,#d0d0d0,#8a8a8a,#c0c0c0)','#1a1a1a'],'bronze'=>['🥉','linear-gradient(135deg,#d4935a,#8b4513,#c87941)','#3a1500'],'special'=>['🏅','linear-gradient(135deg,#667eea,#764ba2,#a855f7)','#fff'],'participation'=>['🎖️','linear-gradient(135deg,#0d47a1,#1565c0,#1976d2)','#fff']];
-      $achCats=['sports'=>'⚽','arts'=>'🎭','education'=>'📚','club'=>'🏛','special'=>'⭐'];
-      foreach($pubAch as $paidx=>$pa):
-        $pm  = $achM[$pa['medal_type']] ?? $achM['special'];
-        $ppho= !empty($pa['uphoto']) ? getMemberPhoto($pa['uphoto']) : '';
-        $pUrl= '';
-        if(!empty($pa['image'])) $pUrl = (strpos($pa['image'],'/')!==false) ? url('assets/uploads/'.$pa['image']) : url('assets/uploads/achievements/'.$pa['image']);
-        $catIcon = $achCats[$pa['category']] ?? '🏆';
-      ?>
-      <div class="ach-hp-card"
-        data-img="<?=htmlspecialchars($pUrl,ENT_QUOTES)?>"
-        data-medal="<?=$pm[0]?>"
-        data-title="<?=htmlspecialchars($pa['title'],ENT_QUOTES)?>"
-        data-member="<?=htmlspecialchars($pa['member_name'],ENT_QUOTES)?>"
-        data-date="<?= $pa['achievement_date'] ? date('d M Y',strtotime($pa['achievement_date'])) : '' ?>"
-        style="border-radius:16px;overflow:hidden;cursor:pointer;position:relative;aspect-ratio:3/4;box-shadow:0 8px 28px rgba(0,0,0,.3);transition:all .3s"
-        onmouseover="this.style.transform='translateY(-5px) scale(1.02)';this.style.boxShadow='0 16px 48px rgba(0,0,0,.5)'"
-        onmouseout="this.style.transform='';this.style.boxShadow='0 8px 28px rgba(0,0,0,.3)'">
-        <!-- Background: photo or gradient -->
-        <?php if($pUrl): ?>
-        <img src="<?=$pUrl?>" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
-        <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.1) 0%,transparent 35%,rgba(0,0,0,.85) 100%)"></div>
-        <?php else: ?>
-        <div style="position:absolute;inset:0;background:<?=$pm[1]?>"></div>
-        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);font-size:5rem;opacity:.2"><?=$pm[0]?></div>
-        <?php endif; ?>
-        <!-- Top badge -->
-        <div style="position:absolute;top:.65rem;left:.65rem;display:flex;gap:.3rem;align-items:center">
-          <span style="background:rgba(0,0,0,.4);backdrop-filter:blur(6px);color:#fff;border-radius:20px;padding:.18rem .6rem;font-size:.6rem;font-weight:800;display:flex;align-items:center;gap:.25rem">
-            <?=$pm[0]?> <?=strtoupper($pa['medal_type'])?>
-          </span>
-        </div>
-        <!-- Tap hint -->
-        <div style="position:absolute;top:.65rem;right:.65rem;background:rgba(255,255,255,.15);border-radius:20px;padding:.2rem .5rem;font-size:.58rem;color:rgba(255,255,255,.7)">👁 Tap</div>
-        <!-- Bottom info -->
-        <div style="position:absolute;bottom:0;left:0;right:0;padding:.8rem .85rem">
-          <div style="font-weight:800;font-size:.82rem;color:#fff;line-height:1.3;margin-bottom:.3rem;text-shadow:0 1px 4px rgba(0,0,0,.5)"><?=h($pa['title'])?></div>
-          <div style="display:flex;align-items:center;gap:.35rem">
-            <?php if($ppho): ?><img src="<?=$ppho?>" style="width:20px;height:20px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(200,146,42,.6)"><?php endif; ?>
-            <span style="font-size:.7rem;color:rgba(255,255,255,.75);font-weight:600"><?=h(mb_strimwidth($pa['member_name'],0,22,'…'))?></span>
-            <span style="margin-left:auto;font-size:.68rem;color:rgba(255,255,255,.4)"><?=$catIcon?></span>
-          </div>
-        </div>
-      </div>
+      </article>
       <?php endforeach; ?>
     </div>
-
-    <div style="text-align:center;margin-top:.5rem">
-      <?php if(isLoggedIn()): ?>
-      <a href="<?=url('modules/certificate.php')?>" style="display:inline-flex;align-items:center;gap:.5rem;background:linear-gradient(135deg,#c8922a,#e6b84a);color:#0d1b3e;border-radius:10px;padding:.65rem 1.6rem;font-family:'Inter',sans-serif;font-weight:700;font-size:.88rem;text-decoration:none;box-shadow:0 6px 22px rgba(200,146,42,.35)">🏆 View All Achievements</a>
-      <?php else: ?>
-      <button onclick="openModal('login')" style="background:linear-gradient(135deg,#c8922a,#e6b84a);color:#0d1b3e;border:none;border-radius:10px;padding:.65rem 1.6rem;font-family:'Inter',sans-serif;font-weight:700;font-size:.88rem;cursor:pointer;box-shadow:0 6px 22px rgba(200,146,42,.35)">🔐 Login to See All Achievements</button>
-      <?php endif; ?>
-    </div>
   </div>
 </section>
-<script>
-// Achievement card click via delegated event
-document.addEventListener('DOMContentLoaded',function(){
-document.getElementById('achHomeGrid')&&document.getElementById('achHomeGrid').addEventListener('click',function(e){
-  var card=e.target.closest('.ach-hp-card'); if(!card) return;
-  var d=card.dataset;
-  document.getElementById('achLBImg').src=d.img||'';
-  document.getElementById('achLBImg').style.display=d.img?'block':'none';
-  document.getElementById('achLBMedal').textContent=d.medal||'🏆';
-  document.getElementById('achLBTitle').textContent=d.title||'';
-  document.getElementById('achLBMember').textContent=d.member||'';
-  document.getElementById('achLBDate').textContent=d.date||'';
-  document.getElementById('achLB').style.display='flex';
-  document.body.style.overflow='hidden';
-});
-});
-function closeAchLB(){
-  document.getElementById('achLB').style.display='none';
-  document.body.style.overflow='';
-}
-document.addEventListener('keydown',function(e){if(e.key==='Escape')closeAchLB();});
-</script>
 <?php endif; ?>
 
-<section id="gallery" class="sec">
-<div class="container" style="max-width:1200px">
-  <div class="text-center mb-4 rv">
-    <div class="sec-label">Gallery</div>
-    <h2 class="sec-title">Club <span style="color:var(--a-tx)">Moments</span></h2>
-    <div class="sec-rule" style="margin:.75rem auto"></div>
-    <p class="sec-sub" style="margin:0 auto .3rem">Memories from every event in <?= h(setting('CLUB_PLACE','Vettikkattiri')) ?></p>
-    <p style="font-size:.78rem;color:var(--t3)"><i class="fas fa-hand-pointer" aria-hidden="true"></i> Hover to pause · Login to view full gallery</p>
-  </div>
-  <div class="gal-wrap rv">
-    <div class="gal-track" id="galTrack">
-      <?php
-      // Double for seamless infinite loop
-      $galAll = array_merge($galItems, $galItems);
-      foreach($galAll as $gi):
-      ?>
-      <?php $isImg = ($gi['type']==='img'); $galIdx = array_search($gi, $galAll); ?>
-      <div class="gal-cell" <?php if($isImg): ?>role="button" tabindex="0" aria-label="View photo: <?= h($gi['title']) ?>" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}" onclick="openLB('<?= addslashes(h($gi['src'])) ?>','<?= addslashes(h($gi['title'])) ?>')" style="cursor:pointer"<?php endif; ?>>
-        <?php if($isImg): ?>
-          <img src="<?= h($gi['src']) ?>" alt="<?= h($gi['title']) ?>" loading="lazy" onerror="this.parentNode.innerHTML='<div class=gal-cell-ph><div style=font-size:2rem>🖼️</div></div>'">
-          <div class="gal-cell-ov" aria-hidden="true"><i class="fas fa-expand-alt"></i></div>
-        <?php else: ?>
-          <div class="gal-cell-ph">
-            <div style="font-size:2.4rem"><?= $gi['em'] ?></div>
-            <span style="font-size:.7rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.08em"><?= h($gi['title']) ?></span>
-          </div>
-        <?php endif; ?>
+<?php if($hon('home_committee_show') && !empty($committee)):
+  $roleLbl = array('president'=>'President','vice_president'=>'Vice President','secretary'=>'Secretary','joint_secretary'=>'Jt. Secretary','treasurer'=>'Treasurer','committee_member'=>'Committee'); ?>
+<!-- ══ COMMITTEE ══ -->
+<section class="sec white" id="committee" aria-labelledby="comH">
+  <div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">Club leadership</span><h2 class="sec-title" id="comH">Our committee</h2></div></div>
+    <div class="cgrid g-p">
+      <?php foreach($committee as $cm): $photo = !empty($cm['profile_photo']) ? getMemberPhoto($cm['profile_photo']) : ''; ?>
+      <div class="card person">
+        <?php if($photo): ?><img src="<?= $photo ?>" alt="" loading="lazy"><?php else: ?><span class="ph"><?= ic('user','ic-lg') ?></span><?php endif; ?>
+        <b><?= h($cm['name']) ?></b>
+        <span><?= h(!empty($cm['committee_position']) ? $cm['committee_position'] : (isset($roleLbl[$cm['role']]) ? $roleLbl[$cm['role']] : 'Committee')) ?></span>
       </div>
       <?php endforeach; ?>
     </div>
   </div>
-  <div class="text-center mt-4 rv">
-    <button onclick="openModal('login')" style="display:inline-flex;align-items:center;gap:.5rem;font-size:.86rem;font-weight:600;color:var(--p);background:rgba(26,58,107,.07);border:1.5px solid rgba(26,58,107,.14);padding:.65rem 1.4rem;border-radius:var(--rad-s);transition:all .25s;cursor:pointer;font-family:'Inter',sans-serif" onmouseover="this.style.background='var(--p)';this.style.color='#fff'" onmouseout="this.style.background='rgba(26,58,107,.07)';this.style.color='var(--p)'">
-      <i class="fas fa-sign-in-alt"></i> Login to View Full Gallery
-    </button>
-  </div>
-</div>
 </section>
+<?php endif; ?>
 
+<?php if($hon('home_achievements_show') && !empty($pubAch)):
+  $medal = array('gold'=>'🥇','silver'=>'🥈','bronze'=>'🥉'); ?>
+<!-- ══ ACHIEVEMENTS ══ -->
+<section class="sec dark" id="achievements" aria-labelledby="achH">
+  <div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">Proud moments</span><h2 class="sec-title" id="achH">Achievements</h2></div></div>
+    <div class="ach-row" tabindex="0" role="region" aria-label="Achievements">
+      <?php foreach($pubAch as $pa):
+        $pUrl=''; if(!empty($pa['image'])) $pUrl=(strpos($pa['image'],'/')!==false)?url('assets/uploads/'.$pa['image']):url('assets/uploads/achievements/'.$pa['image']);
+        $md = isset($medal[$pa['medal_type'] ?? '']) ? $medal[$pa['medal_type']] : '🏆'; ?>
+      <button type="button" class="gcard ach" <?php if($pUrl): ?>onclick="openLB('<?= addslashes(h($pUrl)) ?>','<?= addslashes(h($pa['title'])) ?>')"<?php endif; ?>>
+        <div class="img"><?php if($pUrl): ?><img src="<?= h($pUrl) ?>" alt="" loading="lazy"><?php else: ?><span aria-hidden="true"><?= $md ?></span><?php endif; ?></div>
+        <div class="body"><b><?= $md ?> <?= h($pa['title']) ?></b><span><?= h($pa['member_name'] ?? '') ?><?= !empty($pa['achievement_date']) ? ' · '.date('M Y',strtotime($pa['achievement_date'])) : '' ?></span></div>
+      </button>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</section>
+<?php endif; ?>
+
+<?php if($hon('home_gallery_show')): ?>
+<!-- ══ GALLERY ══ -->
+<section class="sec" id="gallery" aria-labelledby="galH">
+  <div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">Moments</span><h2 class="sec-title" id="galH">Gallery</h2><p class="sec-sub">Memories from every event in <?= h($clubPlace) ?>.</p></div>
+      <?php if(!$_pLoggedIn): ?><a class="link-more" href="#" onclick="openModal('login');return false">Log in for full gallery <?= ic('next','ic-sm') ?></a><?php else: ?><a class="link-more" href="<?= url('modules/gallery.php') ?>">Full gallery <?= ic('next','ic-sm') ?></a><?php endif; ?></div>
+    <div class="gal">
+      <?php foreach(array_slice($galItems,0,10) as $gi): $isImg = ($gi['type']==='img'); ?>
+      <div class="gal-cell" <?php if($isImg): ?>role="button" tabindex="0" aria-label="View photo: <?= h($gi['title']) ?>" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}" onclick="openLB('<?= addslashes(h($gi['src'])) ?>','<?= addslashes(h($gi['title'])) ?>')"<?php endif; ?>>
+        <?php if($isImg): ?><img src="<?= h($gi['src']) ?>" alt="<?= h($gi['title']) ?>" loading="lazy" onerror="this.parentNode.innerHTML='<div class=gal-cell-ph>🖼️</div>'">
+        <?php else: ?><div class="gal-cell-ph"><span aria-hidden="true"><?= $gi['em'] ?></span><span><?= h($gi['title']) ?></span></div><?php endif; ?>
+      </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</section>
+<?php endif; ?>
+
+<?php if($hon('home_join_show') && !$_pLoggedIn): ?>
+<!-- ══ JOIN ══ -->
+<section class="sec" style="padding-top:0" aria-labelledby="joinH">
+  <div class="wrap">
+    <div class="join">
+      <h2 class="sec-title" id="joinH"><?= h($hs('home_join_title','Be part of the club')) ?></h2>
+      <p><?= h($hs('home_join_text','Apply in one minute. The secretary approves your membership and you get access to events, the members portal and your digital ID card.')) ?></p>
+      <div class="hcta">
+        <button type="button" class="btn-hero-p" onclick="openModal('register')"><?= ic('plus') ?> Apply to join</button>
+        <?php if($wa): ?><a class="btn-hero-s" href="https://wa.me/<?= h($wa) ?>" target="_blank" rel="noopener"><?= ic('whatsapp') ?> WhatsApp us</a><?php endif; ?>
+      </div>
+    </div>
+  </div>
+</section>
+<?php endif; ?>
 </main>
+
 <!-- ══════════════════ FOOTER ══════════════════ -->
-<div class="kstripe" aria-hidden="true"></div>
 <footer id="footer">
-<div class="foot-inner">
-  <div class="row g-4">
-    <!-- Brand -->
-    <div class="col-sm-12 col-md-4">
-      <div class="foot-logo">
-        <?php if($logo): ?><img src="<?= $logo ?>" alt="" width="44" height="44"><?php else: ?><div class="foot-logo-ph" aria-hidden="true">⚜</div><?php endif; ?>
-        <div><div class="foot-name"><?= h(setting('CLUB_NAME','Aishwarya Arts & Sports Club')) ?></div><div class="foot-tag"><?= h(setting('CLUB_TAGLINE','Unity · Sports · Culture · Community')) ?></div></div>
-      </div>
-      <p style="font-size:.88rem;color:rgba(255,255,255,.78);line-height:1.7">Uniting <?= h(setting('CLUB_PLACE','Vettikkattiri')) ?> through sports, arts and community service.</p>
-      <div style="display:flex;gap:.55rem;margin-top:.9rem">
+<div class="wrap">
+  <div class="foot">
+    <div>
+      <div class="foot-brand"><?php if($logo): ?><img src="<?= $logo ?>" alt="" width="46" height="46"><?php endif; ?><span><b><?= h($clubName) ?></b><?= h($clubTag) ?></span></div>
+      <p style="font-size:.92rem;white-space:pre-line"><?= h($hs('footer_text', 'Uniting '.$clubPlace.' through sports, arts and community service.')) ?></p>
+      <div class="sicons">
+        <?php if($wa): ?><a href="https://wa.me/<?= h($wa) ?>" target="_blank" rel="noopener" class="sicon" aria-label="WhatsApp" style="background:#1DA851"><i class="fab fa-whatsapp" aria-hidden="true"></i></a><?php endif; ?>
         <?php
-        // WhatsApp personal
-        if($wa): ?>
-        <a href="https://wa.me/<?= h($wa) ?>" target="_blank" rel="noopener" class="sicon" title="WhatsApp" aria-label="WhatsApp" style="background:#25d366;border-color:#25d366;color:#fff"><i class="fab fa-whatsapp" aria-hidden="true"></i></a>
-        <?php endif; ?>
-        <?php
-        // Dynamic social icons from DB
         $footSocials = array();
-        try {
-            $fsrows = db()->query("SELECT setting_key,setting_value FROM club_settings WHERE setting_group='social' AND setting_value IS NOT NULL AND setting_value != ''")->fetchAll();
-            foreach($fsrows as $fsr) $footSocials[$fsr['setting_key']] = $fsr['setting_value'];
-        } catch(Exception $e){}
+        foreach ($HS as $k=>$v) { if (strpos($k,'social_')===0 && $v!=='') $footSocials[$k] = $v; }
         $footIconMap = array(
-            'social_wa_group'  => array('icon'=>'fab fa-whatsapp',  'color'=>'#128c7e','title'=>'WhatsApp Group'),
-            'social_facebook'  => array('icon'=>'fab fa-facebook-f','color'=>'#1877f2','title'=>'Facebook'),
-            'social_instagram' => array('icon'=>'fab fa-instagram', 'color'=>'#e1306c','title'=>'Instagram'),
-            'social_youtube'   => array('icon'=>'fab fa-youtube',   'color'=>'#ff0000','title'=>'YouTube'),
-            'social_twitter'   => array('icon'=>'fab fa-x-twitter', 'color'=>'#000',   'title'=>'X/Twitter'),
-            'social_telegram'  => array('icon'=>'fab fa-telegram',  'color'=>'#0088cc','title'=>'Telegram'),
-            'social_linkedin'  => array('icon'=>'fab fa-linkedin-in','color'=>'#0077b5','title'=>'LinkedIn'),
-            'social_tiktok'    => array('icon'=>'fab fa-tiktok',    'color'=>'#010101','title'=>'TikTok'),
-            'social_website'   => array('icon'=>'fas fa-globe',     'color'=>'#0d47a1','title'=>'Website'),
-        );
-        foreach($footIconMap as $fkey=>$finfo):
-            if(empty($footSocials[$fkey])) continue;
-        ?>
-        <a href="<?= h($footSocials[$fkey]) ?>" target="_blank" rel="noopener" class="sicon" title="<?= h($finfo['title']) ?>" aria-label="<?= h($finfo['title']) ?>" style="background:<?= $finfo['color'] ?>;border-color:<?= $finfo['color'] ?>;color:#fff"><i class="<?= $finfo['icon'] ?>" aria-hidden="true"></i></a>
+          'social_wa_group'=>array('fab fa-whatsapp','#128c7e','WhatsApp group'),'social_facebook'=>array('fab fa-facebook-f','#1877f2','Facebook'),
+          'social_instagram'=>array('fab fa-instagram','#C13584','Instagram'),'social_youtube'=>array('fab fa-youtube','#D90000','YouTube'),
+          'social_twitter'=>array('fab fa-x-twitter','#000','X / Twitter'),'social_telegram'=>array('fab fa-telegram','#0077b5','Telegram'),
+          'social_linkedin'=>array('fab fa-linkedin-in','#0a66c2','LinkedIn'),'social_tiktok'=>array('fab fa-tiktok','#010101','TikTok'),
+          'social_website'=>array('fas fa-globe','#0F766E','Website'));
+        foreach($footIconMap as $fk=>$fi): if(empty($footSocials[$fk])) continue; ?>
+        <a href="<?= h($footSocials[$fk]) ?>" target="_blank" rel="noopener" class="sicon" aria-label="<?= h($fi[2]) ?>" style="background:<?= $fi[1] ?>"><i class="<?= $fi[0] ?>" aria-hidden="true"></i></a>
         <?php endforeach; ?>
       </div>
     </div>
-    <!-- Quick Links -->
-    <div class="col-6 col-md-2 offset-md-1">
-      <div class="foot-col">
-        <h5>Quick Links</h5>
-        <a href="#hero">Home</a>
-        <a href="#events">Events</a>
-        <a href="#gallery">Gallery</a>
-        <a href="<?= url('contact.php') ?>">Contact</a>
-        <a href="#" role="button" onclick="openModal('login');return false">Member Login</a>
-      </div>
+    <div>
+      <h2>Explore</h2>
+      <a class="fl" href="#hero">Home</a>
+      <?php if($hon('home_events_show')): ?><a class="fl" href="#events">Events</a><?php endif; ?>
+      <?php if($hon('home_gallery_show')): ?><a class="fl" href="#gallery">Gallery</a><?php endif; ?>
+      <a class="fl" href="<?= url('modules/market.php') ?>">Mini Market</a>
+      <a class="fl" href="<?= url('contact.php') ?>">Contact</a>
     </div>
-    <!-- Member -->
-    <div class="col-6 col-md-2">
-      <div class="foot-col">
-        <h5>Members</h5>
-        <a href="#" role="button" onclick="openModal('login');return false">Login</a>
-        <a href="#" role="button" onclick="openModal('register');return false">Apply to Join</a>
-        <a href="<?= url('dashboard.php') ?>">Dashboard</a>
-        <a href="<?= url('modules/blood.php') ?>">Blood Hub</a>
-        <a href="<?= url('modules/crowdfund.php') ?>">Donate</a>
-      </div>
+    <div>
+      <h2>Members</h2>
+      <?php if($_pLoggedIn): ?>
+        <a class="fl" href="<?= url('dashboard.php') ?>">Dashboard</a>
+      <?php else: ?>
+        <a class="fl" href="#" role="button" onclick="openModal('login');return false">Login</a>
+        <a class="fl" href="#" role="button" onclick="openModal('register');return false">Apply to join</a>
+      <?php endif; ?>
+      <a class="fl" href="<?= url('modules/blood.php') ?>">Blood Hub</a>
+      <a class="fl" href="<?= url('modules/crowdfund.php') ?>">Donate</a>
     </div>
-    <!-- Contact -->
-    <div class="col-sm-12 col-md-3">
-      <div class="foot-col">
-        <h5>Contact</h5>
-        <p><i class="fas fa-map-marker-alt" aria-hidden="true" style="color:var(--a2);margin-right:.4rem"></i><?= h(setting('CLUB_PLACE','Vettikkattiri')) ?>, Kerala</p>
-        <p style="margin-top:.4rem"><i class="fab fa-whatsapp" aria-hidden="true" style="color:#25d366;margin-right:.4rem"></i><?= h(setting('CLUB_PHONE','+919876543210')) ?></p>
-        <a href="https://wa.me/<?= h($wa) ?>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.45rem;margin-top:.9rem;background:#157a3f;color:#fff;min-height:44px;padding:.52rem 1.1rem;border-radius:8px;font-size:.82rem;font-weight:700;transition:all .22s"><i class="fab fa-whatsapp" aria-hidden="true"></i> Chat on WhatsApp</a>
-      </div>
+    <div>
+      <h2>Contact</h2>
+      <p style="display:flex;gap:.5rem;align-items:center;min-height:40px"><?= ic('map','ic-sm') ?><?= h($clubPlace) ?>, Kerala</p>
+      <p style="display:flex;gap:.5rem;align-items:center;min-height:40px"><?= ic('phone','ic-sm') ?><?= h(setting('CLUB_PHONE','')) ?></p>
+      <?php if($wa): ?><a href="https://wa.me/<?= h($wa) ?>" target="_blank" rel="noopener" class="btn-login" style="margin-top:.5rem"><?= ic('whatsapp','ic-sm') ?> Chat on WhatsApp</a><?php endif; ?>
     </div>
   </div>
+  <div class="foot-btm">© <?= date('Y') ?> <b><?= h($clubName) ?></b> · <?= h($clubPlace) ?> · Kerala · All rights reserved · <b>anexpaikadan</b></div>
 </div>
-<div class="foot-btm">© <?= date('Y') ?> <b style="color:var(--a2)"><?= h(setting('CLUB_NAME','Aishwarya Arts & Sports Club')) ?></b> · <?= h(setting('CLUB_PLACE','Vettikkattiri')) ?> · Kerala · All rights reserved</div>
 </footer>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -1837,96 +1489,31 @@ document.addEventListener('keydown', function(e) {
 </script>
 
 <!-- ══ PUBLIC BOTTOM NAV ══ -->
-<?php
-$_pLoggedIn  = !empty($_SESSION['user_id']);
-$_pMarketUrl = url('modules/market.php');
-$_pDashUrl   = url('dashboard.php');
-$_pfeedUrl   = url('modules/feed.php');
-
-?>
 <style>
-#pub-bnav{
-  position:fixed;bottom:0;left:0;right:0;z-index:9999;
-  background:#fff;border-top:1px solid #ececec;
-  display:flex;align-items:stretch;
-  box-shadow:0 -2px 16px rgba(0,0,0,.08);
-  padding-bottom:env(safe-area-inset-bottom,0px)
-}
-.pbn{
-  flex:1;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  min-height:58px;padding:.5rem .2rem .42rem;
-  font-size:.7rem;font-weight:700;
-  color:#fff;text-decoration:none;cursor:pointer;
-  border:none;gap:.18rem;background:none;
-  -webkit-tap-highlight-color:transparent;
-  font-family:inherit;line-height:1;
-  transition:transform .15s ease
-}
-.pbn:active{transform:scale(.9)}
-.pbn span:last-child{color:#333}
-.pbn:focus-visible{outline:3px solid var(--p2);outline-offset:-3px;border-radius:12px}
-
-/* Icon chip — consistent size for all tabs */
-.pbn-ico{
-  font-size:1.25rem;line-height:1;
-  width:38px;height:38px;
-  display:flex;align-items:center;justify-content:center;
-  border-radius:12px;color:#fff;
-  transition:transform .2s ease
-}
-.pbn:active .pbn-ico{transform:translateY(-2px)}
-
-/* Gradient backgrounds per tab */
-.pbn-login   .pbn-ico{background:linear-gradient(135deg,#07225c,#1565C0)}
-.pbn-install .pbn-ico{background:linear-gradient(135deg,#6a1b9a,#8e24aa)}
-.pbn-feed    .pbn-ico{background:linear-gradient(135deg,#e65100,#fb8c00)}
-.pbn-mkt     .pbn-ico{background:linear-gradient(135deg,#1B5E20,#2E7D32)}
-
-/* Sparkle feed icon — gentle float + scale */
-.pbn-feed .pbn-ico{animation:feedFloat 2.2s ease-in-out infinite}
-@keyframes feedFloat{
-  0%,100%{transform:translateY(0) scale(1)}
-  50%{transform:translateY(-3px) scale(1.08)}
-}
-
-/* Install icon — subtle attention pulse */
-.pbn-install .pbn-ico{animation:instPulse 2.5s ease-in-out infinite}
-@keyframes instPulse{
-  0%,100%{box-shadow:0 0 0 0 rgba(142,36,170,.45)}
-  50%{box-shadow:0 0 0 6px rgba(142,36,170,0)}
-}
-
-body{padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))!important}
+#pub-bnav{position:fixed;left:.6rem;right:.6rem;bottom:calc(.55rem + env(safe-area-inset-bottom,0px));z-index:9999;max-width:520px;margin:0 auto;
+  height:66px;border-radius:24px;display:flex;align-items:center;justify-content:space-around;padding:0 .3rem;
+  background:rgba(10,26,31,.88);backdrop-filter:saturate(160%) blur(18px);-webkit-backdrop-filter:saturate(160%) blur(18px);
+  border:1px solid rgba(255,255,255,.1);box-shadow:0 14px 34px -10px rgba(10,26,31,.55)}
+.pbn{flex:1;min-width:0;height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:0;background:none;cursor:pointer;
+  color:rgba(255,255,255,.75);font-size:.7rem;font-weight:700;border-radius:18px}
+.pbn .ic{width:23px;height:23px}
+.pbn:active .ic{transform:scale(.88)}
+.pbn-mid{flex:0 0 auto;width:58px;height:58px;margin:0 .15rem;border-radius:20px;color:var(--ink);transform:translateY(-12px);
+  background:linear-gradient(145deg,var(--a-light),var(--a));box-shadow:0 10px 24px -8px var(--a),inset 0 1px 0 rgba(255,255,255,.5)}
+.pbn-mid span{display:none}
+body{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))!important}
+@media(min-width:900px){#pub-bnav{display:none}body{padding-bottom:0!important}}
 </style>
-
 <nav id="pub-bnav" aria-label="Quick links">
+  <a href="#hero" class="pbn"><?= ic('home') ?><span>Home</span></a>
+  <a href="<?= h(url('modules/events.php')) ?>" class="pbn"><?= ic('calendar') ?><span>Events</span></a>
   <?php if($_pLoggedIn): ?>
-  <a href="<?php echo h($_pDashUrl); ?>" class="pbn pbn-login">
-    <span class="pbn-ico" aria-hidden="true">&#127968;</span>
-    <span>Dashboard</span>
-  </a>
+  <a href="<?= h(url('dashboard.php')) ?>" class="pbn pbn-mid" aria-label="Dashboard"><?= ic('layout') ?><span>Dashboard</span></a>
   <?php else: ?>
-  <button type="button" class="pbn pbn-login" onclick="openModal('login')">
-    <span class="pbn-ico" aria-hidden="true">&#128273;</span>
-    <span>Login</span>
-  </button>
+  <button type="button" class="pbn pbn-mid" onclick="openModal('login')" aria-label="Member login"><?= ic('login') ?><span>Login</span></button>
   <?php endif; ?>
-
-  <button type="button" class="pbn pbn-install" id="pwaNavBtn" onclick="pwaNavInstall()">
-    <span class="pbn-ico" aria-hidden="true">&#128242;</span>
-    <span>Install</span>
-  </button>
-
-  <a href="<?php echo h($_pfeedUrl); ?>" class="pbn pbn-feed">
-    <span class="pbn-ico" aria-hidden="true">&#x2728;</span>
-    <span>Feed</span>
-  </a>
-
-  <a href="<?php echo h($_pMarketUrl); ?>" class="pbn pbn-mkt">
-    <span class="pbn-ico" aria-hidden="true">&#128717;</span>
-    <span>Market</span>
-  </a>
+  <button type="button" class="pbn" id="pwaNavBtn" onclick="pwaNavInstall()"><?= ic('install') ?><span>Install</span></button>
+  <a href="<?= h(url('modules/market.php')) ?>" class="pbn"><?= ic('store') ?><span>Market</span></a>
 </nav>
 
 <!-- Install Sheet - iOS + Android -->
