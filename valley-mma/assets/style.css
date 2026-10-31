@@ -347,3 +347,8 @@ body.pub-dark .dev-credit { color: #8E8B8B; }
 .prod-edit-img { width: 110px; }
 .prod-edit-img img { width: 110px; height: 110px; object-fit: cover; border-radius: .5rem; border: 1px solid #ddd; }
 .card .price-sale { color: var(--vm-dark); }
+
+/* Join requests */
+.req-ava { width: 2.4rem; height: 2.4rem; border-radius: 50%; background: #FBE7E6; color: var(--vm-blue); font-weight: 800; display: grid; place-items: center; flex: none; }
+.req-ava.big { width: 3.4rem; height: 3.4rem; font-size: 1.4rem; }
+.trial-btn { box-shadow: 0 8px 24px rgba(200, 22, 14, .45); font-weight: 800; text-transform: uppercase; letter-spacing: .5px; }

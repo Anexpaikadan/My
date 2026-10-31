@@ -172,7 +172,7 @@ INSERT IGNORE INTO settings (k, v) VALUES
   ('trial_days', '7'),
   ('auto_backup', '1'),
   ('backup_keep', '14'),
-  ('schema_version', '7');
+  ('schema_version', '8');
 
 INSERT IGNORE INTO plans (id, name, duration_value, duration_unit, price, description, sort_order) VALUES
   (1, 'Monthly', 1, 'month', 1500, 'MMA, boxing, kickboxing and fitness training', 1),
@@ -315,6 +315,27 @@ CREATE TABLE IF NOT EXISTS products (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   KEY idx_active (active, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+/* Free trial / join requests from the public home page */
+CREATE TABLE IF NOT EXISTS join_requests (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  place VARCHAR(100) NOT NULL DEFAULT '',
+  phone VARCHAR(20) NOT NULL,
+  program VARCHAR(60) NOT NULL DEFAULT '',
+  /* new → following / waiting → trial (trial attended) → joined, or not_interested */
+  status ENUM('new','following','waiting','trial','joined','not_interested') NOT NULL DEFAULT 'new',
+  trial_date DATE NULL,
+  trial_days SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  member_id INT UNSIGNED NULL,
+  note VARCHAR(1000) NOT NULL DEFAULT '',
+  ip VARCHAR(45) NOT NULL DEFAULT '',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_status (status, created_at),
+  KEY idx_ip (ip, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 
 
@@ -509,3 +530,8 @@ INSERT INTO complaint_msgs (complaint_id, by_admin, message, created_at) VALUES
   (1, 0, 'The chain of the big punching bag near the window is loose and makes noise.', NOW() - INTERVAL 2 DAY),
   (1, 1, 'Thank you, we have ordered a new chain. It will be fixed this week.', NOW() - INTERVAL 1 DAY),
   (2, 0, 'Can we have a 6 am batch? 7 am is late for people going to work.', NOW() - INTERVAL 3 HOUR);
+
+/* Free trial requests */
+INSERT INTO join_requests (name, place, phone, program, status, created_at, updated_at) VALUES
+  ('Rinshad K', 'Wandoor', '9876512345', 'MMA', 'new', NOW() - INTERVAL 2 HOUR, NOW() - INTERVAL 2 HOUR),
+  ('Akhil Raj', 'Manjeri', '9876523456', 'Boxing', 'following', NOW() - INTERVAL 2 DAY, NOW() - INTERVAL 1 DAY);

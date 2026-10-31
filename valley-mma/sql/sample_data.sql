@@ -151,3 +151,8 @@ INSERT INTO complaint_msgs (complaint_id, by_admin, message, created_at) VALUES
   (1, 0, 'The chain of the big punching bag near the window is loose and makes noise.', NOW() - INTERVAL 2 DAY),
   (1, 1, 'Thank you, we have ordered a new chain. It will be fixed this week.', NOW() - INTERVAL 1 DAY),
   (2, 0, 'Can we have a 6 am batch? 7 am is late for people going to work.', NOW() - INTERVAL 3 HOUR);
+
+/* Free trial requests */
+INSERT INTO join_requests (name, place, phone, program, status, created_at, updated_at) VALUES
+  ('Rinshad K', 'Wandoor', '9876512345', 'MMA', 'new', NOW() - INTERVAL 2 HOUR, NOW() - INTERVAL 2 HOUR),
+  ('Akhil Raj', 'Manjeri', '9876523456', 'Boxing', 'following', NOW() - INTERVAL 2 DAY, NOW() - INTERVAL 1 DAY);

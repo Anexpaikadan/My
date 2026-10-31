@@ -10,6 +10,8 @@ $m = preg_match('/^[a-f0-9]{32}$/', $token) ? q("SELECT * FROM members WHERE inv
 $errors = [];
 $me = member_user();
 $loggedIn = $m && $me && (int)$me['id'] === (int)$m['id'];
+// Not approved yet, or on a free trial and the form not filled yet.
+$canJoin = $m && ($m['status'] === 'pending' || ($m['status'] === 'active' && (!$m['details_at'] || get('sent') === '1')));
 
 if ($m && $_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
@@ -24,7 +26,7 @@ if ($m && $_SERVER['REQUEST_METHOD'] === 'POST') {
             failed_attempt();
             $errors[] = t('member_login_wrong');
         }
-    } elseif (post('action') === 'details' && $loggedIn && $m['status'] === 'pending') {
+    } elseif (post('action') === 'details' && $loggedIn && $canJoin) {
         $d = $m;
         member_read_personal($d, $errors);
         if (!$d['declaration']) {
@@ -54,7 +56,7 @@ require __DIR__ . '/includes/header.php';
 ?>
 <div class="pt-3"><?= brand_html('', 'mb-3') ?></div>
 
-<?php if (!$m || $m['status'] !== 'pending'): ?>
+<?php if (!$m || !$canJoin): ?>
   <div class="card"><div class="card-body text-center p-4">
     <div class="checkin-big text-<?= $m ? 'success' : 'danger' ?> mb-2"><i class="bi <?= $m ? 'bi-check-circle-fill' : 'bi-x-circle-fill' ?>"></i></div>
     <p class="fs-5"><?= e($m ? t('join_already_active') : t('join_link_invalid')) ?></p>

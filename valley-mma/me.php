@@ -80,7 +80,7 @@ if (!$m): ?>
 endif;
 
 // Invited member who has not filled the join form yet: send them to it.
-if ($m['status'] === 'pending' && !$m['details_at'] && $m['invite_token']) {
+if ($m['status'] !== 'inactive' && !$m['details_at'] && $m['invite_token']) {
     redirect('join.php?t=' . $m['invite_token']);
 }
 $block = attendance_block($m);

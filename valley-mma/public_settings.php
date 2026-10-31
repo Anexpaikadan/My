@@ -6,7 +6,7 @@ require __DIR__ . '/includes/init.php';
 require_admin();
 
 $text = [ // setting => max length
-    'pub_hero_title' => 80, 'pub_hero_text' => 250, 'pub_join_text' => 30,
+    'pub_hero_title' => 80, 'pub_hero_text' => 250, 'pub_join_text' => 30, 'pub_trial_text' => 40,
     'pub_about_title' => 60, 'pub_about_text' => 1500, 'pub_programs_title' => 60, 'pub_programs' => 2000,
     'pub_fees_title' => 60, 'pub_fees_note' => 300, 'pub_timings_title' => 60, 'pub_timings' => 1000,
     'pub_rules_title' => 60, 'pub_shop_title' => 30, 'pub_shop_text' => 250, 'pub_contact_title' => 60,
@@ -81,7 +81,9 @@ $ta = fn($k, $rows, $help = '') => '<label class="form-label small" for="' . $k 
         <label class="form-label small" for="pub_hero_text"><?= e(t('content')) ?></label>
         <textarea class="form-control mb-2" id="pub_hero_text" name="pub_hero_text" rows="2" maxlength="250"><?= $pv('pub_hero_text') ?></textarea>
         <label class="form-label small" for="pub_join_text"><?= e(t('join_button_text')) ?></label>
-        <input class="form-control" id="pub_join_text" name="pub_join_text" value="<?= $pv('pub_join_text') ?>" maxlength="30">
+        <input class="form-control mb-2" id="pub_join_text" name="pub_join_text" value="<?= $pv('pub_join_text') ?>" maxlength="30">
+        <label class="form-label small" for="pub_trial_text"><?= e(t('trial_button_text')) ?></label>
+        <input class="form-control" id="pub_trial_text" name="pub_trial_text" value="<?= $pv('pub_trial_text') ?>" maxlength="40">
       </div></div>
     <?php
     $sec('about', 'pub_about_title', 'bi-star-fill', $ta('pub_about_text', 4, t('one_per_line')));

@@ -11,6 +11,7 @@ function pub_defaults(): array
         'pub_hero_title'     => 'Train with Champions',
         'pub_hero_text'      => 'MMA · Boxing · Muay Thai · Fitness – for beginners, kids and fighters in Pandikkad.',
         'pub_join_text'      => 'Join Us',
+        'pub_trial_text'     => 'Book Your Free Trial',
         'pub_about_title'    => 'Why Valley MMA',
         'pub_about_text'     => "Real fight training from coaches who compete.\nA friendly team for beginners – no experience needed.\nGet fit, learn to defend yourself and build confidence.",
         'pub_programs_title' => 'Programs',

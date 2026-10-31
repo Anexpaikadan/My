@@ -21,8 +21,9 @@ require __DIR__ . '/includes/header.php';
   <div class="pub-hero-body">
     <h1><?= e(pub('pub_hero_title')) ?></h1>
     <p><?= e(pub('pub_hero_text')) ?></p>
+    <button type="button" class="btn btn-primary btn-lg w-100 mb-2 trial-btn" data-bs-toggle="modal" data-bs-target="#trialModal"><i class="bi bi-lightning-charge-fill"></i> <?= e(pub('pub_trial_text')) ?></button>
     <div class="d-flex gap-2 justify-content-center flex-wrap">
-      <a href="<?= e($joinWa) ?>" class="btn btn-primary btn-lg px-4" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> <?= e(pub('pub_join_text')) ?></a>
+      <a href="<?= e($joinWa) ?>" class="btn btn-outline-light btn-lg px-4" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> <?= e(pub('pub_join_text')) ?></a>
       <?php if ($phones): ?><a href="tel:<?= e(clean_phone(reset($phones))) ?>" class="btn btn-outline-light btn-lg px-4"><i class="bi bi-telephone-fill"></i> <?= e(t('call')) ?></a><?php endif; ?>
     </div>
   </div>
@@ -65,7 +66,7 @@ require __DIR__ . '/includes/header.php';
       <?php endforeach; ?>
     </div>
     <?php if (pub('pub_fees_note') !== ''): ?><p class="pub-note"><i class="bi bi-info-circle"></i> <?= e(pub('pub_fees_note')) ?></p><?php endif; ?>
-    <a href="<?= e($joinWa) ?>" class="btn btn-primary w-100 mt-2" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> <?= e(pub('pub_join_text')) ?></a>
+    <button type="button" class="btn btn-primary btn-lg w-100 mt-2" data-bs-toggle="modal" data-bs-target="#trialModal"><i class="bi bi-lightning-charge-fill"></i> <?= e(pub('pub_trial_text')) ?></button>
   </section>
 <?php endif; ?>
 
@@ -113,5 +114,31 @@ require __DIR__ . '/includes/header.php';
     </div>
   </section>
 <?php endif; ?>
+</div>
+
+<div class="modal fade" id="trialModal" tabindex="-1" aria-labelledby="trialTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered"><form class="modal-content pub-modal" method="post" action="trial.php" id="trial"><?= csrf_field() ?>
+    <div class="modal-header"><h2 class="modal-title h5" id="trialTitle"><i class="bi bi-lightning-charge-fill text-primary"></i> <?= e(pub('pub_trial_text')) ?></h2>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button></div>
+    <div class="modal-body">
+      <p class="small mb-3" style="color:#c9c5c5"><?= e(t('trial_form_help')) ?></p>
+      <div class="d-none"><label>Website <input name="website" tabindex="-1" autocomplete="off"></label></div>
+      <label class="form-label small" for="trName"><?= e(t('name')) ?> *</label>
+      <input class="form-control form-control-lg mb-2" id="trName" name="name" maxlength="100" required autocomplete="name">
+      <label class="form-label small" for="trPlace"><?= e(t('place')) ?></label>
+      <input class="form-control form-control-lg mb-2" id="trPlace" name="place" maxlength="100" autocomplete="address-level2">
+      <label class="form-label small" for="trPhone"><?= e(t('whatsapp_number')) ?> *</label>
+      <input class="form-control form-control-lg mb-2" id="trPhone" name="phone" type="tel" inputmode="tel" required pattern="[+0-9 ]{10,16}" placeholder="9XXXXXXXXX" autocomplete="tel">
+      <?php if (pub_lines('pub_programs')): ?>
+        <label class="form-label small d-block"><?= e(t('interested_in')) ?></label>
+        <div class="d-flex flex-wrap gap-1 cat-opt">
+          <?php foreach (pub_lines('pub_programs') as $i => [$name]): ?>
+            <input type="radio" class="btn-check" name="program" value="<?= e($name) ?>" id="trp<?= $i ?>"><label class="btn btn-sm btn-outline-light" for="trp<?= $i ?>"><?= e($name) ?></label>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+    </div>
+    <div class="modal-footer"><button class="btn btn-primary btn-lg w-100"><i class="bi bi-send"></i> <?= e(t('submit_request')) ?></button></div>
+  </form></div>
 </div>
 <?php require __DIR__ . '/includes/footer.php';

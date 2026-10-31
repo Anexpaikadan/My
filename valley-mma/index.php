@@ -28,6 +28,8 @@ $absent = (int)q("SELECT COUNT(*) FROM members WHERE status = 'active' AND expir
     AND id NOT IN (SELECT member_id FROM member_freezes WHERE from_date <= ? AND to_date > ?)",
     [$today, date('Y-m-d', strtotime("-$absentDays day")), $today, date('Y-m-d', strtotime("-$absentDays day"))])->fetchColumn();
 $frozen = count(frozen_ids());
+$newRequests = (int)q("SELECT COUNT(*) FROM join_requests WHERE status = 'new'")->fetchColumn();
+$openRequests = (int)q("SELECT COUNT(*) FROM join_requests WHERE status IN ('new', 'following', 'waiting', 'trial')")->fetchColumn();
 $openComplaints = (int)q("SELECT COUNT(*) FROM complaints WHERE status <> 'resolved'")->fetchColumn();
 $newComplaints = complaints_unread_admin();
 $firstLevel = levels()[0] ?? null;
@@ -53,6 +55,7 @@ $groups = [
         ['alerts.php?tab=birthdays', 'bi-cake2-fill', 'ico-amber', count($birthdays), t('birthdays_today'), ''],
     ],
     'sec_members' => [
+        ['join_requests.php', 'bi-person-raised-hand', 'ico-red', $openRequests, t('join_requests'), $newRequests ? t('n_new', $newRequests) : t('free_trial')],
         ['members.php', 'bi-people-fill', 'ico-blue', $total, t('total_members'), ''],
         ['members.php?status=active', 'bi-person-check-fill', 'ico-green', $activeCount, t('active_members'), ''],
         ['members.php?status=expired', 'bi-person-x-fill', 'ico-red', $expired, t('expired_memberships'), ''],

@@ -4,7 +4,7 @@
 declare(strict_types=1);
 
 // App version: shown in the app (More, login, Scanner test). Must match window.VM_JS in assets/app.js.
-const APP_VERSION = '4.2';
+const APP_VERSION = '4.3';
 
 $CONFIG = require __DIR__ . '/../config.php';
 date_default_timezone_set($CONFIG['timezone'] ?? 'Asia/Kolkata');
@@ -66,7 +66,7 @@ function db(): PDO
 function migrate(PDO $pdo): void
 {
     $v = (int)$pdo->query("SELECT v FROM settings WHERE k = 'schema_version'")->fetchColumn();
-    if ($v >= 7) {
+    if ($v >= 8) {
         return;
     }
     if ($v < 2) {
@@ -104,7 +104,9 @@ function migrate(PDO $pdo): void
         $pdo->exec('ALTER TABLE members ADD COLUMN rules_accepted_at DATETIME NULL AFTER details_at');
     }
     run_sql($pdo, file_get_contents(__DIR__ . '/../sql/shop.sql'));
-    $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '7') ON DUPLICATE KEY UPDATE v = '7'");
+    // v8: free trial / join requests from the public page
+    run_sql($pdo, file_get_contents(__DIR__ . '/../sql/join_requests.sql'));
+    $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '8') ON DUPLICATE KEY UPDATE v = '8'");
 }
 
 // Sets level_id from the attendance days (add a WHERE).
@@ -419,6 +421,7 @@ function nav_sections(): array
     return [
         'sec_members' => [
             ['members.php', 'members', 'bi-people-fill', 'members'],
+            ['join_requests.php', 'join_requests', 'bi-person-raised-hand', 'requests'],
             ['member_invite.php', 'invite_member', 'bi-person-plus-fill', 'add_member'],
             ['member_edit.php', 'add_member', 'bi-person-vcard-fill', 'add_member'],
             ['member_edit.php?old=1', 'add_old_student', 'bi-person-check-fill', 'add_member'],
