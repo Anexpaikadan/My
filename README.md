@@ -4,6 +4,7 @@
 |---|---|
 | [`daybill/`](daybill/) | **Daybill Print** – print shop app (PHP + MySQL) |
 | `sales-pos.html` | Sales POS page |
+| [`Av/mynamec_/`](Av/mynamec_/) | **Aishwarya Arts & Sports Club** – members portal (PHP + MySQL), mynamecc.online |
 
 ## Daybill Print
 
@@ -34,3 +35,22 @@ staff see the order, check it and print it on the shop printer.
 - HTTPS is always required. Installable as an app (PWA).
 
 Setup, hosting and printer details: [`daybill/README.md`](daybill/README.md).
+
+## Aishwarya Arts & Sports Club (`Av/mynamec_/`)
+
+Members portal for the club in Vettikkattiri: public homepage, WhatsApp OTP / passkey login, dashboard,
+admin panel and modules (football, predictions, arts festival, henna fest, elections, blood donors,
+crowdfunding, ID cards, certificates, gallery, subscriptions…).
+
+**Setup:** in `includes/config.php` fill in `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS` (kept as placeholders in git),
+and the football-data.org token in `modules/prediction_sync.php`.
+
+**UI/UX pass (shared header + footer, used by every member page):**
+- Pinch-zoom allowed again; no auto-zoom on iPhone when typing (inputs are 16px).
+- Clearer text: grey labels, placeholders, menu headings and bottom-bar labels now meet 4.5:1 contrast.
+- Bigger tap targets (44px): menu, close buttons, avatar, social icons, bottom bar, buttons on phones.
+- Keyboard and screen reader: "Skip to content" link, visible focus ring, menus report open/closed,
+  Escape closes menus and the drawer, current page is marked, decorative emoji hidden from readers.
+- Mobile menu highlights the page you are on.
+- Faster: Font Awesome loaded once (the duplicate JS copy is gone), duplicate PWA tags removed.
+- Honours the phone's "reduce motion" setting; safe-area padding for notched phones.

@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>⚽ FIFA World Cup 2026 — Fan Poster</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;600;700&family=Black+Han+Sans&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --fifa-blue:#003087;
+  --fifa-red:#c8102e;
+  --fifa-gold:#f5a623;
+  --dark:#0a0e1a;
+}
+body{
+  background:linear-gradient(160deg,#0a0e1a 0%,#0d1b2a 40%,#0a0e1a 100%);
+  min-height:100vh;
+  font-family:'Rajdhani',sans-serif;
+  color:#fff;
+  overflow-x:hidden;
+}
+
+/* ── Header ── */
+.hdr{
+  background:linear-gradient(90deg,#003087,#c8102e);
+  padding:.7rem 1rem;
+  display:flex;align-items:center;gap:.6rem;
+  position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 16px rgba(0,0,0,.5);
+}
+.hdr-logo{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.1em;color:#fff}
+.hdr-sub{font-size:.6rem;color:rgba(255,255,255,.6);letter-spacing:.15em;text-transform:uppercase}
+.hdr-badge{
+  margin-left:auto;background:#f5a623;color:#000;
+  padding:.25rem .6rem;border-radius:20px;
+  font-size:.65rem;font-weight:700;letter-spacing:.06em;
+}
+
+/* ── Main layout ── */
+.container{padding:.8rem;max-width:480px;margin:0 auto;padding-bottom:5rem}
+
+/* ── Section cards ── */
+.card{
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;
+  overflow:hidden;
+  margin-bottom:.8rem;
+}
+.card-head{
+  background:rgba(255,255,255,.06);
+  padding:.65rem 1rem;
+  display:flex;align-items:center;gap:.5rem;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.card-head h3{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1rem;letter-spacing:.08em;color:#fff;
+  font-weight:400;
+}
+.card-body{padding:.9rem}
+
+/* ── Country selector ── */
+.country-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:.4rem;
+}
+.country-btn{
+  padding:.5rem .3rem;
+  background:rgba(255,255,255,.05);
+  border:1.5px solid rgba(255,255,255,.1);
+  border-radius:10px;
+  cursor:pointer;
+  text-align:center;
+  transition:all .15s;
+  position:relative;
+}
+.country-btn:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2)}
+.country-btn.active{border-color:var(--fifa-gold);background:rgba(245,166,35,.1)}
+.country-btn .flag{font-size:1.5rem;display:block;margin-bottom:.2rem}
+.country-btn .cname{font-size:.56rem;color:rgba(255,255,255,.7);font-weight:600;letter-spacing:.04em}
+.country-btn.active .cname{color:var(--fifa-gold)}
+
+/* ── Template selector ── */
+.template-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
+.tpl-btn{
+  aspect-ratio:3/4;
+  border:2px solid rgba(255,255,255,.1);
+  border-radius:10px;
+  cursor:pointer;
+  overflow:hidden;
+  position:relative;
+  transition:all .15s;
+}
+.tpl-btn:hover{border-color:rgba(255,255,255,.3)}
+.tpl-btn.active{border-color:var(--fifa-gold);box-shadow:0 0 0 2px rgba(245,166,35,.3)}
+.tpl-btn canvas{width:100%;height:100%;display:block}
+.tpl-label{
+  position:absolute;bottom:0;left:0;right:0;
+  background:linear-gradient(transparent,rgba(0,0,0,.8));
+  padding:.3rem .4rem;
+  font-size:.58rem;font-weight:700;color:#fff;text-align:center;
+  letter-spacing:.05em;
+}
+
+/* ── Photo upload ── */
+.photo-upload-area{
+  border:2px dashed rgba(255,255,255,.2);
+  border-radius:14px;
+  padding:1.5rem;
+  text-align:center;
+  cursor:pointer;
+  transition:all .2s;
+  background:rgba(255,255,255,.02);
+  position:relative;
+}
+.photo-upload-area:hover{border-color:var(--fifa-gold);background:rgba(245,166,35,.05)}
+.photo-upload-area .upload-icon{font-size:2.5rem;display:block;margin-bottom:.5rem}
+.photo-upload-area p{font-size:.8rem;color:rgba(255,255,255,.6)}
+.photo-upload-area strong{color:var(--fifa-gold);display:block;margin-bottom:.2rem;font-size:.85rem}
+#photoPreviewWrap{display:none;position:relative}
+#photoPreviewWrap img{
+  width:100%;max-height:200px;object-fit:cover;border-radius:10px;
+  border:2px solid var(--fifa-gold);
+}
+.remove-photo{
+  position:absolute;top:6px;right:6px;
+  background:rgba(0,0,0,.7);color:#fff;border:none;border-radius:50%;
+  width:26px;height:26px;cursor:pointer;font-size:.8rem;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* ── Text inputs ── */
+.inp-dark{
+  width:100%;padding:.6rem .8rem;
+  background:rgba(255,255,255,.07);
+  border:1.5px solid rgba(255,255,255,.12);
+  border-radius:10px;color:#fff;
+  font-family:'Rajdhani',sans-serif;font-size:.9rem;font-weight:600;
+  outline:none;transition:border-color .15s;
+  margin-bottom:.5rem;
+}
+.inp-dark::placeholder{color:rgba(255,255,255,.35)}
+.inp-dark:focus{border-color:var(--fifa-gold)}
+.inp-lbl{font-size:.68rem;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.3rem;display:block}
+
+/* ── Number selector ── */
+.number-row{display:flex;align-items:center;gap:.8rem;margin-bottom:.5rem}
+.num-btn{
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);
+  color:#fff;cursor:pointer;font-size:1.1rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.num-btn:hover{background:var(--fifa-gold);color:#000;border-color:var(--fifa-gold)}
+.num-display{
+  font-family:'Bebas Neue',sans-serif;font-size:2.5rem;
+  color:var(--fifa-gold);min-width:60px;text-align:center;
+  line-height:1;
+}
+
+/* ── Poster preview ── */
+.poster-section{
+  background:rgba(0,0,0,.4);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;
+  overflow:hidden;
+  margin-bottom:.8rem;
+}
+.poster-header{
+  padding:.65rem 1rem;
+  background:linear-gradient(90deg,rgba(0,48,135,.6),rgba(200,16,46,.6));
+  display:flex;align-items:center;justify-content:space-between;
+}
+.poster-header span{font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:.1em;color:#fff}
+#mainCanvas{
+  width:100%;display:block;
+  aspect-ratio:1/1;
+  cursor:pointer;
+}
+
+/* ── Action buttons ── */
+.action-row{
+  display:grid;grid-template-columns:1fr 1fr;gap:.5rem;
+  padding:.8rem;background:rgba(0,0,0,.2);
+}
+.action-btn{
+  padding:.7rem;border:none;border-radius:12px;
+  font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:.08em;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.4rem;
+  transition:all .15s;
+}
+.action-btn:hover{transform:translateY(-2px)}
+.btn-download{background:linear-gradient(135deg,#003087,#0052cc);color:#fff;box-shadow:0 3px 12px rgba(0,48,135,.4)}
+.btn-share{background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;box-shadow:0 3px 12px rgba(37,211,102,.3)}
+.btn-regen{background:rgba(255,255,255,.08);color:#fff;border:1.5px solid rgba(255,255,255,.15)}
+.btn-regen:hover{background:rgba(255,255,255,.15)}
+
+/* ── Generate button ── */
+.generate-bar{
+  position:fixed;bottom:0;left:0;right:0;
+  padding:.8rem 1rem;
+  background:linear-gradient(transparent,rgba(10,14,26,.95) 30%);
+  padding-top:1.5rem;
+}
+.btn-generate-main{
+  width:100%;padding:.9rem;
+  background:linear-gradient(135deg,#c8102e,#8b0000);
+  color:#fff;border:none;border-radius:14px;
+  font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.12em;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.6rem;
+  box-shadow:0 4px 20px rgba(200,16,46,.4);
+  transition:all .2s;
+}
+.btn-generate-main:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(200,16,46,.5)}
+.btn-generate-main:disabled{opacity:.6;cursor:not-allowed;transform:none}
+
+/* Loading overlay */
+.loading-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(10,14,26,.9);
+  z-index:200;
+  align-items:center;justify-content:center;
+  flex-direction:column;gap:1rem;
+}
+.loading-overlay.show{display:flex}
+.ball-loader{
+  width:60px;height:60px;
+  animation:spin 0.8s linear infinite;
+  font-size:3rem;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-overlay p{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:.1em;color:#fff}
+.loading-overlay small{font-size:.75rem;color:rgba(255,255,255,.5)}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:5rem;left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:rgba(255,255,255,.1);backdrop-filter:blur(10px);
+  color:#fff;padding:.6rem 1.2rem;border-radius:25px;
+  font-size:.8rem;font-weight:700;z-index:9999;
+  opacity:0;transition:all .3s;border:1px solid rgba(255,255,255,.2);
+  white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{background:rgba(46,125,50,.9);border-color:rgba(76,175,80,.5)}
+.toast.err{background:rgba(183,28,28,.9);border-color:rgba(244,67,54,.5)}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="hdr">
+  <div>
+    <div class="hdr-logo">⚽ FIFA WORLD CUP</div>
+    <div class="hdr-sub">Fan Poster Generator</div>
+  </div>
+  <div class="hdr-badge">USA · CAN · MEX 2026</div>
+</div>
+
+<div class="container">
+
+<!-- Country Select -->
+<div class="card">
+  <div class="card-head">
+    <span>🌍</span><h3>Choose Your Team</h3>
+  </div>
+  <div class="card-body">
+    <div class="country-grid" id="countryGrid"></div>
+  </div>
+</div>
+
+<!-- Photo Upload -->
+<div class="card">
+  <div class="card-head">
+    <span>📸</span><h3>Your Photo</h3>
+  </div>
+  <div class="card-body">
+    <div class="photo-upload-area" onclick="document.getElementById('photoInput').click()" id="uploadArea">
+      <span class="upload-icon">🤳</span>
+      <strong>Tap to upload your photo</strong>
+      <p>Take selfie or choose from gallery</p>
+    </div>
+    <div id="photoPreviewWrap">
+      <img id="photoPreview" src="" alt="">
+      <button class="remove-photo" onclick="removePhoto()">✕</button>
+    </div>
+    <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="handlePhoto(this)">
+  </div>
+</div>
+
+<!-- Player Details -->
+<div class="card">
+  <div class="card-head">
+    <span>⚽</span><h3>Your Player Details</h3>
+  </div>
+  <div class="card-body">
+    <label class="inp-lbl">Your Name</label>
+    <input type="text" class="inp-dark" id="playerName" placeholder="e.g. Mohammed Anas" maxlength="25">
+
+    <label class="inp-lbl">Jersey Number</label>
+    <div class="number-row">
+      <button class="num-btn" onclick="changeNum(-1)">−</button>
+      <div class="num-display" id="numDisplay">10</div>
+      <button class="num-btn" onclick="changeNum(1)">+</button>
+      <input type="number" class="inp-dark" id="jerseyNum" value="10" min="1" max="99"
+             style="width:80px;margin:0;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:1.2rem"
+             oninput="document.getElementById('numDisplay').textContent=this.value">
+    </div>
+
+    <label class="inp-lbl">Position</label>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem;margin-bottom:.5rem">
+      <?php
+      $positions = ['GK','DEF','MID','FWD'];
+      foreach($positions as $p):
+      ?>
+      <button onclick="selectPos(this,'<?= $p ?>')"
+        style="padding:.45rem;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;color:rgba(255,255,255,.7);font-family:'Bebas Neue',sans-serif;font-size:.9rem;cursor:pointer;letter-spacing:.06em;transition:all .15s"
+        class="pos-btn <?= $p==='FWD'?'pos-active':'' ?>">
+        <?= $p ?>
+      </button>
+      <?php endforeach; ?>
+    </div>
+
+    <label class="inp-lbl">Favourite Player (optional)</label>
+    <input type="text" class="inp-dark" id="favPlayer" placeholder="e.g. Messi, Ronaldo, Mbappe">
+  </div>
+</div>
+
+<!-- Template -->
+<div class="card">
+  <div class="card-head">
+    <span>🎨</span><h3>Poster Template</h3>
+  </div>
+  <div class="card-body">
+    <div class="template-grid" id="templateGrid"></div>
+  </div>
+</div>
+
+<!-- Preview -->
+<div class="poster-section">
+  <div class="poster-header">
+    <span>🏆 POSTER PREVIEW</span>
+    <span style="font-size:.65rem;color:rgba(255,255,255,.5)">Tap to zoom</span>
+  </div>
+  <canvas id="mainCanvas" width="800" height="800"></canvas>
+  <div class="action-row">
+    <button class="action-btn btn-download" onclick="downloadPoster()">📥 DOWNLOAD</button>
+    <button class="action-btn btn-share" onclick="sharePoster()">💚 WHATSAPP</button>
+  </div>
+</div>
+
+<!-- Generate button -->
+<div style="height:80px"></div>
+
+</div><!-- end container -->
+
+<!-- Generate fixed button -->
+<div class="generate-bar">
+  <button class="btn-generate-main" id="genBtn" onclick="generatePoster()">
+    ⚽ GENERATE MY POSTER
+  </button>
+</div>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="ball-loader">⚽</div>
+  <p>Creating your poster...</p>
+  <small id="loadStep">Setting up the pitch...</small>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────
+var TEAMS = [
+  {flag:'🇸🇦',name:'Saudi Arabia',c1:'#006c35',c2:'#fff',abbr:'KSA'},
+  {flag:'🇶🇦',name:'Qatar',      c1:'#8d1b3d',c2:'#fff',abbr:'QAT'},
+  {flag:'🇵🇸',name:'Palestine',  c1:'#000',   c2:'#e4312b',abbr:'PAL'},
+  {flag:'🇲🇦',name:'Morocco',    c1:'#c1272d',c2:'#006233',abbr:'MAR'},
+  {flag:'🇮🇳',name:'India',      c1:'#ff9933', c2:'#138808',abbr:'IND'},
+  {flag:'🇧🇷',name:'Brazil',     c1:'#009c3b',c2:'#ffdf00',abbr:'BRA'},
+  {flag:'🇦🇷',name:'Argentina',  c1:'#74acdf',c2:'#fff',abbr:'ARG'},
+  {flag:'🇫🇷',name:'France',     c1:'#002395',c2:'#ed2939',abbr:'FRA'},
+  {flag:'🇩🇪',name:'Germany',    c1:'#000',   c2:'#dd0000',abbr:'GER'},
+  {flag:'🇪🇸',name:'Spain',      c1:'#c60b1e',c2:'#ffc400',abbr:'ESP'},
+  {flag:'🇵🇹',name:'Portugal',   c1:'#006600',c2:'#ff0000',abbr:'POR'},
+  {flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',name:'England',    c1:'#fff',   c2:'#cf081f',abbr:'ENG'},
+];
+
+var TEMPLATES = [
+  {name:'FIRE',     id:'fire'},
+  {name:'NIGHT',    id:'night'},
+  {name:'GOLD',     id:'gold'},
+  {name:'GRUNGE',   id:'grunge'},
+  {name:'NEON',     id:'neon'},
+  {name:'FLAG',     id:'flag'},
+];
+
+var selectedTeam = TEAMS[0];
+var selectedTemplate = 'fire';
+var selectedPos = 'FWD';
+var jerseyNum = 10;
+var playerPhoto = null;
+
+// ── Render team grid ──────────────────────────────────────────
+var grid = document.getElementById('countryGrid');
+TEAMS.forEach(function(t,i){
+  var d = document.createElement('div');
+  d.className = 'country-btn' + (i===0?' active':'');
+  d.innerHTML = '<span class="flag">'+t.flag+'</span><span class="cname">'+t.name+'</span>';
+  d.onclick = function(){
+    document.querySelectorAll('.country-btn').forEach(function(b){b.classList.remove('active')});
+    d.classList.add('active');
+    selectedTeam = t;
+    renderPreview();
+  };
+  grid.appendChild(d);
+});
+
+// ── Render template grid ──────────────────────────────────────
+var tGrid = document.getElementById('templateGrid');
+TEMPLATES.forEach(function(t,i){
+  var wrap = document.createElement('div');
+  wrap.className = 'tpl-btn' + (i===0?' active':'');
+  wrap.dataset.id = t.id;
+  var c = document.createElement('canvas');
+  c.width = 120; c.height = 160;
+  wrap.appendChild(c);
+  var lbl = document.createElement('div');
+  lbl.className = 'tpl-label';
+  lbl.textContent = t.name;
+  wrap.appendChild(lbl);
+  wrap.onclick = function(){
+    document.querySelectorAll('.tpl-btn').forEach(function(b){b.classList.remove('active')});
+    wrap.classList.add('active');
+    selectedTemplate = t.id;
+    renderPreview();
+  };
+  tGrid.appendChild(wrap);
+  renderTemplateThumbnail(c, t.id, i);
+});
+
+function renderTemplateThumbnail(canvas, id, i){
+  var ctx = canvas.getContext('2d');
+  var W=120,H=160;
+  var palettes = {
+    fire:  ['#1a0000','#8b0000','#ff4500'],
+    night: ['#0a0e2a','#003087','#00bfff'],
+    gold:  ['#1a1000','#8b6914','#f5a623'],
+    grunge:['#1a1a1a','#333','#ff2200'],
+    neon:  ['#000a1a','#0d1b2a','#00ff88'],
+    flag:  ['#003087','#fff','#c8102e'],
+  };
+  var p = palettes[id] || palettes.fire;
+  var bg = ctx.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,p[0]);bg.addColorStop(.5,p[1]);bg.addColorStop(1,p[0]);
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=p[2];ctx.globalAlpha=.15;
+  // Pattern
+  for(var j=0;j<6;j++){
+    ctx.beginPath();ctx.arc(W/2,H/2,30+j*12,0,Math.PI*2);
+    ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+  // Mini text
+  ctx.fillStyle=p[2];ctx.font='bold 11px Bebas Neue,sans-serif';
+  ctx.textAlign='center';ctx.fillText('⚽',W/2,H/2+4);
+  ctx.font='bold 8px Bebas Neue,sans-serif';ctx.fillText('2026',W/2,H-16);
+}
+
+// ── Position select ───────────────────────────────────────────
+function selectPos(el, pos){
+  document.querySelectorAll('.pos-btn').forEach(function(b){
+    b.classList.remove('pos-active');
+    b.style.borderColor='rgba(255,255,255,.1)';
+    b.style.color='rgba(255,255,255,.7)';
+    b.style.background='rgba(255,255,255,.06)';
+  });
+  el.style.borderColor='#f5a623';
+  el.style.color='#f5a623';
+  el.style.background='rgba(245,166,35,.1)';
+  selectedPos = pos;
+}
+// Init first active
+document.querySelectorAll('.pos-btn').forEach(function(b){
+  if(b.textContent.trim()==='FWD'){
+    b.style.borderColor='#f5a623';b.style.color='#f5a623';b.style.background='rgba(245,166,35,.1)';
+  }
+});
+
+// ── Jersey number ─────────────────────────────────────────────
+function changeNum(d){
+  jerseyNum = Math.max(1,Math.min(99,(parseInt(document.getElementById('jerseyNum').value)||10)+d));
+  document.getElementById('jerseyNum').value = jerseyNum;
+  document.getElementById('numDisplay').textContent = jerseyNum;
+}
+
+// ── Photo handling ────────────────────────────────────────────
+function handlePhoto(input){
+  if(!input.files||!input.files[0]) return;
+  var r = new FileReader();
+  r.onload = function(e){
+    playerPhoto = e.target.result;
+    document.getElementById('photoPreview').src = playerPhoto;
+    document.getElementById('uploadArea').style.display = 'none';
+    document.getElementById('photoPreviewWrap').style.display = 'block';
+    renderPreview();
+  };
+  r.readAsDataURL(input.files[0]);
+}
+function removePhoto(){
+  playerPhoto = null;
+  document.getElementById('uploadArea').style.display = 'block';
+  document.getElementById('photoPreviewWrap').style.display = 'none';
+  document.getElementById('photoInput').value = '';
+  renderPreview();
+}
+
+// ── Main canvas renderer ──────────────────────────────────────
+var C = document.getElementById('mainCanvas');
+var ctx = C.getContext('2d');
+var W = 800, H = 800;
+
+function renderPreview(){
+  ctx.clearRect(0,0,W,H);
+  var t = selectedTemplate;
+  var team = selectedTeam;
+  var name = (document.getElementById('playerName').value||'YOUR NAME').toUpperCase();
+  var num  = document.getElementById('jerseyNum').value || '10';
+  var pos  = selectedPos;
+  var fav  = document.getElementById('favPlayer').value||'';
+
+  if(t==='fire')   drawFirePoster(team,name,num,pos,fav);
+  else if(t==='night') drawNightPoster(team,name,num,pos,fav);
+  else if(t==='gold')  drawGoldPoster(team,name,num,pos,fav);
+  else if(t==='grunge') drawGrungePoster(team,name,num,pos,fav);
+  else if(t==='neon')  drawNeonPoster(team,name,num,pos,fav);
+  else if(t==='flag')  drawFlagPoster(team,name,num,pos,fav);
+}
+
+// ── Template: FIRE ───────────────────────────────────────────
+function drawFirePoster(team,name,num,pos,fav){
+  // BG
+  var bg=ctx.createRadialGradient(W/2,H,0,W/2,H/2,W);
+  bg.addColorStop(0,'#ff4500');bg.addColorStop(.4,'#8b0000');bg.addColorStop(1,'#1a0000');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+
+  // Fire rays
+  ctx.save();ctx.globalAlpha=.15;
+  for(var i=0;i<24;i++){
+    ctx.save();ctx.translate(W/2,H);ctx.rotate((i/24)*Math.PI*2);
+    var lg=ctx.createLinearGradient(0,0,0,-H);
+    lg.addColorStop(0,'#ff6600');lg.addColorStop(1,'transparent');
+    ctx.fillStyle=lg;ctx.fillRect(-8,0,16,H);ctx.restore();
+  }
+  ctx.restore();
+
+  // Photo circle
+  drawPhotoCircle(W/2,300,200,'#ff4500','#ff8c00');
+
+  // Big number background
+  ctx.save();
+  ctx.globalAlpha=.06;
+  ctx.font='700px "Bebas Neue",sans-serif';
+  ctx.fillStyle='#fff';ctx.textAlign='center';
+  ctx.fillText(num,W/2,H-50);
+  ctx.restore();
+
+  // Team flag + name
+  ctx.font='52px serif';ctx.textAlign='center';
+  ctx.fillText(team.flag,W/2,80);
+  ctx.font='bold 28px "Bebas Neue",sans-serif';
+  ctx.fillStyle='rgba(255,255,255,.7)';ctx.letterSpacing='0.15em';
+  ctx.fillText(team.name.toUpperCase(),W/2,115);
+
+  // Divider
+  var dv=ctx.createLinearGradient(W*.2,0,W*.8,0);
+  dv.addColorStop(0,'transparent');dv.addColorStop(.5,'#ff4500');dv.addColorStop(1,'transparent');
+  ctx.strokeStyle=dv;ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(W*.15,130);ctx.lineTo(W*.85,130);ctx.stroke();
+
+  // Name
+  ctx.font='bold 72px "Bebas Neue",sans-serif';
+  ctx.fillStyle='#fff';ctx.textAlign='center';
+  ctx.shadowColor='#ff4500';ctx.shadowBlur=20;
+  ctx.fillText(name,W/2,570);ctx.shadowBlur=0;
+
+  // Number + Position row
+  ctx.font='bold 52px "Bebas Neue",sans-serif';
+  ctx.fillStyle='#ff6600';
+  ctx.fillText('#'+num+'  ·  '+pos,W/2,625);
+
+  // FIFA WC 2026
+  drawFIFABadge(W/2,710);
+
+  // Fav player
+  if(fav){
+    ctx.font='bold 22px "Rajdhani",sans-serif';
+    ctx.fillStyle='rgba(255,200,100,.7)';
+    ctx.fillText('FAN OF: '+fav.toUpperCase(),W/2,765);
+  }
+
+  // Bottom club
+  ctx.font='18px "Rajdhani",sans-serif';
+  ctx.fillStyle='rgba(255,255,255,.3)';
+  ctx.fillText('AISHWARYA ARTS & SPORTS CLUB · VETTIKKATTIRI',W/2,795);
+}
+
+// ── Template: NIGHT ──────────────────────────────────────────
+function drawNightPoster(team,name,num,pos,fav){
+  var bg=ctx.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,'#0a0e2a');bg.addColorStop(.5,'#001a4d');bg.addColorStop(1,'#0a0e2a');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+
+  // Stars
+  for(var i=0;i<80;i++){
+    ctx.beginPath();ctx.arc(Math.random()*W,Math.random()*H*.4,Math.random()*2,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,'+(0.3+Math.random()*.7)+')';ctx.fill();
+  }
+
+  // Circles
+  ctx.save();ctx.globalAlpha=.08;
+  ctx.strokeStyle='#00bfff';ctx.lineWidth=2;
+  for(var j=0;j<5;j++){ctx.beginPath();ctx.arc(W/2,H/2,(j+1)*120,0,Math.PI*2);ctx.stroke();}
+  ctx.restore();
+
+  drawPhotoCircle(W/2,300,200,'#003087','#00bfff');
+
+  ctx.font='52px serif';ctx.textAlign='center';ctx.fillText(team.flag,W/2,80);
+  ctx.font='bold 26px "Bebas Neue",sans-serif';ctx.fillStyle='#00bfff';
+  ctx.fillText(team.name.toUpperCase(),W/2,115);
+
+  ctx.font='bold 76px "Bebas Neue",sans-serif';
+  ctx.fillStyle='#fff';ctx.shadowColor='#00bfff';ctx.shadowBlur=25;
+  ctx.fillText(name,W/2,570);ctx.shadowBlur=0;
+
+  ctx.font='bold 48px "Bebas Neue",sans-serif';ctx.fillStyle='#00bfff';
+  ctx.fillText('#'+num+'  ·  '+pos,W/2,625);
+
+  drawFIFABadge(W/2,710);
+  if(fav){ctx.font='22px Rajdhani,sans-serif';ctx.fillStyle='rgba(0,191,255,.7)';ctx.fillText('FAN OF: '+fav.toUpperCase(),W/2,765);}
+  ctx.font='18px Rajdhani,sans-serif';ctx.fillStyle='rgba(255,255,255,.3)';
+  ctx.fillText('AISHWARYA ARTS & SPORTS CLUB · VETTIKKATTIRI',W/2,795);
+}
+
+// ── Template: GOLD ───────────────────────────────────────────
+function drawGoldPoster(team,name,num,pos,fav){
+  var bg=ctx.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,'#0d0800');bg.addColorStop(.5,'#2a1a00');bg.addColorStop(1,'#0d0800');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+
+  ctx.save();ctx.globalAlpha=.1;
+  for(var i=0;i<12;i++){
+    var ag=ctx.createLinearGradient(0,0,0,H);
+    ag.addColorStop(0,'transparent');ag.addColorStop(.5,'#f5a623');ag.addColorStop(1,'transparent');
+    ctx.save();ctx.translate(W/2,H/2);ctx.rotate(i*Math.PI/6);
+    ctx.fillStyle=ag;ctx.fillRect(-3,-H/2,6,H);ctx.restore();
+  }ctx.restore();
+
+  drawPhotoCircle(W/2,300,200,'#8b6914','#f5a623');
+
+  ctx.font='52px serif';ctx.textAlign='center';ctx.fillText(team.flag,W/2,80);
+  ctx.font='bold 26px "Bebas Neue",sans-serif';ctx.fillStyle='#f5a623';
+  ctx.fillText(team.name.toUpperCase(),W/2,115);
+
+  ctx.save();ctx.globalAlpha=.06;ctx.font='700px "Bebas Neue",sans-serif';
+  ctx.fillStyle='#f5a623';ctx.textAlign='center';ctx.fillText(num,W/2,H-50);ctx.restore();
+
+  ctx.font='bold 76px "Bebas Neue",sans-serif';
+  var ng=ctx.createLinearGradient(0,530,0,580);
+  ng.addColorStop(0,'#fff');ng.addColorStop(.5,'#f5a623');ng.addColorStop(1,'#c8860a');
+  ctx.fillStyle=ng;ctx.fillText(name,W/2,570);
+
+  ctx.font='bold 48px "Bebas Neue",sans-serif';ctx.fillStyle='#f5a623';
+  ctx.fillText('#'+num+'  ·  '+pos,W/2,625);
+
+  // Trophy icon area
+  ctx.font='38px serif';ctx.fillText('🏆',W/2-60,680);ctx.fillText('🥇',W/2+60,680);
+  drawFIFABadge(W/2,730);
+  if(fav){ctx.font='22px Rajdhani,sans-serif';ctx.fillStyle='rgba(245,166,35,.7)';ctx.fillText('FAN OF: '+fav.toUpperCase(),W/2,770);}
+  ctx.font='18px Rajdhani,sans-serif';ctx.fillStyle='rgba(255,255,255,.3)';
+  ctx.fillText('AISHWARYA ARTS & SPORTS CLUB · VETTIKKATTIRI',W/2,795);
+}
+
+// ── Template: GRUNGE ─────────────────────────────────────────
+function drawGrungePoster(team,name,num,pos,fav){
+  ctx.fillStyle='#111';ctx.fillRect(0,0,W,H);
+  ctx.save();ctx.globalAlpha=.06;
+  for(var i=0;i<200;i++){
+    ctx.fillStyle='#fff';
+    ctx.fillRect(Math.random()*W,Math.random()*H,Math.random()*3,Math.random()*3);
+  }ctx.restore();
+
+  var lg=ctx.createLinearGradient(0,0,W,H);
+  lg.addColorStop(0,'rgba(200,16,46,.3)');lg.addColorStop(1,'rgba(0,48,135,.3)');
+  ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);
+
+  drawPhotoCircle(W/2,300,200,'#c8102e','#fff');
+
+  ctx.font='52px serif';ctx.textAlign='center';ctx.fillText(team.flag,W/2,80);
+  ctx.font='bold 24px "Bebas Neue",sans-serif';ctx.fillStyle='#c8102e';
+  ctx.fillText(team.name.toUpperCase(),W/2,115);
+
+  ctx.save();ctx.globalAlpha=.05;ctx.font='700px "Bebas Neue",sans-serif';
+  ctx.fillStyle='#fff';ctx.textAlign='center';ctx.fillText(num,W/2,H-50);ctx.restore();
+
+  ctx.font='bold 80px "Bebas Neue",sans-serif';ctx.fillStyle='#fff';
+  ctx.shadowColor='#c8102e';ctx.shadowBlur=0;ctx.fillText(name,W/2,570);
+
+  ctx.font='bold 48px "Bebas Neue",sans-serif';ctx.fillStyle='#c8102e';
+  ctx.fillText('#'+num+'  ·  '+pos,W/2,625);
+
+  drawFIFABadge(W/2,710);
+  if(fav){ctx.font='22px Rajdhani,sans-serif';ctx.fillStyle='rgba(255,100,100,.7)';ctx.fillText('FAN OF: '+fav.toUpperCase(),W/2,765);}
+  ctx.font='18px Rajdhani,sans-serif';ctx.fillStyle='rgba(255,255,255,.3)';
+  ctx.fillText('AISHWARYA ARTS & SPORTS CLUB · VETTIKKATTIRI',W/2,795);
+}
+
+// ── Template: NEON ───────────────────────────────────────────
+function drawNeonPoster(team,name,num,pos,fav){
+  ctx.fillStyle='#000a1a';ctx.fillRect(0,0,W,H);
+
+  ctx.save();ctx.globalAlpha=.08;ctx.strokeStyle='#00ff88';ctx.lineWidth=1;
+  for(var i=0;i<W;i+=30){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,H);ctx.stroke();}
+  for(var j=0;j<H;j+=30){ctx.beginPath();ctx.moveTo(0,j);ctx.lineTo(W,j);ctx.stroke();}
+  ctx.restore();
+
+  drawPhotoCircle(W/2,300,200,'#00ff88','#00cc66');
+
+  ctx.font='52px serif';ctx.textAlign='center';ctx.fillText(team.flag,W/2,80);
+  ctx.font='bold 26px "Bebas Neue",sans-serif';ctx.fillStyle='#00ff88';
+  ctx.shadowColor='#00ff88';ctx.shadowBlur=15;
+  ctx.fillText(team.name.toUpperCase(),W/2,115);ctx.shadowBlur=0;
+
+  ctx.font='bold 76px "Bebas Neue",sans-serif';
+  ctx.shadowColor='#00ff88';ctx.shadowBlur=20;ctx.fillStyle='#fff';
+  ctx.fillText(name,W/2,570);ctx.shadowBlur=0;
+
+  ctx.font='bold 48px "Bebas Neue",sans-serif';
+  ctx.fillStyle='#00ff88';ctx.shadowColor='#00ff88';ctx.shadowBlur=15;
+  ctx.fillText('#'+num+'  ·  '+pos,W/2,625);ctx.shadowBlur=0;
+
+  drawFIFABadge(W/2,710);
+  if(fav){ctx.font='22px Rajdhani,sans-serif';ctx.fillStyle='rgba(0,255,136,.7)';ctx.fillText('FAN OF: '+fav.toUpperCase(),W/2,765);}
+  ctx.font='18px Rajdhani,sans-serif';ctx.fillStyle='rgba(255,255,255,.3)';
+  ctx.fillText('AISHWARYA ARTS & SPORTS CLUB · VETTIKKATTIRI',W/2,795);
+}
+
+// ── Template: FLAG ───────────────────────────────────────────
+function drawFlagPoster(team,name,num,pos,fav){
+  var c1=team.c1||'#003087', c2=team.c2||'#fff';
+  var bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,c1);bg.addColorStop(.5,'#0d1b3e');bg.addColorStop(1,c1);
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+
+  ctx.save();ctx.globalAlpha=.12;ctx.fillStyle=c2;
+  for(var i=0;i<6;i++){
+    ctx.beginPath();ctx.arc(W/2,H/2,(i+1)*100,0,Math.PI*2);ctx.stroke();
+  }ctx.restore();
+
+  drawPhotoCircle(W/2,300,200,c1,c2);
+
+  ctx.font='60px serif';ctx.textAlign='center';ctx.fillText(team.flag,W/2,90);
+  ctx.font='bold 30px "Bebas Neue",sans-serif';
+  ctx.fillStyle=c2==='#fff'?'rgba(255,255,255,.9)':c2;
+  ctx.fillText(team.name.toUpperCase(),W/2,125);
+
+  ctx.font='bold 76px "Bebas Neue",sans-serif';ctx.fillStyle='#fff';
+  ctx.shadowColor=c2;ctx.shadowBlur=15;
+  ctx.fillText(name,W/2,570);ctx.shadowBlur=0;
+
+  ctx.font='bold 50px "Bebas Neue",sans-serif';
+  ctx.fillStyle=c2==='#fff'?'rgba(255,255,255,.8)':c2;
+  ctx.fillText('#'+num+'  ·  '+pos,W/2,625);
+
+  drawFIFABadge(W/2,710);
+  if(fav){ctx.font='22px Rajdhani,sans-serif';ctx.fillStyle='rgba(255,255,255,.6)';ctx.fillText('FAN OF: '+fav.toUpperCase(),W/2,765);}
+  ctx.font='18px Rajdhani,sans-serif';ctx.fillStyle='rgba(255,255,255,.3)';
+  ctx.fillText('AISHWARYA ARTS & SPORTS CLUB · VETTIKKATTIRI',W/2,795);
+}
+
+// ── Shared helpers ────────────────────────────────────────────
+function drawPhotoCircle(cx,cy,r,c1,c2){
+  // Outer glow ring
+  ctx.save();
+  ctx.shadowColor=c2;ctx.shadowBlur=25;
+  ctx.beginPath();ctx.arc(cx,cy,r+10,0,Math.PI*2);
+  var rg=ctx.createLinearGradient(cx-r,cy-r,cx+r,cy+r);
+  rg.addColorStop(0,c2);rg.addColorStop(.5,c1);rg.addColorStop(1,c2);
+  ctx.strokeStyle=rg;ctx.lineWidth=4;ctx.stroke();
+  ctx.restore();
+
+  // Photo or placeholder
+  ctx.save();
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.clip();
+
+  if(playerPhoto){
+    var img=new Image();
+    img.onload=function(){
+      ctx.save();ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.clip();
+      // Cover fit
+      var scale=Math.max(r*2/img.width,r*2/img.height);
+      var iw=img.width*scale,ih=img.height*scale;
+      ctx.drawImage(img,cx-iw/2,cy-ih/2,iw,ih);
+      ctx.restore();
+      // Redraw overlays after image loads
+      setTimeout(function(){ renderPreview(); },50);
+    };
+    img.src=playerPhoto;
+    // Draw placeholder while loading
+    ctx.fillStyle='rgba(0,0,0,.3)';ctx.fillRect(cx-r,cy-r,r*2,r*2);
+    ctx.font='80px serif';ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,.3)';
+    ctx.fillText('🤳',cx,cy+28);
+  } else {
+    // Placeholder
+    var pg=ctx.createRadialGradient(cx,cy-20,0,cx,cy,r);
+    pg.addColorStop(0,'rgba(255,255,255,.15)');pg.addColorStop(1,'rgba(0,0,0,.3)');
+    ctx.fillStyle=pg;ctx.fillRect(cx-r,cy-r,r*2,r*2);
+    ctx.font='80px serif';ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,.4)';
+    ctx.fillText('📸',cx,cy+28);
+    ctx.font='bold 20px Rajdhani,sans-serif';ctx.fillStyle='rgba(255,255,255,.4)';
+    ctx.fillText('ADD YOUR PHOTO',cx,cy+75);
+  }
+  ctx.restore();
+}
+
+function drawFIFABadge(cx,y){
+  // FIFA WC 2026 badge
+  ctx.save();
+  ctx.textAlign='center';
+
+  // Badge background
+  var bw=280,bh=38;
+  var bx=cx-bw/2;
+  var bg=ctx.createLinearGradient(bx,y-bh,bx+bw,y);
+  bg.addColorStop(0,'rgba(0,48,135,.6)');
+  bg.addColorStop(.5,'rgba(200,16,46,.6)');
+  bg.addColorStop(1,'rgba(0,48,135,.6)');
+  ctx.fillStyle=bg;
+  roundRect2(ctx,bx,y-bh,bw,bh,8);ctx.fill();
+
+  ctx.strokeStyle='rgba(255,255,255,.2)';ctx.lineWidth=1;
+  roundRect2(ctx,bx,y-bh,bw,bh,8);ctx.stroke();
+
+  ctx.font='bold 20px "Bebas Neue",sans-serif';
+  ctx.fillStyle='#fff';ctx.letterSpacing='0.12em';
+  ctx.fillText('⚽  FIFA WORLD CUP 2026  ⚽',cx,y-8);
+  ctx.restore();
+}
+
+function roundRect2(ctx,x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);ctx.lineTo(x+r,y+h);
+  ctx.arcTo(x,y+h,x,y+h-r,r);ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
+}
+
+// ── Generate (re-render with latest inputs) ───────────────────
+var loadSteps=['Setting up the pitch...','Placing your photo...','Drawing team colors...','Adding details...','Final touches...'];
+function generatePoster(){
+  var li=document.getElementById('loadingOverlay');
+  li.classList.add('show');
+  var si=0;
+  var iv=setInterval(function(){
+    document.getElementById('loadStep').textContent=loadSteps[si++%loadSteps.length];
+  },600);
+  setTimeout(function(){
+    clearInterval(iv);
+    renderPreview();
+    li.classList.remove('show');
+    toast('🎉 Poster ready!','ok');
+    document.getElementById('mainCanvas').scrollIntoView({behavior:'smooth',block:'center'});
+  },2400);
+}
+
+// ── Download ──────────────────────────────────────────────────
+function downloadPoster(){
+  var name=(document.getElementById('playerName').value||'fan').replace(/\s+/g,'_');
+  var a=document.createElement('a');
+  a.href=C.toDataURL('image/png');
+  a.download='WC2026_'+name+'_Poster.png';
+  a.click();
+  toast('📥 Downloaded!','ok');
+}
+
+// ── WhatsApp share ────────────────────────────────────────────
+function sharePoster(){
+  var name=document.getElementById('playerName').value||'Fan';
+  var team=selectedTeam.name;
+  var num=document.getElementById('jerseyNum').value||'10';
+  var msg='⚽ *FIFA WORLD CUP 2026*\n🏆 I am a proud '+team+' fan!\n\n👤 '+name.toUpperCase()+' | #'+num+' | '+selectedPos+'\n\n🌐 mynamecc.online\n\n🏅 Aishwarya Arts & Sports Club, Vettikkattiri';
+
+  // Try native share with image
+  C.toBlob(function(blob){
+    var file=new File([blob],'WC2026_Fan_Poster.png',{type:'image/png'});
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+      navigator.share({files:[file],text:msg,title:'My FIFA WC 2026 Fan Poster'});
+    } else {
+      // Download and open WA
+      downloadPoster();
+      setTimeout(function(){
+        window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+      },500);
+    }
+  });
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function toast(msg,type){
+  var el=document.getElementById('toast');
+  el.textContent=msg;
+  el.className='toast show'+(type==='ok'?' ok':type==='err'?' err':'');
+  setTimeout(function(){el.className='toast'},2500);
+}
+
+// ── Live preview on input ─────────────────────────────────────
+['playerName','jerseyNum','favPlayer'].forEach(function(id){
+  var el=document.getElementById(id);
+  if(el) el.addEventListener('input',function(){renderPreview();});
+});
+
+// ── Initial render ────────────────────────────────────────────
+document.fonts.ready.then(function(){ renderPreview(); });
+renderPreview();
+</script>
+</body>
+</html>
