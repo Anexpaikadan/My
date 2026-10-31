@@ -249,8 +249,6 @@ $navItems = array(
     array('url'=>url('modules/feed.php'),        'em'=>'📰','label'=>'Feed',          'bg'=>'#e1f5fe','bc'=>'#4fc3f7','tc'=>'#01579b'),
     array('url'=>url('modules/market.php'),      'em'=>'🏪','label'=>'AV Market',      'bg'=>'#e3f2fd','bc'=>'#90caf9','tc'=>'#0d47a1'),
   array('url'=>url('modules/idcard.php'),      'em'=>'🪪','label'=>'ID Card',      'bg'=>'#e3f2fd','bc'=>'#90caf9','tc'=>'#0d47a1'),
-  array('url'=>url('modules/nameslip.php'),    'em'=>'📚','label'=>'Name Slip',     'bg'=>'#e3f2fd','bc'=>'#90caf9','tc'=>'#0d47a1'),
-  array('url'=>url('modules/henna_fest.php'),  'em'=>'🌿','label'=>'Henna Fest',  'bg'=>'#fff3e0','bc'=>'#ffcc80','tc'=>'#8B3A0F'),
   array('url'=>url('modules/fest_manager.php'), 'em'=>'🎪','label'=>'Fests',   'bg'=>'#e8eaf6','bc'=>'#9fa8da','tc'=>'#1a237e'),
   array('url'=>url('modules/poster_maker.php'), 'em'=>'🎨','label'=>'AI Poster',   'bg'=>'#fff3e0','bc'=>'#ffcc80','tc'=>'#8B3A0F'),
   array('url'=>url('modules/crowdfund.php'),   'em'=>'❤️','label'=>'Crowd Fund',    'bg'=>'#fce4ec','bc'=>'#f48fb1','tc'=>'#880e4f'),
@@ -1114,106 +1112,4 @@ var _sp=document.getElementById('scanPopup');
 if (_sp) { _sp.addEventListener('click',function(e){if(e.target===this)closeDashScan();}); }
 document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeDashScan(); });
 </script>
-<?php
-// ── Henna Fest Dashboard Section ──
-$_dbHenna = false;
-$_dbHEntries  = [];
-$_dbHSettings = null;
-$_dbHMyVote   = 0;
-$_dbHPoster   = '';
-$_dbHFestId   = 1;
-try {
-  if (db()->query("SHOW TABLES LIKE 'henna_entries'")->fetch()) {
-    // Get settings - try henna_fest_settings first (working table)
-    try {
-      $_dbHSettings = db()->query("SELECT * FROM henna_fest_settings LIMIT 1")->fetch();
-      $_dbHPoster   = $_dbHSettings['event_poster'] ?? '';
-      $_dbHFestId   = 1;
-    } catch(Exception $ex2) {}
-
-    // Top 10 entries by likes
-    $_dbHEntries = db()->query(
-      "SELECT e.*,u.name member_name FROM henna_entries e
-       JOIN users u ON u.id=e.member_id
-       WHERE e.status='active'
-       ORDER BY e.vote_count DESC, e.created_at ASC LIMIT 10"
-    )->fetchAll();
-
-    // My vote
-    $_dbHMyVoteStmt = db()->prepare("SELECT entry_id FROM henna_votes WHERE voter_id=? LIMIT 1");
-    $_dbHMyVoteStmt->execute([$user['id']]);
-    $mv = $_dbHMyVoteStmt->fetchColumn();
-    $_dbHMyVote = $mv ? (int)$mv : 0;
-
-    $_dbHenna = !empty($_dbHEntries);
-  }
-} catch(Exception $ex){}
-?>
-<?php if($_dbHenna): ?>
-<?php
-$_dbHSiteUrl  = rtrim(SITE_URL, '/');
-$_dbHVotingOn = $_dbHSettings ? (bool)$_dbHSettings['voting_open'] : false;
-$_dbHTitle    = $_dbHSettings ? ($_dbHSettings['event_title'] ?? 'Henna Fest') : 'Henna Fest';
-?>
-<div style="margin:1rem;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 3px 16px rgba(139,58,15,.1);border:1.5px solid rgba(196,82,26,.12)">
-
-  <!-- Section header -->
-  <div style="background:linear-gradient(135deg,#2D1B0E,#8B3A0F);padding:.8rem 1rem;display:flex;align-items:center;justify-content:space-between">
-    <div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.08em;color:#fff">🌿 <?php echo h($_dbHTitle); ?></div>
-      <div style="font-size:.62rem;color:rgba(255,255,255,.5)"><?php echo $_dbHVotingOn ? '❤️ Tap any photo to like!' : '🔒 Voting closed'; ?></div>
-    </div>
-    <a href="<?php echo url('modules/henna_fest.php'); ?>" style="background:#D4A017;color:#000;border:none;border-radius:10px;padding:.38rem .8rem;font-weight:800;font-size:.72rem;text-decoration:none">View All →</a>
-  </div>
-
-  <!-- Event Poster (if set) -->
-  <?php if($_dbHPoster): ?>
-  <div style="cursor:pointer" onclick="window.location='<?php echo url('modules/henna_fest.php'); ?>'">
-    <img src="<?php echo h($_dbHSiteUrl.'/assets/uploads/henna/'.basename($_dbHPoster)); ?>"
-         style="width:100%;max-height:200px;object-fit:cover;display:block" loading="lazy" alt="Fest Poster">
-  </div>
-  <?php endif; ?>
-
-  <!-- Top 10 entries strip -->
-  <div style="display:flex;gap:.6rem;padding:.75rem;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none">
-    <?php foreach($_dbHEntries as $_dbHRank => $_dbHE):
-      // Build correct image URL — check fest_id subfolder first, then root henna folder
-      $_dbHFid    = (int)($_dbHE['fest_id'] ?? 1);
-      $_dbHImgSub = $_dbHSiteUrl.'/assets/uploads/henna/'.$_dbHFid.'/'.basename($_dbHE['image_path']);
-      $_dbHImgOld = $_dbHSiteUrl.'/assets/uploads/henna/'.basename($_dbHE['image_path']);
-      // Use subfolder path (new uploads go here)
-      $_dbHImgUrl = $_dbHImgSub;
-      $_dbHIsOwn  = (int)$_dbHE['member_id'] === (int)$user['id'];
-      $_dbHVotedThis = $_dbHMyVote === (int)$_dbHE['id'];
-      $_dbHCanLike   = $_dbHVotingOn && !$_dbHMyVote && !$_dbHIsOwn;
-      $_dbHBorder = $_dbHVotedThis ? '#C4521A' : ($rank===0 ? '#D4A017' : 'rgba(196,82,26,.12)');
-    ?>
-    <div style="flex-shrink:0;width:130px;border-radius:14px;overflow:hidden;background:#fff;border:2px solid <?php echo $_dbHBorder; ?>;box-shadow:0 2px 10px rgba(139,58,15,.1);cursor:pointer;position:relative"
-         onclick="window.location='<?php echo url('modules/henna_fest.php'); ?>'">
-      <!-- Rank badge for top 3 -->
-      <?php if($_dbHRank < 3 && $_dbHE['vote_count'] > 0): ?>
-      <div style="position:absolute;top:5px;left:5px;width:22px;height:22px;border-radius:50%;background:<?php echo $_dbHRank===0?'#D4A017':($_dbHRank===1?'#9e9e9e':'#cd7f32'); ?>;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:900;color:<?php echo $_dbHRank===0?'#000':'#fff'; ?>;z-index:5;box-shadow:0 1px 4px rgba(0,0,0,.3)">
-        <?php echo $_dbHRank+1; ?>
-      </div>
-      <?php endif; ?>
-      <img src="<?php echo h($_dbHImgUrl); ?>"
-           style="width:130px;height:155px;object-fit:cover;display:block" loading="lazy" alt=""
-           onerror="this.src='<?php echo h($_dbHImgOld); ?>'">
-      <div style="padding:.4rem .5rem">
-        <div style="font-size:.63rem;font-weight:800;color:#8B3A0F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><?php echo h($_dbHE['member_name']); ?></div>
-        <div style="font-size:.68rem;color:<?php echo $_dbHVotedThis ? '#C4521A' : '#94a3b8'; ?>;font-weight:700">
-          <?php echo $_dbHVotedThis ? '✅' : '❤️'; ?> <?php echo (int)$_dbHE['vote_count']; ?>
-        </div>
-      </div>
-    </div>
-    <?php endforeach; ?>
-  </div>
-
-  <!-- Footer link -->
-  <div style="text-align:center;padding:.4rem .5rem .6rem;font-size:.68rem;color:#5d6b80">
-    <a href="<?php echo url('modules/henna_fest.php'); ?>" style="color:#8B3A0F;font-weight:700;text-decoration:none">View all entries & submit yours →</a>
-  </div>
-
-</div>
-<?php endif; ?>
 <?php require_once __DIR__.'/includes/footer.php'; ?>

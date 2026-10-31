@@ -308,7 +308,7 @@ function catColor($c) {
 function isSportsAdmin($r) {
     return in_array($r, array('secretary','developer','sports_committee'));
 }
-// Cultural/arts pages admin (arts festival, onam, henna)
+// Cultural/arts pages admin (arts festival, onam)
 function isCulturalAdmin($r) {
     return in_array($r, array('secretary','developer','cultural_committee'));
 }

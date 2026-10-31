@@ -714,7 +714,7 @@ require_once __DIR__ . '/../includes/header.php';
          'member'=>['Member','👤','Regular']];
     $mods=['football'=>['⚽','Football'],
            'arts_festival'=>['🎭','Arts Festival'],'onam'=>['🌸','Onam'],
-           'henna_fest'=>['🌿','Henna Fest'],'crowdfund'=>['❤️','Crowd Fund'],
+           'crowdfund'=>['❤️','Crowd Fund'],
            'donation'=>['💚','Donations'],'election'=>['🗳️','Elections'],
            'blood'=>['🩸','Blood Hub'],'gallery'=>['📸','Gallery'],
            'events'=>['📅','Events'],'market'=>['🛍️','Market'],

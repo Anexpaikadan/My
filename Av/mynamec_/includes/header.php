@@ -299,7 +299,6 @@ img{display:block;max-width:100%}
         <a href="<?= url('modules/football.php') ?>"><div class="di" aria-hidden="true" style="background:#e8f5e9">⚽</div> Football Tournament</a>
         <a href="<?= url('modules/arts_festival.php') ?>"><div class="di" aria-hidden="true" style="background:#f3e5f5">🎭</div> Arts Festival</a>
         <a href="<?= url('modules/onam.php') ?>"><div class="di" aria-hidden="true" style="background:#fff8e1">🌸</div> Onam Celebration</a>
-        <a href="<?= url('modules/henna_fest.php') ?>"><div class="di" aria-hidden="true" style="background:#fff3e0">🌿</div> Henna Fest</a>
         <a href="<?= url('modules/election.php') ?>"><div class="di" aria-hidden="true" style="background:#e3f2fd">🗳️</div> Elections</a>
         <a href="<?= url('modules/donation.php') ?>"><div class="di" aria-hidden="true" style="background:#fce4ec">💚</div> Donations</a>
         <a href="<?= url('modules/crowdfund.php') ?>"><div class="di" aria-hidden="true" style="background:#fce4ec">❤️</div> Crowd Funding</a>
@@ -314,7 +313,6 @@ img{display:block;max-width:100%}
       <div class="nav-drop" id="ddMe">
         <a href="<?= url('modules/profile.php') ?>"><div class="di" aria-hidden="true" style="background:#e3f2fd">👤</div> My Profile</a>
         <a href="<?= url('modules/idcard.php') ?>"><div class="di" aria-hidden="true" style="background:#e8f5e9">🪪</div> ID Card</a>
-        <a href="<?= url('modules/nameslip.php') ?>"><div class="di" aria-hidden="true" style="background:#e3f2fd">📚</div> Name Slip</a>
         <a href="<?= url('modules/certificate.php') ?>"><div class="di" aria-hidden="true" style="background:#fff8e1">🏅</div> Certificate</a>
         <a href="<?= url('modules/subscription.php') ?>"><div class="di" aria-hidden="true" style="background:#fce4ec">💳</div> Subscription</a>
         <div class="nav-drop-sep"></div>
@@ -406,7 +404,6 @@ img{display:block;max-width:100%}
     'My Account' => array(
       array('modules/profile.php','👤','My Profile'),
       array('modules/idcard.php','🪪','My ID Card'),
-      array('modules/nameslip.php','📚','Name Slip'),
       array('modules/certificate.php','🏅','Certificate'),
       array('modules/subscription.php','💳','Subscription'),
     ),
@@ -414,7 +411,6 @@ img{display:block;max-width:100%}
       array('modules/football.php','⚽','Football Tournament'),
       array('modules/arts_festival.php','🎭','Arts Festival'),
       array('modules/onam.php','🌸','Onam Celebration'),
-      array('modules/henna_fest.php','🌿','Henna Fest'),
       array('modules/election.php','🗳️','Elections'),
       array('modules/donation.php','💚','Donations'),
       array('modules/crowdfund.php','❤️','Crowd Funding'),
