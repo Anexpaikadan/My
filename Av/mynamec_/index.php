@@ -249,8 +249,10 @@ $wa   = preg_replace('/\D/', '', setting('CLUB_PHONE','+919876543210'));
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<?php $pageTitle = isset($pageTitle) ? $pageTitle : setting('CLUB_NAME','Aishwarya Arts & Sports Club').' · '.setting('CLUB_PLACE','Vettikkattiri'); ?>
 <title><?= h($pageTitle) ?></title>
+<meta name="description" content="<?= h(setting('CLUB_NAME','Aishwarya Arts & Sports Club').', '.setting('CLUB_PLACE','Vettikkattiri').', Kerala — sports, arts and community service. Events, gallery and member portal.') ?>">
 <link rel="manifest" href="/manifest.php">
 <meta name="theme-color" content="#07225c">
 <meta name="mobile-web-app-capable" content="yes">
@@ -270,7 +272,8 @@ $wa   = preg_replace('/\D/', '', setting('CLUB_PHONE','+919876543210'));
   --p:#1a3a6b; --p2:#0d47a1;
   --a:#c8922a; --a2:#e6b84a;
   --r:#b71c1c; --g:#1b5e20;
-  --tx:#1a1a2e; --t2:#4a5568; --t3:#8a9bae;
+  --tx:#1a1a2e; --t2:#4a5568; --t3:#5f6f86; /* 5.1:1 (was 2.9:1) */
+  --a-tx:#8a6116; /* gold for small text on light bg, 5.2:1 */
   --bd:rgba(0,0,0,.08);
   --sh:0 4px 24px rgba(0,0,0,.09);
   --sh2:0 12px 48px rgba(0,0,0,.14);
@@ -299,13 +302,13 @@ img{display:block;max-width:100%}
 .nav-logo-ph{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--p2));border:2px solid var(--a);display:flex;align-items:center;justify-content:center;font-size:1rem;color:#fff}
 .nav-club{line-height:1.2}
 .nav-club-name{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.09em;color:#1a3a6b}
-.nav-club-sub{font-size:.58rem;color:#8a9bae;letter-spacing:.1em;text-transform:uppercase}
+.nav-club-sub{font-size:.62rem;color:#5f6f86;letter-spacing:.1em;text-transform:uppercase}
 .nav-links{display:none;list-style:none;gap:.1rem;align-items:center;margin:0;padding:0}
 .nav-links a{font-size:.84rem;font-weight:600;color:#4a5568;padding:.42rem .8rem;border-radius:8px;transition:all .25s;white-space:nowrap;text-decoration:none}
 .nav-links a:hover,.nav-links a.on{color:var(--p);background:rgba(26,58,107,.08)}
 .btn-login{background:var(--p);color:#fff;border:none;border-radius:var(--rad-s);padding:.46rem 1.15rem;font-family:'Inter',sans-serif;font-size:.84rem;font-weight:700;cursor:pointer;transition:all var(--tr);display:inline-flex;align-items:center;gap:.4rem;white-space:nowrap}
 .btn-login:hover{background:var(--p2);transform:translateY(-1px);box-shadow:0 6px 18px rgba(26,58,107,.3)}
-.hb{display:flex;flex-direction:column;gap:4.5px;background:none;border:none;cursor:pointer;padding:.4rem;flex-shrink:0}
+.hb{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4.5px;background:none;border:none;cursor:pointer;width:44px;height:44px;padding:0;border-radius:10px;flex-shrink:0}
 .hb span{width:22px;height:2px;background:var(--p);border-radius:2px;display:block;transition:all .25s}
 .hb.open span:nth-child(1){transform:rotate(45deg) translate(4.5px,4.5px)}
 .hb.open span:nth-child(2){opacity:0}
@@ -315,19 +318,19 @@ img{display:block;max-width:100%}
 /* Mobile menu */
 .mob-menu{display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border-bottom:1px solid var(--bd);padding:.8rem 1.4rem 1.1rem;box-shadow:var(--sh)}
 .mob-menu.open{display:block}
-.mob-menu a{display:block;font-size:.9rem;font-weight:500;color:var(--t2);padding:.62rem .4rem;border-bottom:1px solid rgba(0,0,0,.05);transition:color var(--tr)}
+.mob-menu a{display:block;font-size:.95rem;font-weight:500;color:var(--t2);padding:.8rem .4rem;border-bottom:1px solid rgba(0,0,0,.05);transition:color var(--tr)}
 .mob-menu a:hover{color:var(--p)}
 .mob-menu .btn-login{width:100%;justify-content:center;margin-top:.8rem}
 
 /* ══ LOGIN MODAL ══ */
-.overlay{display:none;position:fixed;inset:0;z-index:5000;background:rgba(10,20,40,.6);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:1rem}
+.overlay{display:none;position:fixed;inset:0;z-index:10002;background:rgba(10,20,40,.6);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:1rem}
 .overlay.show{display:flex}
 .modal{background:#fff;border-radius:20px;width:100%;max-width:430px;box-shadow:0 30px 80px rgba(0,0,0,.25);overflow:hidden;max-height:92vh;display:flex;flex-direction:column;animation:mpop .3s cubic-bezier(.34,1.56,.64,1) both}
 @keyframes mpop{from{opacity:0;transform:scale(.85) translateY(24px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .modal-bar{height:4px;background:linear-gradient(90deg,var(--a),var(--p),var(--a2));flex-shrink:0}
 .modal-head{display:flex;align-items:center;justify-content:space-between;padding:1.2rem 1.4rem .75rem;flex-shrink:0}
 .modal-head h3{font-family:'Playfair Display',serif;font-size:1.35rem;color:var(--p);margin:0}
-.modal-x{background:rgba(0,0,0,.06);border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:.9rem;color:var(--t2);display:flex;align-items:center;justify-content:center;transition:all var(--tr)}
+.modal-x{background:rgba(0,0,0,.06);border:none;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:.9rem;color:var(--t2);display:flex;align-items:center;justify-content:center;transition:all var(--tr)}
 .modal-x:hover{background:rgba(183,28,28,.12);color:var(--r)}
 .modal-tabs{display:flex;padding:0 1.4rem;border-bottom:2px solid rgba(0,0,0,.06);flex-shrink:0}
 .mtab{flex:1;padding:.68rem .5rem;text-align:center;font-size:.84rem;font-weight:600;color:var(--t3);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-2px;transition:all var(--tr)}
@@ -336,9 +339,9 @@ img{display:block;max-width:100%}
 .mpanel{display:none}.mpanel.on{display:block}
 /* Form elements */
 .flbl{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--t2);display:block;margin-bottom:.35rem}
-.finp{width:100%;background:#f7f9fc;border:1.5px solid rgba(0,0,0,.1);border-radius:10px;padding:.72rem .95rem;font-family:'Inter',sans-serif;font-size:.9rem;color:var(--tx);outline:none;transition:all var(--tr);margin-bottom:.9rem}
+.finp{width:100%;background:#f7f9fc;border:1.5px solid rgba(0,0,0,.1);border-radius:10px;padding:.72rem .95rem;font-family:'Inter',sans-serif;font-size:1rem;color:var(--tx);outline:none;transition:all var(--tr);margin-bottom:.9rem}
 .finp:focus{border-color:var(--p);background:#fff;box-shadow:0 0 0 3px rgba(26,58,107,.09)}
-.finp::placeholder{color:#bcc4cf}
+.finp::placeholder{color:#6E7A93}
 .frow{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
 /* OTP */
 .otp-wrap{display:flex;gap:.4rem;justify-content:center;margin:.6rem 0 1.1rem}
@@ -397,8 +400,8 @@ img{display:block;max-width:100%}
 .hero-logo-wrap img{animation:floatUp 3s ease-in-out infinite}
 
 #hero{position:relative;height:100vh;min-height:600px;overflow:hidden}
-.hslide{position:absolute;inset:0;opacity:0;transition:opacity 1.1s ease;display:flex;align-items:center;justify-content:center}
-.hslide.on{opacity:1;z-index:2}
+.hslide{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity 1.1s ease,visibility 1.1s;display:flex;align-items:center;justify-content:center}
+.hslide.on{opacity:1;visibility:visible;z-index:2}
 .hslide-bg{position:absolute;inset:0;background-size:cover;background-position:center}
 .hslide-ov{position:absolute;inset:0;background:linear-gradient(160deg,rgba(5,15,40,.78) 0%,rgba(5,15,40,.42) 60%,rgba(5,15,40,.6) 100%)}
 .hcontent{position:relative;z-index:3;text-align:center;color:#fff;padding:80px 1.5rem 2rem;max-width:800px;width:100%}
@@ -406,7 +409,7 @@ img{display:block;max-width:100%}
 .htitle{font-family:'Playfair Display',Georgia,serif;font-size:clamp(2.2rem,5.5vw,4rem);font-weight:700;line-height:1.14;margin-bottom:.9rem;text-shadow:0 2px 12px rgba(0,0,0,.3)}
 .hsub{font-size:clamp(.95rem,2.3vw,1.15rem);color:rgba(255,255,255,.75);line-height:1.65;max-width:560px;margin:0 auto 2rem}
 .hcta{display:flex;gap:.85rem;flex-wrap:wrap;justify-content:center}
-.btn-hero-p{background:var(--a);color:#fff;border:none;border-radius:10px;padding:.82rem 2rem;font-family:'Inter',sans-serif;font-weight:700;font-size:.92rem;cursor:pointer;transition:all var(--tr)}
+.btn-hero-p{background:var(--a);color:#1a1a2e;border:none;border-radius:10px;padding:.82rem 2rem;font-family:'Inter',sans-serif;font-weight:700;font-size:.92rem;cursor:pointer;transition:all var(--tr)}
 .btn-hero-p:hover{background:var(--a2);color:var(--tx);transform:translateY(-2px);box-shadow:0 8px 24px rgba(200,146,42,.4)}
 .btn-hero-s{background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.35);color:#fff;border-radius:10px;padding:.8rem 2rem;font-family:'Inter',sans-serif;font-weight:600;font-size:.92rem;cursor:pointer;transition:all var(--tr)}
 .btn-hero-s:hover{background:rgba(255,255,255,.22);transform:translateY(-2px)}
@@ -444,7 +447,7 @@ img{display:block;max-width:100%}
 }
 .stat-icon{font-size:1.1rem;display:block;margin-bottom:.15rem}
 .stat-lbl{
-  font-size:.58rem;color:rgba(255,255,255,.55);
+  font-size:.66rem;color:rgba(255,255,255,.8);
   text-transform:uppercase;letter-spacing:.09em;
   font-weight:700;margin-top:.18rem;display:block;
 }
@@ -453,7 +456,7 @@ img{display:block;max-width:100%}
 /* ══ SECTIONS ══ */
 .sec{padding:5rem 0}
 .sec-bg{background:#fafbff}
-.sec-label{display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--a);background:rgba(200,146,42,.1);border:1px solid rgba(200,146,42,.25);padding:.28rem .9rem;border-radius:30px;margin-bottom:.85rem}
+.sec-label{display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--a-tx);background:rgba(200,146,42,.1);border:1px solid rgba(200,146,42,.25);padding:.28rem .9rem;border-radius:30px;margin-bottom:.85rem}
 .sec-title{font-family:'Playfair Display',serif;font-size:clamp(1.85rem,3.5vw,2.7rem);font-weight:700;color:var(--p);line-height:1.2;margin-bottom:.5rem}
 .sec-rule{width:48px;height:3px;background:linear-gradient(90deg,var(--a),var(--a2));border-radius:2px;margin:.75rem 0}
 .sec-sub{font-size:.95rem;color:var(--t2);line-height:1.7;max-width:500px}
@@ -476,14 +479,14 @@ img{display:block;max-width:100%}
 .ev-ph{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem}
 .ev-badge{position:absolute;top:.7rem;left:.7rem;font-size:.63rem;font-weight:700;padding:.2rem .6rem;border-radius:20px;text-transform:uppercase;letter-spacing:.06em;color:#fff}
 .ev-body{padding:1.15rem 1.2rem 1.3rem}
-.ev-date{font-size:.72rem;font-weight:700;color:var(--a);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.42rem;display:flex;align-items:center;gap:.3rem}
+.ev-date{font-size:.72rem;font-weight:700;color:var(--a-tx);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.42rem;display:flex;align-items:center;gap:.3rem}
 .ev-title{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--tx);margin-bottom:.4rem;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .ev-desc{font-size:.81rem;color:var(--t2);line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:.85rem}
 .ev-more{display:inline-flex;align-items:center;gap:.4rem;font-size:.81rem;font-weight:600;color:var(--p);padding:.4rem .85rem;border:1.5px solid rgba(26,58,107,.2);border-radius:var(--rad-s);transition:all var(--tr)}
 .ev-more:hover{background:var(--p);color:#fff;border-color:var(--p)}
 /* Slider controls */
 .sl-ctrl{display:flex;align-items:center;justify-content:center;gap:.75rem;margin-top:1.8rem}
-.sl-btn{width:38px;height:38px;border-radius:50%;background:#fff;border:1.5px solid var(--bd);color:var(--t2);cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:all var(--tr);box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.sl-btn{width:44px;height:44px;border-radius:50%;background:#fff;border:1.5px solid var(--bd);color:var(--t2);cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:all var(--tr);box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .sl-btn:hover{background:var(--p);color:#fff;border-color:var(--p)}
 .sl-dots{display:flex;gap:.42rem;align-items:center}
 .sl-dot{width:7px;height:7px;border-radius:50%;background:rgba(0,0,0,.15);cursor:pointer;border:none;transition:all .3s;padding:0}
@@ -537,14 +540,14 @@ img{display:block;max-width:100%}
 .foot-logo img{width:44px;height:44px;border-radius:50%;border:2px solid rgba(200,146,42,.4);object-fit:cover}
 .foot-logo-ph{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid rgba(200,146,42,.35);display:flex;align-items:center;justify-content:center;font-size:1.05rem}
 .foot-name{font-family:'Playfair Display',serif;font-size:.95rem;color:#fff;font-weight:700}
-.foot-tag{font-size:.68rem;color:rgba(255,255,255,.38);letter-spacing:.07em}
-.foot-col h5{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:rgba(255,255,255,.32);margin-bottom:.75rem}
-.foot-col a{display:block;font-size:.83rem;color:rgba(255,255,255,.58);padding:.2rem 0;transition:all .2s}
+.foot-tag{font-size:.72rem;color:rgba(255,255,255,.72);letter-spacing:.07em}
+.foot-col h5{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:rgba(255,255,255,.72);margin-bottom:.75rem}
+.foot-col a{display:block;font-size:.88rem;color:rgba(255,255,255,.82);padding:.45rem 0;transition:all .2s}
 .foot-col a:hover{color:var(--a2);padding-left:.22rem}
-.foot-col p{font-size:.83rem;color:rgba(255,255,255,.58);margin:.1rem 0}
-.sicon{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.65);display:flex;align-items:center;justify-content:center;font-size:.88rem;transition:all .22s}
+.foot-col p{font-size:.88rem;color:rgba(255,255,255,.82);margin:.1rem 0}
+.sicon{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.65);display:flex;align-items:center;justify-content:center;font-size:.88rem;transition:all .22s}
 .sicon:hover{background:var(--a);border-color:var(--a);color:#fff;transform:translateY(-2px)}
-.foot-btm{border-top:1px solid rgba(255,255,255,.07);padding:1.2rem 1.5rem;text-align:center;font-size:.74rem;color:rgba(255,255,255,.28);max-width:1200px;margin:0 auto}
+.foot-btm{border-top:1px solid rgba(255,255,255,.07);padding:1.2rem 1.5rem;text-align:center;font-size:.76rem;color:rgba(255,255,255,.72);max-width:1200px;margin:0 auto}
 
 /* WA float */
 .wa-float{position:fixed;bottom:1.5rem;right:1.5rem;width:50px;height:50px;border-radius:50%;background:#25d366;color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.35rem;z-index:900;box-shadow:0 6px 22px rgba(37,211,102,.42);transition:all .22s;border:none;cursor:pointer;text-decoration:none}
@@ -552,7 +555,7 @@ img{display:block;max-width:100%}
 @media(max-width:576px){.sec{padding:3.8rem 0}.mod-sec{padding:3.8rem 0}}
 
 /* ══ GALLERY LIGHTBOX ══ */
-.lb-ov{display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.96);align-items:center;justify-content:center;flex-direction:column;padding:0}
+.lb-ov{display:none;position:fixed;inset:0;z-index:10002;background:rgba(0,0,0,.96);align-items:center;justify-content:center;flex-direction:column;padding:0}
 .lb-ov.on{display:flex}
 .lb-img-wrap{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:60px 0 80px}
 .lb-img-wrap img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;box-shadow:0 24px 80px rgba(0,0,0,.8);transition:opacity .2s}
@@ -562,9 +565,9 @@ img{display:block;max-width:100%}
 
 /* ── PASSKEY KEYPAD ── */
 .num-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;max-width:280px;margin:0 auto}
-.num-keypad button{background:#f4f6fb;border:1.5px solid #e0e7ff;border-radius:12px;padding:.7rem .4rem;font-size:1.2rem;font-weight:700;color:#0d1b3e;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:0;line-height:1;font-family:'Inter',sans-serif}
+.num-keypad button{background:#f4f6fb;border:1.5px solid #e0e7ff;border-radius:12px;min-height:54px;padding:.7rem .4rem;font-size:1.25rem;font-weight:700;color:#0d1b3e;cursor:pointer;justify-content:center;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:0;line-height:1;font-family:'Inter',sans-serif}
 .num-keypad button:active{background:#0d47a1;color:#fff;border-color:#0d47a1;transform:scale(.94)}
-.num-keypad button span{font-size:.45rem;font-weight:600;letter-spacing:.08em;color:#8a93a8;margin-top:.12rem;display:block}
+.num-keypad button span{font-size:.55rem;font-weight:600;letter-spacing:.08em;color:#5f6f86;margin-top:.12rem;display:block}
 .num-keypad button:active span{color:rgba(255,255,255,.65)}
 .num-keypad .pk-del{background:#fff0f0;border-color:#fecaca;color:#b71c1c}
 .num-keypad .pk-del:active{background:#b71c1c;color:#fff;border-color:#b71c1c}
@@ -578,8 +581,39 @@ img{display:block;max-width:100%}
 .lb-login-hint button{background:var(--p);color:#fff;border:none;border-radius:8px;padding:.55rem 1.3rem;font-family:'Inter',sans-serif;font-size:.84rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:.45rem;transition:all .2s}
 .lb-login-hint button:hover{background:var(--p2);transform:translateY(-2px)}
 /* Touch/swipe indicator on mobile */
-.lb-swipe-hint{position:fixed;top:1rem;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.3);font-size:.72rem;letter-spacing:.06em;z-index:9001;pointer-events:none}
+.lb-swipe-hint{position:fixed;top:1rem;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.72);font-size:.72rem;letter-spacing:.06em;z-index:9001;pointer-events:none}
 @media(min-width:600px){.lb-swipe-hint{display:none}}
+/* ══ UX / ACCESSIBILITY LAYER ══ */
+.skip-link{position:absolute;left:.75rem;top:-100px;z-index:20000;background:#fff;color:var(--p);font-weight:700;padding:.7rem 1rem;border-radius:10px;box-shadow:var(--sh2)}
+.skip-link:focus{top:.75rem}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+:focus{outline:none}
+:focus-visible{outline:3px solid var(--p2);outline-offset:2px;border-radius:6px}
+#hero :focus-visible,#footer :focus-visible,.lb-ov :focus-visible,.mod-sec :focus-visible{outline-color:#ffc107}
+.finp:focus-visible,.otp-cell:focus-visible{outline:none}
+.mtab{background:none;border:0;border-bottom:2.5px solid transparent;font-family:inherit;min-height:44px}
+.mtab.on{border-bottom-color:var(--p)}
+.btn-login{min-height:40px}
+/* Bigger tap area for slider dots without changing their look */
+.hdot{position:relative}.hdot::after{content:'';position:absolute;inset:-14px -6px}
+.sl-dot{position:relative}.sl-dot::after{content:'';position:absolute;inset:-14px -6px}
+.gal-wrap:focus-within .gal-track{animation-play-state:paused}
+/* Footer grid (the markup uses Bootstrap class names, but Bootstrap is not loaded) */
+#footer .row{display:grid;grid-template-columns:1fr 1fr;gap:1.6rem 1.2rem}
+#footer .row>.col-sm-12{grid-column:1/-1}
+@media(min-width:768px){#footer .row{grid-template-columns:4fr 2fr 2fr 3fr;gap:2rem}#footer .row>.col-sm-12{grid-column:auto}}
+/* Install-the-app sheet (had no styles, so it always showed at the page bottom) */
+#iosSheet{display:none;position:fixed;inset:0;z-index:10003;background:rgba(10,20,40,.55);align-items:flex-end;justify-content:center}
+#iosSheet.open{display:flex}
+#iosSheet>div{animation:sheetUp .28s ease both;max-height:92vh;overflow-y:auto}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+/* Respect the phone's "reduce motion" setting */
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  .gal-track{animation:none!important}
+  .gal-wrap{overflow-x:auto}
+}
 </style>
 <script>
 // Modal functions - plain JS, no jQuery dependency
@@ -607,12 +641,16 @@ function closeModal(){
   document.body.style.overflow='';
 }
 function toggleMob(){
-  document.getElementById('hb').classList.toggle('open');
-  document.getElementById('mobMenu').classList.toggle('open');
+  var hb=document.getElementById('hb'),m=document.getElementById('mobMenu');
+  var open=!m.classList.contains('open');
+  hb.classList.toggle('open',open); m.classList.toggle('open',open);
+  hb.setAttribute('aria-expanded',open?'true':'false');
+  hb.setAttribute('aria-label',open?'Close menu':'Open menu');
 }
 function closeMob(){
-  document.getElementById('hb').classList.remove('open');
-  document.getElementById('mobMenu').classList.remove('open');
+  var hb=document.getElementById('hb');
+  hb.classList.remove('open'); document.getElementById('mobMenu').classList.remove('open');
+  hb.setAttribute('aria-expanded','false'); hb.setAttribute('aria-label','Open menu');
 }
 function heroMove(d){
   if(typeof _heroMove==='function')_heroMove(d);
@@ -622,76 +660,75 @@ function heroGo(i){
 }
 </script>
 </head>
-<body> 
+<body>
+<a href="#main" class="skip-link">Skip to content</a>
 
-<!-- NAVBAR -->
 <!-- ══════════════════ NAVBAR ══════════════════ -->
-    <body>
 <?php include 'av-splash.php'; ?>
 
-<nav class="navbar" id="mainNav" style="top:4px">
+<nav class="navbar" id="mainNav" style="top:4px" aria-label="Main">
 <div class="nav-inner">
-  <a href="#hero" class="nav-brand">
-    <?php if($logo): ?><img src="<?= $logo ?>" class="nav-logo" alt="Logo"><?php else: ?><div class="nav-logo-ph">⚜</div><?php endif; ?>
+  <a href="#hero" class="nav-brand" aria-label="<?= h(setting('CLUB_NAME','Aishwarya Arts & Sports Club')) ?> — home">
+    <?php if($logo): ?><img src="<?= $logo ?>" class="nav-logo" alt="" width="40" height="40"><?php else: ?><div class="nav-logo-ph" aria-hidden="true">⚜</div><?php endif; ?>
     <div class="nav-club">
       <div class="nav-club-name"><?= h(setting('CLUB_NAME','Aishwarya A&S Club')) ?></div>
       <div class="nav-club-sub"><?= h(setting('CLUB_PLACE','Vettikkattiri')) ?> · Kerala</div>
     </div>
   </a>
   <ul class="nav-links" id="navLinks">
-    <li><a href="#hero" class="on" id="nl-home">Home</a></li>
+    <li><a href="#hero" class="on" id="nl-home" aria-current="true">Home</a></li>
     <li><a href="#events" id="nl-events">Events</a></li>
     <li><a href="#gallery" id="nl-gallery">Gallery</a></li>
-    <li><a href="<?= url('modules/market.php') ?>">🛍️ Market</a></li>
+    <li><a href="<?= url('modules/market.php') ?>"><span aria-hidden="true">🛍️</span> Market</a></li>
     <li><a href="<?= url('contact.php') ?>">Contact</a></li>
   </ul>
   <div style="display:flex;align-items:center;gap:.5rem">
-    <button class="btn-login" id="openLogin" onclick="openModal('login')"><i class="fas fa-sign-in-alt"></i> Login</button>
-    <button class="hb" id="hb" onclick="toggleMob()" aria-label="Menu"><span></span><span></span><span></span></button>
+    <button type="button" class="btn-login" id="openLogin"><i class="fas fa-sign-in-alt" aria-hidden="true"></i> Login</button>
+    <button type="button" class="hb" id="hb" onclick="toggleMob()" aria-label="Open menu" aria-expanded="false" aria-controls="mobMenu"><span></span><span></span><span></span></button>
   </div>
 </div>
 <div class="mob-menu" id="mobMenu">
-  <a href="#hero"    onclick="closeMob()">🏠 Home</a>
-  <a href="#events"  onclick="closeMob()">📅 Events</a>
-  <a href="#gallery" onclick="closeMob()">🖼️ Gallery</a>
-  <a href="<?= url('modules/market.php') ?>" onclick="closeMob()">🛍️ Mini Market</a>
-  <a href="<?= url('contact.php') ?>" onclick="closeMob()">📞 Contact</a>
-  <button class="btn-login" onclick="closeMob();openModal('login')"><i class="fas fa-sign-in-alt"></i> Member Login</button>
+  <a href="#hero"    onclick="closeMob()"><span aria-hidden="true">🏠</span> Home</a>
+  <a href="#events"  onclick="closeMob()"><span aria-hidden="true">📅</span> Events</a>
+  <a href="#gallery" onclick="closeMob()"><span aria-hidden="true">🖼️</span> Gallery</a>
+  <a href="<?= url('modules/market.php') ?>" onclick="closeMob()"><span aria-hidden="true">🛍️</span> Mini Market</a>
+  <a href="<?= url('contact.php') ?>" onclick="closeMob()"><span aria-hidden="true">📞</span> Contact</a>
+  <button type="button" class="btn-login" onclick="closeMob();openModal('login')"><i class="fas fa-sign-in-alt" aria-hidden="true"></i> Member Login</button>
 </div>
 </nav>
 
 
 <!-- ══════════════════ LOGIN MODAL ══════════════════ -->
 <div class="overlay" id="loginOverlay" onclick="if(event.target===this)closeModal()">
-<div class="modal">
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
   <div class="modal-bar"></div>
   <div class="modal-head">
     <h3 id="mTitle">Member Portal</h3>
-    <button class="modal-x" onclick="closeModal()"><i class="fas fa-times"></i></button>
+    <button type="button" class="modal-x" onclick="closeModal()" aria-label="Close"><i class="fas fa-times" aria-hidden="true"></i></button>
   </div>
-  <div class="modal-tabs">
-    <div class="mtab on" id="tLogin"    onclick="switchTab('login')">🔐 Login</div>
-    <div class="mtab"    id="tRegister" onclick="switchTab('register')">✍️ Apply to Join</div>
+  <div class="modal-tabs" role="tablist" aria-label="Login or apply">
+    <button type="button" class="mtab on" id="tLogin"    role="tab" aria-selected="true"  aria-controls="pLogin"    onclick="switchTab('login')"><span aria-hidden="true">🔐</span> Login</button>
+    <button type="button" class="mtab"    id="tRegister" role="tab" aria-selected="false" aria-controls="pRegister" onclick="switchTab('register')"><span aria-hidden="true">✍️</span> Apply to Join</button>
   </div>
   <div class="modal-body">
 
     <!-- LOGIN PANEL — Phone + Passkey -->
-    <div class="mpanel on" id="pLogin">
-      <div class="fmsg" id="loginMsg"></div>
+    <div class="mpanel on" id="pLogin" role="tabpanel" aria-labelledby="tLogin">
+      <div class="fmsg" id="loginMsg" role="alert" aria-live="assertive"></div>
 
       <!-- STEP 1: Phone number (username) with remember -->
       <div id="stepPhone">
-        <label class="flbl">📱 Phone Number (Username)</label>
+        <label class="flbl" for="loginPhone"><span aria-hidden="true">📱</span> Phone Number (Username)</label>
         <input type="tel" class="finp" id="loginPhone" placeholder="98765 43210" maxlength="10" inputmode="numeric"
           autocomplete="username" oninput="this.value=this.value.replace(/\D/g,'')">
         <div style="display:flex;align-items:center;gap:.5rem;margin:.4rem 0 .8rem">
           <input type="checkbox" id="rememberPhone" style="width:16px;height:16px;accent-color:var(--p);cursor:pointer">
           <label for="rememberPhone" style="font-size:.78rem;color:var(--t2);cursor:pointer;user-select:none">Remember my number</label>
         </div>
-        <button class="fbtn fbtn-p" id="btnNext" onclick="doCheckPhone()">
+        <button type="button" class="fbtn fbtn-p" id="btnNext" onclick="doCheckPhone()">
           Next →
         </button>
-        <button class="fbtn" id="btnBioLogin" onclick="bioLogin()" style="display:none;width:100%;margin-top:.5rem;background:#fff;border:1.5px solid #1565c0;color:#1565c0;font-weight:800">
+        <button type="button" class="fbtn" id="btnBioLogin" onclick="bioLogin()" style="display:none;width:100%;margin-top:.5rem;background:#fff;border:1.5px solid #1565c0;color:#1565c0;font-weight:800">
           <i class="fas fa-fingerprint"></i> Login with Fingerprint / Face ID
         </button>
         <p class="fhint">Enter your registered 10-digit mobile number.</p>
@@ -699,83 +736,83 @@ function heroGo(i){
 
       <!-- STEP 2a: Enter Passkey (number keypad) -->
       <div id="stepPasskey" style="display:none">
-        <button class="fback" onclick="backStep('stepPhone')">← Change Number</button>
+        <button type="button" class="fback" onclick="backStep('stepPhone')">← Change Number</button>
         <div style="text-align:center;margin-bottom:.9rem">
           <div id="loginNameHint" style="font-size:.82rem;color:var(--t2);margin-bottom:.25rem"></div>
-          <div style="font-size:.78rem;color:var(--t3)">Enter your 6-digit passkey</div>
+          <div style="font-size:.85rem;color:var(--t3)">Enter your 6-digit passkey <span class="sr-only">— type the numbers or use the keypad</span></div>
         </div>
         <!-- Passkey display dots -->
-        <div style="display:flex;justify-content:center;gap:.55rem;margin-bottom:1.2rem" id="pkDots">
+        <div style="display:flex;justify-content:center;gap:.55rem;margin-bottom:1.2rem" id="pkDots" aria-hidden="true">
           <div class="pk-dot"></div><div class="pk-dot"></div><div class="pk-dot"></div>
           <div class="pk-dot"></div><div class="pk-dot"></div><div class="pk-dot"></div>
         </div>
         <!-- Number keypad -->
-        <div class="num-keypad" id="loginKeypad">
-          <button onclick="pkTap('1')">1</button>
-          <button onclick="pkTap('2')">2<span>ABC</span></button>
-          <button onclick="pkTap('3')">3<span>DEF</span></button>
-          <button onclick="pkTap('4')">4<span>GHI</span></button>
-          <button onclick="pkTap('5')">5<span>JKL</span></button>
-          <button onclick="pkTap('6')">6<span>MNO</span></button>
-          <button onclick="pkTap('7')">7<span>PQRS</span></button>
-          <button onclick="pkTap('8')">8<span>TUV</span></button>
-          <button onclick="pkTap('9')">9<span>WXYZ</span></button>
-          <button onclick="pkTap('del')" class="pk-del" style="font-size:1.1rem">⌫</button>
-          <button onclick="pkTap('0')">0</button>
-          <button onclick="pkTap('ok')" class="pk-ok">✓</button>
+        <div class="num-keypad" id="loginKeypad" role="group" aria-label="Passkey keypad">
+          <button type="button" onclick="pkTap(\'1\')">1</button>
+          <button type="button" onclick="pkTap(\'2\')">2<span>ABC</span></button>
+          <button type="button" onclick="pkTap(\'3\')">3<span>DEF</span></button>
+          <button type="button" onclick="pkTap(\'4\')">4<span>GHI</span></button>
+          <button type="button" onclick="pkTap(\'5\')">5<span>JKL</span></button>
+          <button type="button" onclick="pkTap(\'6\')">6<span>MNO</span></button>
+          <button type="button" onclick="pkTap(\'7\')">7<span>PQRS</span></button>
+          <button type="button" onclick="pkTap(\'8\')">8<span>TUV</span></button>
+          <button type="button" onclick="pkTap(\'9\')">9<span>WXYZ</span></button>
+          <button type="button" onclick="pkTap('del')" class="pk-del" style="font-size:1.1rem" aria-label="Delete last digit">⌫</button>
+          <button type="button" onclick="pkTap(\'0\')">0</button>
+          <button type="button" onclick="pkTap('ok')" class="pk-ok" aria-label="Log in">✓</button>
         </div>
         <p style="text-align:center;font-size:.76rem;margin-top:.7rem">
-          <a href="#" onclick="showSetPasskey();return false" style="color:var(--p)">Forgot passkey? Reset it</a>
+          <a href="#" onclick="showSetPasskey();return false" style="color:var(--p);display:inline-block;padding:.5rem">Forgot passkey? Reset it</a>
         </p>
       </div>
 
       <!-- STEP 2b: No passkey — create one -->
       <div id="stepCreatePasskey" style="display:none">
-        <button class="fback" onclick="backStep('stepPhone')">← Change Number</button>
+        <button type="button" class="fback" onclick="backStep('stepPhone')">← Change Number</button>
         <div style="text-align:center;margin:.3rem 0 1rem">
-          <div style="font-size:1.6rem;margin-bottom:.4rem">🔑</div>
+          <div style="font-size:1.6rem;margin-bottom:.4rem" aria-hidden="true">🔑</div>
           <div style="font-weight:700;font-size:.95rem;color:var(--p)">Create Your Passkey</div>
           <div style="font-size:.78rem;color:var(--t3);margin-top:.25rem">You'll use this 6-digit code every time you login</div>
         </div>
         <!-- Name verify field -->
-        <label class="flbl">Your Registered Name (for verification)</label>
+        <label class="flbl" for="pkName">Your Registered Name (for verification)</label>
         <input type="text" class="finp" id="pkName" placeholder="Enter your full name as registered" autocomplete="name">
         <!-- New passkey dots -->
-        <div style="display:flex;justify-content:center;gap:.55rem;margin:1rem 0 .5rem" id="newPkDots">
+        <div style="display:flex;justify-content:center;gap:.55rem;margin:1rem 0 .5rem" id="newPkDots" aria-hidden="true">
           <div class="pk-dot"></div><div class="pk-dot"></div><div class="pk-dot"></div>
           <div class="pk-dot"></div><div class="pk-dot"></div><div class="pk-dot"></div>
         </div>
         <div style="text-align:center;font-size:.74rem;color:var(--t3);margin-bottom:.8rem">Choose a 6-digit passkey</div>
         <!-- Keypad for new passkey -->
-        <div class="num-keypad" id="createKeypad">
-          <button onclick="pkNewTap('1')">1</button>
-          <button onclick="pkNewTap('2')">2<span>ABC</span></button>
-          <button onclick="pkNewTap('3')">3<span>DEF</span></button>
-          <button onclick="pkNewTap('4')">4<span>GHI</span></button>
-          <button onclick="pkNewTap('5')">5<span>JKL</span></button>
-          <button onclick="pkNewTap('6')">6<span>MNO</span></button>
-          <button onclick="pkNewTap('7')">7<span>PQRS</span></button>
-          <button onclick="pkNewTap('8')">8<span>TUV</span></button>
-          <button onclick="pkNewTap('9')">9<span>WXYZ</span></button>
-          <button onclick="pkNewTap('del')" class="pk-del">⌫</button>
-          <button onclick="pkNewTap('0')">0</button>
-          <button onclick="pkNewTap('ok')" class="pk-ok">✓</button>
+        <div class="num-keypad" id="createKeypad" role="group" aria-label="New passkey keypad">
+          <button type="button" onclick="pkNewTap(\'1\')">1</button>
+          <button type="button" onclick="pkNewTap(\'2\')">2<span>ABC</span></button>
+          <button type="button" onclick="pkNewTap(\'3\')">3<span>DEF</span></button>
+          <button type="button" onclick="pkNewTap(\'4\')">4<span>GHI</span></button>
+          <button type="button" onclick="pkNewTap(\'5\')">5<span>JKL</span></button>
+          <button type="button" onclick="pkNewTap(\'6\')">6<span>MNO</span></button>
+          <button type="button" onclick="pkNewTap(\'7\')">7<span>PQRS</span></button>
+          <button type="button" onclick="pkNewTap(\'8\')">8<span>TUV</span></button>
+          <button type="button" onclick="pkNewTap(\'9\')">9<span>WXYZ</span></button>
+          <button type="button" onclick="pkNewTap('del')" class="pk-del" aria-label="Delete last digit">⌫</button>
+          <button type="button" onclick="pkNewTap(\'0\')">0</button>
+          <button type="button" onclick="pkNewTap('ok')" class="pk-ok" aria-label="Save passkey">✓</button>
         </div>
       </div>
 
     </div>
 
     <!-- REGISTER PANEL -->
-    <div class="mpanel" id="pRegister">
-      <div class="fmsg" id="regMsg"></div>
+    <div class="mpanel" id="pRegister" role="tabpanel" aria-labelledby="tRegister">
+      <div class="fmsg" id="regMsg" role="alert" aria-live="assertive"></div>
       <div id="regForm">
-        <label class="flbl">Full Name *</label>
-        <input type="text" class="finp" id="rName" placeholder="Your full name">
-        <label class="flbl">WhatsApp Number *</label>
-        <input type="tel" class="finp" id="rPhone" placeholder="98765 43210" maxlength="10" inputmode="numeric">
+        <label class="flbl" for="rName">Full Name *</label>
+        <input type="text" class="finp" id="rName" placeholder="Your full name" autocomplete="name" required>
+        <label class="flbl" for="rPhone">WhatsApp Number *</label>
+        <input type="tel" class="finp" id="rPhone" placeholder="98765 43210" maxlength="10" inputmode="numeric" autocomplete="tel-national" required>
         <div class="frow">
           <div>
-            <label class="flbl">Blood Group</label>
+            <label class="flbl" for="rBlood">Blood Group</label>
             <select class="finp" id="rBlood" style="margin-bottom:0">
               <option value="">— Select —</option>
               <?php foreach(array('A+','A-','B+','B-','AB+','AB-','O+','O-') as $bg): ?>
@@ -784,22 +821,22 @@ function heroGo(i){
             </select>
           </div>
           <div>
-            <label class="flbl">Skill / Sport</label>
+            <label class="flbl" for="rSkill">Skill / Sport</label>
             <input type="text" class="finp" id="rSkill" placeholder="e.g. Football" style="margin-bottom:0">
           </div>
         </div>
         <div style="margin-top:.9rem">
-          <label class="flbl">Profession / Occupation</label>
+          <label class="flbl" for="rProfession">Profession / Occupation</label>
           <input type="text" class="finp" id="rProfession" placeholder="e.g. Teacher, Engineer, Business…">
         </div>
-        <button class="fbtn fbtn-g" id="btnReg" onclick="doRegister()">
+        <button type="button" class="fbtn fbtn-g" id="btnReg" onclick="doRegister()">
           <i class="fas fa-user-plus"></i> Submit Application
         </button>
         <p class="fhint">Secretary will review and activate your account via WhatsApp.</p>
       </div>
       <div id="regSuccess" style="display:none">
         <div class="success-panel">
-          <div class="success-em">🎉</div>
+          <div class="success-em" aria-hidden="true">🎉</div>
           <h4 style="font-family:'Playfair Display',serif;color:var(--p);margin-bottom:.5rem">Application Submitted!</h4>
           <p style="font-size:.87rem;color:var(--t2);line-height:1.65">The Secretary will review and activate your account. You'll receive a WhatsApp message when approved.</p>
           <button class="fbtn fbtn-p" style="margin-top:1.2rem;max-width:160px;margin-left:auto;margin-right:auto" onclick="closeModal()"><i class="fas fa-check"></i> Done</button>
@@ -811,7 +848,7 @@ function heroGo(i){
 
   <!-- Add to Home Screen button -->
   <div style="padding:.5rem 1rem .7rem">
-    <button id="pwaInstallBtn" onclick="pwaInstall()" style="display:none;width:100%;padding:.52rem;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;border-radius:12px;font-weight:800;font-size:.8rem;cursor:pointer;align-items:center;justify-content:center;gap:.4rem">
+    <button type="button" id="pwaInstallBtn" onclick="pwaInstall()" style="display:none;width:100%;min-height:44px;padding:.52rem;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;border-radius:12px;font-weight:800;font-size:.8rem;cursor:pointer;align-items:center;justify-content:center;gap:.4rem">
       📲 Add to Home Screen
     </button>
     <div id="pwaIosHint" style="display:none;text-align:center;font-size:.7rem;color:#64748b;padding:.4rem;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0">
@@ -823,9 +860,10 @@ function heroGo(i){
 
 
 <!-- ══════════════════ HERO SLIDER ══════════════════ -->
-<section id="hero" style="height:100vh!important;min-height:600px;position:relative;overflow:hidden">
+<main id="main" tabindex="-1" style="outline:none">
+<section id="hero" style="height:100vh!important;min-height:600px;position:relative;overflow:hidden" aria-roledescription="carousel" aria-label="Highlights">
   <?php foreach($heroSlides as $i=>$sl): ?>
-  <div class="hslide <?= $i===0?'on':'' ?>" data-idx="<?= $i ?>">
+  <div class="hslide <?= $i===0?'on':'' ?>" data-idx="<?= $i ?>" role="group" aria-roledescription="slide" aria-label="<?= ($i+1).' of '.count($heroSlides) ?>"<?= $i===0?'':' aria-hidden="true"' ?>>
     <div class="hslide-bg" style="<?php
       if (!empty($sl['img'])):
         echo "background-image:url('".h($sl['img'])."');background-size:cover;background-position:center";
@@ -835,20 +873,20 @@ function heroGo(i){
     ?>"></div>
     <div class="hslide-ov"></div>
     <div class="hcontent">
-      <div class="hbadge">🏆 <?= h(setting('CLUB_PLACE','Vettikkattiri')) ?> · Kerala</div>
-      <h1 class="htitle"><?= h($sl['title']) ?></h1>
+      <div class="hbadge"><span aria-hidden="true">🏆</span> <?= h(setting('CLUB_PLACE','Vettikkattiri')) ?> · Kerala</div>
+      <?php $_ht = $i===0 ? 'h1' : 'h2'; ?><<?= $_ht ?> class="htitle"><?= h($sl['title']) ?></<?= $_ht ?>>
       <p class="hsub"><?= h($sl['subtitle']) ?></p>
       <div class="hcta">
-        <button class="btn-hero-p" onclick="openModal('login')">🔐 Member Login</button>
+        <button type="button" class="btn-hero-p" onclick="openModal('login')"><span aria-hidden="true">🔐</span> Member Login</button>
       </div>
     </div>
   </div>
   <?php endforeach; ?>
-  <button class="harr harr-l" onclick="heroMove(-1)"><i class="fas fa-chevron-left"></i></button>
-  <button class="harr harr-r" onclick="heroMove(1)"><i class="fas fa-chevron-right"></i></button>
+  <button type="button" class="harr harr-l" onclick="heroMove(-1)" aria-label="Previous slide"><i class="fas fa-chevron-left" aria-hidden="true"></i></button>
+  <button type="button" class="harr harr-r" onclick="heroMove(1)" aria-label="Next slide"><i class="fas fa-chevron-right" aria-hidden="true"></i></button>
   <div class="hdots" id="heroDots">
     <?php foreach($heroSlides as $i=>$sl): ?>
-    <button class="hdot <?= $i===0?'on':'' ?>" onclick="heroGo(<?= $i ?>)"></button>
+    <button type="button" class="hdot <?= $i===0?'on':'' ?>" data-idx="<?= $i ?>" onclick="heroGo(<?= $i ?>)" aria-label="Show slide <?= $i+1 ?>"<?= $i===0?' aria-current="true"':'' ?>></button>
     <?php endforeach; ?>
   </div>
 </section>
@@ -856,22 +894,22 @@ function heroGo(i){
 <!-- Stats Bar -->
 <div class="stats-bar">
   <div class="stat-card">
-    <span class="stat-icon">👥</span>
+    <span class="stat-icon" aria-hidden="true">👥</span>
     <span class="stat-num" data-target="<?=(int)($stats['total']??0)?>"><?=(int)($stats['total']??0)?></span>
     <span class="stat-lbl">Members</span>
   </div>
   <div class="stat-card">
-    <span class="stat-icon">✅</span>
+    <span class="stat-icon" aria-hidden="true">✅</span>
     <span class="stat-num" data-target="<?=(int)($stats['active']??0)?>"><?=(int)($stats['active']??0)?></span>
     <span class="stat-lbl">Active</span>
   </div>
   <div class="stat-card">
-    <span class="stat-icon">⚽</span>
+    <span class="stat-icon" aria-hidden="true">⚽</span>
     <span class="stat-num" data-target="5">5</span>
     <span class="stat-lbl">Sports</span>
   </div>
   <div class="stat-card">
-    <span class="stat-icon">🩸</span>
+    <span class="stat-icon" aria-hidden="true">🩸</span>
     <span class="stat-num" data-target="<?=(int)($stats['donors']??0)?>"><?=(int)($stats['donors']??0)?></span>
     <span class="stat-lbl">Donors</span>
   </div>
@@ -1235,7 +1273,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closeAchLB()
     <h2 class="sec-title">Club <span style="color:var(--a)">Moments</span></h2>
     <div class="sec-rule" style="margin:.75rem auto"></div>
     <p class="sec-sub" style="margin:0 auto .3rem">Memories from every event in <?= h(setting('CLUB_PLACE','Vettikkattiri')) ?></p>
-    <p style="font-size:.78rem;color:var(--t3)"><i class="fas fa-hand-pointer"></i> Hover to pause · Login to view full gallery</p>
+    <p style="font-size:.78rem;color:var(--t3)"><i class="fas fa-hand-pointer" aria-hidden="true"></i> Hover to pause · Login to view full gallery</p>
   </div>
   <div class="gal-wrap rv">
     <div class="gal-track" id="galTrack">
@@ -1245,10 +1283,10 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closeAchLB()
       foreach($galAll as $gi):
       ?>
       <?php $isImg = ($gi['type']==='img'); $galIdx = array_search($gi, $galAll); ?>
-      <div class="gal-cell" <?php if($isImg): ?>onclick="openLB('<?= addslashes(h($gi['src'])) ?>','<?= addslashes(h($gi['title'])) ?>')" style="cursor:pointer"<?php endif; ?>>
+      <div class="gal-cell" <?php if($isImg): ?>role="button" tabindex="0" aria-label="View photo: <?= h($gi['title']) ?>" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}" onclick="openLB('<?= addslashes(h($gi['src'])) ?>','<?= addslashes(h($gi['title'])) ?>')" style="cursor:pointer"<?php endif; ?>>
         <?php if($isImg): ?>
           <img src="<?= h($gi['src']) ?>" alt="<?= h($gi['title']) ?>" loading="lazy" onerror="this.parentNode.innerHTML='<div class=gal-cell-ph><div style=font-size:2rem>🖼️</div></div>'">
-          <div class="gal-cell-ov"><i class="fas fa-expand-alt"></i></div>
+          <div class="gal-cell-ov" aria-hidden="true"><i class="fas fa-expand-alt"></i></div>
         <?php else: ?>
           <div class="gal-cell-ph">
             <div style="font-size:2.4rem"><?= $gi['em'] ?></div>
@@ -1424,7 +1462,7 @@ function hPop(id,nm,im,imo,lk,ph,lkd,can){
   av.innerHTML=ph?'<img src="'+ph+'" style="width:100%;height:100%;object-fit:cover">':'<span style="font-size:1.1rem">&#127774;</span>';
   var lw=document.getElementById('hPopLW');
   if(!_hLgn){
-    lw.innerHTML='<button onclick="hClose();setTimeout(function(){openModal('login');},200)" style="width:100%;padding:.6rem;background:linear-gradient(135deg,#8B3A0F,#C4521A);color:#fff;border:none;border-radius:12px;font-weight:800;cursor:pointer">&#10084; Login to Like</button>';
+    lw.innerHTML='<button onclick="hClose();setTimeout(function(){openModal(\'login\');},200)" style="width:100%;padding:.6rem;background:linear-gradient(135deg,#8B3A0F,#C4521A);color:#fff;border:none;border-radius:12px;font-weight:800;cursor:pointer">&#10084; Login to Like</button>';
   } else if(lkd){
     lw.innerHTML='<button style="width:100%;padding:.6rem;background:rgba(196,82,26,.2);color:#C4521A;border:2px solid #C4521A;border-radius:12px;font-weight:800;font-size:.85rem">&#10003; You liked this!</button>';
   } else if(can){
@@ -1480,23 +1518,24 @@ function hShare(){
 </script>
 <?php endif; ?>
 
+</main>
 <!-- ══════════════════ FOOTER ══════════════════ -->
-<div class="kstripe"></div>
+<div class="kstripe" aria-hidden="true"></div>
 <footer id="footer">
 <div class="foot-inner">
   <div class="row g-4">
     <!-- Brand -->
     <div class="col-sm-12 col-md-4">
       <div class="foot-logo">
-        <?php if($logo): ?><img src="<?= $logo ?>" alt=""><?php else: ?><div class="foot-logo-ph">⚜</div><?php endif; ?>
+        <?php if($logo): ?><img src="<?= $logo ?>" alt="" width="44" height="44"><?php else: ?><div class="foot-logo-ph" aria-hidden="true">⚜</div><?php endif; ?>
         <div><div class="foot-name"><?= h(setting('CLUB_NAME','Aishwarya Arts & Sports Club')) ?></div><div class="foot-tag"><?= h(setting('CLUB_TAGLINE','Unity · Sports · Culture · Community')) ?></div></div>
       </div>
-      <p style="font-size:.83rem;color:rgba(255,255,255,.5);line-height:1.7">Uniting <?= h(setting('CLUB_PLACE','Vettikkattiri')) ?> through sports, arts and community service.</p>
+      <p style="font-size:.88rem;color:rgba(255,255,255,.78);line-height:1.7">Uniting <?= h(setting('CLUB_PLACE','Vettikkattiri')) ?> through sports, arts and community service.</p>
       <div style="display:flex;gap:.55rem;margin-top:.9rem">
         <?php
         // WhatsApp personal
         if($wa): ?>
-        <a href="https://wa.me/<?= h($wa) ?>" target="_blank" class="sicon" title="WhatsApp" style="background:#25d366;border-color:#25d366;color:#fff"><i class="fab fa-whatsapp"></i></a>
+        <a href="https://wa.me/<?= h($wa) ?>" target="_blank" rel="noopener" class="sicon" title="WhatsApp" aria-label="WhatsApp" style="background:#25d366;border-color:#25d366;color:#fff"><i class="fab fa-whatsapp" aria-hidden="true"></i></a>
         <?php endif; ?>
         <?php
         // Dynamic social icons from DB
@@ -1519,7 +1558,7 @@ function hShare(){
         foreach($footIconMap as $fkey=>$finfo):
             if(empty($footSocials[$fkey])) continue;
         ?>
-        <a href="<?= h($footSocials[$fkey]) ?>" target="_blank" class="sicon" title="<?= h($finfo['title']) ?>" style="background:<?= $finfo['color'] ?>;border-color:<?= $finfo['color'] ?>;color:#fff"><i class="<?= $finfo['icon'] ?>"></i></a>
+        <a href="<?= h($footSocials[$fkey]) ?>" target="_blank" rel="noopener" class="sicon" title="<?= h($finfo['title']) ?>" aria-label="<?= h($finfo['title']) ?>" style="background:<?= $finfo['color'] ?>;border-color:<?= $finfo['color'] ?>;color:#fff"><i class="<?= $finfo['icon'] ?>" aria-hidden="true"></i></a>
         <?php endforeach; ?>
       </div>
     </div>
@@ -1531,15 +1570,15 @@ function hShare(){
         <a href="#events">Events</a>
         <a href="#gallery">Gallery</a>
         <a href="<?= url('contact.php') ?>">Contact</a>
-        <a href="javascript:void(0)" onclick="openModal('login')">Member Login</a>
+        <a href="#" role="button" onclick="openModal('login');return false">Member Login</a>
       </div>
     </div>
     <!-- Member -->
     <div class="col-6 col-md-2">
       <div class="foot-col">
         <h5>Members</h5>
-        <a href="javascript:void(0)" onclick="openModal('login')">Login</a>
-        <a href="javascript:void(0)" onclick="openModal('register')">Apply to Join</a>
+        <a href="#" role="button" onclick="openModal('login');return false">Login</a>
+        <a href="#" role="button" onclick="openModal('register');return false">Apply to Join</a>
         <a href="<?= url('dashboard.php') ?>">Dashboard</a>
         <a href="<?= url('modules/blood.php') ?>">Blood Hub</a>
         <a href="<?= url('modules/crowdfund.php') ?>">Donate</a>
@@ -1549,9 +1588,9 @@ function hShare(){
     <div class="col-sm-12 col-md-3">
       <div class="foot-col">
         <h5>Contact</h5>
-        <p><i class="fas fa-map-marker-alt" style="color:var(--a2);margin-right:.4rem"></i><?= h(setting('CLUB_PLACE','Vettikkattiri')) ?>, Kerala</p>
-        <p style="margin-top:.4rem"><i class="fab fa-whatsapp" style="color:#25d366;margin-right:.4rem"></i><?= h(setting('CLUB_PHONE','+919876543210')) ?></p>
-        <a href="https://wa.me/<?= h($wa) ?>" target="_blank" style="display:inline-flex;align-items:center;gap:.45rem;margin-top:.9rem;background:#25d366;color:#fff;padding:.52rem 1.1rem;border-radius:8px;font-size:.82rem;font-weight:700;transition:all .22s"><i class="fab fa-whatsapp"></i> Chat on WhatsApp</a>
+        <p><i class="fas fa-map-marker-alt" aria-hidden="true" style="color:var(--a2);margin-right:.4rem"></i><?= h(setting('CLUB_PLACE','Vettikkattiri')) ?>, Kerala</p>
+        <p style="margin-top:.4rem"><i class="fab fa-whatsapp" aria-hidden="true" style="color:#25d366;margin-right:.4rem"></i><?= h(setting('CLUB_PHONE','+919876543210')) ?></p>
+        <a href="https://wa.me/<?= h($wa) ?>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.45rem;margin-top:.9rem;background:#1a8d4a;color:#fff;min-height:44px;padding:.52rem 1.1rem;border-radius:8px;font-size:.82rem;font-weight:700;transition:all .22s"><i class="fab fa-whatsapp" aria-hidden="true"></i> Chat on WhatsApp</a>
       </div>
     </div>
   </div>
@@ -1587,23 +1626,39 @@ function switchTab(tab){
   var isL = tab === 'login';
   $('#pLogin').toggleClass('on', isL);
   $('#pRegister').toggleClass('on', !isL);
-  $('#tLogin').toggleClass('on', isL);
-  $('#tRegister').toggleClass('on', !isL);
+  $('#tLogin').toggleClass('on', isL).attr('aria-selected', isL ? 'true' : 'false');
+  $('#tRegister').toggleClass('on', !isL).attr('aria-selected', isL ? 'false' : 'true');
   $('#mTitle').text(isL ? 'Member Portal' : 'Apply to Join');
 }
 
+var _modalReturnFocus = null;
 function openModal(tab){
+  _modalReturnFocus = document.activeElement;
   $('#loginOverlay').addClass('show');
   $('body').css('overflow','hidden');
   switchTab(tab || 'login');
-  if(tab === 'login') setTimeout(function(){ $('#loginPhone').focus(); }, 300);
+  setTimeout(function(){ $(tab === 'register' ? '#rName' : '#loginPhone').trigger('focus'); }, 300);
 }
 
 function closeModal(){
+  if(!$('#loginOverlay').hasClass('show')) return;
   $('#loginOverlay').removeClass('show');
   $('body').css('overflow','');
   resetModal();
+  if(_modalReturnFocus && _modalReturnFocus.focus) _modalReturnFocus.focus();
 }
+
+// Passkey: let people type digits on a keyboard as well as tapping the keypad
+document.addEventListener('keydown', function(e){
+  if(!$('#loginOverlay').hasClass('show')) return;
+  var t = e.target;
+  if(t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) return;
+  var fn = $('#stepPasskey').is(':visible') ? window.pkTap : ($('#stepCreatePasskey').is(':visible') ? window.pkNewTap : null);
+  if(typeof fn !== 'function') return;
+  if(/^[0-9]$/.test(e.key)){ e.preventDefault(); fn(e.key); }
+  else if(e.key === 'Backspace'){ e.preventDefault(); fn('del'); }
+  else if(e.key === 'Enter' && t.tagName !== 'BUTTON'){ e.preventDefault(); fn('ok'); }
+});
 
 // Expose to global scope for inline onclick="" handlers
 window.openModal  = openModal;
@@ -1619,8 +1674,8 @@ $(window).on('scroll', function(){
     var el = $('#' + secs[i]);
     if(el.length && $(window).scrollTop() >= el.offset().top - 140) cur = secs[i];
   }
-  $('#navLinks a').removeClass('on');
-  $('#navLinks a[href="#'+cur+'"]').addClass('on');
+  $('#navLinks a').removeClass('on').removeAttr('aria-current');
+  $('#navLinks a[href="#'+cur+'"]').addClass('on').attr('aria-current','true');
 });
 
 /* 3. SMOOTH SCROLL */
@@ -1630,13 +1685,17 @@ $('a[href^="#"]').on('click', function(e){
 });
 
 /* 4. MOBILE MENU */
-window.toggleMob = function(){ $('#hb').toggleClass('open'); $('#mobMenu').toggleClass('open'); };
-window.closeMob  = function(){ $('#hb').removeClass('open'); $('#mobMenu').removeClass('open'); };
+window.toggleMob = function(){
+  var open = !$('#mobMenu').hasClass('open');
+  $('#hb').toggleClass('open', open).attr({'aria-expanded': open ? 'true' : 'false', 'aria-label': open ? 'Close menu' : 'Open menu'});
+  $('#mobMenu').toggleClass('open', open);
+};
+window.closeMob  = function(){ $('#hb').removeClass('open').attr({'aria-expanded':'false','aria-label':'Open menu'}); $('#mobMenu').removeClass('open'); };
 
 /* 5. MODAL TRIGGERS */
 $('#openLogin').on('click', function(){ openModal('login'); });
 $('#loginOverlay').on('click', function(e){ if(e.target === this) closeModal(); });
-$(document).on('keydown', function(e){ if(e.key === 'Escape') closeModal(); });
+$(document).on('keydown', function(e){ if(e.key === 'Escape'){ closeModal(); closeMob(); $('#iosSheet').removeClass('open'); } });
 
 // Auto-open if redirected with ?login=1
 if(window.location.search.indexOf('login=1') !== -1){
@@ -1665,19 +1724,30 @@ $(cells).each(function(i){
 function getOTP(){ return $.map(cells, function(b){ return b.value; }).join(''); }
 
 /* 7. HERO SLIDER */
-var hIdx=0, hTotal=<?= count($heroSlides) ?>, hTimer;
+var hIdx=0, hTotal=<?= count($heroSlides) ?>, hTimer, hPaused=false;
+// No auto-advance for people who asked their phone to reduce motion
+var hReduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function heroSchedule(){
+  clearTimeout(hTimer);
+  if(hTotal > 1 && !hReduce && !hPaused) hTimer = setTimeout(function(){ heroGo(hIdx+1); }, 6000);
+}
 function heroGo(n){
   hIdx = (n + hTotal) % hTotal;
-  $('.hslide').removeClass('on');
-  $('.hdot').removeClass('on');
-  $('.hslide[data-idx="'+hIdx+'"]').addClass('on');
-  $('.hdot[data-idx="'+hIdx+'"]').addClass('on');
-  clearTimeout(hTimer);
-  hTimer = setTimeout(function(){ heroGo(hIdx+1); }, 5000);
+  $('.hslide').removeClass('on').attr('aria-hidden','true');
+  $('.hdot').removeClass('on').removeAttr('aria-current');
+  $('.hslide[data-idx="'+hIdx+'"]').addClass('on').removeAttr('aria-hidden');
+  $('.hdot[data-idx="'+hIdx+'"]').addClass('on').attr('aria-current','true');
+  heroSchedule();
 }
 window.heroMove = function(d){ heroGo(hIdx + d); };
 window.heroGo   = heroGo;
-if(hTotal > 1) hTimer = setTimeout(function(){ heroGo(1); }, 5000);
+// Pause while the pointer or keyboard focus is on the slider
+$('#hero').on('mouseenter focusin', function(){ hPaused = true; clearTimeout(hTimer); })
+          .on('mouseleave focusout', function(e){
+            if(e.type === 'focusout' && this.contains(e.relatedTarget)) return;
+            hPaused = false; heroSchedule();
+          });
+heroSchedule();
 
 /* 8. STATS COUNT-UP */
 var statsDone = false;
@@ -1929,14 +1999,14 @@ window.doRegister=function(){
 </script>
 
 <!-- ══ GALLERY LIGHTBOX ══ -->
-<div class="lb-ov" id="lbOv" onclick="if(event.target===this)closeLB()">
-  <div class="lb-swipe-hint">Tap outside to close</div>
-  <button class="lb-close" onclick="closeLB()">✕</button>
+<div class="lb-ov" id="lbOv" onclick="if(event.target===this)closeLB()" role="dialog" aria-modal="true" aria-label="Photo viewer">
+  <div class="lb-swipe-hint" aria-hidden="true">Tap outside to close</div>
+  <button type="button" class="lb-close" onclick="closeLB()" aria-label="Close photo">✕</button>
   <div class="lb-img-wrap">
     <img id="lbImg" src="" alt="">
   </div>
   <div class="lb-login-hint">
-    <button onclick="closeLB();openModal('login')"><i class="fas fa-sign-in-alt"></i> Login to see all photos</button>
+    <button type="button" onclick="closeLB();openModal('login')"><i class="fas fa-sign-in-alt" aria-hidden="true"></i> Login to see all photos</button>
   </div>
   <div class="lb-caption" id="lbCaption"></div>
 </div>
@@ -1949,11 +2019,17 @@ function openLB(src, title) {
   var cap = document.getElementById('lbCaption');
   img.src = src;
   cap.textContent = title || '';
+  img.alt = title || 'Club photo';
+  window._lbReturn = document.activeElement;
   ov.classList.add('on');
   document.body.style.overflow = 'hidden';
+  setTimeout(function(){ ov.querySelector('.lb-close').focus(); }, 50);
 }
 function closeLB() {
-  document.getElementById('lbOv').classList.remove('on');
+  var ov = document.getElementById('lbOv');
+  if (!ov.classList.contains('on')) return;
+  ov.classList.remove('on');
+  if (window._lbReturn && window._lbReturn.focus) window._lbReturn.focus();
   document.getElementById('lbImg').src = '';
   document.body.style.overflow = '';
 }
@@ -1992,16 +2068,17 @@ $_pfeedUrl   = url('modules/feed.php');
 .pbn{
   flex:1;display:flex;flex-direction:column;
   align-items:center;justify-content:center;
-  padding:.5rem .2rem .42rem;
-  font-size:.55rem;font-weight:800;
+  min-height:58px;padding:.5rem .2rem .42rem;
+  font-size:.7rem;font-weight:700;
   color:#fff;text-decoration:none;cursor:pointer;
   border:none;gap:.18rem;background:none;
   -webkit-tap-highlight-color:transparent;
-  font-family:'DM Sans',sans-serif;line-height:1;
+  font-family:inherit;line-height:1;
   transition:transform .15s ease
 }
 .pbn:active{transform:scale(.9)}
-.pbn span:last-child{color:#444}
+.pbn span:last-child{color:#333}
+.pbn:focus-visible{outline:3px solid var(--p2);outline-offset:-3px;border-radius:12px}
 
 /* Icon chip — consistent size for all tabs */
 .pbn-ico{
@@ -2036,37 +2113,37 @@ $_pfeedUrl   = url('modules/feed.php');
 body{padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))!important}
 </style>
 
-<nav id="pub-bnav">
+<nav id="pub-bnav" aria-label="Quick links">
   <?php if($_pLoggedIn): ?>
   <a href="<?php echo h($_pDashUrl); ?>" class="pbn pbn-login">
-    <span class="pbn-ico">&#127968;</span>
+    <span class="pbn-ico" aria-hidden="true">&#127968;</span>
     <span>Dashboard</span>
   </a>
   <?php else: ?>
   <button type="button" class="pbn pbn-login" onclick="openModal('login')">
-    <span class="pbn-ico">&#128273;</span>
+    <span class="pbn-ico" aria-hidden="true">&#128273;</span>
     <span>Login</span>
   </button>
   <?php endif; ?>
 
   <button type="button" class="pbn pbn-install" id="pwaNavBtn" onclick="pwaNavInstall()">
-    <span class="pbn-ico">&#128242;</span>
+    <span class="pbn-ico" aria-hidden="true">&#128242;</span>
     <span>Install</span>
   </button>
 
   <a href="<?php echo h($_pfeedUrl); ?>" class="pbn pbn-feed">
-    <span class="pbn-ico">&#x2728;</span>
+    <span class="pbn-ico" aria-hidden="true">&#x2728;</span>
     <span>Feed</span>
   </a>
 
   <a href="<?php echo h($_pMarketUrl); ?>" class="pbn pbn-mkt">
-    <span class="pbn-ico">&#128717;</span>
+    <span class="pbn-ico" aria-hidden="true">&#128717;</span>
     <span>Market</span>
   </a>
 </nav>
 
 <!-- Install Sheet - iOS + Android -->
-<div id="iosSheet" onclick="if(event.target===this)this.classList.remove('open')">
+<div id="iosSheet" role="dialog" aria-modal="true" aria-label="Install the app" onclick="if(event.target===this)this.classList.remove('open')">
   <div style="background:#fff;width:100%;max-width:480px;border-radius:24px 24px 0 0;padding-bottom:env(safe-area-inset-bottom,16px);overflow:hidden">
 
     <!-- Handle -->
@@ -2076,7 +2153,7 @@ body{padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))!important}
 
     <!-- App card -->
     <div style="display:flex;align-items:center;gap:.85rem;padding:1rem 1.2rem .8rem">
-      <img src="/assets/logo.jpg" style="width:60px;height:60px;border-radius:14px;object-fit:cover;box-shadow:0 3px 10px rgba(0,0,0,.15);flex-shrink:0">
+      <img src="/assets/logo.jpg" alt="" width="60" height="60" style="width:60px;height:60px;border-radius:14px;object-fit:cover;box-shadow:0 3px 10px rgba(0,0,0,.15);flex-shrink:0">
       <div>
         <div style="font-size:1.1rem;font-weight:800;color:#07225c">Aishwarya</div>
         <div style="font-size:.72rem;color:#64748b">Aishwarya Arts &amp; Sports Club</div>
@@ -2145,7 +2222,7 @@ body{padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))!important}
     </div>
 
     <div style="padding:0 1.2rem .9rem">
-      <button onclick="document.getElementById('iosSheet').classList.remove('open')" style="width:100%;padding:.62rem;background:#f1f5f9;border:none;border-radius:12px;font-size:.85rem;font-weight:700;cursor:pointer;color:#555">
+      <button type="button" onclick="document.getElementById('iosSheet').classList.remove('open')" style="width:100%;min-height:44px;padding:.62rem;background:#f1f5f9;border:none;border-radius:12px;font-size:.85rem;font-weight:700;cursor:pointer;color:#555">
         Maybe Later
       </button>
     </div>
@@ -2198,7 +2275,9 @@ function showInstallSheet(isIos){
   var stepsAnd = document.getElementById('stepsAndroid');
   if(stepsIos) stepsIos.style.display = isIos ? 'block' : 'none';
   if(stepsAnd) stepsAnd.style.display = isIos ? 'none' : 'block';
-  document.getElementById('iosSheet').classList.add('open');
+  var sh = document.getElementById('iosSheet');
+  sh.classList.add('open');
+  var b = sh.querySelector('button'); if (b) setTimeout(function(){ b.focus(); }, 50);
 }
 </script>
 <!-- ══ /PUBLIC BOTTOM NAV ══ -->
@@ -2207,8 +2286,7 @@ function showInstallSheet(isIos){
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
     navigator.serviceWorker.register('/sw.js')
-      .then(function(r){console.log('SW registered');})
-      .catch(function(e){console.log('SW failed',e);});
+      .catch(function(){});
   });
 }
 // Capture install prompt (Android Chrome)

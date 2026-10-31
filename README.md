@@ -54,3 +54,13 @@ and the football-data.org token in `modules/prediction_sync.php`.
 - Mobile menu highlights the page you are on.
 - Faster: Font Awesome loaded once (the duplicate JS copy is gone), duplicate PWA tags removed.
 - Honours the phone's "reduce motion" setting; safe-area padding for notched phones.
+
+**Public homepage (`index.php`) — UI/UX pass:**
+- Fixed: the "Install the app" instructions always showed at the bottom of the page; they now open as a sheet from the Install button.
+- Fixed: footer columns were stacked in one long list (they used Bootstrap classes without Bootstrap); now a proper 4-column / 2-column grid.
+- Fixed: Henna Fest script stopped with an error (broken quotes), and the slider dots never changed.
+- Fixed: the page had an empty browser title; it now shows the club name, plus a description for search and sharing.
+- Login popup and photo viewer now sit above the bottom bar; popup, tabs, keypad and menus work by keyboard and
+  screen reader; focus returns where it was on close; passkey can also be typed on a keyboard.
+- Slider pauses on hover/focus and doesn't auto-play with "reduce motion"; hidden slides can't be clicked.
+- Better contrast (grey and gold text, footer, labels), 16px inputs, 44px tap targets, labelled form fields.
