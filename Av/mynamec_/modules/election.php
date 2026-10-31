@@ -132,7 +132,7 @@ require_once __DIR__ . '/../includes/header.php';
       <div style="font-size:.7rem;color:var(--t3);margin-bottom:.5rem"><?=h($c2['post'])?></div>
       <?php if($c2['bio']): ?><div style="font-size:.72rem;color:var(--t2);margin-bottom:.6rem;line-height:1.4"><?=h($c2['bio'])?></div><?php endif;?>
       <div style="background:#ECEEFF;border-radius:8px;padding:.5rem;margin-bottom:.6rem">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#0A14E0"><?=$c2['votes']?></div>
+        <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.04rem;color:#0A14E0"><?=$c2['votes']?></div>
         <div style="font-size:.62rem;color:var(--t3);margin-bottom:.3rem">votes · <?=$pct?>%</div>
         <div style="background:#D6DAFF;border-radius:4px;height:5px"><div style="background:#0A14E0;height:5px;border-radius:4px;width:<?=$pct?>%"></div></div>
       </div>

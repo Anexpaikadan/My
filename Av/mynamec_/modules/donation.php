@@ -83,8 +83,8 @@ require_once __DIR__ . '/../includes/header.php';
     <!-- Progress bar -->
     <div style="background:#E8F5E9;border-radius:12px;padding:1rem;margin-bottom:1.2rem">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
-        <div><span style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:#2E7D32">₹<?=number_format($camp['raised_amount'])?></span><span style="font-size:.72rem;color:var(--t3)"> raised of ₹<?=number_format($camp['goal_amount'])?></span></div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:#1B5E20"><?=$pct?>%</div>
+        <div><span style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.28rem;color:#2E7D32">₹<?=number_format($camp['raised_amount'])?></span><span style="font-size:.72rem;color:var(--t3)"> raised of ₹<?=number_format($camp['goal_amount'])?></span></div>
+        <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.12rem;color:#1B5E20"><?=$pct?>%</div>
       </div>
       <div style="background:#C8E6C9;border-radius:8px;height:10px;overflow:hidden">
         <div style="background:linear-gradient(90deg,#2E7D32,#4CAF50);height:10px;border-radius:8px;width:<?=$pct?>%;transition:width 1s ease"></div>

@@ -24,6 +24,9 @@ $_barTitle = isset($pageTitle) && $pageTitle ? trim(preg_split('/\s+[—|·-]\s+
 if (!$_barTitle) {
     foreach (array_merge(app_modules(), admin_modules()) as $_m) { if (basename($_m[0]) === $curPage) { $_barTitle = $_m[1]; break; } }
 }
+// 3D icon of the current module (shown in its page banner)
+$_modImg = '';
+foreach (array_merge(app_modules(), admin_modules()) as $_m) { if (basename($_m[0]) === $curPage) { $_modImg = url('assets/icons/3d/'.$_m[5].'.webp'); break; } }
 $_club  = setting('CLUB_NAME','Aishwarya Arts & Sports Club');
 $_place = setting('CLUB_PLACE','Vettikkattiri');
 
@@ -189,7 +192,7 @@ a:active .appic,button:active .appic{transform:scale(.92)}
 .hero{position:relative;overflow:hidden;color:#fff;text-align:center;padding:2rem 1.2rem 2.2rem;
   background:radial-gradient(70% 120% at 0% 0%,rgba(255,255,255,.16),transparent 55%),var(--brand-grad)}
 .hero h1{font-family:var(--font);font-weight:800;font-size:clamp(1.6rem,5vw,2.4rem);letter-spacing:-.02em;color:#fff;margin-bottom:.3rem}
-.hero h1 span{color:#fff;text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:6px}
+.hero h1 span{color:#fff}
 .hero-place{font-size:.74rem;color:rgba(255,255,255,.9);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:.35rem}
 .hero-tagline{font-size:.92rem;color:rgba(255,255,255,.8)}
 .red-bar{height:4px;background:var(--brand-grad)}
@@ -257,6 +260,23 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
 .form-msg{display:none;border-radius:12px;padding:.7rem .95rem;font-size:.86rem;font-weight:500;margin-bottom:.85rem;line-height:1.45}
 .form-msg.ok{display:block;background:#ECFDF3;border:1px solid #BBF7D0;color:#166534}
 .form-msg.err{display:block;background:#FEF2F2;border:1px solid #FECACA;color:#991B1B}
+/* ═══ Unified page banner for every module ═══ */
+.hero,.ft-hero,.bh-header,.bc-hero,.ach-hero,.cf-hero,.ev-header,.fm-hero,.gal-hero,.gf-hero,.mk-hero,.adm-header{
+  background:radial-gradient(70% 120% at 0% 0%,rgba(255,255,255,.16),transparent 55%),radial-gradient(60% 90% at 100% 100%,rgba(0,0,0,.18),transparent 60%),var(--brand-grad)!important;
+  color:#fff!important;position:relative;overflow:hidden;border-radius:0 0 30px 30px;box-shadow:0 18px 36px -24px rgba(10,20,224,.8)}
+.hero-ic{display:block;width:78px;height:78px;object-fit:contain;margin:0 auto .55rem;filter:drop-shadow(0 10px 14px rgba(0,0,0,.28))}
+.ph-left .hero-ic{margin-left:0}
+.ph-title{font-family:var(--font)!important;font-weight:800!important;text-transform:uppercase;letter-spacing:.01em!important;
+  font-size:clamp(1.45rem,6.2vw,2.2rem)!important;line-height:1.08!important;color:#fff!important}
+.ph-title span:not(.ph-sub){color:#fff!important}
+.ph-title::after{content:'';display:block;width:52px;height:4px;border-radius:4px;background:#fff;margin:.6rem auto 0}
+.ph-left .ph-title::after{margin-left:0}
+.ph-title .ph-sub{display:block;text-transform:none;font-weight:600;font-size:.82rem;letter-spacing:0;opacity:.92;margin-top:.35rem}
+.bc-hero-icon,.mk-hero-icon{display:none!important}
+/* section headings inside modules */
+.section-title,.adm-head h2,.scard-title,.bh-sec-lbl{font-family:var(--font)!important;font-weight:800!important;text-transform:uppercase;letter-spacing:.02em!important;color:var(--text)!important}
+.section-title::after,.adm-head h2::after{content:'';display:block;width:40px;height:4px;border-radius:4px;margin-top:.4rem;background:var(--brand-grad)}
+.adm-head-line{display:none}
 /* table helper */
 .tbl-wrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--line);background:#fff}
 @media (prefers-reduced-motion:reduce){
@@ -275,7 +295,7 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 </head>
-<body>
+<body<?= $_modImg ? ' data-mod-img="'.h($_modImg).'"' : '' ?>>
 <?= icon_sprite() ?>
 <a href="#main" class="skip-link">Skip to content</a>
 

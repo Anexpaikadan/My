@@ -249,7 +249,7 @@ require_once __DIR__.'/../includes/header.php';
       </div>
 
       <div style="width:100%">
-        <h1 style="font-family:'Bebas Neue',sans-serif;font-size:1.7rem;letter-spacing:.04em;color:#0B1033;margin-bottom:.15rem;line-height:1.1"><?= h($profile['name']) ?></h1>
+        <h1 style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.36rem;letter-spacing:.01em;color:#0B1033;margin-bottom:.15rem;line-height:1.1"><?= h($profile['name']) ?></h1>
         <?php if($profile['committee_position']): ?>
         <div style="font-size:.86rem;color:#3D4F7C;font-weight:700"><?= h($profile['committee_position']) ?></div>
         <?php endif; ?>
@@ -295,7 +295,7 @@ require_once __DIR__.'/../includes/header.php';
       <!-- Blood Group -->
       <div class="pf-tile" style="background:linear-gradient(135deg,#fff5f5,#ffebee);border:1px solid #ffcdd2">
         <div class="pf-tile-l" style="color:#B71C1C">🩸 Blood Group</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:#B71C1C;line-height:1"><?= h($profile['blood_group'] ?? '—') ?></div>
+        <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.28rem;color:#B71C1C;line-height:1"><?= h($profile['blood_group'] ?? '—') ?></div>
       </div>
 
       <!-- WhatsApp -->
@@ -317,7 +317,7 @@ require_once __DIR__.'/../includes/header.php';
       <!-- Member ID -->
       <div class="pf-tile" style="background:linear-gradient(135deg,#faf4ff,#f3e5f5);border:1px solid #e1bee7">
         <div class="pf-tile-l" style="color:#7B1FA2">🆔 Member ID</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:#7B1FA2">AV<?= str_pad($profile['id'],4,'0',STR_PAD_LEFT) ?></div>
+        <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.96rem;color:#7B1FA2">AV<?= str_pad($profile['id'],4,'0',STR_PAD_LEFT) ?></div>
       </div>
 
       <?php if($profile['profession']): ?>
@@ -379,15 +379,15 @@ require_once __DIR__.'/../includes/header.php';
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.55rem;margin-bottom:.9rem">
     <div style="background:linear-gradient(135deg,#f1faf3,#e8f5e9);border:1px solid #a5d6a7;border-radius:12px;padding:.6rem;text-align:center">
       <div style="font-size:.56rem;font-weight:800;color:#2E7D32;text-transform:uppercase">Paid</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.35rem;color:#1b5e20">₹<?= number_format($gfPaid) ?></div>
+      <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.08rem;color:#1b5e20">₹<?= number_format($gfPaid) ?></div>
     </div>
     <div style="background:linear-gradient(135deg,#f3f7ff,#ECEEFF);border:1px solid #D6DAFF;border-radius:12px;padding:.6rem;text-align:center">
       <div style="font-size:.56rem;font-weight:800;color:#0A14E0;text-transform:uppercase">Pledged</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.35rem;color:#0A14E0">₹<?= number_format($gfPledge) ?></div>
+      <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.08rem;color:#0A14E0">₹<?= number_format($gfPledge) ?></div>
     </div>
     <div style="background:linear-gradient(135deg,<?= $gfBalance>0?'#fff8f0,#fff3e0':'#f1faf3,#e8f5e9' ?>);border:1px solid <?= $gfBalance>0?'#ffe0b2':'#a5d6a7' ?>;border-radius:12px;padding:.6rem;text-align:center">
       <div style="font-size:.56rem;font-weight:800;color:<?= $gfBalance>0?'#E65100':'#2E7D32' ?>;text-transform:uppercase">Balance</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.35rem;color:<?= $gfBalance>0?'#e65100':'#1b5e20' ?>"><?= $gfBalance>0?'₹'.number_format($gfBalance):'✓ Paid' ?></div>
+      <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.08rem;color:<?= $gfBalance>0?'#e65100':'#1b5e20' ?>"><?= $gfBalance>0?'₹'.number_format($gfBalance):'✓ Paid' ?></div>
     </div>
   </div>
 
@@ -469,7 +469,7 @@ require_once __DIR__.'/../includes/header.php';
       <!-- Blood Donation Availability -->
       <?php if(!empty($profile['blood_group'])): ?>
       <div style="margin-top:1.5rem;padding:1.2rem;background:#fff5f5;border-radius:12px;border:1.5px solid #ffcdd2">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.07em;color:#b71c1c;margin-bottom:.85rem">🩸 BLOOD DONATION STATUS</div>
+        <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.8rem;letter-spacing:.01em;color:#b71c1c;margin-bottom:.85rem">🩸 BLOOD DONATION STATUS</div>
         <p style="font-size:.8rem;color:#64748b;margin-bottom:.85rem">Set whether you are available to donate blood</p>
         <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.85rem">
           <button type="button" id="btnBldAvail" onclick="setBldAvail(1)"
@@ -503,7 +503,7 @@ require_once __DIR__.'/../includes/header.php';
 
       <!-- Change Passkey -->
       <div style="margin-top:1.5rem;padding:1.2rem;background:#f8fafc;border-radius:12px;border:1.5px solid #ECEEFF">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.07em;color:#0A14E0;margin-bottom:.75rem">🔑 CHANGE PASSKEY</div>
+        <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.8rem;letter-spacing:.01em;color:#0A14E0;margin-bottom:.75rem">🔑 CHANGE PASSKEY</div>
         <p style="font-size:.8rem;color:#64748b;margin-bottom:.8rem">Choose a new 6-digit passkey for login</p>
         <div style="display:flex;justify-content:center;gap:.55rem;margin-bottom:.75rem" id="profPkDots">
           <?php for($i=0;$i<6;$i++): ?><div style="width:13px;height:13px;border-radius:50%;background:#ECEEFF;border:2px solid #c7d2fe;transition:all .2s" class="ppk-dot"></div><?php endfor; ?>

@@ -107,7 +107,7 @@ function renderMemberCard($m, $user, $size = 'normal') {
   <?php if(!empty($executives)): ?>
   <div id="executives" style="margin-bottom:2.5rem">
     <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:1.2rem">
-      <div style="background:linear-gradient(135deg,#B8860B,#DAA520);color:#fff;border-radius:10px;padding:.4rem .85rem;font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:.07em">⭐ EXECUTIVE COMMITTEE</div>
+      <div style="background:linear-gradient(135deg,#B8860B,#DAA520);color:#fff;border-radius:10px;padding:.4rem .85rem;font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.76rem;letter-spacing:.01em">⭐ EXECUTIVE COMMITTEE</div>
       <div style="flex:1;height:2px;background:linear-gradient(90deg,#B8860B,transparent)"></div>
       <span style="font-size:.75rem;color:#565D82;font-weight:600"><?= count($executives) ?> Members</span>
     </div>
@@ -121,7 +121,7 @@ function renderMemberCard($m, $user, $size = 'normal') {
   <?php if(!empty($committee)): ?>
   <div id="committee" style="margin-bottom:2.5rem">
     <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:1.2rem">
-      <div style="background:linear-gradient(135deg,#4A148C,#7B1FA2);color:#fff;border-radius:10px;padding:.4rem .85rem;font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:.07em">🏛 COMMITTEE MEMBERS</div>
+      <div style="background:linear-gradient(135deg,#4A148C,#7B1FA2);color:#fff;border-radius:10px;padding:.4rem .85rem;font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.76rem;letter-spacing:.01em">🏛 COMMITTEE MEMBERS</div>
       <div style="flex:1;height:2px;background:linear-gradient(90deg,#7B1FA2,transparent)"></div>
       <span style="font-size:.75rem;color:#565D82;font-weight:600"><?= count($committee) ?> Members</span>
     </div>
@@ -163,7 +163,7 @@ function renderMemberCard($m, $user, $size = 'normal') {
   <?php if(!empty($generalMembers)): ?>
   <div id="members">
     <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:1.2rem">
-      <div style="background:linear-gradient(135deg,#37474F,#546E7A);color:#fff;border-radius:10px;padding:.4rem .85rem;font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:.07em">👥 GENERAL MEMBERS</div>
+      <div style="background:linear-gradient(135deg,#37474F,#546E7A);color:#fff;border-radius:10px;padding:.4rem .85rem;font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.76rem;letter-spacing:.01em">👥 GENERAL MEMBERS</div>
       <div style="flex:1;height:2px;background:linear-gradient(90deg,#546E7A,transparent)"></div>
       <span style="font-size:.75rem;color:#565D82;font-weight:600"><?= count($generalMembers) ?> Members</span>
     </div>

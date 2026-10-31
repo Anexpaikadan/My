@@ -102,14 +102,14 @@ require_once __DIR__.'/../includes/header.php';
   background:linear-gradient(145deg,#0B1033,#121A5C,#0A14E0);
   padding:1.4rem 1.2rem 3.2rem;position:relative;overflow:hidden}
 .ev-header::before{content:'📅';position:absolute;right:-1rem;top:-1rem;font-size:9rem;opacity:.07}
-.ev-htitle{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;letter-spacing:.1em;color:#fff}
+.ev-htitle{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.52rem;letter-spacing:.01em;color:#fff}
 .ev-htitle span{color:#B9BFFF;font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;font-weight:600;
   letter-spacing:.04em;display:block;margin-top:.2rem}
 .ev-hstats{display:flex;gap:.55rem;margin-top:1rem}
 .ev-hstat{background:rgba(255,255,255,.14);backdrop-filter:blur(8px);
   border:1px solid rgba(255,255,255,.2);border-radius:12px;
   padding:.5rem .8rem;text-align:center;flex:1}
-.ev-hstat-n{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:#fff;line-height:1}
+.ev-hstat-n{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.2rem;color:#fff;line-height:1}
 .ev-hstat-l{font-size:.55rem;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.09em;font-weight:700}
 
 /* Filter pills */
@@ -127,7 +127,7 @@ require_once __DIR__.'/../includes/header.php';
 
 /* Section label */
 .ev-sec{padding:.9rem 1rem .45rem;display:flex;align-items:center;gap:.6rem}
-.ev-sec-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.06em;color:#0B1033}
+.ev-sec-title{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.88rem;letter-spacing:.01em;color:#0B1033}
 .ev-sec-line{flex:1;height:2px;background:linear-gradient(90deg,#c8922a,transparent);border-radius:2px}
 .ev-sec-count{font-size:.68rem;font-weight:700;color:#5d6b80;background:#F5F7FF;
   border-radius:20px;padding:.1rem .55rem}

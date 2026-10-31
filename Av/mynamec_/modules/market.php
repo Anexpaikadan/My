@@ -474,7 +474,7 @@ require_once __DIR__.'/../includes/header.php';
 .mk-fav-btn{position:absolute;bottom:calc(50% + 4px);right:6px;background:rgba(255,255,255,.92);border:none;border-radius:50%;width:26px;height:26px;font-size:.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.15)}
 .mk-card-body{padding:.45rem .5rem .55rem}
 .mk-card-title{font-size:.75rem;font-weight:800;color:#1a1a1a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:.15rem}
-.mk-card-price{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--mk1);line-height:1;margin-bottom:.1rem}
+.mk-card-price{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.8rem;color:var(--mk1);line-height:1;margin-bottom:.1rem}
 .mk-card-price-free{font-size:.7rem;color:#2E7D32;font-weight:700}
 .mk-card-meta{font-size:.58rem;color:#5d6b80;display:flex;align-items:center;gap:.3rem;flex-wrap:wrap}
 .mk-card-seller{display:flex;align-items:center;gap:.3rem;margin-top:.3rem;padding-top:.3rem;border-top:1px solid #f5f5f5}
@@ -493,7 +493,7 @@ require_once __DIR__.'/../includes/header.php';
 .mk-slider-btn.prev{left:6px}.mk-slider-btn.next{right:6px}
 .mk-detail-body{padding:.9rem .9rem 0}
 .mk-detail-title{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:#1a1a1a;margin-bottom:.25rem}
-.mk-detail-price{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:var(--mk1);line-height:1;margin-bottom:.5rem}
+.mk-detail-price{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.44rem;color:var(--mk1);line-height:1;margin-bottom:.5rem}
 .mk-detail-desc{font-size:.82rem;color:#444;line-height:1.6;margin-bottom:.8rem;white-space:pre-wrap}
 .mk-info-row{display:flex;align-items:center;gap:.45rem;padding:.38rem 0;border-bottom:1px solid #f5f5f5;font-size:.78rem;color:#555}
 .mk-info-icon{font-size:.9rem;flex-shrink:0;width:22px}
@@ -746,7 +746,7 @@ elseif ($page==='new' || $page==='edit'):
 ?>
 <div style="background:linear-gradient(135deg,var(--mk1),var(--mk2));padding:.65rem .9rem;display:flex;align-items:center;gap:.5rem">
   <button onclick="history.back()" style="background:rgba(255,255,255,.2);border:none;border-radius:50%;width:28px;height:28px;color:#fff;cursor:pointer">←</button>
-  <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.08em;color:#fff"><?php echo $fi?'EDIT POST':'NEW POST'; ?></span>
+  <span style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.8rem;letter-spacing:.01em;color:#fff"><?php echo $fi?'EDIT POST':'NEW POST'; ?></span>
 </div>
 <form method="POST" enctype="multipart/form-data" class="mk-form">
   <input type="hidden" name="save_item" value="1">
@@ -842,7 +842,7 @@ elseif ($page==='new' || $page==='edit'):
 elseif ($page==='sub_wall'): ?>
 <div style="background:linear-gradient(135deg,#b71c1c,#c62828);padding:.65rem .9rem;display:flex;align-items:center;gap:.5rem">
   <button onclick="history.back()" style="background:rgba(255,255,255,.2);border:none;border-radius:50%;width:28px;height:28px;color:#fff;cursor:pointer">←</button>
-  <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.08em;color:#fff">🔒 SUBSCRIPTION REQUIRED</span>
+  <span style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.8rem;letter-spacing:.01em;color:#fff">🔒 SUBSCRIPTION REQUIRED</span>
 </div>
 <div style="padding:2rem 1.2rem;text-align:center">
   <div style="font-size:3.5rem;margin-bottom:.8rem">🛍️</div>
@@ -872,7 +872,7 @@ $grps = ['active'=>[],'pending'=>[],'sold'=>[],'inactive'=>[]];
 foreach($myItems as $mi) { $grps[$mi['status']??'inactive'][] = $mi; }
 ?>
 <div style="background:linear-gradient(135deg,var(--mk1),var(--mk2));padding:.65rem .9rem;display:flex;align-items:center;justify-content:space-between">
-  <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.08em;color:#fff">MY ITEMS</span>
+  <span style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.8rem;letter-spacing:.01em;color:#fff">MY ITEMS</span>
   <?php if($hasActiveSub): ?>
   <a href="<?php echo $SELF.'?new'; ?>" style="background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:20px;padding:.3rem .75rem;font-size:.72rem;font-weight:800;text-decoration:none">＋ New Post</a>
   <?php else: ?>
@@ -906,7 +906,7 @@ foreach($myItems as $mi) { $grps[$mi['status']??'inactive'][] = $mi; }
     <div class="mk-myitem-title"><?php echo h($mi['title']); ?></div>
     <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.15rem">
       <span class="sb sb-<?php echo $mi['status']; ?>"><?php echo ucfirst($mi['status']); ?></span>
-      <?php if($mi['price']): ?><span style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:var(--mk1)">₹<?php echo h($mi['price']); ?></span><?php endif; ?>
+      <?php if($mi['price']): ?><span style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.72rem;color:var(--mk1)">₹<?php echo h($mi['price']); ?></span><?php endif; ?>
     </div>
     <div style="font-size:.58rem;color:#5d6b80">👁 <?php echo (int)$mi['views']; ?> views · <?php echo date('d M',strtotime($mi['created_at'])); ?></div>
     <div class="mk-myitem-actions">
@@ -943,12 +943,12 @@ $allAdmItems=[];
 try { $allAdmItems=db()->query("SELECT m.*,u.name seller_name,(SELECT image_path FROM market_images WHERE item_id=m.id LIMIT 1) thumb FROM market_items m JOIN users u ON u.id=m.user_id ORDER BY m.created_at DESC LIMIT 50")->fetchAll(); } catch(Exception $e){}
 ?>
 <div style="background:linear-gradient(135deg,#0B1033,#0A14E0);padding:.65rem .9rem">
-  <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.08em;color:#fff">🛡️ ADMIN — MINI MARKET</span>
+  <span style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.8rem;letter-spacing:.01em;color:#fff">🛡️ ADMIN — MINI MARKET</span>
 </div>
 <div style="display:grid;grid-template-columns:repeat(4,1fr);background:#fff;border-bottom:2px solid #e0e0e0">
   <?php foreach(['total'=>['📦','Total'],'active'=>['✅','Active'],'pending'=>['⏳','Pending'],'sellers'=>['👤','Sellers']] as $sk=>$sv): ?>
   <div style="padding:.55rem .3rem;text-align:center;border-right:1px solid #f0f0f0">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--mk1)"><?php echo $allStats[$sk]??0; ?></div>
+    <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.04rem;color:var(--mk1)"><?php echo $allStats[$sk]??0; ?></div>
     <div style="font-size:.55rem;color:#5d6b80"><?php echo $sv[1]; ?></div>
   </div>
   <?php endforeach; ?>

@@ -82,9 +82,9 @@ require_once __DIR__ . '/../includes/header.php';
 }
 .bc-hero-icon { font-size: 2.8rem; display: block; margin-bottom: .4rem; position: relative; z-index: 1; }
 .bc-hero h1 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.7rem;
-    letter-spacing: .1em;
+    font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;
+    font-size:1.36rem;
+    letter-spacing:.01em;
     color: #fff;
     position: relative;
     z-index: 1;
@@ -101,7 +101,7 @@ require_once __DIR__ . '/../includes/header.php';
 }
 .bc-stat { padding: .7rem .5rem; text-align: center; border-right: 1px solid rgba(255,255,255,.1); }
 .bc-stat:last-child { border-right: none; }
-.bc-stat-n { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: #25d366; line-height: 1; }
+.bc-stat-n { font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase; font-size:1.2rem; color: #25d366; line-height: 1; }
 .bc-stat-l { font-size: .62rem; color: rgba(255,255,255,.85); text-transform: uppercase; letter-spacing: .08em; margin-top: .1rem; }
 
 /* Main card */
@@ -121,9 +121,9 @@ require_once __DIR__ . '/../includes/header.php';
     gap: .6rem;
 }
 .bc-card-head h3 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.1rem;
-    letter-spacing: .08em;
+    font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;
+    font-size:0.88rem;
+    letter-spacing:.01em;
     color: #fff;
     margin: 0;
 }

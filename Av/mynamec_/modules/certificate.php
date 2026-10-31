@@ -207,14 +207,14 @@ $cats = [
 .ach-hero{background:linear-gradient(135deg,#0B1033 0%,#121A5C 50%,#0A14E0 100%);padding:2.5rem 1.2rem 2rem;text-align:center;position:relative;overflow:hidden}
 .ach-hero::before{content:'🏆';position:absolute;right:-1rem;top:-1rem;font-size:9rem;opacity:.07;transform:rotate(15deg)}
 .ach-hero::after{content:'🥇';position:absolute;left:-1rem;bottom:-1rem;font-size:7rem;opacity:.07;transform:rotate(-15deg)}
-.ach-hero h1{font-family:'Bebas Neue',sans-serif;font-size:2.1rem;letter-spacing:.1em;color:#fff;margin-bottom:.3rem}
+.ach-hero h1{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.68rem;letter-spacing:.01em;color:#fff;margin-bottom:.3rem}
 .ach-hero h1 span{color:#f5d060}
 .ach-hero p{color:rgba(255,255,255,.62);font-size:.85rem}
 
 /* Stats bar */
 .ach-stats{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap;margin-top:1.2rem}
 .ach-stat{background:rgba(255,255,255,.12);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:.45rem 1rem;display:flex;align-items:center;gap:.4rem}
-.ach-stat-num{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#f5d060;line-height:1}
+.ach-stat-num{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.04rem;color:#f5d060;line-height:1}
 .ach-stat-lbl{font-size:.62rem;color:rgba(255,255,255,.6);font-weight:700;text-transform:uppercase;letter-spacing:.08em}
 
 /* Filters */
@@ -255,7 +255,7 @@ $cats = [
 
 /* Timeline view */
 .timeline{padding:1.2rem;max-width:680px;margin:0 auto}
-.timeline-year{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.08em;color:#0A14E0;margin:1.5rem 0 .8rem;display:flex;align-items:center;gap:.6rem}
+.timeline-year{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.12rem;letter-spacing:.01em;color:#0A14E0;margin:1.5rem 0 .8rem;display:flex;align-items:center;gap:.6rem}
 .timeline-year::after{content:'';flex:1;height:2px;background:linear-gradient(90deg,#0A14E0,transparent)}
 .tl-item{display:flex;gap:1rem;margin-bottom:1.2rem;position:relative}
 .tl-item::before{content:'';position:absolute;left:18px;top:38px;bottom:-14px;width:2px;background:linear-gradient(to bottom,#ECEEFF,transparent);z-index:0}
@@ -309,7 +309,7 @@ textarea.inp2{resize:vertical;min-height:70px}
 <?php if ($isAdmin): ?>
 <div class="ach-form-card" style="margin:1rem 1rem 0">
   <div class="ach-form-header" onclick="toggleForm()" style="background:linear-gradient(135deg,#0A14E0,#1A23C9)">
-    <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.08em;color:#fff">
+    <span style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.8rem;letter-spacing:.01em;color:#fff">
       <?= $editItem ? '✏️ EDIT ACHIEVEMENT' : '➕ ADD NEW ACHIEVEMENT' ?>
     </span>
     <span id="formArrow" style="color:rgba(255,255,255,.7);font-size:.8rem"><?= $editItem?'▲':'▼' ?></span>

@@ -234,7 +234,7 @@ require_once __DIR__.'/../includes/header.php';
 :root{--fm1:#0B1033;--fm2:#0A14E0;--gold:#f5a623}
 .fm-wrap{max-width:580px;margin:0 auto;padding-bottom:4rem}
 .fm-hero{background:linear-gradient(135deg,#0B1033,#0A14E0,#1A23C9);padding:1.6rem 1rem 1.2rem;text-align:center}
-.fm-hero h1{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:#fff;letter-spacing:.1em;margin-bottom:.2rem}
+.fm-hero h1{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.44rem;color:#fff;letter-spacing:.01em;margin-bottom:.2rem}
 .fm-hero p{font-size:.72rem;color:rgba(255,255,255,.6)}
 .fest-card{background:#fff;margin:.6rem .8rem;border-radius:16px;overflow:hidden;box-shadow:0 3px 16px rgba(11,16,51,.1);border:1.5px solid rgba(11,16,51,.1);cursor:pointer;transition:all .15s}
 .fest-card:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(11,16,51,.15)}
@@ -258,7 +258,7 @@ require_once __DIR__.'/../includes/header.php';
 .ec img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
 .ec-info{padding:.4rem .5rem .5rem}
 .ec-name{font-size:.7rem;font-weight:800;color:#0B1033}
-.ec-likes{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:#e53935}
+.ec-likes{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.8rem;color:#e53935}
 .like-btn{padding:.28rem .6rem;border:none;border-radius:7px;font-size:.68rem;font-weight:800;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif}
 .like-can{background:linear-gradient(135deg,#e53935,#b71c1c);color:#fff}
 .like-done{background:#fce4ec;color:#c62828}
@@ -266,7 +266,7 @@ require_once __DIR__.'/../includes/header.php';
 /* Admin form */
 .af{background:#fff;margin:.7rem .8rem;border-radius:16px;box-shadow:0 3px 16px rgba(11,16,51,.1);border:1.5px solid rgba(11,16,51,.1);overflow:hidden}
 .af-head{background:linear-gradient(135deg,#0B1033,#0A14E0);padding:.75rem 1rem;display:flex;align-items:center;gap:.5rem}
-.af-head h3{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.08em;color:#fff;margin:0}
+.af-head h3{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.8rem;letter-spacing:.01em;color:#fff;margin:0}
 .af-body{padding:1rem}
 /* Upload area */
 .upload-area{border:2px dashed rgba(11,16,51,.25);border-radius:12px;padding:1.2rem;text-align:center;cursor:pointer;background:#f8faff;transition:all .2s;margin-bottom:.5rem}

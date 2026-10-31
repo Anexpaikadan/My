@@ -83,7 +83,7 @@ require_once __DIR__.'/includes/header.php';
 }
 .adm-header::before{content:'🛡';position:absolute;right:-.5rem;top:-.5rem;font-size:7rem;opacity:.07;transform:rotate(15deg)}
 .adm-hrow{display:flex;align-items:center;justify-content:space-between;margin-bottom:.9rem}
-.adm-hname{font-family:'Bebas Neue',sans-serif;font-size:.85rem;letter-spacing:.12em;color:rgba(255,255,255,.55)}
+.adm-hname{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.68rem;letter-spacing:.01em;color:rgba(255,255,255,.55)}
 .adm-hrole{font-size:.72rem;color:rgba(255,255,255,.4);margin-top:.1rem}
 .adm-havatar{width:40px;height:40px;border-radius:50%;border:2.5px solid rgba(200,146,42,.6);object-fit:cover;background:#121A5C;display:flex;align-items:center;justify-content:center;font-size:1.1rem;overflow:hidden}
 
@@ -97,7 +97,7 @@ require_once __DIR__.'/includes/header.php';
   text-align:center;
   backdrop-filter:blur(6px);
 }
-.adm-stat-n{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:#f5d060;line-height:1}
+.adm-stat-n{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.28rem;color:#f5d060;line-height:1}
 .adm-stat-l{font-size:.55rem;text-transform:uppercase;letter-spacing:.09em;color:rgba(255,255,255,.5);font-weight:700;margin-top:.12rem}
 
 /* Nav grid */
@@ -114,12 +114,12 @@ require_once __DIR__.'/includes/header.php';
 }
 .adm-tab{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:.18rem;padding:.55rem .25rem;
+  gap:.18rem;padding:.7rem .25rem;min-height:78px;
   border-radius:14px;
   background:#f8fafc;
   border:1.5px solid #e8eef8;
   color:#475569;
-  font-size:.58rem;font-weight:800;
+  font-size:.68rem;font-weight:800;
   font-family:'Plus Jakarta Sans',sans-serif;
   text-decoration:none;
   text-align:center;
@@ -128,7 +128,8 @@ require_once __DIR__.'/includes/header.php';
   line-height:1.2;
   letter-spacing:.01em;
 }
-.adm-tab-em{font-size:1.3rem;line-height:1;display:block;margin-bottom:.05rem}
+.adm-tab-em{line-height:1;display:block;margin-bottom:.2rem}
+.adm-tab-em img{width:36px;height:36px;object-fit:contain;display:block;margin:0 auto;filter:drop-shadow(0 3px 3px rgba(11,16,51,.15))}
 .adm-tab:active{transform:scale(.93)}
 .adm-tab.on{
   background:linear-gradient(145deg,#0A14E0,#1A23C9);
@@ -154,7 +155,7 @@ require_once __DIR__.'/includes/header.php';
 
 /* Section head */
 .adm-head{display:flex;align-items:center;gap:.7rem;margin:1rem 0 .9rem;padding-bottom:.55rem;border-bottom:2px solid #E3E7F5}
-.adm-head h2{font-family:'Bebas Neue',sans-serif;font-size:1.25rem;letter-spacing:.06em;color:#0B1033}
+.adm-head h2{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.0rem;letter-spacing:.01em;color:#0B1033}
 .adm-head-line{flex:1;height:2px;background:linear-gradient(90deg,#c8922a 0%,transparent 100%)}
 </style>
 
@@ -198,43 +199,43 @@ require_once __DIR__.'/includes/header.php';
 <!-- ── Nav Grid ── -->
 <div class="adm-nav">
   <a href="<?=url('admin.php')?>?tab=pending" class="adm-tab <?=$tab==='pending'?'on':''?>">
-    <span class="adm-tab-em">⏳</span>Pending
+    <span class="adm-tab-em"><img src="<?=url('assets/icons/3d/pending.webp')?>" alt="" width="36" height="36" loading="lazy"></span>Pending
     <?php if(count($pending)>0): ?><span class="adm-badge"><?=count($pending)?></span><?php endif; ?>
   </a>
   <a href="<?=url('admin.php')?>?tab=members" class="adm-tab <?=$tab==='members'?'on':''?>">
-    <span class="adm-tab-em">👥</span>Members
+    <span class="adm-tab-em"><img src="<?=url('assets/icons/3d/members.webp')?>" alt="" width="36" height="36" loading="lazy"></span>Members
   </a>
   <a href="<?=url('admin.php')?>?tab=add" class="adm-tab <?=$tab==='add'?'on':''?>">
-    <span class="adm-tab-em">➕</span>Add Member
+    <span class="adm-tab-em"><img src="<?=url('assets/icons/3d/add.webp')?>" alt="" width="36" height="36" loading="lazy"></span>Add Member
   </a>
   <a href="<?=url('admin.php')?>?tab=anns" class="adm-tab <?=$tab==='anns'?'on':''?>">
-    <span class="adm-tab-em">📢</span>Announce
+    <span class="adm-tab-em"><img src="<?=url('assets/icons/3d/broadcast.webp')?>" alt="" width="36" height="36" loading="lazy"></span>Announce
   </a>
   <a href="<?=url('admin.php')?>?tab=events" class="adm-tab <?=$tab==='events'?'on':''?>">
-    <span class="adm-tab-em">📅</span>Events
+    <span class="adm-tab-em"><img src="<?=url('assets/icons/3d/events.webp')?>" alt="" width="36" height="36" loading="lazy"></span>Events
   </a>
   <a href="<?=url('admin.php')?>?tab=reports" class="adm-tab <?=$tab==='reports'?'on':''?>">
-    <span class="adm-tab-em">📊</span>Reports
+    <span class="adm-tab-em"><img src="<?=url('assets/icons/3d/reports.webp')?>" alt="" width="36" height="36" loading="lazy"></span>Reports
   </a>
-  <a href="<?=url('modules/admin_subscriptions.php')?>" class="adm-tab">
-    <span class="adm-tab-em">💳</span>Subs
+  <a href="<?=url('modules/admin_subscription.php')?>" class="adm-tab">
+    <span class="adm-tab-em"><img src="<?=url('assets/icons/3d/payments.webp')?>" alt="" width="36" height="36" loading="lazy"></span>Subs
   </a>
   <?php if(isSuperAdmin($user)): ?>
   <a href="<?=url('modules/settings.php')?>" class="adm-tab">
-    <span class="adm-tab-em">⚙️</span>Settings
+    <span class="adm-tab-em"><img src="<?=url('assets/icons/3d/settings.webp')?>" alt="" width="36" height="36" loading="lazy"></span>Settings
   </a>
   <?php endif; ?>
   <a href="<?=url('dashboard.php')?>" class="adm-tab">
-    <span class="adm-tab-em">🏠</span>Dashboard
+    <span class="adm-tab-em"><img src="<?=url('assets/icons/3d/home.webp')?>" alt="" width="36" height="36" loading="lazy"></span>Dashboard
   </a>
   <a href="<?=url('modules/blood.php')?>" class="adm-tab green">
-    <span class="adm-tab-em">🩸</span>Blood Hub
+    <span class="adm-tab-em"><img src="<?=url('assets/icons/3d/blood.webp')?>" alt="" width="36" height="36" loading="lazy"></span>Blood Hub
   </a>
   <a href="<?=url('modules/certificate.php')?>" class="adm-tab">
-    <span class="adm-tab-em">🏆</span>Achieve
+    <span class="adm-tab-em"><img src="<?=url('assets/icons/3d/trophy.webp')?>" alt="" width="36" height="36" loading="lazy"></span>Achieve
   </a>
   <a href="<?=url('logout.php')?>" class="adm-tab red">
-    <span class="adm-tab-em">🚪</span>Logout
+    <span class="adm-tab-em"><img src="<?=url('assets/icons/3d/logout.webp')?>" alt="" width="36" height="36" loading="lazy"></span>Logout
   </a>
 </div>
 

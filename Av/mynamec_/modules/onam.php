@@ -53,7 +53,7 @@ require_once __DIR__ . '/../includes/header.php';
 <!-- Onam info banner -->
 <div style="background:linear-gradient(135deg,#FFF8E1,#FFF3CD);border:1.5px solid #FFB300;border-radius:16px;padding:1.3rem;margin-bottom:1.5rem;text-align:center">
   <div style="font-size:2rem;margin-bottom:.4rem">🌸 🎊 🌺 🌟 🌸</div>
-  <h2 style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:.08em;color:#E65100;margin-bottom:.3rem">HAPPY ONAM!</h2>
+  <h2 style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.28rem;letter-spacing:.01em;color:#E65100;margin-bottom:.3rem">HAPPY ONAM!</h2>
   <p style="font-size:.85rem;color:#6D4C41">Celebrating the spirit of Kerala, unity and prosperity. Thrikkakara Appan's blessings to all!</p>
 </div>
 

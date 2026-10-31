@@ -154,15 +154,15 @@ require_once __DIR__ . '/../includes/header.php';
   padding:1.4rem 1.2rem 3.5rem;position:relative;overflow:hidden}
 .bh-header::before{content:'🩸';position:absolute;right:-1rem;top:-1rem;
   font-size:9rem;opacity:.08}
-.bh-title{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;
-  letter-spacing:.1em;color:#fff;line-height:1}
+.bh-title{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.52rem;
+  letter-spacing:.01em;color:#fff;line-height:1}
 .bh-title span{color:#ffcdd2;font-size:1rem;font-weight:400;
   font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:.05em;display:block;margin-top:.2rem}
 .bh-hstats{display:flex;gap:.6rem;margin-top:1rem}
 .bh-hstat{background:rgba(255,255,255,.15);backdrop-filter:blur(8px);
   border:1px solid rgba(255,255,255,.2);border-radius:12px;
   padding:.5rem .8rem;text-align:center;flex:1}
-.bh-hstat-n{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;
+.bh-hstat-n{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.2rem;
   color:#fff;line-height:1}
 .bh-hstat-l{font-size:.55rem;color:rgba(255,255,255,.6);
   text-transform:uppercase;letter-spacing:.09em;font-weight:700}
@@ -183,7 +183,7 @@ require_once __DIR__ . '/../includes/header.php';
 .bh-bg-btn.on{background:linear-gradient(145deg,#b71c1c,#c62828);
   border-color:transparent;box-shadow:0 4px 16px rgba(183,28,28,.4)}
 .bh-bg-btn.has-donors{border-color:#ef9a9a;background:#fff5f5}
-.bh-bg-group{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;
+.bh-bg-group{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.12rem;
   color:#b71c1c;line-height:1}
 .bh-bg-btn.on .bh-bg-group{color:#fff}
 .bh-bg-count{font-size:.6rem;color:#5d6b80;font-weight:700;margin-top:.15rem}
@@ -217,7 +217,7 @@ require_once __DIR__ . '/../includes/header.php';
   border:2px solid #ef9a9a;
   display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .bh-blood-badge.unavail{background:#f5f5f5;border-color:#e0e0e0}
-.bh-blood-text{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;
+.bh-blood-text{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.88rem;
   color:#b71c1c;line-height:1}
 .bh-blood-badge.unavail .bh-blood-text{color:#666666}
 
@@ -252,8 +252,8 @@ require_once __DIR__ . '/../includes/header.php';
 .bh-broadcast{background:linear-gradient(135deg,#e8f5e9,#f1f8e9);
   border:2px solid #4caf50;border-radius:16px;
   padding:1rem 1.1rem;margin:0 1rem .9rem}
-.bh-broadcast-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;
-  letter-spacing:.06em;color:#1b5e20;margin-bottom:.7rem}
+.bh-broadcast-title{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.8rem;
+  letter-spacing:.01em;color:#1b5e20;margin-bottom:.7rem}
 .bh-wa-chip{display:inline-flex;align-items:center;gap:.3rem;
   background:#25d366;color:#fff;border-radius:20px;
   padding:.35rem .85rem;font-size:.74rem;font-weight:700;
@@ -274,8 +274,8 @@ require_once __DIR__ . '/../includes/header.php';
   box-shadow:0 4px 20px rgba(0,0,0,.1)}
 .bh-form-head{background:linear-gradient(135deg,#b71c1c,#c62828);
   padding:.9rem 1.1rem;display:flex;align-items:center;gap:.6rem;cursor:pointer}
-.bh-form-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;
-  letter-spacing:.07em;color:#fff}
+.bh-form-title{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.8rem;
+  letter-spacing:.01em;color:#fff}
 .bh-form-body{padding:1.1rem}
 .bh-fg2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.65rem}
 .bh-inp{width:100%;padding:.65rem .9rem;border:1.5px solid #E3E7F5;

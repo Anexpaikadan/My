@@ -200,7 +200,7 @@ require_once __DIR__.'/../includes/header.php';
 .gf-shell{background:#F5F7FF;min-height:100vh;padding-bottom:6rem}
 .gf-hero{background:linear-gradient(135deg,#0a1f3d,#121A5C 55%,#1A23C9);padding:1.8rem 1.1rem 1.5rem;text-align:center;color:#fff;position:relative;overflow:hidden}
 .gf-hero::before{content:'🏟️';position:absolute;font-size:8rem;opacity:.06;right:-10px;top:-10px}
-.gf-hero h1{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:.05em;margin-bottom:.2rem;position:relative}
+.gf-hero h1{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.44rem;letter-spacing:.01em;margin-bottom:.2rem;position:relative}
 .gf-hero p{font-size:.76rem;color:rgba(255,255,255,.72);position:relative}
 .gf-wrap{max-width:760px;margin:0 auto;padding:1rem}
 .gf-sum{display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem;margin-bottom:1rem}
@@ -208,7 +208,7 @@ require_once __DIR__.'/../includes/header.php';
 .gf-sum-box:nth-child(2){animation-delay:.05s}.gf-sum-box:nth-child(3){animation-delay:.1s}.gf-sum-box:nth-child(4){animation-delay:.15s}
 @keyframes gfUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .gf-sum-box .l{font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#5f6880;margin-bottom:.2rem}
-.gf-sum-box .v{font-family:'Bebas Neue',sans-serif;font-size:1.55rem}
+.gf-sum-box .v{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.24rem}
 .v-paid{color:var(--gfg)}.v-pledge{color:var(--gf1)}.v-exp{color:#c62828}.v-bal{color:#8a6116}
 .gf-search{display:flex;align-items:center;gap:.5rem;background:#fff;border:1.5px solid #E3E7F5;border-radius:24px;padding:.55rem .9rem;margin-bottom:.7rem;box-shadow:0 2px 8px rgba(0,0,0,.04)}
 .gf-search input{border:none;outline:none;flex:1;font-size:.9rem;font-family:inherit;background:none}
@@ -220,7 +220,7 @@ require_once __DIR__.'/../includes/header.php';
 .gf-row:active{background:#f6f8fc}
 .gf-av{width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0;background:linear-gradient(135deg,var(--gf1),var(--gf2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800}
 .gf-name{font-weight:800;font-size:.92rem;color:#0B1033}.gf-role{font-size:.66rem;color:#5f6880}
-.gf-amt{text-align:right;flex-shrink:0}.gf-paid{font-family:'Bebas Neue',sans-serif;font-size:1.25rem;color:var(--gfg);line-height:1}
+.gf-amt{text-align:right;flex-shrink:0}.gf-paid{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.0rem;color:var(--gfg);line-height:1}
 .gf-bal-pill{display:inline-block;font-size:.6rem;font-weight:800;padding:.12rem .5rem;border-radius:10px;margin-top:.15rem}
 .bal-due{background:#fff3e0;color:#e65100}.bal-clear{background:#e8f5e9;color:#1b5e20}.bal-none{background:#eceff1;color:#546e7a}
 .gf-chev{color:#cbd5e1;font-size:.9rem;transition:transform .25s}.gf-card.open .gf-chev{transform:rotate(90deg)}
@@ -233,7 +233,7 @@ require_once __DIR__.'/../includes/header.php';
 .gf-pay-item{display:flex;justify-content:space-between;align-items:center;font-size:.78rem;padding:.4rem 0;border-bottom:1px dashed #E3E7F5}
 .gf-mini-btn{background:linear-gradient(135deg,var(--gfg),#2e7d32);color:#fff;border:none;border-radius:10px;padding:.5rem .9rem;font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit}
 .gf-mini-btn.blue{background:linear-gradient(135deg,var(--gf1),var(--gf2))}
-.gf-sec-title{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.05em;color:var(--gf1);margin:1.3rem 0 .6rem;display:flex;align-items:center;justify-content:space-between}
+.gf-sec-title{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.96rem;letter-spacing:.01em;color:var(--gf1);margin:1.3rem 0 .6rem;display:flex;align-items:center;justify-content:space-between}
 .gf-exp-row{display:flex;justify-content:space-between;align-items:center;background:#fff;border-radius:12px;padding:.7rem .85rem;margin-bottom:.45rem;box-shadow:0 2px 8px rgba(0,0,0,.04)}
 .gf-report-btn{display:flex;align-items:center;justify-content:center;gap:.4rem;width:100%;background:linear-gradient(135deg,#1b5e20,#2e7d32);color:#fff;border-radius:12px;padding:.7rem;font-size:.84rem;font-weight:800;text-decoration:none;margin-bottom:1rem}
 .gf-ov{display:none;position:fixed;inset:0;background:rgba(13,27,62,.6);z-index:10000;align-items:flex-end;justify-content:center}
@@ -351,15 +351,15 @@ require_once __DIR__.'/../includes/header.php';
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.7rem">
       <div style="background:#fff;border-radius:12px;padding:.6rem;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.04)">
         <div style="font-size:.56rem;font-weight:800;color:#5f6880;text-transform:uppercase">Entries</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#0B1033"><?= $expCount ?></div>
+        <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.04rem;color:#0B1033"><?= $expCount ?></div>
       </div>
       <div style="background:#fff;border-radius:12px;padding:.6rem;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.04)">
         <div style="font-size:.56rem;font-weight:800;color:#5f6880;text-transform:uppercase">This Month</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#c62828">₹<?= number_format($expThisMonth) ?></div>
+        <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.04rem;color:#c62828">₹<?= number_format($expThisMonth) ?></div>
       </div>
       <div style="background:#fff;border-radius:12px;padding:.6rem;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.04)">
         <div style="font-size:.56rem;font-weight:800;color:#5f6880;text-transform:uppercase">Average</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#0B1033">₹<?= number_format($expAvg) ?></div>
+        <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.04rem;color:#0B1033">₹<?= number_format($expAvg) ?></div>
       </div>
     </div>
     <!-- Expense time filter -->
@@ -378,7 +378,7 @@ require_once __DIR__.'/../includes/header.php';
     ?>
     <div class="gf-exp-row" data-month="<?= $ePeriodM ?>" data-year="<?= $ePeriodY ?>">
       <div><div style="font-weight:700;font-size:.86rem;color:#0B1033"><?= h($ex['title']) ?></div><div style="font-size:.68rem;color:#5f6880"><?= $ex['spent_date']?date('d M Y',strtotime($ex['spent_date'])):'' ?><?= $ex['note']?' · '.h($ex['note']):'' ?></div></div>
-      <div style="display:flex;align-items:center;gap:.5rem"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.15rem;color:#c62828">₹<?= number_format($ex['amount']) ?></div><?php if($isAdmin): ?><button onclick="gfDelExp(<?= $ex['id'] ?>)" style="background:none;border:none;color:#b71c1c;cursor:pointer">🗑</button><?php endif; ?></div>
+      <div style="display:flex;align-items:center;gap:.5rem"><div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.92rem;color:#c62828">₹<?= number_format($ex['amount']) ?></div><?php if($isAdmin): ?><button onclick="gfDelExp(<?= $ex['id'] ?>)" style="background:none;border:none;color:#b71c1c;cursor:pointer">🗑</button><?php endif; ?></div>
     </div>
     <?php endforeach; endif; ?>
     <div id="gfExpNone" style="display:none;text-align:center;padding:1rem;color:#5f6880;font-size:.82rem">No expenses in this period.</div>

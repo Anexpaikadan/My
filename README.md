@@ -82,3 +82,7 @@ colours, font and footer text. Fees from Club Settings → Fees are now used on 
 
 **Logo colours (2026-11):** the whole site now uses the club logo's white, red and blue, with the logo's red→blue
 gradient on the top bar, banners and main buttons. App tiles show 3D pictures (`assets/icons/3d/`, replaceable).
+
+**One design on every page:** each module opens with the same logo-gradient banner, its big 3D icon (added
+automatically from `app_modules()`), and a bold uppercase title; section headings use the red-blue bar; the old
+Bebas Neue headings now use the site font (ID card and Poster Studio keep theirs because they export images/PDFs).

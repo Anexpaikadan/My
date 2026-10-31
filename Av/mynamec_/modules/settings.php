@@ -284,12 +284,10 @@ require_once __DIR__ . '/../includes/header.php';
 <div style="max-width:700px;margin:0 auto;padding:1rem">
 
   <!-- Header -->
-  <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem">
-    <a href="<?= url('dashboard.php') ?>" style="color:#64748b;font-size:.82rem;font-weight:600;padding:.38rem .85rem;border:1.5px solid #e2e8f0;border-radius:8px;text-decoration:none;background:#fff">← Back</a>
-    <div>
-      <h1 style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:.06em;color:#0A14E0;line-height:1">⚙️ CLUB SETTINGS</h1>
-      <p style="font-size:.78rem;color:#556274;margin-top:.1rem">Configure website, club info and activities</p>
-    </div>
+  <div class="hero" style="margin:-1rem -1rem 1.2rem">
+    <h1>Club Settings</h1>
+    <div class="hero-place">Website, club info, activities and roles</div>
+  </div>
   </div>
 
   <?php if($msg): ?>
@@ -315,7 +313,7 @@ require_once __DIR__ . '/../includes/header.php';
   .stab.on{background:linear-gradient(135deg,#0A14E0,#1A23C9);color:#fff;box-shadow:0 3px 10px rgba(10,20,224,.28)}
   .stab-panel{display:none}.stab-panel.on{display:block}
   .scard{background:#fff;border-radius:14px;padding:1.2rem;box-shadow:0 3px 14px rgba(0,0,0,.07);border:1px solid #e2e8f0;margin-bottom:1rem}
-  .scard-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.07em;color:#0A14E0;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+  .scard-title{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.8rem;letter-spacing:.01em;color:#0A14E0;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
   .scard-title::after{content:'';flex:1;height:1.5px;background:linear-gradient(90deg,#0A14E0,transparent)}
   .srow{margin-bottom:.85rem}
   .slbl{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#475569;display:block;margin-bottom:.35rem}

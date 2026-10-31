@@ -110,6 +110,26 @@ body{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))!important}
     if (!c.id) c.id='fld-auto-'+(++n);
     l.htmlFor=c.id;
   });
+  // Module banner: same look everywhere — 3D icon, emoji removed from the title
+  var hero = document.querySelector('.hero,.ft-hero,.bh-header,.bc-hero,.ach-hero,.cf-hero,.ev-header,.fm-hero,.gal-hero,.gf-hero,.mk-hero,.adm-header');
+  if (hero) {
+    var t = hero.querySelector('h1,.bh-title,.ev-htitle,.adm-hname');
+    if (t) {
+      var tn = t.firstChild;
+      while (tn && tn.nodeType === 3 && !tn.nodeValue.trim()) tn = tn.nextSibling;
+      if (tn && tn.nodeType === 3) {
+        try { tn.nodeValue = tn.nodeValue.replace(/^\s*(?:\p{Extended_Pictographic}|\uFE0F|\u200D|\s)+/u, ''); } catch(e) {}
+      }
+      t.classList.add('ph-title');
+      if (t.matches('.bh-title,.ev-htitle')) { var sp = t.querySelector('span'); if (sp) sp.classList.add('ph-sub'); }
+      var img = document.body.getAttribute('data-mod-img');
+      if (img && !hero.querySelector('.hero-ic')) {
+        var im = new Image(); im.src = img; im.alt = ''; im.className = 'hero-ic'; im.width = 78; im.height = 78;
+        t.parentNode.insertBefore(im, t);
+      }
+      if (getComputedStyle(t).textAlign !== 'center') t.parentNode.classList.add('ph-left');
+    }
+  }
   // Clickable cards/tabs built from <div onclick>: make them reachable and usable by keyboard
   document.querySelectorAll('div[onclick],span[onclick],li[onclick],td[onclick],img[onclick]').forEach(function(el){
     var oc=el.getAttribute('onclick')||'';

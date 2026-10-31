@@ -99,7 +99,7 @@ require_once __DIR__ . '/../includes/header.php';
 <style>
 .gal-page{max-width:1200px;margin:0 auto;padding:1.5rem 1rem}
 .gal-hero{background:linear-gradient(135deg,#121A5C,#0A14E0);padding:2.5rem 1.5rem;text-align:center;color:#fff;margin-bottom:0}
-.gal-hero h1{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:.1em;margin-bottom:.3rem}
+.gal-hero h1{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:2.0rem;letter-spacing:.01em;margin-bottom:.3rem}
 .gal-hero p{font-size:.9rem;color:rgba(255,255,255,.65)}
 
 /* Upload card */
@@ -165,7 +165,7 @@ require_once __DIR__ . '/../includes/header.php';
 <!-- ── UPLOAD (Admin only) ── -->
 <?php if($isAdmin): ?>
 <div class="upload-card">
-  <h3 style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.07em;color:#121A5C;margin-bottom:1.2rem">📤 Upload Photos</h3>
+  <h3 style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.12rem;letter-spacing:.01em;color:#121A5C;margin-bottom:1.2rem">📤 Upload Photos</h3>
   <form method="POST" action="<?= url('modules/gallery.php') ?>" enctype="multipart/form-data">
     <div class="row g-3">
       <div class="col-md-8">

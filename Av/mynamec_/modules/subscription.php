@@ -149,7 +149,7 @@ require_once __DIR__.'/../includes/header.php';
     <div style="position:absolute;bottom:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#B71C1C,#FFC107,#B71C1C)"></div>
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
       <div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.06em;color:#FFC107">✅ ACTIVE SUBSCRIPTION</div>
+        <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.12rem;letter-spacing:.01em;color:#FFC107">✅ ACTIVE SUBSCRIPTION</div>
         <div style="font-size:.78rem;color:rgba(255,255,255,.65)"><?= h(ucfirst($activeSub['plan_type'])) ?> Plan · <?= h(CLUB_NAME) ?></div>
       </div>
       <span style="background:rgba(76,175,80,.2);border:1.5px solid #4CAF50;color:#A5D6A7;border-radius:20px;padding:.25rem .9rem;font-size:.72rem;font-weight:700">✓ PAID</span>
@@ -181,7 +181,7 @@ require_once __DIR__.'/../includes/header.php';
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
     <!-- Monthly Plan -->
     <div style="background:#fff;border-radius:14px;padding:1.3rem;box-shadow:0 3px 14px rgba(0,0,0,.08);border:2px solid #E3E7F5;position:relative;transition:all .2s" id="planMonthly">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:.05em;color:#3D4F7C">MONTHLY</div>
+      <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.04rem;letter-spacing:.01em;color:#3D4F7C">MONTHLY</div>
       <div style="font-size:2rem;font-weight:700;color:#0A14E0;margin:.3rem 0">₹<?= number_format($feeMonthly) ?></div>
       <div style="font-size:.78rem;color:#666666;margin-bottom:.8rem">per month · Auto-renew available</div>
       <ul style="font-size:.8rem;color:#3D4F7C;padding-left:1.2rem;margin-bottom:.8rem;line-height:1.8">
@@ -193,7 +193,7 @@ require_once __DIR__.'/../includes/header.php';
     <!-- Annual Plan — recommended -->
     <div style="background:linear-gradient(160deg,#0B1033,#0A14E0);border-radius:14px;padding:1.3rem;box-shadow:0 6px 20px rgba(10,20,224,.3);border:2px solid #1A23C9;position:relative;color:#fff" id="planAnnual">
       <div style="position:absolute;top:-1px;right:12px;background:#FFC107;color:#0B1033;font-size:.62rem;font-weight:700;padding:.2rem .7rem;border-radius:0 0 8px 8px;letter-spacing:.05em">RECOMMENDED</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:.05em;color:#FFC107">ANNUAL</div>
+      <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.04rem;letter-spacing:.01em;color:#FFC107">ANNUAL</div>
       <div style="font-size:2rem;font-weight:700;color:#fff;margin:.3rem 0">₹<?= number_format($feeAnnual) ?></div>
       <div style="font-size:.78rem;color:rgba(255,255,255,.6);margin-bottom:.8rem">per year · Best value</div>
       <ul style="font-size:.8rem;color:rgba(255,255,255,.8);padding-left:1.2rem;margin-bottom:.8rem;line-height:1.8">
@@ -239,7 +239,7 @@ require_once __DIR__.'/../includes/header.php';
       <?php if($balance > 0): ?>
       <div style="background:#FFF3E0;border:1.5px solid #FFB300;border-radius:10px;padding:.8rem 1rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center">
         <span style="font-size:.85rem;color:#E65100;font-weight:700">⏳ Balance Remaining</span>
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:#E65100">₹<?= number_format($balance) ?></span>
+        <span style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.12rem;color:#E65100">₹<?= number_format($balance) ?></span>
       </div>
       <?php else: ?>
       <div style="background:#E8F5E9;border:1.5px solid #4CAF50;border-radius:10px;padding:.8rem 1rem;margin-bottom:1rem;text-align:center">
@@ -343,7 +343,7 @@ require_once __DIR__.'/../includes/header.php';
 
         <div style="background:#ECEEFF;border-radius:10px;padding:.8rem 1rem;margin-bottom:.8rem;display:flex;justify-content:space-between;align-items:center">
           <span style="font-size:.85rem;color:#0B1033;font-weight:600">Total Due:</span>
-          <span id="totalDue" style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:#0A14E0">₹<?= number_format($feeAnnual) ?></span>
+          <span id="totalDue" style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.2rem;color:#0A14E0">₹<?= number_format($feeAnnual) ?></span>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem">
@@ -365,7 +365,7 @@ require_once __DIR__.'/../includes/header.php';
         <!-- Balance indicator -->
         <div id="balanceBox" style="background:#FFF3E0;border:1.5px solid #FFB300;border-radius:10px;padding:.65rem 1rem;margin-bottom:.8rem;display:flex;justify-content:space-between;align-items:center;display:none">
           <span style="font-size:.82rem;color:#E65100;font-weight:600">Balance you'll owe:</span>
-          <span id="balanceAmt" style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:#E65100">₹0</span>
+          <span id="balanceAmt" style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.96rem;color:#E65100">₹0</span>
         </div>
 
         <div>

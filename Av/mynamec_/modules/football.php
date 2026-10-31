@@ -239,14 +239,14 @@ require_once __DIR__ . '/../includes/header.php';
 ?>
 <style>
 .ft-hero{background:linear-gradient(135deg,#1B5E20,#2E7D32,#388E3C);padding:2rem 1.2rem 1.8rem;text-align:center}
-.ft-hero h1{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#fff;letter-spacing:.08em}
+.ft-hero h1{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.6rem;color:#fff;letter-spacing:.01em}
 .ft-hero h1 span{color:#A5D6A7}
 .t-card{background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.1);overflow:hidden;margin-bottom:1.5rem}
 .t-banner{position:relative;width:100%;min-height:160px;background:linear-gradient(135deg,#1B5E20,#388E3C);overflow:hidden}
 .t-banner img{width:100%;max-height:200px;object-fit:cover;display:block}
 .t-banner-ov{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,.7))}
 .t-banner-info{position:absolute;bottom:.8rem;left:1rem;right:1rem;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:.4rem;z-index:2}
-.t-banner-title{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:#fff;letter-spacing:.05em;line-height:1.1}
+.t-banner-title{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.2rem;color:#fff;letter-spacing:.01em;line-height:1.1}
 .t-badge{border-radius:20px;padding:.2rem .8rem;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
 .t-admin-bar{background:#F7F8FF;border-bottom:1px solid #E3E7F5;padding:.6rem 1rem;display:flex;gap:.4rem;flex-wrap:wrap;align-items:center}
 .tab-pill{padding:.35rem .85rem;border-radius:20px;border:1.5px solid #ECEEFF;font-size:.74rem;font-weight:700;cursor:pointer;background:#fff;color:#0A14E0;transition:all .2s}
@@ -268,7 +268,7 @@ require_once __DIR__ . '/../includes/header.php';
 .league-table tr:first-child td{background:#f1f8e9;font-weight:700}
 .league-table tr:nth-child(2) td{background:#fafffe}
 .match-row{background:#f8fafc;border-radius:10px;padding:.7rem 1rem;margin-bottom:.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
-.score-box{background:#0A14E0;color:#fff;border-radius:8px;padding:.25rem .9rem;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.06em}
+.score-box{background:#0A14E0;color:#fff;border-radius:8px;padding:.25rem .9rem;font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.88rem;letter-spacing:.01em}
 .team-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid #ECEEFF}
 .team-avatar-ph{width:36px;height:36px;border-radius:50%;background:#ECEEFF;display:flex;align-items:center;justify-content:center;font-size:1rem;border:2px solid #ECEEFF;flex-shrink:0}
 .inp-sm{padding:.45rem .7rem;border:1.5px solid #ECEEFF;border-radius:8px;font-family:Inter,sans-serif;font-size:.85rem;width:100%;outline:none}
@@ -296,7 +296,7 @@ require_once __DIR__ . '/../includes/header.php';
 <!-- ══ CREATE TOURNAMENT (admin) ══ -->
 <?php if ($isAdmin): ?>
 <div style="background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;margin-bottom:1.5rem">
-  <button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'" style="width:100%;background:linear-gradient(135deg,#1b5e20,#2e7d32);color:#fff;border:none;padding:.9rem 1.2rem;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.07em;cursor:pointer;display:flex;align-items:center;gap:.5rem">
+  <button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'" style="width:100%;background:linear-gradient(135deg,#1b5e20,#2e7d32);color:#fff;border:none;padding:.9rem 1.2rem;font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.8rem;letter-spacing:.01em;cursor:pointer;display:flex;align-items:center;gap:.5rem">
     ➕ CREATE NEW TOURNAMENT <span style="margin-left:auto;font-size:.8rem">▼</span>
   </button>
   <div style="display:none;padding:1.2rem">
@@ -454,7 +454,7 @@ require_once __DIR__ . '/../includes/header.php';
         <td style="text-align:center;color:#b71c1c"><?=$tm['losses']?></td>
         <td style="text-align:center"><?=$tm['goals_for']?></td>
         <td style="text-align:center"><?=$tm['goals_against']?></td>
-        <td style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:#0A14E0"><?=$tm['pts']?></td>
+        <td style="text-align:center;font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.88rem;color:#0A14E0"><?=$tm['pts']?></td>
         <?php if ($isAdmin): ?>
         <td>
           <form method="POST" style="display:inline" onsubmit="return confirm('Delete team?')">

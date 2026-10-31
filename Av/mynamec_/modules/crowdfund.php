@@ -296,14 +296,14 @@ require_once __DIR__.'/../includes/header.php';
 
 /* Hero */
 .cf-hero{background:linear-gradient(135deg,#0a1f3d,#121A5C 50%,#1A23C9);padding:1.8rem 1rem 1.4rem;text-align:center;color:#fff}
-.cf-hero h1{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:.1em;margin-bottom:.2rem}
+.cf-hero h1{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.6rem;letter-spacing:.01em;margin-bottom:.2rem}
 .cf-hero p{font-size:.75rem;color:rgba(255,255,255,.55)}
 
 /* Stats bar */
 .cf-stats{display:grid;grid-template-columns:repeat(3,1fr);background:var(--cf1);border-bottom:3px solid var(--cfa)}
 .cf-stat{padding:.65rem .5rem;text-align:center;border-right:1px solid rgba(255,255,255,.08)}
 .cf-stat:last-child{border-right:none}
-.cf-stat-n{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--cfa);line-height:1}
+.cf-stat-n{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.2rem;color:var(--cfa);line-height:1}
 .cf-stat-l{font-size:.62rem;color:rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:.1em}
 
 /* Pending bar */
@@ -321,7 +321,7 @@ require_once __DIR__.'/../includes/header.php';
 .cf-del-btn{position:absolute;bottom:.6rem;right:.6rem;background:rgba(183,28,28,.9);color:#fff;border:none;border-radius:8px;padding:.3rem .65rem;font-size:.68rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:.25rem}
 
 .cf-body{padding:1rem}
-.cf-title{font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:.04em;color:var(--cf1);margin-bottom:.3rem;line-height:1.25}
+.cf-title{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.92rem;letter-spacing:.01em;color:var(--cf1);margin-bottom:.3rem;line-height:1.25}
 .cf-desc{font-size:.8rem;color:#4a5568;line-height:1.55;margin-bottom:.8rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
 /* Progress */
@@ -329,7 +329,7 @@ require_once __DIR__.'/../includes/header.php';
 .cf-prog-bar{height:7px;background:#E3E7F5;border-radius:10px;overflow:hidden;margin-bottom:.4rem}
 .cf-prog-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,#1b5e20,#4caf50);transition:width 1.2s}
 .cf-prog-row{display:flex;justify-content:space-between;align-items:baseline}
-.cf-raised{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--cfg);letter-spacing:.03em}
+.cf-raised{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.96rem;color:var(--cfg);letter-spacing:.01em}
 .cf-target{font-size:.7rem;color:#8a93a8}
 .cf-pct{font-size:.75rem;font-weight:700;color:var(--cfg)}
 
@@ -356,14 +356,14 @@ require_once __DIR__.'/../includes/header.php';
 /* Detail */
 .cf-detail-img{width:100%;max-height:260px;object-fit:cover;border-radius:14px;margin-bottom:1rem}
 .cf-big-prog{background:#fff;border-radius:14px;padding:1.2rem;box-shadow:0 3px 14px rgba(0,0,0,.08);border:1px solid rgba(0,0,0,.07);margin-bottom:1rem}
-.cf-amt-big{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:var(--cfg);line-height:1;letter-spacing:.04em}
+.cf-amt-big{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.76rem;color:var(--cfg);line-height:1;letter-spacing:.01em}
 .cf-bar-big{height:12px;background:#E3E7F5;border-radius:10px;overflow:hidden;margin:.9rem 0}
 .cf-bar-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,#1b5e20,#4caf50,#81c784)}
 
 /* Quick stats */
 .cf-qs{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.8rem}
 .cf-qs-box{background:#F7F8FF;border-radius:10px;padding:.6rem .4rem;text-align:center}
-.cf-qs-n{font-family:'Bebas Neue',sans-serif;font-size:1.25rem;color:var(--cf1);line-height:1}
+.cf-qs-n{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.0rem;color:var(--cf1);line-height:1}
 .cf-qs-l{font-size:.58rem;color:#5f6880;text-transform:uppercase;letter-spacing:.08em}
 
 /* UPI box */
@@ -391,7 +391,7 @@ require_once __DIR__.'/../includes/header.php';
 /* Admin */
 .admin-panel{background:#fff;border-radius:14px;border:1.5px solid rgba(11,16,51,.15);overflow:hidden;margin-bottom:1rem}
 .admin-panel-head{background:linear-gradient(135deg,#0B1033,#0A14E0);padding:.7rem 1rem;display:flex;align-items:center;gap:.5rem}
-.admin-panel-head h3{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.08em;color:#fff;margin:0}
+.admin-panel-head h3{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.8rem;letter-spacing:.01em;color:#fff;margin:0}
 .admin-panel-body{padding:1rem}
 .admin-btns{display:flex;gap:.4rem;flex-wrap:wrap}
 .admin-btns form{display:inline}
@@ -463,7 +463,7 @@ if ($view==='campaign' && !empty($camp)):
   <?php if($camp['is_featured']): ?><span style="background:var(--cfa);color:#fff;font-size:.62rem;font-weight:700;padding:.18rem .6rem;border-radius:20px">⭐ Featured</span><?php endif; ?>
 </div>
 
-<h2 style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:.04em;color:var(--cf1);margin-bottom:.5rem;line-height:1.2"><?php echo h($camp['title']); ?></h2>
+<h2 style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.28rem;letter-spacing:.01em;color:var(--cf1);margin-bottom:.5rem;line-height:1.2"><?php echo h($camp['title']); ?></h2>
 
 <!-- Big progress -->
 <div class="cf-big-prog">
@@ -530,14 +530,14 @@ if ($view==='campaign' && !empty($camp)):
 <div id="tab-donors" style="display:none">
   <?php if(!empty($topDonors)): ?>
   <div style="background:linear-gradient(135deg,#fffaf0,#fff3e0);border:1px solid #ffe0b2;border-radius:14px;padding:1rem;margin-bottom:1rem">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:.05em;color:#c8922a;margin-bottom:.7rem">🏆 TOP DONORS</div>
+    <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.84rem;letter-spacing:.01em;color:#c8922a;margin-bottom:.7rem">🏆 TOP DONORS</div>
     <?php foreach($topDonors as $ti=>$td): 
       $medal = $ti===0?'🥇':($ti===1?'🥈':($ti===2?'🥉':'⭐')); ?>
     <div style="display:flex;align-items:center;gap:.7rem;padding:.45rem 0;<?php echo $ti<count($topDonors)-1?'border-bottom:1px dashed #f0e2c0':''; ?>">
       <div style="font-size:1.1rem;width:24px;text-align:center"><?php echo $medal; ?></div>
       <div style="flex:1;min-width:0;font-weight:700;font-size:.86rem;color:#0B1033;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><?php echo h($td['donor_name']); ?></div>
       <div style="text-align:right;flex-shrink:0">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.15rem;color:#1b5e20">₹<?php echo number_format($td['total']); ?></div>
+        <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.92rem;color:#1b5e20">₹<?php echo number_format($td['total']); ?></div>
         <?php if($td['cnt']>1): ?><div style="font-size:.62rem;color:#5f6880"><?php echo $td['cnt']; ?> donations</div><?php endif; ?>
       </div>
     </div>
@@ -553,7 +553,7 @@ if ($view==='campaign' && !empty($camp)):
       <div style="font-size:.7rem;color:#5f6880"><?php echo date('d M Y',strtotime($don['donated_at'])); ?> · <?php echo ucfirst($don['payment_method']); ?></div>
     </div>
     <div style="text-align:right;flex-shrink:0">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--cfg)">₹<?php echo number_format($don['amount']); ?></div>
+      <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.88rem;color:var(--cfg)">₹<?php echo number_format($don['amount']); ?></div>
       <span class="don-badge db-<?php echo $don['status']; ?>"><?php echo ucfirst($don['status']); ?></span>
       <?php if($isAdmin && $don['status']==='pending'): ?>
       <div style="display:flex;gap:.25rem;margin-top:.25rem;justify-content:flex-end">
@@ -623,7 +623,7 @@ if ($view==='campaign' && !empty($camp)):
 <!-- Donate Form -->
 <?php if($camp['status']==='active'): ?>
 <div class="cf-donate">
-  <div style="font-family:'Bebas Neue',sans-serif;font-size:1.25rem;letter-spacing:.07em;color:var(--cf1);margin-bottom:.3rem">💖 MAKE A DONATION</div>
+  <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.0rem;letter-spacing:.01em;color:var(--cf1);margin-bottom:.3rem">💖 MAKE A DONATION</div>
   <p style="font-size:.74rem;color:#8a93a8;margin-bottom:.9rem">3 quick steps — choose amount, pay, confirm.</p>
   <form method="POST" enctype="multipart/form-data" id="donateForm" onsubmit="return validateDonate()">
     <input type="hidden" name="act" value="donate">
@@ -701,7 +701,7 @@ elseif ($view==='edit' && $isAdmin && !empty($editCamp)):
 ?>
 <a href="?view=campaign&id=<?php echo $editCamp['id']; ?>" style="display:inline-flex;align-items:center;gap:.3rem;font-size:.8rem;font-weight:700;color:var(--cf1);text-decoration:none;margin-bottom:.8rem">← Back</a>
 <div class="cf-form-card">
-  <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.08em;color:var(--cf1);margin-bottom:1rem">✏️ EDIT CAMPAIGN</div>
+  <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.96rem;letter-spacing:.01em;color:var(--cf1);margin-bottom:1rem">✏️ EDIT CAMPAIGN</div>
   <form method="POST" enctype="multipart/form-data">
     <input type="hidden" name="act" value="save_campaign">
     <input type="hidden" name="cid" value="<?php echo $editCamp['id']; ?>">
@@ -755,7 +755,7 @@ elseif ($view==='create' && $isAdmin):
 ?>
 <a href="?" style="display:inline-flex;align-items:center;gap:.3rem;font-size:.8rem;font-weight:700;color:var(--cf1);text-decoration:none;margin-bottom:.8rem">← Back</a>
 <div class="cf-form-card">
-  <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.08em;color:var(--cf1);margin-bottom:1rem">➕ CREATE CAMPAIGN</div>
+  <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.96rem;letter-spacing:.01em;color:var(--cf1);margin-bottom:1rem">➕ CREATE CAMPAIGN</div>
   <form method="POST" enctype="multipart/form-data">
     <input type="hidden" name="act" value="save_campaign">
     <div class="fg"><label class="lbl">Campaign Title *</label><input type="text" name="title" class="inp" required placeholder="e.g. Medical Aid for Rajan Family"></div>
@@ -805,7 +805,7 @@ elseif ($view==='create' && $isAdmin):
 elseif ($view==='pending' && $isAdmin):
 ?>
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.9rem;flex-wrap:wrap;gap:.5rem">
-  <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:.08em;color:var(--cf1)">💳 DONATION APPROVALS</div>
+  <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.04rem;letter-spacing:.01em;color:var(--cf1)">💳 DONATION APPROVALS</div>
   <a href="?" style="font-size:.78rem;font-weight:700;color:var(--cf1);text-decoration:none">← Back</a>
 </div>
 
@@ -821,7 +821,7 @@ elseif ($view==='pending' && $isAdmin):
       <div style="font-size:.7rem;color:#5f6880"><?php echo date('d M Y, g:i A',strtotime($pd2['donated_at'])); ?></div>
     </div>
     <div style="margin-left:auto;text-align:right">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--cfg)">₹<?php echo number_format($pd2['amount']); ?></div>
+      <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.12rem;color:var(--cfg)">₹<?php echo number_format($pd2['amount']); ?></div>
       <div style="font-size:.65rem;color:#5f6880"><?php echo ucfirst($pd2['payment_method']); ?></div>
     </div>
   </div>
