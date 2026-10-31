@@ -135,7 +135,7 @@ require_once __DIR__.'/../includes/header.php';
           <td style="padding:1rem; vertical-align:top;">
             <div style="font-weight:700; color:#0B1033; font-size:0.95rem;"><?= h($r['member_name']) ?></div>
             <?php if(!empty($rawPhone)): ?>
-              <div style="font-size:0.78rem; color:#7A8DB5; margin-top:0.15rem;">📱 <?= h($rawPhone) ?></div>
+              <div style="font-size:0.78rem; color:#565D82; margin-top:0.15rem;">📱 <?= h($rawPhone) ?></div>
             <?php else: ?>
               <div style="margin-top:0.3rem;">
                 <input type="tel" id="input_phone_<?= $r['id'] ?>" placeholder="Enter WhatsApp #" style="font-size:0.75rem; padding:0.2rem; border:1px solid #CCC; border-radius:4px; width:120px;">

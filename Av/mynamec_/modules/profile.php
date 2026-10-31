@@ -254,7 +254,7 @@ require_once __DIR__.'/../includes/header.php';
         <div style="font-size:.86rem;color:#3D4F7C;font-weight:700"><?= h($profile['committee_position']) ?></div>
         <?php endif; ?>
         <?php if($profile['committee_name']): ?>
-        <div style="font-size:.74rem;color:#7A8DB5"><?= h($profile['committee_name']) ?></div>
+        <div style="font-size:.74rem;color:#565D82"><?= h($profile['committee_name']) ?></div>
         <?php endif; ?>
         <?php if($isOwn): ?>
         <button onclick="document.getElementById('editSection').style.display=document.getElementById('editSection').style.display==='none'?'block':'none';document.getElementById('editSection').scrollIntoView({behavior:'smooth'})" style="margin-top:.7rem;background:linear-gradient(135deg,#0A14E0,#1A23C9);color:#fff;border:none;border-radius:22px;padding:.5rem 1.4rem;font-size:.8rem;font-weight:800;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;box-shadow:0 4px 12px rgba(26,35,201,.3)">✏️ Edit Profile</button>
@@ -570,7 +570,7 @@ require_once __DIR__.'/../includes/header.php';
 </div><!-- /section -->
 
 <style>
-:root{--t3:#7A8DB5}
+:root{--t3:#565D82}
 .fg{margin-bottom:.9rem}
 .lbl{display:block;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#4A5E8A;margin-bottom:.38rem}
 .inp{width:100%;padding:.68rem .9rem;border:2px solid #E3E7F5;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;color:#0B1033;background:#fff;outline:none;-webkit-appearance:none;transition:border-color .18s}
