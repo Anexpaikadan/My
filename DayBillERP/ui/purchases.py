@@ -897,6 +897,7 @@ class PurchaseForm:
                     why = ""
                 if why:
                     self.status_var.set("⚠️  " + why)
+                    pp.flag(why)                       # shown at the payment area too
                     messagebox.showwarning("Payment", why, parent=self.win)
                     return False
                 method = pp.method()

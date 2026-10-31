@@ -741,6 +741,15 @@ class LoginWindow:
 
 
 # ── DB Settings Dialog ─────────────────────────────────────────
+def _button_bg(colour):
+    """v7.9.4: a button colour dark enough for its white text (4.5 : 1)."""
+    try:
+        from ui.ink import button_bg
+        return button_bg(colour)
+    except Exception:
+        return colour
+
+
 _MARK_OK, _MARK_OTHER = "   ✓ DayBill", "   ✗ other program"
 
 
@@ -1049,15 +1058,15 @@ class DbSettingsDialog:
         tools = tk.Frame(self.dialog, bg=C["content_bg"])
         tools.pack(pady=(0, 10))
         tk.Button(tools, text="♻  Restore Database (.bak)…",
-                  font=("Segoe UI", 9, "bold"), bg="#8E44AD", fg="white",
+                  font=("Segoe UI", 9, "bold"), bg=_button_bg("#8E44AD"), fg="white",
                   relief="flat", padx=12, pady=6, cursor="hand2",
                   command=self._restore_db).pack(side="left", padx=5)
         tk.Button(tools, text="🆕  Create New Company…",
-                  font=("Segoe UI", 9, "bold"), bg="#27AE60", fg="white",
+                  font=("Segoe UI", 9, "bold"), bg=_button_bg("#27AE60"), fg="white",
                   relief="flat", padx=12, pady=6, cursor="hand2",
                   command=self._create_db).pack(side="left", padx=5)
         tk.Button(tools, text="💾  Backup Now",
-                  font=("Segoe UI", 9, "bold"), bg="#2E86AB", fg="white",
+                  font=("Segoe UI", 9, "bold"), bg=_button_bg("#2E86AB"), fg="white",
                   relief="flat", padx=12, pady=6, cursor="hand2",
                   command=self._backup_now).pack(side="left", padx=5)
 
@@ -1065,7 +1074,7 @@ class DbSettingsDialog:
         net = tk.Frame(self.dialog, bg=C["content_bg"])
         net.pack(pady=(0, 12))
         tk.Button(net, text="🛡  Allow SQL Server in Firewall",
-                  font=("Segoe UI", 9, "bold"), bg="#B45309", fg="white",
+                  font=("Segoe UI", 9, "bold"), bg=_button_bg("#B45309"), fg="white",
                   relief="flat", padx=12, pady=6, cursor="hand2",
                   command=self._allow_firewall).pack(side="left", padx=5)
         tk.Button(net, text="📖  Several counters — guide",

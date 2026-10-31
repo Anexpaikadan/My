@@ -628,6 +628,7 @@ class ReturnForm:
                                    "customer" if self.mode == "sales" else "supplier")
                 if why:
                     self.status.set("⚠️  " + why)
+                    pp.flag(why)                       # shown at the payment area too
                     messagebox.showwarning("Refund", why, parent=self.win)
                     return False
                 m = pp.method()

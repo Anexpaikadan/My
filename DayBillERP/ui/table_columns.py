@@ -1212,12 +1212,23 @@ class ColumnsDialog:
                        font=("Segoe UI", 10), justify="right").grid(row=r, column=2, padx=4)
             ttk.Combobox(self.body, textvariable=al, values=[n for n, _a in ALIGNS], width=7,
                          state="readonly").grid(row=r, column=3, padx=2)
-            tk.Button(self.body, text="▲", width=2, relief="flat", bg="#EEF2F7", bd=0,
-                      state="normal" if i > 0 else "disabled",
-                      command=lambda i=i: self.move(i, -1)).grid(row=r, column=4, padx=1)
-            tk.Button(self.body, text="▼", width=2, relief="flat", bg="#EEF2F7", bd=0,
-                      state="normal" if i < len(self.rows) - 1 else "disabled",
-                      command=lambda i=i: self.move(i, 1)).grid(row=r, column=5, padx=(1, 6))
+            # order buttons: 24 px or more, with a tip (they are icon-only)
+            up = tk.Button(self.body, text="▲", width=2, relief="flat", bg="#EEF2F7", bd=0, pady=2,
+                           font=("Segoe UI", 10), cursor="hand2",
+                           state="normal" if i > 0 else "disabled",
+                           command=lambda i=i: self.move(i, -1))
+            up.grid(row=r, column=4, padx=1, pady=1)
+            dn = tk.Button(self.body, text="▼", width=2, relief="flat", bg="#EEF2F7", bd=0, pady=2,
+                           font=("Segoe UI", 10), cursor="hand2",
+                           state="normal" if i < len(self.rows) - 1 else "disabled",
+                           command=lambda i=i: self.move(i, 1))
+            dn.grid(row=r, column=5, padx=(1, 6), pady=1)
+            try:
+                from ui.ink import tip
+                tip(up, "Move this column up (left)")
+                tip(dn, "Move this column down (right)")
+            except Exception:
+                pass
             if c in self.locks:
                 tk.Checkbutton(self.body, variable=self.locks[c], bg="white", activebackground="white",
                                highlightthickness=0, cursor="hand2").grid(row=r, column=6, padx=(4, 6))

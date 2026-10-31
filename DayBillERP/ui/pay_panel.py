@@ -18,9 +18,13 @@
 #   p.rows()                 [{method, account_id, amount}] (amount > 0)
 #   p.paid() / p.on_account() / p.manual
 #   p.set_rows(rows)         a saved document
+#   p.flag(message)          show a problem AT the payment area (red
+#                            border + text); cleared when the user types
 # ============================================================
 import tkinter as tk
 from tkinter import ttk
+
+from ui.ink import readable, tip
 
 
 def money_accounts():
@@ -49,30 +53,45 @@ class PayPanel:
         self.by_label = {l: a for l, a in zip(self.labels, self.accounts)}
         self.manual = False
         self._busy = False
-        self.frame = tk.Frame(parent, bg=C["card_bg"], highlightthickness=1,
-                              highlightbackground=C.get("border", "#E2E6EE"))
+        bg = C["card_bg"]
+        self.ink = {"good": readable("#15803D", bg), "bad": readable(C.get("danger", "#B91C1C"), bg),
+                    "text": readable(C["text_primary"], bg), "muted": readable(C["text_secondary"], bg)}
+        self._border = C.get("border", "#E2E6EE")
+        self.frame = tk.Frame(parent, bg=bg, highlightthickness=1, highlightbackground=self._border,
+                              highlightcolor=self._border)
         self.frame.pack(fill="x", side="bottom")
-        inner = tk.Frame(self.frame, bg=C["card_bg"])
+        # a problem with the payment is shown right here, not only in a pop-up
+        self.err = tk.Label(self.frame, text="", font=("Segoe UI", 9, "bold"), bg=bg,
+                            fg=self.ink["bad"], anchor="w", justify="left")
+        inner = self._inner = tk.Frame(self.frame, bg=bg)
         inner.pack(fill="x", padx=10, pady=4)
-        tk.Label(inner, text="💳 " + title.upper(), font=("Segoe UI", 8, "bold"), bg=C["card_bg"],
-                 fg=C["primary"]).pack(side="left", padx=(0, 8))
+        tk.Label(inner, text="💳 " + title.upper(), font=("Segoe UI", 8, "bold"), bg=bg,
+                 fg=readable(C["primary"], bg)).pack(side="left", padx=(0, 8))
         self.rows_box = tk.Frame(inner, bg=C["card_bg"])
         self.rows_box.pack(side="left")
-        self.add_btn = tk.Button(inner, text="＋ account", font=("Segoe UI", 8), relief="flat",
-                                 bg=C["content_bg"], cursor="hand2", command=self.add_row)
+        self.add_btn = tk.Button(inner, text="＋ account", font=("Segoe UI", 9), relief="flat",
+                                 bg=C["content_bg"], fg=readable(C["text_primary"], C["content_bg"]),
+                                 cursor="hand2", command=self.add_row)
         self.add_btn.pack(side="left", padx=(4, 0))
-        tk.Button(inner, text="Pay all", font=("Segoe UI", 8, "bold"), relief="flat", bg=C["content_bg"],
-                  cursor="hand2", command=self.pay_all).pack(side="left", padx=(6, 0))
-        tk.Button(inner, text="All on account", font=("Segoe UI", 8), relief="flat", bg=C["content_bg"],
-                  cursor="hand2", command=self.all_on_account).pack(side="left", padx=(4, 0))
-        self.summary = tk.Label(inner, text="", font=("Segoe UI", 9, "bold"), bg=C["card_bg"],
-                                fg=C["text_primary"])
+        tip(self.add_btn, "Pay from one more cash / bank account")
+        self.all_btn = tk.Button(inner, text="Pay all", font=("Segoe UI", 9, "bold"), relief="flat",
+                                 bg=C["content_bg"], fg=readable(C["text_primary"], C["content_bg"]),
+                                 cursor="hand2", command=self.pay_all)
+        self.all_btn.pack(side="left", padx=(6, 0))
+        tip(self.all_btn, "Pay the rest of the bill now")
+        self.none_btn = tk.Button(inner, text="All on account", font=("Segoe UI", 9), relief="flat",
+                                  bg=C["content_bg"], fg=readable(C["text_primary"], C["content_bg"]),
+                                  cursor="hand2", command=self.all_on_account)
+        self.none_btn.pack(side="left", padx=(4, 0))
+        tip(self.none_btn, "Nothing paid now — the whole bill goes on the party's account")
+        self.summary = tk.Label(inner, text="", font=("Segoe UI", 9, "bold"), bg=bg,
+                                fg=self.ink["text"])
         self.summary.pack(side="right")
         self._rows = []
         self.add_row(user=False)
-        if state != "normal":
-            for w in (self.add_btn,):
-                w.configure(state="disabled")
+        if state != "normal":                     # a document opened to view only
+            for w in (self.add_btn, self.all_btn, self.none_btn):
+                w.configure(state="disabled", cursor="arrow")
 
     # ── rows ──────────────────────────────────────────────────
     def _default_label(self, kind="cash"):
@@ -96,11 +115,14 @@ class PayPanel:
         e = tk.Entry(fr, textvariable=mv, width=9, justify="right", font=("Segoe UI", 10, "bold"),
                      relief="solid", bd=1, state=self.state)
         e.pack(side="left", padx=(3, 0))
-        x = tk.Button(fr, text="✕", font=("Segoe UI", 8), relief="flat", bg=C["card_bg"],
-                      fg=C["text_secondary"], cursor="hand2", bd=0,
+        # 24 px or more, named for keyboard and mouse users
+        x = tk.Button(fr, text="✕", font=("Segoe UI", 10), relief="flat", bg=C["card_bg"],
+                      fg=self.ink["muted"], cursor="hand2", bd=0, width=2, pady=2,
+                      state="normal" if self.state == "normal" else "disabled",
                       command=lambda: self.remove_row(row))
         x.pack(side="left", padx=(1, 0))
-        row = {"frame": fr, "acct": av, "amount": mv, "entry": e, "combo": cb}
+        tip(x, "Remove this account")
+        row = {"frame": fr, "acct": av, "amount": mv, "entry": e, "combo": cb, "x": x}
         self._rows.append(row)
         mv.trace_add("write", lambda *a: self._typed())
         cb.bind("<<ComboboxSelected>>", lambda e_: self._typed())
@@ -122,7 +144,26 @@ class PayPanel:
     def _typed(self):
         if not self._busy:
             self.manual = True
+            self.flag("")
         self._refresh()
+
+    def flag(self, message=""):
+        """Show (or clear) a payment problem at the panel itself."""
+        try:
+            if message:
+                self.frame.configure(highlightthickness=2, highlightbackground=self.ink["bad"],
+                                     highlightcolor=self.ink["bad"])
+                self.err.configure(text="⚠ " + message)
+                if not self.err.winfo_manager():
+                    self.err.pack(fill="x", padx=10, pady=(4, 0), before=self._inner)
+            else:
+                self.frame.configure(highlightthickness=1, highlightbackground=self._border,
+                                     highlightcolor=self._border)
+                self.err.configure(text="")
+                if self.err.winfo_manager():
+                    self.err.pack_forget()
+        except tk.TclError:
+            pass
 
     # ── what is paid ──────────────────────────────────────────
     def rows(self):
@@ -234,11 +275,11 @@ class PayPanel:
         except Exception:
             m = lambda v: "{:,.2f}".format(v)
         if chg > 0.004:
-            txt, fg = "Total %s · Paid %s · Change %s" % (m(tot), m(paid), m(chg)), "#15803D"
+            txt, fg = "Total %s · Paid %s · Change %s" % (m(tot), m(paid), m(chg)), self.ink["good"]
         elif rest > 0.004:
-            txt, fg = "Total %s · Paid %s · On account %s" % (m(tot), m(paid), m(rest)), C.get("danger", "#B91C1C")
+            txt, fg = "Total %s · Paid %s · On account %s" % (m(tot), m(paid), m(rest)), self.ink["bad"]
         else:
-            txt, fg = "Total %s · Paid in full" % m(tot), "#15803D"
+            txt, fg = "Total %s · Paid in full" % m(tot), self.ink["good"]
         try:
             self.summary.configure(text=txt, fg=fg)
         except tk.TclError:

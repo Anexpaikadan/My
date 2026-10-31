@@ -126,7 +126,12 @@ def apply_modern_theme(root):
                     foreground=text, rowheight=30, borderwidth=1,
                     bordercolor=border, lightcolor=card, darkcolor=border,
                     font=("Segoe UI", 10))
-    style.configure("Treeview.Heading", background=heading_bg, foreground="#374151",
+    try:                                   # v7.9.4: readable on dark themes too
+        from ui.ink import readable as _readable
+        head_fg = _readable("#374151", heading_bg)
+    except Exception:
+        head_fg = "#374151"
+    style.configure("Treeview.Heading", background=heading_bg, foreground=head_fg,
                     font=("Segoe UI", 9, "bold"), relief="flat", padding=(8, 7),
                     bordercolor=border, lightcolor=heading_bg, darkcolor=border)
     style.map("Treeview",

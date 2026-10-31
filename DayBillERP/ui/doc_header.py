@@ -23,6 +23,8 @@
 # ============================================================
 import tkinter as tk
 
+from ui.ink import readable
+
 
 class Block:
     def __init__(self, header, title, weight=1, minwidth=0):
@@ -37,7 +39,7 @@ class Block:
         cap = tk.Frame(self.frame, bg=C["card_bg"])
         cap.pack(fill="x", padx=8, pady=(4, 0))
         tk.Label(cap, text=title.upper(), font=("Segoe UI", 8, "bold"), bg=C["card_bg"],
-                 fg=C["primary"]).pack(side="left")
+                 fg=readable(C["primary"], C["card_bg"])).pack(side="left")
         tk.Frame(cap, bg=C.get("border", "#E2E6EE"), height=1).pack(side="left", fill="x",
                                                                   expand=True, padx=(6, 0), pady=(2, 0))
         self.body = tk.Frame(self.frame, bg=C["card_bg"])
@@ -104,16 +106,22 @@ class BalanceCard:
         self.frame.grid(row=0, column=col, sticky="nsew", padx=(0, 0))
         header.frame.columnconfigure(col, weight=0, minsize=190)
         bg = self.frame["bg"]
+        self.bg = bg
+        # every colour on the card stays readable on its tinted background
+        self.ink = {"title": readable(C["primary"], bg), "text": readable(C["text_primary"], bg),
+                    "muted": readable(C["text_secondary"], bg),
+                    "owes": readable(C.get("danger", "#B91C1C"), bg),
+                    "credit": readable("#15803D", bg)}
         self.title = tk.Label(self.frame, text=title.upper(), font=("Segoe UI", 8, "bold"), bg=bg,
-                              fg=C["primary"])
+                              fg=self.ink["title"])
         self.title.pack(anchor="w", padx=10, pady=(5, 0))
         self.amount = tk.Label(self.frame, text="—", font=("Segoe UI", 18, "bold"), bg=bg,
-                               fg=C["text_primary"], anchor="w")
+                               fg=self.ink["text"], anchor="w")
         self.amount.pack(fill="x", padx=10)
-        self.line1 = tk.Label(self.frame, text="", font=("Segoe UI", 9), bg=bg, fg=C["text_secondary"],
+        self.line1 = tk.Label(self.frame, text="", font=("Segoe UI", 9), bg=bg, fg=self.ink["muted"],
                               anchor="w", justify="left")
         self.line1.pack(fill="x", padx=10)
-        self.line2 = tk.Label(self.frame, text="", font=("Segoe UI", 9), bg=bg, fg=C["text_secondary"],
+        self.line2 = tk.Label(self.frame, text="", font=("Segoe UI", 9), bg=bg, fg=self.ink["muted"],
                               anchor="w", justify="left")
         self.line2.pack(fill="x", padx=10, pady=(0, 6))
         self.tools = tk.Frame(self.frame, bg=bg)
@@ -129,22 +137,31 @@ class BalanceCard:
         except Exception:
             f, txt, PI = None, "", None
         self.facts = f
+        ink = self.ink
         if not f:
-            self.amount.configure(text="—", fg=self.C["text_primary"])
+            self.title.configure(text="BALANCE")
+            self.amount.configure(text="—", fg=ink["text"])
             self.line1.configure(text=""); self.line2.configure(text="")
             return txt
         if f["balance"] is None:                     # the walk-in party
             self.title.configure(text="CASH SALE" if kind == "customer" else "CASH PURCHASE")
-            self.amount.configure(text="No account", fg=self.C["text_secondary"],
+            self.amount.configure(text="No account", fg=ink["muted"],
                                   font=("Segoe UI", 13, "bold"))
             self.line1.configure(text="")
         else:
             b = f["balance"]
             owes = (b > 0) if kind == "customer" else (b < 0)
-            self.title.configure(text="BALANCE")
+            # say it in words too — colour alone (red / green) is not enough
+            if abs(b) <= 0.004:
+                word = "SETTLED"
+            elif kind == "customer":
+                word = "OWES US" if owes else "IN CREDIT"
+            else:
+                word = "WE OWE" if owes else "ADVANCE PAID"
+            self.title.configure(text="BALANCE · " + word)
             self.amount.configure(text=PI.balance_text(b), font=("Segoe UI", 18, "bold"),
-                                  fg=(self.C.get("danger", "#B91C1C") if owes and abs(b) > 0.004
-                                      else ("#15803D" if abs(b) > 0.004 else self.C["text_primary"])))
+                                  fg=(ink["owes"] if owes and abs(b) > 0.004
+                                      else (ink["credit"] if abs(b) > 0.004 else ink["text"])))
             lb = f["last"]
             self.line1.configure(text=("Last bill  #%s · %s · %s" % (lb["number"], PI.money(lb["total"]), lb["date"]))
                                  if lb else "Last bill  —")

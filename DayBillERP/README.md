@@ -1,7 +1,19 @@
-# DayBill ERP  v7.9.3
+# DayBill ERP  v7.9.4
 
 Billing, POS, inventory, accounts and HR for shops in 🇸🇦 Saudi Arabia, 🇦🇪 the UAE and 🇮🇳 India.
 **VAT / GST by country · ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
+
+## 🎨 v7.9.4 — UI/UX review of the v7.9 windows
+
+- **Readable in every theme** (WCAG 4.5 : 1): balance card, payment line,
+  table headings and buttons — the dark theme no longer has dark text on
+  dark buttons or headings.
+- **Balance card in words:** OWES US · IN CREDIT · WE OWE · ADVANCE PAID ·
+  SETTLED, not only red / green.
+- **Payment area:** problems show right at the payment area; a document
+  opened to view only can't be changed there; bigger ✕ with a tip.
+- Grid design ▲ ▼ and small buttons are 24 px or more with tips; no 7 pt
+  text in the Invoice Designer.
 
 ## 🖥 v7.9.3 — several counters on one server
 

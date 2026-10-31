@@ -458,13 +458,29 @@ def readable_bg(bg, fg, C=None, target=4.5):
 
 
 # ── tk.Button: hover + cursor + flatten ────────────────────────
+def _as_hex(w, colour):
+    """Any Tk colour name ('black', 'SystemButtonText' …) → #RRGGBB."""
+    if _is_hex(colour):
+        return colour
+    try:
+        r, g, b_ = w.winfo_rgb(colour)
+        return "#%02X%02X%02X" % (r // 257, g // 257, b_ // 257)
+    except Exception:
+        return colour
+
+
 def _polish_button(w, C):
     try:
-        bg, fg = w.cget("bg"), w.cget("fg")
-        fg = "#FFFFFF" if str(fg).lower() == "white" else fg
+        bg, fg = _as_hex(w, w.cget("bg")), _as_hex(w, w.cget("fg"))
         nb = readable_bg(bg, fg, C)
         if nb != bg:
             w.config(bg=nb)
+        elif _is_hex(bg) and _is_hex(fg) and contrast(bg, fg) < 4.5:
+            # v7.9.4: dark text on a dark button (dark theme, a button that
+            # set only its background) → lighter text of the same hue
+            from ui.ink import readable
+            base = C.get("text_primary", fg) if _rel_lum(fg) < 0.02 else fg   # plain black → theme text
+            w.config(fg=readable(base, bg), activeforeground=readable(base, bg))
     except Exception:
         pass
     try:                                   # keyboard focus ring in the brand colour

@@ -132,8 +132,10 @@ class InvoiceGrid(tk.Frame):
             pass
         style.configure("Inv.Treeview", rowheight=30, font=("Segoe UI", 10),
                         fieldbackground="white", background="white")
+        from ui.ink import readable as _readable
+        _hbg = C.get("heading_bg", C["content_bg"])
         style.configure("Inv.Treeview.Heading", font=("Segoe UI", 9, "bold"),
-                        background=C.get("heading_bg", C["content_bg"]), foreground="#374151")
+                        background=_hbg, foreground=_readable("#374151", _hbg))  # v7.9.4: dark themes
 
         wrap = tk.Frame(self, bg=C["card_bg"])
         wrap.pack(fill="both", expand=True)

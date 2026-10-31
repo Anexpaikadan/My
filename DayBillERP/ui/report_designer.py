@@ -266,7 +266,7 @@ class ReportDesignerView:
             tk.Spinbox(fr, from_=0, to=to, increment=inc, width=6, textvariable=self.p_page[key],
                        font=("Segoe UI", 9), justify="right").pack(side="right")
             if hint:
-                tk.Label(self.props, text=hint, font=("Segoe UI", 7), bg=C["card_bg"],
+                tk.Label(self.props, text=hint, font=("Segoe UI", 8), bg=C["card_bg"],
                          fg=C["text_secondary"]).pack(anchor="w")
 
         def tick(text, var, cmd=None):
@@ -350,7 +350,7 @@ class ReportDesignerView:
         tk.Label(self.props, text=f"{len(printers)} system printer(s) detected"
                                   if printers != ["(no printers detected)"]
                                   else "No printers detected on this PC",
-                 font=("Segoe UI", 7), bg=C["card_bg"],
+                 font=("Segoe UI", 8), bg=C["card_bg"],
                  fg=C["text_secondary"]).pack(anchor="w", pady=(2, 0))
         fr = tk.Frame(self.props, bg=C["card_bg"]); fr.pack(fill="x", pady=(4, 0))
         tk.Label(fr, text="Copies", font=("Segoe UI", 9), bg=C["card_bg"],
@@ -389,7 +389,7 @@ class ReportDesignerView:
                      bg=C["card_bg"], fg=C["text_secondary"]).pack(side="right")
         tk.Label(self.props, text="Fields above the items are the invoice header, below them the "
                  "invoice footer. Pick a field ▸ Section to print it on every page.",
-                 font=("Segoe UI", 7), bg=C["card_bg"], fg=C["text_secondary"], justify="left",
+                 font=("Segoe UI", 8), bg=C["card_bg"], fg=C["text_secondary"], justify="left",
                  wraplength=200).pack(anchor="w", pady=(4, 0))
 
     def _page_values(self):
@@ -470,7 +470,7 @@ class ReportDesignerView:
             bc.bind("<<ComboboxSelected>>", lambda e: self._update_el(
                 el, "band", next(k for k, v in bmap.items() if v == self.el_band.get())))
             tk.Label(self.props, text="now in: " + DO.BAND_NAMES[DO.band_of(el, self.elements)],
-                     font=("Segoe UI", 7), bg=C["card_bg"], fg=C["text_secondary"]).pack(anchor="w")
+                     font=("Segoe UI", 8), bg=C["card_bg"], fg=C["text_secondary"]).pack(anchor="w")
         field("X", "x", el["x"])
         field("Y", "y", el["y"])
         field("Width", "w", el["w"])
@@ -598,7 +598,7 @@ class ReportDesignerView:
         tk.Label(self.props, text=f"Item column:  {info[1]}", font=("Segoe UI", 9, "bold"),
                  bg=C["card_bg"], fg=C["primary"]).pack(anchor="w", pady=(6, 2))
         tk.Label(self.props, text="Drag sideways to move · drag the ◢ corner to resize. "
-                 "Moving up/down moves the whole table.", font=("Segoe UI", 7),
+                 "Moving up/down moves the whole table.", font=("Segoe UI", 8),
                  bg=C["card_bg"], fg=C["text_secondary"], wraplength=200,
                  justify="left").pack(anchor="w")
         lbl("Header (English)"); entry("label", el.get("label", ""))

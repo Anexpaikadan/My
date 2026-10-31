@@ -10,7 +10,7 @@ import re
 try:                                    # one version for the whole app (config/version.py)
     from config.version import VERSION as APP_VERSION
 except Exception:
-    APP_VERSION = "7.9.3"
+    APP_VERSION = "7.9.4"
 
 # Ordered list of database patches shipped with the app.
 # (filename relative to project root, human description, version)
@@ -35,6 +35,12 @@ PATCHES = [
 
 # What changed in each version (shown in the Updates panel)
 CHANGELOG = [
+    ("7.9.4", ["🎨 Readable in every theme: the balance card, payment line, table headings and buttons now keep "
+               "4.5 : 1 contrast (dark theme: no more dark text on dark buttons / headings).",
+               "👤 Balance card says it in words: OWES US · IN CREDIT · WE OWE · ADVANCE PAID · SETTLED.",
+               "💳 Payment area: a problem is shown at the payment area itself (red border + text); a document "
+               "opened to view only can't be changed there any more; ✕ is bigger and has a tip.",
+               "▦ Grid design ▲ ▼ bigger with tips; bigger help text in the Invoice Designer."]),
     ("7.9.3", ["🖥 Several counters on one server: Database Settings ▸ 🛡 Allow SQL Server in Firewall (on the "
                "server PC) and 📖 Several counters — guide (docs/MULTI_COUNTER_SETUP.md)."]),
     ("7.9.2", ["🔧 Fixed: \"Windows cannot find C:\\Python314\\pythonw.exe\" at the end of an update — a test "

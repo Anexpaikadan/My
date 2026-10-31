@@ -2,6 +2,29 @@
 
 Newest first. The short guide is in the main README.md.
 
+## 🎨 v7.9.4 — UI/UX review of the v7.9 windows (UI/UX Pro Max)
+
+Checked with the UI/UX Pro Max rules (colour only, contrast, target size,
+focus, error placement, disabled states) and measured in all 9 themes:
+
+- ui/ink.py: readable(fg, bg) / button_bg(bg) keep 4.5 : 1 with the same
+  hue; tip(widget, text) shows help on mouse-over AND keyboard focus.
+- Balance card (ui/doc_header): every colour made readable on its tinted
+  background (red / green amounts were 4.0–4.4, dark theme 2.9); the title
+  says OWES US / IN CREDIT (customer), WE OWE / ADVANCE PAID (supplier) or
+  SETTLED, so the colour is never the only signal. Block titles readable.
+- Payment area (ui/pay_panel): readable title / summary / buttons; flag()
+  shows "pay in full" problems at the panel (red border + text, cleared on
+  typing) — Purchase and both returns call it; view-only documents now
+  disable ＋ account / Pay all / All on account / ✕ (they still worked);
+  ✕ is 24 px or more with a tip.
+- ui_polish: a button with dark text on a dark background (dark theme)
+  gets the theme's light text; table headings (ui_kit, invoice grid) no
+  longer use a fixed dark grey.
+- Grid design ▲ ▼ 24 px or more with tips; Database Settings buttons
+  darkened where white text was 2.9 – 4.1; Invoice Designer help text
+  7 pt → 8 pt.
+
 ## 🖥 v7.9.3 — several counters on one server
 
 - New guide docs/MULTI_COUNTER_SETUP.md (bundled into the exe): server PC
