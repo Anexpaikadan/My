@@ -109,6 +109,25 @@ function app_modules() {
     );
 }
 
+// One-line description under each app card (dashboard, homepage)
+function app_desc($file) {
+    $d = array(
+        'modules/feed.php'=>'Posts, photos & videos', 'modules/events.php'=>'What\'s coming up',
+        'modules/members.php'=>'Everyone in the club', 'modules/blood.php'=>'Find & request donors',
+        'modules/market.php'=>'Buy & sell locally', 'modules/gallery.php'=>'Club photo albums',
+        'modules/skills.php'=>'Members\' talents', 'modules/football.php'=>'Fixtures & standings',
+        'modules/arts_festival.php'=>'Programs & results', 'modules/onam.php'=>'Celebrations & sadya',
+        'modules/fest_manager.php'=>'Contests & entries', 'modules/election.php'=>'Vote for the committee',
+        'modules/creative_studio.php'=>'Make posters fast', 'modules/donation.php'=>'Give to a cause',
+        'modules/crowdfund.php'=>'Raise funds together', 'modules/groundfund.php'=>'Club ground fund',
+        'modules/profile.php'=>'Your details', 'modules/idcard.php'=>'Digital member card',
+        'modules/certificate.php'=>'Achievements & awards', 'modules/subscription.php'=>'Membership fee',
+        'admin.php'=>'Approvals & members', 'modules/admin_subscription.php'=>'Fee payments',
+        'modules/broadcast.php'=>'Message all on WhatsApp', 'modules/settings.php'=>'Website & club setup',
+    );
+    return isset($d[$file]) ? $d[$file] : '';
+}
+
 function admin_modules() {
     return array(
         array('admin.php',                       'Admin Panel',   'shield',    'coral', 'Admin', 'admin'),

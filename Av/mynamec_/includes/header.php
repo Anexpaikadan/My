@@ -158,9 +158,11 @@ button,input,select,textarea{font-family:inherit}
 .dr-user img,.dr-user .ph{width:44px;height:44px;border-radius:50%;object-fit:cover;background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center}
 .dr-user b{display:block;font-size:.95rem}
 .dr-user span{font-size:.75rem;color:rgba(255,255,255,.9)}
-.dr-sec{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);padding:.9rem .5rem .35rem}
+.dr-sec{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text);padding:1.1rem .5rem .5rem;font-size:.82rem!important}
+.dr-sec::after{content:'';display:block;width:30px;height:3px;border-radius:3px;margin-top:.3rem;background:var(--brand-grad)}
 .dr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem}
-.dr-a{display:flex;flex-direction:column;align-items:center;gap:.4rem;padding:.65rem .25rem;border-radius:16px;font-size:.74rem;font-weight:600;color:var(--text-2);text-align:center;line-height:1.2;transition:background .15s;min-height:88px;justify-content:center}
+.dr-a{display:flex;flex-direction:column;align-items:center;gap:.4rem;padding:.65rem .25rem;border-radius:16px;font-size:.74rem;font-weight:600;color:var(--text-2);text-align:center;line-height:1.2;transition:background .15s;min-height:100px;justify-content:center}
+.dr-a .app-img{width:46px;height:46px}
 .dr-a:hover{background:var(--surface)}
 .dr-a.on{background:var(--primary-soft);color:var(--primary-dark)}
 .dr-logout{display:flex;align-items:center;justify-content:center;gap:.55rem;margin-top:1rem;padding:.8rem;border-radius:16px;background:var(--accent-soft);border:1px solid #FFD0CE;color:var(--accent-ink);font-weight:700;font-size:.9rem;min-height:48px}
@@ -348,7 +350,7 @@ if ('serviceWorker' in navigator) {
   <div class="dr-grid">
     <?php foreach ($items as $m): $on = ($curPage === basename($m[0])); ?>
     <a href="<?= url($m[0]) ?>" class="dr-a<?= $on?' on':'' ?>"<?= $on?' aria-current="page"':'' ?>>
-      <span class="appic" style="width:50px;height:50px;border-radius:16px"><?= app_img($m[5],36) ?></span>
+      <span class="appic" style="width:60px;height:60px;border-radius:19px"><?= app_img($m[5],46) ?></span>
       <?= h($m[1]) ?><?php if($m[0]==='admin.php' && $pendingBadge): ?> <span class="sr-only">(<?= $pendingBadge ?> waiting)</span><?php endif; ?>
     </a>
     <?php endforeach; ?>

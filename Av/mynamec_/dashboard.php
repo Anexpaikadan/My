@@ -157,17 +157,27 @@ body{background:var(--surface)}
 .kpi b{display:block;font-size:1.45rem;font-weight:800;letter-spacing:-.02em;line-height:1.1}
 .kpi span{font-size:.68rem;font-weight:700;color:rgba(255,255,255,.92);text-transform:uppercase;letter-spacing:.05em}
 .kpi.warn{background:#fff!important}.kpi.warn b{color:var(--accent-ink)}.kpi.warn span{color:var(--accent-ink)}
-.dk-h{display:flex;align-items:center;justify-content:space-between;margin:1.1rem .1rem .6rem}
-.dk-h h2{font-size:.8rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
+.dk-h{display:flex;align-items:flex-end;justify-content:space-between;margin:1.6rem .1rem .9rem}
+.dk-h h2{font-size:1.35rem;font-weight:800;letter-spacing:.01em;text-transform:uppercase;color:var(--text);line-height:1.1}
+.dk-h h2::after{content:'';display:block;width:44px;height:4px;border-radius:4px;margin-top:.45rem;background:var(--brand-grad)}
 .dk-h a{font-size:.8rem;font-weight:700;color:var(--primary);padding:.3rem .2rem}
 /* app grid */
-.apps{display:grid;grid-template-columns:repeat(4,1fr);gap:.9rem .4rem;padding:1rem .5rem}
-@media(min-width:620px){.apps{grid-template-columns:repeat(6,1fr)}}
-@media(min-width:900px){.apps{grid-template-columns:repeat(8,1fr)}}
-.app{display:flex;flex-direction:column;align-items:center;gap:.45rem;font-size:.75rem;font-weight:600;color:var(--text-2);text-align:center;line-height:1.2;padding:.2rem 0;border-radius:16px;position:relative}
-.app .appic{width:62px;height:62px;border-radius:20px}
-.app .appic .app-img{width:44px;height:44px}
-.app .badge{position:absolute;top:-4px;right:calc(50% - 36px);min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--accent);color:#fff;font-size:.68rem;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid #fff;z-index:2}
+.apps{display:grid;grid-template-columns:repeat(2,1fr);gap:.75rem}
+@media(min-width:620px){.apps{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:900px){.apps{grid-template-columns:repeat(4,1fr)}}
+.app{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:.35rem;text-align:center;position:relative;min-height:168px;
+  padding:1.15rem .7rem 1rem;border-radius:22px;background:#fff;border:1px solid var(--line);box-shadow:var(--sh-1);color:var(--text);
+  transition:transform .15s,box-shadow .15s,border-color .15s;font-family:inherit;cursor:pointer}
+.app::before{content:'';position:absolute;left:18px;right:18px;top:0;height:3px;border-radius:0 0 4px 4px;background:var(--brand-grad);opacity:0;transition:opacity .15s}
+.app:hover{border-color:#cfd5f5;box-shadow:0 14px 30px -18px rgba(10,20,224,.45)}
+.app:hover::before,.app:focus-visible::before{opacity:1}
+.app:active{transform:scale(.97)}
+.app .appic{width:auto;height:auto;border:0;box-shadow:none;background:none;margin-bottom:.35rem}
+.app .appic::before{display:none}
+.app .appic .app-img{width:68px;height:68px}
+.app b{font-size:.98rem;font-weight:800;text-transform:uppercase;letter-spacing:.01em;line-height:1.15}
+.app small{font-size:.82rem;color:var(--text-3);line-height:1.3}
+.app .badge{position:absolute;top:10px;right:12px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--accent);color:#fff;font-size:.68rem;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid #fff;z-index:2}
 /* activity slider */
 .slides{display:flex;gap:.7rem;overflow-x:auto;scroll-snap-type:x mandatory;padding:.1rem .1rem .4rem;scrollbar-width:none}
 .slides::-webkit-scrollbar{display:none}
@@ -270,23 +280,23 @@ details.post summary::-webkit-details-marker{display:none}
   <!-- App launcher -->
   <?php foreach($groups as $gname => $items): ?>
   <div class="dk-h"><h2><?= h($gname) ?></h2></div>
-  <div class="apps glass">
+  <div class="apps">
     <?php foreach($items as $m): ?>
-    <a class="app" href="<?= url($m[0]) ?>"><span class="appic"><?= app_img($m[5],44) ?></span><?= h($m[1]) ?></a>
+    <a class="app" href="<?= url($m[0]) ?>"><span class="appic"><?= app_img($m[5],68) ?></span><b><?= h($m[1]) ?></b><small><?= h(app_desc($m[0])) ?></small></a>
     <?php endforeach; ?>
   </div>
   <?php endforeach; ?>
 
   <?php if($isAdm): ?>
   <div class="dk-h"><h2>Admin</h2></div>
-  <div class="apps glass">
+  <div class="apps">
     <?php foreach(admin_modules() as $m):
       if ($m[0]==='modules/settings.php' && !isSuperAdmin($user)) continue; ?>
-    <a class="app" href="<?= url($m[0]) ?>"><span class="appic"><?= app_img($m[5],44) ?></span><?= h($m[1]) ?>
+    <a class="app" href="<?= url($m[0]) ?>"><span class="appic"><?= app_img($m[5],68) ?></span><b><?= h($m[1]) ?></b><small><?= h(app_desc($m[0])) ?></small>
       <?php if($m[0]==='admin.php' && $pendingCount): ?><span class="badge" aria-label="<?= (int)$pendingCount ?> waiting"><?= (int)$pendingCount ?></span><?php endif; ?></a>
     <?php endforeach; ?>
     <?php if(canPost($user['role'])): ?>
-    <button type="button" class="app" onclick="openDashScan()" style="background:none;border:0;cursor:pointer;font-family:inherit;font-size:.75rem;font-weight:600;color:var(--text-2)"><span class="appic"><?= app_img('scan',44) ?></span>Scan QR</button>
+    <button type="button" class="app" onclick="openDashScan()"><span class="appic"><?= app_img('scan',68) ?></span><b>Scan QR</b><small>Check volunteer passes</small></button>
     <?php endif; ?>
   </div>
   <?php endif; ?>

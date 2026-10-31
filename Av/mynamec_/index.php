@@ -376,7 +376,9 @@ button,input,select,textarea{font-family:inherit}
 .eyebrow{display:inline-block;padding-left:.9rem;position:relative;font-size:.74rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--a-tx);margin-bottom:.5rem}
 .eyebrow::before{content:'';position:absolute;left:0;top:.2em;bottom:.2em;width:4px;border-radius:4px;background:var(--brand)}
 .dark .eyebrow{color:#FFB3B0}
-.sec-title{font-weight:800;font-size:clamp(1.6rem,4vw,2.4rem);letter-spacing:-.03em;line-height:1.12;margin-bottom:.6rem}
+.sec-title{font-weight:800;font-size:clamp(1.6rem,4vw,2.4rem);letter-spacing:-.02em;line-height:1.12;margin-bottom:.8rem;text-transform:uppercase}
+.sec-title::after{content:'';display:block;width:56px;height:5px;border-radius:5px;margin-top:.55rem;background:var(--brand)}
+.join .sec-title::after{margin-left:auto;margin-right:auto}
 .sec-sub{font-size:1rem;color:var(--t2);max-width:620px}
 .dark .sec-sub{color:rgba(255,255,255,.8)}
 .sec-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:1.6rem}
@@ -393,10 +395,12 @@ button,input,select,textarea{font-family:inherit}
 @media(min-width:860px){.about{grid-template-columns:1.1fr 1fr}}
 .about p{white-space:pre-line;color:var(--t2);font-size:1.02rem}
 .pillars{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
-.pillar{padding:1rem;border-radius:18px;background:var(--surface);border:1px solid var(--line)}
+.pillar{padding:1.3rem .8rem 1.1rem;border-radius:22px;background:#fff;border:1px solid var(--line);box-shadow:var(--sh);text-align:center;display:flex;flex-direction:column;align-items:center}
 .pillar .tile{margin-bottom:.6rem}
-.pillar b{display:block;font-size:.95rem}
-.pillar span{font-size:.82rem;color:var(--t3)}
+.pillar b{display:block;font-size:1rem;font-weight:800;text-transform:uppercase}
+.pillar .appic{width:auto;height:auto;border:0;box-shadow:none;background:none}
+.pillar .appic .app-img{width:64px;height:64px}
+.pillar span{font-size:.86rem;color:var(--t3)}
 /* app icons with 3D pictures */
 .appic{width:56px;height:56px;border-radius:18px;background:#fff;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);box-shadow:0 8px 18px -10px rgba(10,20,224,.35);margin-bottom:.6rem}
 .appic .app-img{width:40px;height:40px;object-fit:contain;filter:drop-shadow(0 3px 3px rgba(11,16,51,.15))}
