@@ -304,7 +304,7 @@ function catColor($c) {
     return isset($map[$c]) ? $map[$c] : '#37474F';
 }
 
-// Sports pages admin (football, prediction)
+// Sports pages admin (football)
 function isSportsAdmin($r) {
     return in_array($r, array('secretary','developer','sports_committee'));
 }

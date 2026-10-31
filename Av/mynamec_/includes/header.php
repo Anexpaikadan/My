@@ -304,7 +304,6 @@ img{display:block;max-width:100%}
         <a href="<?= url('modules/donation.php') ?>"><div class="di" aria-hidden="true" style="background:#fce4ec">💚</div> Donations</a>
         <a href="<?= url('modules/crowdfund.php') ?>"><div class="di" aria-hidden="true" style="background:#fce4ec">❤️</div> Crowd Funding</a>
         <a href="<?= url('modules/market.php') ?>"><div class="di" aria-hidden="true" style="background:#e8f5e9">🛍️</div> Mini Market</a>
-        <a href="<?= url('modules/prediction.php') ?>"><div class="di" aria-hidden="true" style="background:#e8f5e9">⚽</div> Prediction League</a>
         <?php if(isSuperAdmin($user)): ?><a href="<?= url('modules/settings.php') ?>"><div class="di" aria-hidden="true" style="background:#e8eaf6">⚙️</div> Club Settings</a><?php endif; ?>
       </div>
     </li>
@@ -316,7 +315,6 @@ img{display:block;max-width:100%}
         <a href="<?= url('modules/profile.php') ?>"><div class="di" aria-hidden="true" style="background:#e3f2fd">👤</div> My Profile</a>
         <a href="<?= url('modules/idcard.php') ?>"><div class="di" aria-hidden="true" style="background:#e8f5e9">🪪</div> ID Card</a>
         <a href="<?= url('modules/nameslip.php') ?>"><div class="di" aria-hidden="true" style="background:#e3f2fd">📚</div> Name Slip</a>
-        <a href="<?= url('modules/prediction.php') ?>"><div class="di" aria-hidden="true" style="background:#e8f5e9">⚽</div> Prediction League</a>
         <a href="<?= url('modules/certificate.php') ?>"><div class="di" aria-hidden="true" style="background:#fff8e1">🏅</div> Certificate</a>
         <a href="<?= url('modules/subscription.php') ?>"><div class="di" aria-hidden="true" style="background:#fce4ec">💳</div> Subscription</a>
         <div class="nav-drop-sep"></div>
@@ -409,7 +407,6 @@ img{display:block;max-width:100%}
       array('modules/profile.php','👤','My Profile'),
       array('modules/idcard.php','🪪','My ID Card'),
       array('modules/nameslip.php','📚','Name Slip'),
-      array('modules/prediction.php','⚽','Prediction League'),
       array('modules/certificate.php','🏅','Certificate'),
       array('modules/subscription.php','💳','Subscription'),
     ),
@@ -421,7 +418,6 @@ img{display:block;max-width:100%}
       array('modules/election.php','🗳️','Elections'),
       array('modules/donation.php','💚','Donations'),
       array('modules/crowdfund.php','❤️','Crowd Funding'),
-      array('modules/prediction.php','⚽','Prediction League'),
     ),
     'More' => array(
       array('index.php','🌐','Public Website'),

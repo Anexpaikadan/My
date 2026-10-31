@@ -39,11 +39,10 @@ Setup, hosting and printer details: [`daybill/README.md`](daybill/README.md).
 ## Aishwarya Arts & Sports Club (`Av/mynamec_/`)
 
 Members portal for the club in Vettikkattiri: public homepage, WhatsApp OTP / passkey login, dashboard,
-admin panel and modules (football, predictions, arts festival, henna fest, elections, blood donors,
+admin panel and modules (football, arts festival, henna fest, elections, blood donors,
 crowdfunding, ID cards, certificates, gallery, subscriptions…).
 
-**Setup:** in `includes/config.php` fill in `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS` (kept as placeholders in git),
-and the football-data.org token in `modules/prediction_sync.php`.
+**Setup:** in `includes/config.php` fill in `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS` (kept as placeholders in git).
 
 **UI/UX pass (shared header + footer, used by every member page):**
 - Pinch-zoom allowed again; no auto-zoom on iPhone when typing (inputs are 16px).

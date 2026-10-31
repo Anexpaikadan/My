@@ -77,7 +77,7 @@ There is **no component library, no Storybook and no docs**. Reusable UI comes f
 3. **PHP helper functions:** `h()` (escape every output), `url('modules/x.php')`, `setting('CLUB_NAME', default)`,
    `csrfField()`, `getLogoB64()`, `photoUrl()` in `includes/config.php` and `modules/upload_helper.php`.
 4. **Module-only styles:** most `modules/*.php` add their own `<style>` block with short, module-specific
-   prefixes (`.bh-` blood, `.cf-` crowdfund, `.fd-` feed, `.mk-` market, `.nsg-` name slip, `.fx-` fixtures,
+   prefixes (`.bh-` blood, `.cf-` crowdfund, `.fd-` feed, `.mk-` market, `.nsg-` name slip,
    `.gf-` ground fund, `.bc-` broadcast, `.cs-` creative studio). **Copy this pattern:** a new screen
    gets a new 2–3 letter prefix, and its CSS goes in that module's `<style>`.
 

@@ -712,7 +712,7 @@ require_once __DIR__ . '/../includes/header.php';
          'finance_committee'=>['Finance Committee','💳','Finance pages'],
          'committee_member'=>['Committee Member','👥','No extra access'],
          'member'=>['Member','👤','Regular']];
-    $mods=['football'=>['⚽','Football'],'prediction'=>['🏆','Prediction'],
+    $mods=['football'=>['⚽','Football'],
            'arts_festival'=>['🎭','Arts Festival'],'onam'=>['🌸','Onam'],
            'henna_fest'=>['🌿','Henna Fest'],'crowdfund'=>['❤️','Crowd Fund'],
            'donation'=>['💚','Donations'],'election'=>['🗳️','Elections'],

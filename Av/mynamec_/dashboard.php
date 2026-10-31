@@ -37,36 +37,6 @@ try {
     $nstmt->execute(); $notices = $nstmt->fetchAll();
 } catch(Exception $e){ $notices = []; }
 
-// ── FIFA Prediction League data for dashboard ────────────────
-$predLeague = ['active'=>false,'matches'=>[],'top3'=>[],'my'=>null,'upcoming'=>null];
-try {
-  // Check if table exists
-  $tbl = db()->query("SHOW TABLES LIKE 'prediction_matches'")->fetch();
-  if ($tbl) {
-    $predLeague['active'] = true;
-    // Top 3 leaderboard
-    $predLeague['top3'] = db()->query("SELECT u.id,u.name,u.profile_photo,
-      COALESCE(SUM(mp.points),0) AS pts,
-      COUNT(CASE WHEN mp.points>0 THEN 1 END) AS correct
-      FROM users u
-      JOIN member_predictions mp ON mp.member_id=u.id
-      GROUP BY u.id ORDER BY pts DESC, correct DESC LIMIT 3")->fetchAll();
-    foreach($predLeague['top3'] as &$t3) {
-      $t3['photo'] = $t3['profile_photo'] ? getMemberPhoto($t3['profile_photo']) : '';
-    }
-    // My stats
-    $myP = db()->prepare("SELECT COALESCE(SUM(points),0) AS pts, COUNT(*) AS total FROM member_predictions WHERE member_id=?");
-    $myP->execute([$user['id']]); $predLeague['my'] = $myP->fetch();
-    // My rank
-    $myRank = db()->prepare("SELECT COUNT(DISTINCT member_id)+1 AS rnk FROM (SELECT member_id,SUM(points) AS pts FROM member_predictions GROUP BY member_id HAVING pts > (SELECT COALESCE(SUM(points),0) FROM member_predictions WHERE member_id=?)) x");
-    $myRank->execute([$user['id']]); $rnk=$myRank->fetch(); $predLeague['my']['rank'] = $rnk['rnk'] ?? 1;
-    // Next upcoming match
-    $predLeague['upcoming'] = db()->query("SELECT * FROM prediction_matches WHERE status='upcoming' ORDER BY match_date ASC LIMIT 1")->fetch();
-    // Live match
-    $predLeague['live'] = db()->query("SELECT * FROM prediction_matches WHERE status='live' LIMIT 1")->fetch();
-  }
-} catch(Exception $e){}
-
 // ── Recent achievements for dashboard ──────────────────────
 $recentAch = [];
 try {
@@ -278,11 +248,8 @@ $isAdm = isAdminRole($user['role']);
 $navItems = array(
     array('url'=>url('modules/feed.php'),        'em'=>'📰','label'=>'Feed',          'bg'=>'#e1f5fe','bc'=>'#4fc3f7','tc'=>'#01579b'),
     array('url'=>url('modules/market.php'),      'em'=>'🏪','label'=>'AV Market',      'bg'=>'#e3f2fd','bc'=>'#90caf9','tc'=>'#0d47a1'),
-    array('url'=>url('modules/fixtures.php'),      'em'=>'📅🏟','label'=> 'World Cup Fixture 2026',      'bg'=>'#e3f2fd','bc'=>'#90caf9','tc'=>'#0d47a1'),
-   
   array('url'=>url('modules/idcard.php'),      'em'=>'🪪','label'=>'ID Card',      'bg'=>'#e3f2fd','bc'=>'#90caf9','tc'=>'#0d47a1'),
   array('url'=>url('modules/nameslip.php'),    'em'=>'📚','label'=>'Name Slip',     'bg'=>'#e3f2fd','bc'=>'#90caf9','tc'=>'#0d47a1'),
-  array('url'=>url('modules/prediction.php'),  'em'=>'⚽','label'=>'Prediction',    'bg'=>'#e8f5e9','bc'=>'#a5d6a7','tc'=>'#1b5e20'),
   array('url'=>url('modules/henna_fest.php'),  'em'=>'🌿','label'=>'Henna Fest',  'bg'=>'#fff3e0','bc'=>'#ffcc80','tc'=>'#8B3A0F'),
   array('url'=>url('modules/fest_manager.php'), 'em'=>'🎪','label'=>'Fests',   'bg'=>'#e8eaf6','bc'=>'#9fa8da','tc'=>'#1a237e'),
   array('url'=>url('modules/poster_maker.php'), 'em'=>'🎨','label'=>'AI Poster',   'bg'=>'#fff3e0','bc'=>'#ffcc80','tc'=>'#8B3A0F'),
@@ -1147,117 +1114,6 @@ var _sp=document.getElementById('scanPopup');
 if (_sp) { _sp.addEventListener('click',function(e){if(e.target===this)closeDashScan();}); }
 document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeDashScan(); });
 </script>
-<?php if($predLeague['active']): ?>
-<!-- ══════════════════════════════════════════════
-     FIFA WC 2026 PREDICTION LEAGUE — DASHBOARD CARD
-     ══════════════════════════════════════════════ -->
-<div style="padding:.7rem 1rem 0">
-
-  <!-- Section header -->
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem">
-    <div style="display:flex;align-items:center;gap:.5rem">
-      <span style="font-size:1.1rem">⚽</span>
-      <span style="font-size:.68rem;font-weight:800;color:#5d6b80;text-transform:uppercase;letter-spacing:.12em">Prediction League</span>
-    </div>
-    <a href="<?= url('modules/prediction.php') ?>" style="font-size:.68rem;font-weight:700;color:#ffd700;text-decoration:none">View All →</a>
-  </div>
-
-  <!-- Main card -->
-  <div style="background:linear-gradient(145deg,#050a1a,#0d2137);border-radius:18px;overflow:hidden;border:1.5px solid rgba(255,215,0,.2);box-shadow:0 6px 24px rgba(5,10,26,.5)">
-
-    <!-- Live match banner (if any) -->
-    <?php if(!empty($predLeague['live'])): $lv=$predLeague['live']; ?>
-    <div style="background:linear-gradient(90deg,rgba(255,51,102,.18),rgba(255,51,102,.08));border-bottom:1px solid rgba(255,51,102,.25);padding:.55rem 1rem;display:flex;align-items:center;gap:.55rem">
-      <span style="width:8px;height:8px;border-radius:50%;background:#ff3366;display:inline-block;animation:livePulse 1.2s infinite;flex-shrink:0"></span>
-      <span style="font-size:.65rem;font-weight:800;color:#ff3366;letter-spacing:.08em;text-transform:uppercase">LIVE</span>
-      <span style="font-size:.78rem;font-weight:700;color:#fff;flex:1">
-        <?= h($lv['team1_flag']?:'')?> <?= h($lv['team1']) ?> vs <?= h($lv['team2_flag']?:'')?> <?= h($lv['team2']) ?>
-      </span>
-      <a href="<?= url('modules/prediction.php') ?>" style="font-size:.62rem;color:#ff3366;font-weight:800;text-decoration:none;border:1px solid rgba(255,51,102,.35);border-radius:20px;padding:.15rem .55rem">Watch →</a>
-    </div>
-    <?php endif; ?>
-
-    <!-- My stats row -->
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid rgba(255,255,255,.06)">
-      <div style="padding:.65rem .5rem;text-align:center;border-right:1px solid rgba(255,255,255,.06)">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:#ffd700;line-height:1"><?= (int)($predLeague['my']['pts']??0) ?></div>
-        <div style="font-size:.52rem;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.08em;margin-top:.1rem">My Points</div>
-      </div>
-      <div style="padding:.65rem .5rem;text-align:center;border-right:1px solid rgba(255,255,255,.06)">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:#ffd700;line-height:1"><?= (int)($predLeague['my']['correct']??0) ?>/<?= (int)($predLeague['my']['total']??0) ?></div>
-        <div style="font-size:.52rem;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.08em;margin-top:.1rem">Correct</div>
-      </div>
-      <div style="padding:.65rem .5rem;text-align:center">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:#ffd700;line-height:1">#<?= (int)($predLeague['my']['rank']??1) ?></div>
-        <div style="font-size:.52rem;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.08em;margin-top:.1rem">My Rank</div>
-      </div>
-    </div>
-
-    <!-- Leaderboard top 3 -->
-    <?php if(!empty($predLeague['top3'])): ?>
-    <div style="padding:.65rem .85rem .55rem">
-      <div style="font-size:.58rem;font-weight:800;color:rgba(255,215,0,.5);letter-spacing:.12em;text-transform:uppercase;margin-bottom:.55rem">🏆 Top Predictors</div>
-      <?php
-      $medals = ['🥇','🥈','🥉'];
-      $topBg  = [
-        'linear-gradient(135deg,rgba(255,215,0,.12),rgba(255,215,0,.04))',
-        'linear-gradient(135deg,rgba(192,192,192,.1),rgba(192,192,192,.03))',
-        'linear-gradient(135deg,rgba(205,127,50,.1),rgba(205,127,50,.03))',
-      ];
-      foreach($predLeague['top3'] as $i=>$tp):
-      ?>
-      <div style="display:flex;align-items:center;gap:.65rem;padding:.5rem .6rem;border-radius:11px;margin-bottom:.35rem;background:<?= $topBg[$i] ?>;border:1px solid rgba(255,215,0,<?= $i===0?'.2':'.07' ?>)">
-        <span style="font-size:1rem;flex-shrink:0"><?= $medals[$i] ?></span>
-        <?php if($tp['photo']): ?>
-          <img src="<?= $tp['photo'] ?>" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,215,0,.25);flex-shrink:0">
-        <?php else: ?>
-          <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0">👤</div>
-        <?php endif; ?>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:.8rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><?= h($tp['name']) ?></div>
-          <div style="font-size:.6rem;color:rgba(255,255,255,.35)"><?= (int)$tp['correct'] ?> correct picks</div>
-        </div>
-        <div style="text-align:right;flex-shrink:0">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:#ffd700;line-height:1"><?= (int)$tp['pts'] ?></div>
-          <div style="font-size:.5rem;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.06em">pts</div>
-        </div>
-      </div>
-      <?php endforeach; ?>
-    </div>
-    <?php endif; ?>
-
-    <!-- Next match + predict button -->
-    <?php if(!empty($predLeague['upcoming'])): $um=$predLeague['upcoming']; ?>
-    <div style="padding:.55rem .85rem .8rem;border-top:1px solid rgba(255,255,255,.05)">
-      <div style="font-size:.58rem;font-weight:800;color:rgba(255,255,255,.3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.45rem">⏳ Next Match</div>
-      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.55rem">
-        <span style="font-size:1.5rem"><?= h($um['team1_flag']?:'🏳') ?></span>
-        <div style="flex:1;text-align:center">
-          <div style="font-size:.65rem;font-weight:800;color:#fff"><?= h($um['team1']) ?> vs <?= h($um['team2']) ?></div>
-          <div style="font-size:.58rem;color:rgba(255,255,255,.3);margin-top:.1rem"><?= date('D d M · H:i',strtotime($um['match_date'])) ?></div>
-        </div>
-        <span style="font-size:1.5rem"><?= h($um['team2_flag']?:'🏳') ?></span>
-      </div>
-      <a href="<?= url('modules/prediction.php') ?>" style="display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;padding:.7rem;background:linear-gradient(135deg,#ffd700,#e6a800);color:#000;border-radius:11px;font-weight:900;font-size:.85rem;text-decoration:none;letter-spacing:.04em;box-shadow:0 4px 14px rgba(255,215,0,.25)">
-        🎯 Make Your Prediction
-      </a>
-    </div>
-    <?php elseif(empty($predLeague['live'])): ?>
-    <div style="padding:.7rem .85rem .85rem;text-align:center">
-      <a href="<?= url('modules/prediction.php') ?>" style="display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;padding:.7rem;background:linear-gradient(135deg,#ffd700,#e6a800);color:#000;border-radius:11px;font-weight:900;font-size:.85rem;text-decoration:none;letter-spacing:.04em">
-        ⚽ Open Prediction League
-      </a>
-    </div>
-    <?php endif; ?>
-
-  </div>
-</div>
-
-<style>
-@keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
-</style>
-<?php endif; ?>
-
 <?php
 // ── Henna Fest Dashboard Section ──
 $_dbHenna = false;
