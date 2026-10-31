@@ -1,5 +1,5 @@
 // Valley MMA – page helpers: install as app, forms, exports, WhatsApp sharing, member QR scan.
-window.VM_JS = '4.3'; // same as APP_VERSION in includes/init.php
+window.VM_JS = '4.4'; // same as APP_VERSION in includes/init.php
 
 (function () {
   var $ = function (s, el) { return (el || document).querySelector(s); };

@@ -36,6 +36,7 @@ $amt = fn($n) => $n > 0 ? money($n) : '';
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e(t('receipt')) ?> #<?= (int)$p['receipt_no'] ?></title>
+<?= og_tags(t('receipt') . ' #' . (int)$p['receipt_no']) ?>
 <link rel="stylesheet" href="assets/print.css?v=4">
 </head>
 <body>

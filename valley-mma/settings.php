@@ -27,6 +27,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         set_setting('absent_days', (string)max(1, min(60, (int)post('absent_days'))));
         set_setting('default_lang', post('default_lang') === 'ml' ? 'ml' : 'en');
         flash('success', t('saved'));
+    } elseif ($a === 'share') { // photo and text shown by WhatsApp under every app link
+        set_setting('og_on', post('og_on') === '1' ? '1' : '0');
+        set_setting('og_title', mb_substr(trim(post('og_title')), 0, 90));
+        set_setting('og_text', mb_substr(trim(post('og_text')), 0, 200));
+        $old = setting('og_img');
+        if (!empty($_FILES['og_img']['name'])) {
+            $f = save_photo($_FILES['og_img'], 1200, __DIR__ . '/media');
+            if ($f === null) {
+                flash('danger', t('err_photo'));
+            } else {
+                set_setting('og_img', $f);
+                if ($old !== '') {
+                    @unlink(__DIR__ . '/media/' . $old);
+                }
+            }
+        } elseif (post('og_default') === '1' && $old !== '') {
+            @unlink(__DIR__ . '/media/' . $old);
+            set_setting('og_img', '');
+        }
+        flash('success', t('saved'));
     } elseif ($a === 'attendance') {
         $order = array_values(array_intersect((array)($_POST['order'] ?? []), ['qr', 'card', 'manual']));
         set_setting('att_order', implode(',', array_unique(array_merge($order, ['qr', 'card', 'manual']))));
@@ -154,6 +174,29 @@ require __DIR__ . '/includes/header.php';
   </div>
 
   <div class="col-lg-5">
+    <form method="post" enctype="multipart/form-data" class="card mb-3" id="share"><?= csrf_field() ?><input type="hidden" name="action" value="share">
+      <div class="card-header d-flex align-items-center gap-2"><i class="bi bi-whatsapp text-success"></i><span class="me-auto"><?= e(t('link_preview')) ?></span>
+        <div class="form-check form-switch mb-0"><input class="form-check-input" type="checkbox" role="switch" name="og_on" value="1" id="ogOn"<?= og_on() ? ' checked' : '' ?>>
+          <label class="form-check-label small" for="ogOn"><?= e(t('show')) ?></label></div></div>
+      <div class="card-body">
+        <p class="small-muted"><?= e(t('link_preview_help')) ?></p>
+        <div class="wa-preview mb-3">
+          <img src="<?= e(og_image_path()) ?>" alt="">
+          <div class="p-2"><div class="fw-semibold small"><?= e(og_title('')) ?></div><div class="small-muted" style="font-size:.75rem"><?= e(og_text()) ?></div>
+            <div class="small-muted" style="font-size:.7rem"><?= e(parse_url(base_url(), PHP_URL_HOST)) ?></div></div>
+        </div>
+        <label class="form-label small" for="ogImg"><?= e(t('change_photo')) ?></label>
+        <input class="form-control mb-1" type="file" id="ogImg" name="og_img" accept="image/*">
+        <div class="form-text mt-0 mb-2"><?= e(t('link_preview_photo_help')) ?></div>
+        <?php if (setting('og_img') !== ''): ?><div class="form-check small mb-2"><input class="form-check-input" type="checkbox" name="og_default" value="1" id="ogDef"><label class="form-check-label" for="ogDef"><?= e(t('use_default_photo')) ?></label></div><?php endif; ?>
+        <label class="form-label small" for="ogTitle"><?= e(t('heading')) ?></label>
+        <input class="form-control mb-2" id="ogTitle" name="og_title" maxlength="90" value="<?= e(setting('og_title')) ?>" placeholder="<?= e(gym_title()) ?>">
+        <label class="form-label small" for="ogText"><?= e(t('content')) ?></label>
+        <input class="form-control" id="ogText" name="og_text" maxlength="200" value="<?= e(setting('og_text')) ?>" placeholder="<?= e(pub('pub_hero_text')) ?>">
+      </div>
+      <div class="card-footer bg-transparent"><button class="btn btn-primary"><i class="bi bi-check2-circle"></i> <?= e(t('save')) ?></button></div>
+    </form>
+
     <form method="post" class="card mb-3" id="password"><?= csrf_field() ?><input type="hidden" name="action" value="password">
       <div class="card-header"><i class="bi bi-key"></i> <?= e(t('change_my_password')) ?> (<?= e($me['username']) ?>)</div>
       <div class="card-body d-grid gap-2">

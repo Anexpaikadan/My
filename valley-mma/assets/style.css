@@ -352,3 +352,7 @@ body.pub-dark .dev-credit { color: #8E8B8B; }
 .req-ava { width: 2.4rem; height: 2.4rem; border-radius: 50%; background: #FBE7E6; color: var(--vm-blue); font-weight: 800; display: grid; place-items: center; flex: none; }
 .req-ava.big { width: 3.4rem; height: 3.4rem; font-size: 1.4rem; }
 .trial-btn { box-shadow: 0 8px 24px rgba(200, 22, 14, .45); font-weight: 800; text-transform: uppercase; letter-spacing: .5px; }
+
+/* WhatsApp link preview (settings) */
+.wa-preview { background: #e7fce3; border-radius: .7rem; overflow: hidden; border: 1px solid #cfe9ca; max-width: 340px; }
+.wa-preview img { display: block; width: 100%; max-height: 180px; object-fit: cover; }

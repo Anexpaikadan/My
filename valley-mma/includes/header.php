@@ -13,7 +13,7 @@ $v = APP_VERSION;
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1F1E1E">
 <title><?= e(($title !== '' ? $title . ' · ' : '') . setting('gym_name', 'VALLEY MMA')) ?></title>
-<link rel="manifest" href="manifest.php<?= !empty($memberApp) ? '?app=member' : '' ?>">
+<?= og_tags($title) ?><link rel="manifest" href="manifest.php<?= !empty($memberApp) ? '?app=member' : '' ?>">
 <link rel="icon" type="image/png" href="assets/icons/favicon.png">
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">

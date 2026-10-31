@@ -71,6 +71,56 @@ function pub_wa_phone(string $k = 'pub_whatsapp'): string
     return pub($k) !== '' ? pub($k) : (pub('pub_whatsapp') !== '' ? pub('pub_whatsapp') : setting('phone1'));
 }
 
+// ---- WhatsApp / social link preview (Open Graph) -------------------
+// WhatsApp, Facebook and Telegram show this photo, title and text under every link of the app.
+
+function og_on(): bool
+{
+    return setting('og_on', '1') === '1';
+}
+
+function og_image_path(): string
+{
+    $f = setting('og_img');
+    return $f !== '' && is_file(__DIR__ . '/../media/' . $f) ? 'media/' . rawurlencode($f) : hero_url();
+}
+
+function og_title(string $page): string
+{
+    $base = setting('og_title') !== '' ? setting('og_title') : gym_title();
+    return $page !== '' && $page !== $base ? $page . ' · ' . $base : $base;
+}
+
+function og_text(): string
+{
+    return setting('og_text') !== '' ? setting('og_text') : pub('pub_hero_text');
+}
+
+function og_tags(string $pageTitle): string
+{
+    if (!og_on()) {
+        return '';
+    }
+    $img = og_image_path();
+    $size = @getimagesize(__DIR__ . '/../' . rawurldecode($img));
+    $query = (string)($_SERVER['QUERY_STRING'] ?? '');
+    $tags = [
+        'og:type' => 'website', 'og:site_name' => gym_title(), 'og:title' => og_title($pageTitle), 'og:description' => og_text(),
+        'og:url' => base_url() . basename((string)($_SERVER['SCRIPT_NAME'] ?? 'index.php')) . ($query !== '' ? '?' . $query : ''),
+        'og:image' => base_url() . $img, 'og:image:alt' => gym_title(),
+    ];
+    if ($size) {
+        $tags['og:image:width'] = (string)$size[0];
+        $tags['og:image:height'] = (string)$size[1];
+        $tags['og:image:type'] = $size['mime'];
+    }
+    $h = '';
+    foreach ($tags as $k => $v) {
+        $h .= '<meta property="' . $k . '" content="' . e($v) . "\">\n";
+    }
+    return $h . "<meta name=\"twitter:card\" content=\"summary_large_image\">\n<meta name=\"description\" content=\"" . e(og_text()) . "\">\n";
+}
+
 // ---- Gym rules ----------------------------------------------------
 
 function rules_default(): array
