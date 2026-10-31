@@ -10,6 +10,7 @@ The website can send WhatsApp messages by itself:
 | New event | An event is added (to all active members) |
 | Blood request | A blood request is posted (to available donors of the same group) |
 | Fee reminder | 7 days, 1 day and on the day a membership ends |
+| Broadcast | An admin sends from **WA Broadcast** to all members, the committee, one blood group, or only themselves (test) |
 
 Everything is controlled in **Club Settings → WhatsApp**. If sending is **Off**, the site works exactly as before.
 

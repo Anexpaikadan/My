@@ -4,6 +4,7 @@
 // Aishwarya Arts & Sports Club — PHP 7.3+ compatible
 // ============================================================
 require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/wa_gateway.php';
 // OG tags before requireLogin
 $pageOG = [
   'title' => '📢 Broadcast — ' . setting('CLUB_NAME','Aishwarya Arts & Sports Club'),
@@ -32,6 +33,52 @@ try { db()->exec("CREATE TABLE IF NOT EXISTS broadcast_history (
     sent_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )"); } catch(Exception $e){}
 
+try { db()->exec("ALTER TABLE broadcast_history ADD COLUMN recipients INT DEFAULT NULL"); } catch(Exception $e){}
+try { db()->exec("ALTER TABLE broadcast_history ADD COLUMN method VARCHAR(20) DEFAULT NULL"); } catch(Exception $e){}
+
+// ── Who can receive an automatic broadcast ────────────────────
+$BC_EXEC = array('president','vice_president','secretary','joint_secretary','treasurer');
+function bc_audience_rows($aud, $me, $execRoles) {
+    $base = "SELECT id,name,whatsapp_number FROM users WHERE status='active' AND whatsapp_number IS NOT NULL AND whatsapp_number<>''";
+    if ($aud === 'me') { $st = db()->prepare("SELECT id,name,whatsapp_number FROM users WHERE id=?"); $st->execute(array($me['id'])); return $st->fetchAll(); }
+    if ($aud === 'committee') {
+        $in = implode(',', array_fill(0, count($execRoles) + 1, '?'));
+        $st = db()->prepare($base . " AND role IN ($in)"); $st->execute(array_merge($execRoles, array('committee_member'))); return $st->fetchAll();
+    }
+    if (strpos($aud, 'blood:') === 0) { $st = db()->prepare($base . " AND blood_group=?"); $st->execute(array(substr($aud, 6))); return $st->fetchAll(); }
+    return db()->query($base)->fetchAll();
+}
+
+// ── Automatic WhatsApp broadcast (queue) — AJAX ───────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax']) && in_array($_POST['ajax'], array('bc_queue','bc_status'), true)) {
+    header('Content-Type: application/json');
+    if (!verifyCsrf()) { echo json_encode(['ok'=>false,'msg'=>'Session expired. Reload the page and try again.']); exit; }
+    if ($_POST['ajax'] === 'bc_status') {
+        $pending = 0;
+        try { $pending = (int)db()->query("SELECT COUNT(*) FROM wa_queue WHERE status IN('pending','sending') AND kind='broadcast'")->fetchColumn(); } catch(Exception $e){}
+        echo json_encode(['ok'=>true,'pending'=>$pending]); exit;
+    }
+    if (!wa_enabled()) { echo json_encode(['ok'=>false,'msg'=>'Automatic WhatsApp sending is not set up (Club Settings → WhatsApp).']); exit; }
+    $title = trim($_POST['title'] ?? ''); $body = trim($_POST['message'] ?? '');
+    $cat = preg_replace('/[^a-z_]/', '', $_POST['cat'] ?? 'general') ?: 'general';
+    $aud = (string)($_POST['audience'] ?? 'all');
+    if (!preg_match('/^(all|committee|me|blood:(A|B|AB|O)[+-])$/', $aud)) { echo json_encode(['ok'=>false,'msg'=>'Choose who to send to.']); exit; }
+    if ($body === '') { echo json_encode(['ok'=>false,'msg'=>'Write a message first.']); exit; }
+    if (mb_strlen($body) > 1500) { echo json_encode(['ok'=>false,'msg'=>'Message is too long (max 1500 characters).']); exit; }
+    $text = ($title !== '' ? '*' . $title . "*\n\n" : '') . $body;
+    $site = rtrim(defined('SITE_URL') ? SITE_URL : '', '/');
+    if ($site && strpos($text, preg_replace('#^https?://#', '', $site)) === false) $text .= "\n\n🌐 " . $site;
+    $rows = bc_audience_rows($aud, $me, $BC_EXEC);
+    $n = wa_queue_many($rows, $text, 'broadcast');
+    if ($aud !== 'me') {
+        db()->prepare("INSERT INTO broadcast_history(title,message,category,sent_by,recipients,method) VALUES(?,?,?,?,?,?)")
+           ->execute([$title !== '' ? $title : mb_strimwidth($body, 0, 60, '…'), $body, $cat, $me['id'], $n, 'whatsapp']);
+    }
+    $mins = max(1, (int)ceil($n * max(2, (int)wa_cfg('wa_delay', '4')) / 60));
+    echo json_encode(['ok'=>true,'queued'=>$n,'msg'=>$n ? "Queued for {$n} member" . ($n === 1 ? '' : 's') . ". Sending in the background — about {$mins} min." : 'Nobody to send to in this group.']);
+    exit;
+}
+
 // ── Save broadcast to history ─────────────────────────────────
 $msg_flash = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_broadcast'])) {
@@ -39,8 +86,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_broadcast'])) {
     $message = trim($_POST['broadcast_msg']   ?? '');
     $cat     = $_POST['broadcast_cat'] ?? 'general';
     if ($title && $message) {
-        db()->prepare("INSERT INTO broadcast_history(title,message,category,sent_by) VALUES(?,?,?,?)")
-           ->execute([$title, $message, $cat, $me['id']]);
+        db()->prepare("INSERT INTO broadcast_history(title,message,category,sent_by,method) VALUES(?,?,?,?,?)")
+           ->execute([$title, $message, $cat, $me['id'], 'group']);
         $msg_flash = ['ok', '✅ Broadcast saved to history!'];
     }
 }
@@ -56,6 +103,18 @@ $stats = db()->query("SELECT
     SUM(status='active') active,
     SUM(whatsapp_number IS NOT NULL AND whatsapp_number != '') has_wa
     FROM users WHERE status='active'")->fetch();
+
+// Audience sizes for the automatic sender
+$WA_ON = wa_enabled();
+$audCounts = array();
+if ($WA_ON) {
+    $audCounts['all'] = count(bc_audience_rows('all', $me, $BC_EXEC));
+    $audCounts['committee'] = count(bc_audience_rows('committee', $me, $BC_EXEC));
+    foreach (array('A+','A-','B+','B-','AB+','AB-','O+','O-') as $bg) $audCounts['blood:' . $bg] = count(bc_audience_rows('blood:' . $bg, $me, $BC_EXEC));
+    $audCounts['me'] = 1;
+}
+$bcPending = 0;
+try { $bcPending = $WA_ON ? (int)db()->query("SELECT COUNT(*) FROM wa_queue WHERE status IN('pending','sending') AND kind='broadcast'")->fetchColumn() : 0; } catch(Exception $e){}
 
 $pageTitle = '📢 WhatsApp Broadcast — ' . $CLUB;
 require_once __DIR__ . '/../includes/header.php';
@@ -338,9 +397,9 @@ require_once __DIR__ . '/../includes/header.php';
 .reuse-btn {
     display: inline-block;
     margin-top: .35rem;
-    font-size: .68rem;
+    font-size: .72rem;
     font-weight: 700;
-    color: #25d366;
+    color: #0E6B37;
     background: #f0fdf4;
     border: 1px solid #25d366;
     border-radius: 6px;
@@ -496,13 +555,39 @@ require_once __DIR__ . '/../includes/header.php';
             Your message will appear here...
         </div>
 
+        <!-- Automatic WhatsApp broadcast (Club Settings → WhatsApp) -->
+        <?php if ($WA_ON): ?>
+        <div class="bc-auto">
+            <label class="lbl" for="bcAud">Send to</label>
+            <select id="bcAud" class="inp" onchange="bcAudChange()">
+                <option value="all">All active members (<?= (int)$audCounts['all'] ?>)</option>
+                <option value="committee">Committee &amp; office bearers (<?= (int)$audCounts['committee'] ?>)</option>
+                <?php foreach (array('A+','A-','B+','B-','AB+','AB-','O+','O-') as $bg): ?>
+                <option value="blood:<?= $bg ?>">Blood group <?= $bg ?> (<?= (int)$audCounts['blood:'.$bg] ?>)</option>
+                <?php endforeach; ?>
+                <option value="me">Only me — test (1)</option>
+            </select>
+            <button type="button" class="btn-send-auto" id="bcAutoBtn" onclick="bcQueue()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>
+                <span id="bcAutoLbl">Send to <?= (int)$audCounts['all'] ?> members on WhatsApp</span>
+            </button>
+            <div class="bc-progress" id="bcProgress" role="status" aria-live="polite"<?= $bcPending ? '' : ' hidden' ?>>
+                <span class="bc-spin" aria-hidden="true"></span><span id="bcProgressTxt"><?= $bcPending ?> message<?= $bcPending===1?'':'s' ?> still sending in the background…</span>
+            </div>
+            <p class="bc-note">Sent automatically from the club WhatsApp number, one by one with a short gap. You can close this page.</p>
+        </div>
+        <div class="bc-or"><span>or share in the WhatsApp group</span></div>
+        <?php else: ?>
+        <div class="alert alert-info" style="margin:.2rem 0 .8rem">Tip: set up <b>Club Settings → WhatsApp</b> to send broadcasts to every member automatically.</div>
+        <?php endif; ?>
+
         <!-- Send Button -->
         <?php if ($GROUP && strpos($GROUP, 'YOUR_GROUP') === false): ?>
         <a id="sendBtn" href="#" class="btn-send-wa" onclick="sendBroadcast(event)">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
             </svg>
-            Send to Club Group
+            <?= $WA_ON ? 'Copy &amp; open club group' : 'Send to Club Group' ?>
         </a>
         <?php else: ?>
         <button class="btn-send-wa" onclick="alert('Please set Club WhatsApp Group URL in Club Settings first.')" style="opacity:.6">
@@ -531,11 +616,11 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
     <div class="bc-card-body">
         <?php
-        $catColors = ['general'=>['#64748b','#f1f5f9'],'event'=>['#0A14E0','#ECEEFF'],
+        $catColors = ['general'=>['#475569','#f1f5f9'],'event'=>['#0A14E0','#ECEEFF'],
                       'urgent'=>['#b71c1c','#ffebee'],'meeting'=>['#1b5e20','#e8f5e9'],
                       'fundraiser'=>['#880e4f','#fce4ec'],'congratulations'=>['#e65100','#fff3e0']];
         foreach($history as $h):
-            $cc = $catColors[$h['category']] ?? ['#64748b','#f1f5f9'];
+            $cc = $catColors[$h['category']] ?? ['#475569','#f1f5f9'];
         ?>
         <div class="hist-item" onclick="reuseMessage(<?= htmlspecialchars(json_encode($h['title'])) ?>, <?= htmlspecialchars(json_encode($h['message'])) ?>, '<?= h($h['category']) ?>')">
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem">
@@ -545,6 +630,7 @@ require_once __DIR__ . '/../includes/header.php';
                         <span>👤 <?= h($h['sender'] ?? 'Admin') ?></span>
                         <span>🕐 <?= date('d M Y H:i', strtotime($h['sent_at'])) ?></span>
                         <span class="hist-cat" style="background:<?= $cc[1] ?>;color:<?= $cc[0] ?>"><?= ucfirst($h['category']) ?></span>
+                        <?php if (($h['method'] ?? '') === 'whatsapp'): ?><span class="hist-cat" style="background:#E7F8EE;color:#0E6B37">💬 Auto · <?= (int)$h['recipients'] ?> members</span><?php endif; ?>
                     </div>
                     <div class="hist-preview"><?= h($h['message']) ?></div>
                 </div>
@@ -558,11 +644,69 @@ require_once __DIR__ . '/../includes/header.php';
 
 </div><!-- end .bc-wrap -->
 
+<style>
+.bc-auto{background:#F5F7FF;border:1px solid #E3E7F5;border-radius:18px;padding:1rem;margin:.4rem 0 .9rem}
+.btn-send-auto{width:100%;min-height:52px;margin-top:.7rem;display:flex;align-items:center;justify-content:center;gap:.55rem;border:0;border-radius:16px;cursor:pointer;
+  font-family:inherit;font-weight:800;font-size:.98rem;color:#fff;background:linear-gradient(105deg,#D9050F 0%,#8A0A8E 50%,#0A14E0 100%);box-shadow:0 12px 24px -14px rgba(10,20,224,.8)}
+.btn-send-auto:disabled{opacity:.6;cursor:not-allowed}
+.btn-send-auto:active:not(:disabled){transform:scale(.98)}
+.bc-progress{display:flex;align-items:center;gap:.55rem;margin-top:.7rem;padding:.65rem .8rem;border-radius:12px;background:#fff;border:1px solid #E3E7F5;font-size:.86rem;font-weight:600;color:#3B4266}
+.bc-progress[hidden]{display:none}
+.bc-spin{width:16px;height:16px;border-radius:50%;border:2.5px solid #D6DAFF;border-top-color:#0A14E0;animation:bcspin .8s linear infinite;flex-shrink:0}
+.bc-progress.done .bc-spin{animation:none;border-color:#15803D;background:#15803D}
+@keyframes bcspin{to{transform:rotate(360deg)}}
+.bc-note{font-size:.78rem;color:#565D82;margin-top:.55rem}
+.bc-or{display:flex;align-items:center;gap:.6rem;margin:.2rem 0 .7rem;font-size:.78rem;color:#565D82}
+.bc-or::before,.bc-or::after{content:'';flex:1;height:1px;background:#E3E7F5}
+@media (prefers-reduced-motion:reduce){.bc-spin{animation:none}}
+</style>
 <script>
 var CLUB  = <?= json_encode($CLUB) ?>;
 var PLACE = <?= json_encode($PLACE) ?>;
 var GROUP = <?= json_encode($GROUP) ?>;
 var selectedCat = 'general';
+var BC_CSRF = <?= json_encode(csrfToken()) ?>;
+var BC_COUNTS = <?= json_encode($audCounts) ?>;
+var BC_WORKER = <?= json_encode(url('modules/wa_worker.php') . '?lazy=1') ?>;
+function bcPost(data){
+  var fd = new FormData(); Object.keys(data).forEach(function(k){ fd.append(k, data[k]); }); fd.append('_csrf', BC_CSRF);
+  return fetch(location.pathname, {method:'POST', body:fd, credentials:'same-origin'}).then(function(r){ return r.json(); });
+}
+function bcAudChange(){
+  var a = document.getElementById('bcAud').value, n = BC_COUNTS[a] || 0;
+  document.getElementById('bcAutoLbl').textContent = a === 'me' ? 'Send a test to my WhatsApp' : ('Send to ' + n + ' member' + (n === 1 ? '' : 's') + ' on WhatsApp');
+}
+function bcQueue(){
+  var msg = document.getElementById('bcMsg').value.trim();
+  var title = document.getElementById('bcTitle').value.trim();
+  var aud = document.getElementById('bcAud').value, n = BC_COUNTS[aud] || 0;
+  if (!msg) { alert('Please write a message first!'); document.getElementById('bcMsg').focus(); return; }
+  if (aud !== 'me' && !confirm('Send this message to ' + n + ' member' + (n === 1 ? '' : 's') + ' on WhatsApp?')) return;
+  var btn = document.getElementById('bcAutoBtn'); btn.disabled = true;
+  bcPost({ajax:'bc_queue', title:title, message:msg, cat:selectedCat, audience:aud}).then(function(d){
+    btn.disabled = false;
+    showToast(d.ok ? ('✅ ' + d.msg) : ('⚠️ ' + d.msg));
+    if (d.ok && d.queued) { bcWatch(); }
+  }).catch(function(){ btn.disabled = false; showToast('⚠️ Network error. Try again.'); });
+}
+var bcTimer = null, bcLastKick = 0;
+function bcWatch(){
+  var box = document.getElementById('bcProgress'), txt = document.getElementById('bcProgressTxt');
+  if (!box) return;
+  box.hidden = false; box.classList.remove('done');
+  clearInterval(bcTimer);
+  var tick = function(){
+    // keep the background sender going while this page is open
+    if (Date.now() - bcLastKick > 50000) { bcLastKick = Date.now(); fetch(BC_WORKER, {credentials:'same-origin', keepalive:true}).catch(function(){}); }
+    bcPost({ajax:'bc_status'}).then(function(d){
+      if (!d.ok) return;
+      if (d.pending > 0) { txt.textContent = d.pending + ' message' + (d.pending === 1 ? '' : 's') + ' still sending in the background…'; }
+      else { txt.textContent = 'All messages sent ✓'; box.classList.add('done'); clearInterval(bcTimer); }
+    }).catch(function(){});
+  };
+  tick(); bcTimer = setInterval(tick, 6000);
+}
+<?php if ($bcPending): ?>document.addEventListener('DOMContentLoaded', bcWatch);<?php endif; ?>
 
 // ── Templates ──────────────────────────────────────────────
 var templates = {
