@@ -2,6 +2,26 @@
 
 Newest first. The short guide is in the main README.md.
 
+## 🏷 v7.9.7 — barcode label gallery
+
+- modules/label_designs: 10 designs drawn at a base size and scaled to any
+  of 11 sizes (scale_layout: x / w by width, y / heights by height, fonts
+  and line widths by the smaller change; older 8 mm text rows get rh).
+- Barcode Designer: 🎨 Gallery (design + size + live preview → new
+  template / put on this one / ★ default design and size); size presets
+  and typed sizes resize every field ("Resize all fields with the label");
+  Design tools (box, colour band, line) and text options (colour, band
+  behind, prefix, row height); canvas zooms to fit; one draw_element for
+  designer and gallery.
+- render_labels_pdf: box / hline shapes, text colour, bg band, serif,
+  prefix, row height rh; barcode image asked in its space's shape.
+- barcode_gen: a wide, low barcode space gets shorter bars (never below
+  9 mm module height) so it uses the width.
+- ensure_gallery_designs: Modern, Classic, Expiry date, Barcode, Shelf,
+  Shelf offer added once; Modern 50×30 replaces the plain install starter
+  as ★ default (a default the shop chose is kept). create_template stores
+  show_border (default 1).
+
 ## 📐 v7.9.6 — item grid review (UI/UX Pro Max)
 
 - Default widths retuned so the 17 default columns total 1235 px — no

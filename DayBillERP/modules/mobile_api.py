@@ -1007,7 +1007,7 @@ def label_designs(user):
     need(user, "labels")
     from modules import barcode_designer as bd
     try:
-        bd.ensure_ready_designs()
+        bd.ensure_ready_designs(); bd.ensure_gallery_designs()
     except Exception:
         pass
     out = []

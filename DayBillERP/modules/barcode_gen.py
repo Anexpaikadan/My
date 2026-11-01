@@ -188,12 +188,24 @@ def render_barcode(value: str, fmt: str = "code128",
                 # not a real EAN-13: printing it as EAN would silently change
                 # the digits and the label wouldn't scan back to this product
                 name, data = "code128", value
-            obj = pybarcode.get(name, data, writer=ImageWriter())
-            buf = io.BytesIO()
-            obj.write(buf, options={"module_height": 14, "text_distance": 5,
-                                    "quiet_zone": 2, "font_size": 9})
-            buf.seek(0)
-            img = Image.open(buf).convert("RGB")
+            def _draw(mh):
+                obj = pybarcode.get(name, data, writer=ImageWriter())
+                buf = io.BytesIO()
+                obj.write(buf, options={"module_height": mh, "text_distance": 5,
+                                        "quiet_zone": 2, "font_size": 9})
+                buf.seek(0)
+                return Image.open(buf).convert("RGB")
+            img = _draw(14)
+            # v7.9.7: a wide, low space (shelf label) → shorter bars, so the
+            # barcode uses the width instead of a narrow strip in the middle
+            want = width / float(height or 1)
+            if want > img.width / float(img.height) * 1.15:
+                mh = 14.0
+                for _i in range(3):
+                    mh = max(9.0, mh * (img.width / float(img.height)) / want)   # bars stay scannable
+                    img = _draw(mh)
+                    if mh <= 9.0 or img.width / float(img.height) >= want * 0.92:
+                        break
             # scale PROPORTIONALLY (stretching squashed the digits into the
             # bars and could make scanners misread), then pad to the size
             scale = min(width / img.width, height / img.height)

@@ -17,6 +17,63 @@ import modules.barcode_designer as bd
 PXMM = 3.0  # canvas pixels per mm (labels are small, so zoom up)
 
 
+def draw_element(cv, ox, oy, el, k=PXMM, sel=False, accent="#F59E0B"):
+    """One label element on a Tk canvas (designer and gallery preview):
+    k = canvas pixels per mm. Returns the element's height in mm."""
+    x = ox + float(el.get("x", 2) or 0) * k
+    y = oy + float(el.get("y", 2) or 0) * k
+    w = float(el.get("w", 30) or 30) * k
+    key = el.get("key")
+    if key == "box":
+        h = float(el.get("hh") or 5) * k
+        cv.create_rectangle(x, y, x + w, y + h, fill=el.get("fill") or "",
+                            outline=el.get("stroke") or ("" if el.get("fill") else "#9CA3AF"),
+                            width=max(1, float(el.get("lw") or 0.4) * 0.3528 * k))   # lw is in points, like the PDF
+        if sel:
+            cv.create_rectangle(x - 1, y - 1, x + w + 1, y + h + 1, outline=accent, width=2, dash=(3, 2))
+        return h / k
+    if key == "hline":
+        cv.create_line(x, y, x + w, y, fill=el.get("color") or "#111827",
+                       width=max(1, float(el.get("lw") or 0.3) * 0.3528 * k))
+        if sel:
+            cv.create_rectangle(x, y - 3, x + w, y + 3, outline=accent, width=2, dash=(3, 2))
+        return 2.0
+    if key in ("barcode", "qr"):
+        h = float(el.get("bh", 14) or 14) * k if key == "barcode" else w
+        if key == "barcode":
+            bars = max(12, int(w / 3))
+            for i in range(bars):
+                if i % 3 != 1:
+                    bx = x + i * w / bars
+                    cv.create_rectangle(bx, y, bx + max(1, w / bars * (0.5 + (i % 2) * 0.4)),
+                                        y + h * 0.78, fill="#111827", outline="")
+        else:
+            cv.create_rectangle(x, y, x + w, y + h, outline="#111827", width=2)
+            cv.create_text(x + w / 2, y + h / 2, text="QR", font=("Segoe UI", 8, "bold"))
+        if sel:
+            cv.create_rectangle(x, y, x + w, y + h, outline=accent, width=2, dash=(3, 2))
+        return h / k
+    rh = float(el.get("rh") or 8) * k
+    size = max(4, float(el.get("font", 8) or 8))
+    px = -max(5, int(round(size * 0.3528 * k * 1.15)))      # true to scale
+    fam = "Times New Roman" if el.get("serif") else "Segoe UI"
+    font = (fam, px, "bold" if el.get("bold") else "normal")
+    if el.get("bg"):
+        cv.create_rectangle(x, y, x + w, y + rh, fill=el["bg"], outline="")
+    if sel:
+        cv.create_rectangle(x, y, x + w, y + rh, outline=accent, width=2)
+    text = "%s%s" % (el.get("prefix") or "", el.get("text") or el.get("label") or "")
+    fill = el.get("color") or "#111827"
+    al = el.get("align") or "left"
+    if al == "center":
+        cv.create_text(x + w / 2, y + rh / 2, anchor="center", text=text, font=font, fill=fill)
+    elif al == "right":
+        cv.create_text(x + w - 2, y + rh / 2, anchor="e", text=text, font=font, fill=fill)
+    else:
+        cv.create_text(x + 2, y + rh / 2, anchor="w", text=text, font=font, fill=fill)
+    return rh / k
+
+
 class BarcodeDesignerView:
     def __init__(self, parent, start="design"):
         self.start = start
@@ -27,6 +84,7 @@ class BarcodeDesignerView:
         self.elements = []
         self.sel_id = None
         self._drag = None
+        self.k = PXMM                        # canvas pixels per mm (zoomed to fit)
 
         if not bd.tables_ready():
             tk.Label(self.frame,
@@ -49,6 +107,10 @@ class BarcodeDesignerView:
         nb.add(self.tab_design, text="  🎨  Label Designer  ")
         self._build_designer(self.tab_design)
         self._build_batch(self.tab_batch)
+        try:                                  # v7.9.7: the gallery's ready designs, once
+            bd.ensure_gallery_designs()
+        except Exception:
+            pass
         self._load_templates()
         nb.select(self.tab_batch if self.start == "print" else self.tab_design)
 
@@ -86,6 +148,9 @@ class BarcodeDesignerView:
                                    font=("Segoe UI", 9), width=28)
         self.tpl_cb.pack(side="left", pady=7)
         self.tpl_cb.bind("<<ComboboxSelected>>", lambda e: self._on_pick())
+        tk.Button(strip, text="🎨 Gallery", font=("Segoe UI", 9, "bold"), bg=C["primary"],
+                  fg="white", relief="flat", padx=10, pady=4, cursor="hand2",
+                  command=self._gallery).pack(side="left", padx=(8, 2))
         for txt, cmd in (("＋ New", self._new), ("⧉ Clone", self._clone),
                          ("★ Default", self._set_default), ("🗑 Delete", self._delete)):
             tk.Button(strip, text=txt, font=("Segoe UI", 9), bg=C["card_bg"],
@@ -127,6 +192,7 @@ class BarcodeDesignerView:
         self.canvas.bind("<Button-1>", self._click)
         self.canvas.bind("<B1-Motion>", self._move)
         self.canvas.bind("<ButtonRelease-1>", lambda e: setattr(self, "_drag", None))
+        self.canvas.bind("<Configure>", lambda e: self._redraw(), add="+")
         self.frame.winfo_toplevel().bind("<Delete>", self._del_key, add="+")
 
         # right properties
@@ -177,10 +243,17 @@ class BarcodeDesignerView:
         e1 = tk.Entry(self.props, textvariable=self.p_w, font=("Segoe UI", 9),
                       relief="solid", bd=1); e1.pack(fill="x", ipady=3)
         e1.bind("<KeyRelease>", lambda e: self._redraw())
+        e1.bind("<Return>", lambda e: self._typed_size()); e1.bind("<FocusOut>", lambda e: self._typed_size())
         lbl("Label Height (mm)")
         e2 = tk.Entry(self.props, textvariable=self.p_h, font=("Segoe UI", 9),
                       relief="solid", bd=1); e2.pack(fill="x", ipady=3)
         e2.bind("<KeyRelease>", lambda e: self._redraw())
+        e2.bind("<Return>", lambda e: self._typed_size()); e2.bind("<FocusOut>", lambda e: self._typed_size())
+        if not hasattr(self, "resize_var"):
+            self.resize_var = tk.BooleanVar(value=True)
+        tk.Checkbutton(self.props, text="Resize all fields with the label", variable=self.resize_var,
+                       bg=C["card_bg"], activebackground=C["card_bg"],
+                       font=("Segoe UI", 9)).pack(anchor="w", pady=(4, 0))
         lbl("Paper")
         cb2 = ttk.Combobox(self.props, textvariable=self.p_mode, state="readonly",
                            values=["thermal", "a4sheet"], font=("Segoe UI", 9))
@@ -219,9 +292,9 @@ class BarcodeDesignerView:
         # quick size presets
         lbl("Quick Sizes")
         presets = tk.Frame(self.props, bg=C["card_bg"]); presets.pack(fill="x")
-        for i, (label, w, h) in enumerate((("50×25", 50, 25), ("40×25", 40, 25),
-                                           ("30×20", 30, 20), ("60×40", 60, 40),
-                                           ("75×50", 75, 50), ("100×50", 100, 50))):
+        from modules import label_designs as _LD
+        quick = [("%g×%g" % (w_, h_), w_, h_) for _l, w_, h_, sheet_ in _LD.SIZES if not sheet_]
+        for i, (label, w, h) in enumerate(quick):
             tk.Button(presets, text=label, font=("Segoe UI", 8), bg=C["primary_light"],
                       fg=C["primary"], relief="flat", padx=6, pady=3, cursor="hand2",
                       command=lambda w=w, h=h: self._set_size(w, h)).grid(
@@ -248,9 +321,25 @@ class BarcodeDesignerView:
             e = tk.Entry(self.props, textvariable=v, font=("Segoe UI", 9),
                          relief="solid", bd=1); e.pack(fill="x", ipady=3)
             v.trace("w", lambda *a: self._set_el(el, key, v.get()))
+        if el.get("key") in ("box", "hline"):
+            fld("X (mm)", "x"); fld("Y (mm)", "y"); fld("Width (mm)", "w")
+            if el["key"] == "box":
+                fld("Height (mm)", "hh"); fld("Fill colour (#RRGGBB, empty = none)", "fill")
+                fld("Line colour (empty = none)", "stroke"); fld("Corner radius (mm)", "radius")
+            else:
+                fld("Colour", "color")
+            fld("Line width (mm)", "lw")
+            tk.Button(self.props, text="🗑 Delete", font=("Segoe UI", 9), bg="#FEF2F2", fg=C["danger"],
+                      relief="flat", padx=10, pady=5, cursor="hand2", command=self._del_el).pack(anchor="w", pady=10)
+            return
         fld("Label / text", "label")
         fld("X (mm)", "x"); fld("Y (mm)", "y")
         fld("Width (mm)", "w")
+        if el.get("key") not in ("barcode", "qr"):
+            fld("Row height (mm)", "rh") if "rh" in el else None
+            fld("Text before (e.g. EXP )", "prefix")
+            fld("Text colour (#RRGGBB)", "color")
+            fld("Band behind the text (#RRGGBB)", "bg")
         if el.get("key") == "barcode":
             if "bh" not in el:
                 el["bh"] = 14
@@ -273,7 +362,7 @@ class BarcodeDesignerView:
                   cursor="hand2", command=self._del_el).pack(anchor="w", pady=10)
 
     def _set_el(self, el, key, val):
-        if key in ("x", "y", "w", "font", "bh"):
+        if key in ("x", "y", "w", "font", "bh", "hh", "rh", "lw", "radius"):
             try: el[key] = float(val)
             except ValueError: return
         else:
@@ -281,7 +370,167 @@ class BarcodeDesignerView:
         self._redraw()
 
     def _set_size(self, w, h):
+        """A new label size: every field moves / resizes with it (v7.9.7)."""
+        self._resize_to(float(w), float(h))
         self.p_w.set(str(w)); self.p_h.set(str(h)); self._redraw()
+
+    def _resize_to(self, w, h):
+        old = getattr(self, "_dims", None)
+        if old and (abs(old[0] - w) > 1e-6 or abs(old[1] - h) > 1e-6) and \
+                getattr(self, "resize_var", None) is not None and self.resize_var.get() and self.elements:
+            from modules import label_designs as LD
+            keep = {e["id"]: e for e in self.elements}
+            self.elements = LD.scale_layout(self.elements, old[0], old[1], w, h)
+            for e in self.elements:                 # labels / ids stay
+                e.setdefault("label", keep.get(e.get("id"), {}).get("label", e.get("key")))
+        self._dims = (w, h)
+
+    def _typed_size(self):
+        try:
+            w, h = float(self.p_w.get()), float(self.p_h.get())
+        except ValueError:
+            return
+        if w >= 10 and h >= 8:
+            self._resize_to(w, h)
+            self._redraw()
+
+    # ── v7.9.7: ready designs in any size ────────────────────
+    def _gallery(self):
+        """Pick a design (Modern, Classic, Expiry, Shelf …) and a size; see it
+        drawn; make a new template from it or put it on this one."""
+        from modules import label_designs as LD
+        C = self.C
+        top = tk.Toplevel(self.frame)
+        top.title("Label design gallery")
+        top.configure(bg=C["card_bg"])
+        top.geometry("820x520")
+        tk.Label(top, text="🎨  Label design gallery", font=("Segoe UI", 12, "bold"),
+                 bg=C["primary"], fg="white", anchor="w", padx=14, pady=8).pack(fill="x")
+        body = tk.Frame(top, bg=C["card_bg"]); body.pack(fill="both", expand=True, padx=12, pady=10)
+        left = tk.Frame(body, bg=C["card_bg"]); left.pack(side="left", fill="y")
+        tk.Label(left, text="Design", font=("Segoe UI", 9, "bold"), bg=C["card_bg"]).pack(anchor="w")
+        lb = tk.Listbox(left, height=len(LD.DESIGN_NAMES), font=("Segoe UI", 10), width=18,
+                        exportselection=False, activestyle="none", selectbackground=C["primary"],
+                        selectforeground="white")
+        for n in LD.DESIGN_NAMES:
+            lb.insert("end", "  " + n)
+        lb.pack(anchor="w")
+        lb.selection_set(0)
+        tk.Label(left, text="Size", font=("Segoe UI", 9, "bold"), bg=C["card_bg"]).pack(anchor="w", pady=(10, 0))
+        size_v = tk.StringVar(value=self._default_size_label())
+        scb = ttk.Combobox(left, textvariable=size_v, values=[x[0] for x in LD.SIZES], state="readonly",
+                           width=26)
+        scb.pack(anchor="w")
+        right = tk.Frame(body, bg=C["card_bg"]); right.pack(side="left", fill="both", expand=True, padx=(14, 0))
+        desc = tk.Label(right, text="", font=("Segoe UI", 9), bg=C["card_bg"], fg=C["text_secondary"],
+                        anchor="w", justify="left")
+        desc.pack(fill="x")
+        cv = tk.Canvas(right, bg="#E4E7EE", highlightthickness=0, height=330)
+        cv.pack(fill="both", expand=True, pady=6)
+        state = {}
+
+        def show(*_a):
+            sel = lb.curselection()
+            name = LD.DESIGN_NAMES[sel[0] if sel else 0]
+            _l, w, h, _sh = LD.size_of(size_v.get())
+            els = LD.layout(name, w, h)
+            state.update(name=name, w=w, h=h, els=els)
+            desc.configure(text="%s — %s  ·  %g × %g mm" % (name, LD.DESIGNS[name][0], w, h))
+            cv.delete("all")
+            cv.update_idletasks()
+            cw, ch = max(cv.winfo_width(), 400), max(cv.winfo_height(), 300)
+            k = min((cw - 40) / w, (ch - 40) / h)
+            ox, oy = (cw - w * k) / 2, (ch - h * k) / 2
+            cv.create_rectangle(ox + 3, oy + 3, ox + w * k + 3, oy + h * k + 3, fill="#C9CED8", outline="")
+            cv.create_rectangle(ox, oy, ox + w * k, oy + h * k, fill="white",
+                                outline="" if LD.own_frame(name) else "#9CA3AF")
+            for e in els:
+                draw_element(cv, ox, oy, self._sample_el(e), k)
+        lb.bind("<<ListboxSelect>>", show)
+        scb.bind("<<ComboboxSelected>>", show)
+        cv.bind("<Configure>", show)
+        bar = tk.Frame(top, bg=C["card_bg"]); bar.pack(fill="x", padx=12, pady=(0, 12))
+        dflt_v = tk.BooleanVar(value=False)
+        tk.Checkbutton(bar, text="Make it the ★ default design and size", variable=dflt_v,
+                       bg=C["card_bg"], activebackground=C["card_bg"]).pack(side="left")
+        res = {}
+
+        def use(mode):
+            res.update(state, mode=mode, size=size_v.get(), default=dflt_v.get())
+            top.destroy()
+        tk.Button(bar, text="Cancel", relief="flat", padx=12, pady=5, command=top.destroy).pack(side="right")
+        tk.Button(bar, text="Put on this template", relief="flat", padx=12, pady=5,
+                  state="normal" if self.template else "disabled",
+                  command=lambda: use("apply")).pack(side="right", padx=4)
+        tk.Button(bar, text="＋ New template from it", font=("Segoe UI", 10, "bold"), bg=C["primary"],
+                  fg="white", relief="flat", padx=14, pady=5, command=lambda: use("new")).pack(side="right")
+        self._gallery_win, self._gallery_show, self._gallery_lb, self._gallery_size = top, show, lb, size_v
+        self._gallery_use = use
+        top.after(50, show)
+        try:
+            top.grab_set()
+        except Exception:
+            pass
+        top.wait_window()
+        if res:
+            return self._use_design(res)
+
+    def _sample_el(self, e):
+        """An element with sample text, for the gallery preview."""
+        sample = {"product_name": "Basmati Rice 5kg", "product_name_ar": "أرز بسمتي",
+                  "price_vat": bd._money(24.5), "unit": "PCs", "exp_date": "2027-03-31",
+                  "mfg_date": "2026-09-30", "batch": "B2611", "product_code": "P0001",
+                  "old_price": bd._money(29), "offer_text": "SAVE 15%"}
+        d = dict(e)
+        if d.get("key") in sample:
+            d["label"] = sample[d["key"]]
+        return d
+
+    def _default_size_label(self):
+        from modules import label_designs as LD
+        v = str(cfg.get("label_default_size", "") or "")
+        return v if any(s[0] == v for s in LD.SIZES) else LD.DEFAULT_SIZE
+
+    def _use_design(self, res):
+        from modules import label_designs as LD
+        if res.get("default"):
+            cfg.set("label_default_size", res["size"])
+            try:
+                cfg.save_settings()
+            except Exception:
+                pass
+        if res["mode"] == "apply" and self.template:
+            self.elements = LD.layout(res["name"], res["w"], res["h"])
+            self.p_w.set(str(res["w"])); self.p_h.set(str(res["h"]))
+            self._dims = (float(res["w"]), float(res["h"]))
+            if hasattr(self, "p_border"):
+                self.p_border.set(not LD.own_frame(res["name"]))
+            self._redraw()
+            tid = self.template["template_id"]
+        else:
+            name = "%s %g×%g" % (res["name"], res["w"], res["h"])
+            have = {str(t.get("template_name") or "") for t in bd.list_templates()}
+            base, n = name, 2
+            while name in have:
+                name = "%s (%d)" % (base, n); n += 1
+            tid = bd.create_template(LD.template_data(name, res["name"], res["size"]))
+            self._load_templates()
+            for idx, t in enumerate(self._templates):
+                if t["template_id"] == tid:
+                    self.tpl_cb.current(idx); self._on_pick(); break
+        if res.get("default"):
+            if res["mode"] == "apply":
+                self._quiet_save = True
+                try:
+                    self._save()
+                finally:
+                    self._quiet_save = False
+            bd.set_default(tid)
+            self._load_templates()
+            for idx, t in enumerate(self._templates):
+                if t["template_id"] == tid:
+                    self.tpl_cb.current(idx); self._on_pick(); break
+        return tid
 
     # ── Templates ─────────────────────────────────────────────
     def _load_templates(self):
@@ -304,6 +553,8 @@ class BarcodeDesignerView:
         self.template = dict(self._templates[i])
         self.elements = bd.load_layout(self.template["template_id"])
         self.sel_id = None
+        self._dims = (float(self.template.get("label_width_mm") or 50),
+                      float(self.template.get("label_height_mm") or 25))
         self._tpl_props(); self._redraw()
 
     SIZES = [("50 × 25 mm", 50, 25), ("40 × 25 mm", 40, 25), ("38 × 25 mm", 38, 25),
@@ -450,7 +701,13 @@ class BarcodeDesignerView:
             lw = float(self.p_w.get()); lh = float(self.p_h.get())
         except ValueError:
             lw, lh = 50, 25
-        pw, ph = int(lw * PXMM), int(lh * PXMM)
+        # v7.9.7: the label is drawn as big as the canvas allows (fit)
+        try:
+            cw, ch = max(self.canvas.winfo_width(), 300), max(self.canvas.winfo_height(), 200)
+        except Exception:
+            cw, ch = 600, 400
+        self.k = max(PXMM, min((cw - 80) / max(lw, 1), (ch - 80) / max(lh, 1), 14.0))
+        pw, ph = int(lw * self.k), int(lh * self.k)
         ox, oy = 40, 40
         self.canvas.create_rectangle(ox, oy, ox + pw, oy + ph,
                                      fill="white", outline="#9CA3AF", width=1)
@@ -461,42 +718,22 @@ class BarcodeDesignerView:
             self._draw_el(ox, oy, el)
 
     def _draw_el(self, ox, oy, el):
-        x = ox + float(el.get("x", 2)) * PXMM
-        y = oy + float(el.get("y", 2)) * PXMM
-        w = float(el.get("w", 30)) * PXMM
-        sel = (el["id"] == self.sel_id)
-        if el["key"] in ("barcode", "qr"):
-            h = float(el.get("bh", 14) or 14) * PXMM if el["key"] == "barcode" else w
-            self.canvas.create_rectangle(x, y, x + w, y + h,
-                                         outline=(self.C["accent"] if sel else "#888"),
-                                         width=(2 if sel else 1), dash=(3, 2))
-            self.canvas.create_text(x + w / 2, y + h / 2,
-                                    text=("▮▮▮ BARCODE ▮▮▮" if el["key"] == "barcode"
-                                          else "▣ QR"),
-                                    font=("Segoe UI", 8), fill="#333")
-            el["_h"] = h / PXMM
-        else:
-            h = 8 * PXMM
-            font = ("Segoe UI", max(6, int(el.get("font", 8))),
-                    "bold" if el.get("bold") else "normal")
-            if sel:
-                self.canvas.create_rectangle(x, y, x + w, y + h,
-                                             outline=self.C["accent"], width=2)
-            al = el.get("align") or "left"
-            if al == "center":
-                self.canvas.create_text(x + w / 2, y + h / 2, anchor="center",
-                                        text=el["label"], font=font, fill="#111")
-            elif al == "right":
-                self.canvas.create_text(x + w - 2, y + h / 2, anchor="e",
-                                        text=el["label"], font=font, fill="#111")
-            else:
-                self.canvas.create_text(x + 2, y + h / 2, anchor="w",
-                                        text=el["label"], font=font, fill="#111")
+        el["_h"] = draw_element(self.canvas, ox, oy, el, self.k, el["id"] == self.sel_id,
+                                self.C.get("accent", "#F59E0B"))
 
     def _add_el(self, key, label):
         if not self.template:
             messagebox.showinfo("Template", "Create or pick a template first."); return
         eid = max([e["id"] for e in self.elements], default=0) + 1
+        shape = {"box": {"key": "box", "hh": 8, "stroke": "#111827", "lw": 0.4},
+                 "band": {"key": "box", "hh": 7, "fill": "#111827"},
+                 "hline": {"key": "hline", "lw": 0.3, "color": "#111827"}}.get(key)
+        if shape:
+            shape.update(id=eid, label=label, x=2, y=2, w=20)
+            self.elements.append(shape)
+            self.sel_id = eid
+            self._redraw()
+            return
         self.elements.append({"id": eid, "key": key, "label": label,
                               "x": 3, "y": 3 + (len(self.elements) % 6) * 5,
                               "w": 40, "h": 8, "font": 8, "bold": False})
@@ -507,10 +744,10 @@ class BarcodeDesignerView:
         ox, oy = 40, 40
         hit = None
         for el in reversed(self.elements):
-            x = ox + float(el.get("x", 2)) * PXMM
-            y = oy + float(el.get("y", 2)) * PXMM
-            w = float(el.get("w", 30)) * PXMM
-            h = float(el.get("_h", el.get("h", 8))) * PXMM
+            x = ox + float(el.get("x", 2)) * self.k
+            y = oy + float(el.get("y", 2)) * self.k
+            w = float(el.get("w", 30)) * self.k
+            h = float(el.get("_h", el.get("h", 8))) * self.k
             if x <= event.x <= x + w and y <= event.y <= y + h:
                 hit = el; break
         if hit:
@@ -524,8 +761,8 @@ class BarcodeDesignerView:
         if not self._drag:
             return
         px, py, el = self._drag
-        el["x"] = max(0, float(el.get("x", 0)) + (event.x - px) / PXMM)
-        el["y"] = max(0, float(el.get("y", 0)) + (event.y - py) / PXMM)
+        el["x"] = max(0, float(el.get("x", 0)) + (event.x - px) / self.k)
+        el["y"] = max(0, float(el.get("y", 0)) + (event.y - py) / self.k)
         self._drag = (event.x, event.y, el)
         self._redraw()
 

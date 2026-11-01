@@ -34,8 +34,9 @@ def get_template(tid):
 def create_template(data):
     cols = ["template_name", "barcode_type", "label_width_mm", "label_height_mm",
             "paper_mode", "cols_per_sheet", "rows_per_sheet", "gap_x_mm",
-            "gap_y_mm", "margin_mm", "dpi", "layout_json"]
-    vals = [data.get(c) for c in cols]
+            "gap_y_mm", "margin_mm", "dpi", "layout_json", "show_border"]
+    dflt = {"show_border": 1, "dpi": 203}
+    vals = [data.get(c, dflt.get(c)) if data.get(c) is not None else dflt.get(c) for c in cols]
     ph = ",".join(["?"] * len(cols))
     db.execute(f"INSERT INTO barcode_templates ({','.join(cols)}) VALUES ({ph})",
                tuple(vals))
@@ -160,6 +161,7 @@ def render_labels_pdf(template, items, output_path):
     from reportlab.lib.units import mm
     from reportlab.pdfgen import canvas
     from reportlab.lib.pagesizes import A4
+    from reportlab.lib.colors import HexColor, black
     from modules.barcode_gen import render_barcode
     from PIL import Image
     import tempfile
@@ -208,6 +210,28 @@ def render_labels_pdf(template, items, output_path):
             ex = ox + x * mm
             ey = top - y * mm
             key = el.get("key")
+            if key == "box":                          # v7.9.7 design shapes
+                hh = max(0.2, min(float(el.get("hh") or 5), lh - y))
+                fill, stroke = el.get("fill") or "", el.get("stroke") or ""
+                if fill:
+                    c.setFillColor(HexColor(fill))
+                if stroke:
+                    c.setStrokeColor(HexColor(stroke)); c.setLineWidth(float(el.get("lw") or 0.4))
+                r = float(el.get("radius") or 0) * mm
+                if r:
+                    c.roundRect(ex, ey - hh * mm, w * mm, hh * mm, r, fill=1 if fill else 0,
+                                stroke=1 if stroke else 0)
+                else:
+                    c.rect(ex, ey - hh * mm, w * mm, hh * mm, fill=1 if fill else 0,
+                           stroke=1 if stroke else 0)
+                c.setFillColor(black); c.setStrokeColor(black)
+                continue
+            if key == "hline":
+                c.setStrokeColor(HexColor(el.get("color") or "#111827"))
+                c.setLineWidth(float(el.get("lw") or 0.3))
+                c.line(ex, ey, ex + w * mm, ey)
+                c.setStrokeColor(black)
+                continue
             if key in ("barcode", "qr"):
                 val = str(item.get("barcode_value") or item.get("product_code") or "")
                 if not val:
@@ -219,7 +243,7 @@ def render_labels_pdf(template, items, output_path):
                 else:
                     bh_mm = float(el.get("bh") or 14)
                     bh_mm = max(4.0, min(bh_mm, lh - y - 0.5))
-                    img = render_barcode(val, fmt, 600, 200)
+                    img = render_barcode(val, fmt, max(60, int(w * 24)), max(30, int(bh_mm * 24)))
                     bw, bh = w * mm, bh_mm * mm
                 if img:
                     tf = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
@@ -230,7 +254,12 @@ def render_labels_pdf(template, items, output_path):
                 txt = _field_value(key, item, el)
                 if txt in (None, ""):
                     continue
-                font = "Helvetica-Bold" if el.get("bold") else "Helvetica"
+                if el.get("prefix"):
+                    txt = "%s%s" % (el["prefix"], txt)
+                if el.get("serif"):
+                    font = "Times-Bold" if el.get("bold") else "Times-Roman"
+                else:
+                    font = "Helvetica-Bold" if el.get("bold") else "Helvetica"
                 size = max(5, int(float(el.get("font", 8) or 8)))
                 if key == "product_name_ar" or any("\u0600" <= ch <= "\u06FF" for ch in str(txt)):
                     try:
@@ -240,9 +269,14 @@ def render_labels_pdf(template, items, output_path):
                         txt = _pi._shape_arabic(str(txt))
                     except Exception:
                         pass
-                # designer draws text vertically centred in its row
-                row_mm = max(8.0, size * 0.3528 * 1.25)
+                # designer draws text vertically centred in its row (rh mm;
+                # older designs: 8 mm rows)
+                row_mm = float(el.get("rh") or 0) or max(8.0, size * 0.3528 * 1.25)
                 base = ey - row_mm / 2 * mm - size * 0.3528 * mm * 0.35
+                if el.get("bg"):                       # a band / badge behind the text
+                    c.setFillColor(HexColor(el["bg"]))
+                    c.rect(ex, ey - row_mm * mm, w * mm, row_mm * mm, fill=1, stroke=0)
+                c.setFillColor(HexColor(el["color"]) if el.get("color") else black)
                 c.setFont(font, size)
                 txt = _fit(txt, font, size, w * mm - 1 * mm)
                 al = el.get("align") or ("right" if key in ("product_name_ar", "unit_ar",
@@ -258,7 +292,10 @@ def render_labels_pdf(template, items, output_path):
                     x0 = (ex + w * mm / 2 - tw / 2) if al == "center" else \
                          (ex + w * mm - 0.5 * mm - tw) if al == "right" else ex + 0.5 * mm
                     c.setLineWidth(0.6)
+                    c.setStrokeColor(HexColor(el["color"]) if el.get("color") else black)
                     c.line(x0, base + size * 0.3, x0 + tw, base + size * 0.3)
+                    c.setStrokeColor(black)
+                c.setFillColor(black)
         return tmp_imgs
 
     all_tmp = []
@@ -421,6 +458,9 @@ TOOLBOX = {
         ("warehouse", "Warehouse"), ("rack", "Rack Number"),
         ("quantity", "Quantity"),
     ],
+    "Design": [
+        ("box", "Box / frame"), ("band", "Colour band"), ("hline", "Line"),
+    ],
     "Custom": [
         ("mfg_date", "Mfg Date"), ("exp_date", "Expiry Date"),
         ("supplier", "Supplier"), ("company_name", "Shop Name"),
@@ -465,6 +505,48 @@ READY_DESIGNS = [
         _el(4, "unit", "Unit", 44, 13, 23, 8, False, "right"),
         _el(5, "barcode", "Barcode", 6, 20, 58, bh=15)]),
 ]
+
+
+GALLERY_SEED = [("Modern 50×30", "Modern", "50 × 30 mm"),
+                ("Classic 50×30", "Classic", "50 × 30 mm"),
+                ("Expiry date 50×30", "Expiry date", "50 × 30 mm"),
+                ("Barcode 50×25", "Barcode", "50 × 25 mm"),
+                ("Shelf 80×35", "Shelf", "80 × 35 mm · shelf"),
+                ("Shelf offer 80×35", "Shelf offer", "80 × 35 mm · shelf")]
+
+
+def ensure_gallery_designs():
+    """v7.9.7: the gallery's main designs added once as ready templates;
+    Modern 50×30 becomes the ★ default when nothing is default yet."""
+    try:
+        from config import settings as cfg
+        if cfg.flag("label_gallery_v797", False) or not tables_ready():
+            return 0
+    except Exception:
+        return 0
+    from modules import label_designs as LD
+    have = {str(t.get("template_name") or "") for t in list_templates()}
+    n, first = 0, None
+    for name, design, size in GALLERY_SEED:
+        if name in have:
+            continue
+        try:
+            tid = create_template(LD.template_data(name, design, size))
+            first = first or tid
+            n += 1
+        except Exception:
+            pass
+    try:
+        # Modern becomes the ★ default unless the shop chose its own: the
+        # install's plain starter label doesn't count as a choice
+        cur = next((t for t in list_templates() if t.get("is_default")), None)
+        if first and (cur is None or str(cur.get("template_name") or "") == "Thermal 50x25 (Code128)"):
+            set_default(first)
+        cfg.set("label_gallery_v797", True)
+        cfg.save_settings()
+    except Exception:
+        pass
+    return n
 
 
 def ensure_ready_designs():

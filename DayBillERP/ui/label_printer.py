@@ -44,7 +44,7 @@ class LabelPrintPanel:
         self._matches = []
         self._company = self._company_name()
         try:
-            bd.ensure_ready_designs()
+            bd.ensure_ready_designs(); bd.ensure_gallery_designs()
         except Exception:
             pass
         self._build()

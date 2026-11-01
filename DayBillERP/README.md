@@ -1,7 +1,23 @@
-# DayBill ERP  v7.9.6
+# DayBill ERP  v7.9.7
 
 Billing, POS, inventory, accounts and HR for shops in 🇸🇦 Saudi Arabia, 🇦🇪 the UAE and 🇮🇳 India.
 **VAT / GST by country · ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
+
+## 🏷 v7.9.7 — barcode label gallery
+
+- **🎨 Gallery** (Barcode Labels ▸ Label Designer): Modern, Classic, Minimal,
+  Big price, **Expiry date** (EXP badge, MFG, batch), **Barcode** (framed),
+  **Shelf** (stripe, EN + AR name, big price), **Shelf offer** (red band, old
+  price struck), Mini, Jewellery — pick a size, see it, make a template or
+  put it on the current one. Six of them are added as ready templates;
+  **Modern 50×30 is the ★ default**, and the gallery can set the default
+  design and size.
+- **Change the size → every field resizes** (positions, widths, heights,
+  fonts; a wider label keeps its letter size). "Resize all fields with the
+  label" can be switched off.
+- **Design tools:** box / frame, colour band, line; text colour, a band
+  behind text, "EXP " style prefixes, serif type.
+- Barcodes use the width of their space; the designer zooms the label to fit.
 
 ## 📐 v7.9.6 — item grid review (UI/UX Pro Max)
 
