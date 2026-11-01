@@ -1,7 +1,20 @@
-# DayBill ERP  v7.9.7
+# DayBill ERP  v7.9.8
 
 Billing, POS, inventory, accounts and HR for shops in 🇸🇦 Saudi Arabia, 🇦🇪 the UAE and 🇮🇳 India.
 **VAT / GST by country · ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
+
+## ▮ v7.9.8 — barcodes that scan, shop name on every label
+
+- **Barcodes scan reliably:** drawn as sharp vector bars, each bar a whole
+  number of printer dots, with a quiet zone on both sides. Before, the
+  barcode was a shrunk picture that blurred on a 203-dpi printer.
+- **Barcode prints:** *System barcode (short — scans best)* — the gallery's
+  default —, *Product barcode*, or *As chosen on the Print screen*; digits
+  under the bars can be switched off. A 13-digit packet barcode that is too
+  long for a small space prints as EAN-13.
+- **Shop name** on every gallery design; the gallery's buttons open the
+  design for editing (move, resize, recolour, delete any field). Shelf
+  designs are offered from 58 mm wide.
 
 ## 🏷 v7.9.7 — barcode label gallery
 

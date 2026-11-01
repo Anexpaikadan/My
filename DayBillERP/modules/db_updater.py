@@ -10,7 +10,7 @@ import re
 try:                                    # one version for the whole app (config/version.py)
     from config.version import VERSION as APP_VERSION
 except Exception:
-    APP_VERSION = "7.9.7"
+    APP_VERSION = "7.9.8"
 
 # Ordered list of database patches shipped with the app.
 # (filename relative to project root, human description, version)
@@ -35,6 +35,11 @@ PATCHES = [
 
 # What changed in each version (shown in the Updates panel)
 CHANGELOG = [
+    ("7.9.8", ["▮ Barcodes scan reliably: printed as sharp vector bars sized to the printer's dots, with clear "
+               "margins (tested at 203 dpi black & white: every design and size scans).",
+               "🔢 Each design can print the short system barcode (default for the gallery — fewer, wider bars), "
+               "the product barcode, or what the Print screen chooses; digits under the bars on / off.",
+               "🏪 Every gallery design shows the shop name; every design opens for editing after you pick it."]),
     ("7.9.7", ["🏷 Barcode labels: 🎨 Gallery of ready designs — Modern, Classic, Minimal, Big price, Expiry date, "
                "Barcode, Shelf, Shelf offer, Mini, Jewellery — in any size; Modern 50×30 is the ★ default.",
                "📐 Change the label size and every field resizes with it.",

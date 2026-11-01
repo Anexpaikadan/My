@@ -2,6 +2,24 @@
 
 Newest first. The short guide is in the main README.md.
 
+## ▮ v7.9.8 — barcodes that scan, shop name on every label
+
+- Checked with a real decoder (zxing-cpp) on labels rasterised like a
+  thermal printer (203 dpi, 1-bit): 7.9.7 scanned 1 of 11 designs.
+- barcode_designer.vector_barcode: reportlab vector Code 128 / EAN-13,
+  bar width snapped to whole printer dots (template dpi), 10-module quiet
+  zones, digits drawn underneath; a too-long valid EAN-13 in Code 128
+  switches to EAN-13; the picture remains only as a fallback.
+- Barcode element "source": system / manual / auto (Print screen choice)
+  and "digits"; gallery designs default to the system barcode; the
+  gallery has a "Barcode prints" choice.
+- Every design carries the shop name (company_name); Shelf designs are
+  offered only from 58 × 30 mm (label_designs.sizes_for).
+- ensure_gallery_designs marks the database (a hidden row), not the PC,
+  so a second company / new database also gets the designs.
+- Test: every design × every offered size × (system / product barcode) =
+  200 labels decode at 203 dpi black & white.
+
 ## 🏷 v7.9.7 — barcode label gallery
 
 - modules/label_designs: 10 designs drawn at a base size and scaled to any

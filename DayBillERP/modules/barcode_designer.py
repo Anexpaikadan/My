@@ -233,9 +233,23 @@ def render_labels_pdf(template, items, output_path):
                 c.setStrokeColor(black)
                 continue
             if key in ("barcode", "qr"):
-                val = str(item.get("barcode_value") or item.get("product_code") or "")
+                # v7.9.8: a design can always print the short system barcode
+                # (fewer bars → wider bars → scans best) or the product's own
+                src = el.get("source") or "auto"
+                val = str((item.get("system_barcode") if src == "system" else
+                           item.get("manual_barcode") if src == "manual" else None)
+                          or item.get("barcode_value") or item.get("product_code") or "")
                 if not val:
                     continue
+                if key == "barcode":
+                    bh_mm = max(4.0, min(float(el.get("bh") or 14), lh - y - 0.3))
+                    try:
+                        vector_barcode(c, val, fmt, ex, ey, w * mm, bh_mm * mm,
+                                       dpi=float(template.get("dpi") or 203),
+                                       digits=el.get("digits", True))
+                        continue
+                    except Exception as _e:          # fall back to the picture
+                        print("[DayBill] vector barcode failed:", _e)
                 if key == "qr":
                     side = min(w, lh - y) * mm
                     img = render_barcode(val, "qr", 300, 300)
@@ -340,6 +354,57 @@ def render_labels_pdf(template, items, output_path):
         except Exception:
             pass
     return output_path
+
+
+def _ean_ok(v):
+    v = str(v or "")
+    if len(v) == 12 and v.isdigit():
+        return True
+    if len(v) != 13 or not v.isdigit():
+        return False
+    s_ = sum(int(d) * (3 if i % 2 else 1) for i, d in enumerate(v[:12]))
+    return (10 - s_ % 10) % 10 == int(v[12])
+
+
+def vector_barcode(c, val, fmt, x, top, wpt, hpt, dpi=203.0, digits=True):
+    """A sharp barcode drawn as vector bars — what scanners read best:
+    every bar a whole number of printer dots wide (203 dpi: 1 dot =
+    0.125 mm), a quiet zone of 10 bar-widths on both sides, the digits
+    under the bars. x / top = the space's top-left (PDF points)."""
+    from reportlab.graphics.barcode import createBarcodeDrawing
+    from reportlab.graphics import renderPDF
+    val = str(val)
+    kind = "EAN13" if (str(fmt).lower() == "ean13" and _ean_ok(val)) else "Code128"
+    dot = 72.0 / float(dpi or 203)
+    if kind == "EAN13":
+        modules, quiet = 95.0, 9.0
+    else:
+        probe = createBarcodeDrawing("Code128", value=val, barWidth=1, barHeight=10,
+                                     humanReadable=False, quiet=False)
+        modules, quiet = float(probe.width), 10.0
+        # too long for its space even at 1 printer dot per bar: a valid
+        # EAN-13 number (packet barcodes) is shorter as EAN-13 and scans
+        # back to the same digits
+        if (modules + 2 * quiet) * dot > wpt and len(val) == 13 and _ean_ok(val):
+            kind, modules, quiet = "EAN13", 95.0, 9.0
+    bw = wpt / (modules + 2 * quiet)
+    snapped = int(bw / dot) * dot
+    bw = snapped if snapped >= dot else max(bw, dot * 0.75)
+    bw = min(bw, dot * 6)                       # very short codes: not absurdly wide
+    tsize = max(5.0, min(9.0, hpt / 2.8346 * 0.5)) if digits else 0
+    text_h = tsize * 1.05 if digits else 0
+    bar_h = max(hpt - text_h - 0.8, hpt * 0.55)
+    d = createBarcodeDrawing(kind, value=val[:12] if kind == "EAN13" else val, barWidth=bw,
+                             barHeight=bar_h, humanReadable=False, quiet=False)
+    bx = x + (wpt - d.width) / 2.0
+    renderPDF.draw(d, c, bx, top - bar_h)
+    if digits:
+        txt = val if kind == "Code128" else val[:12] + str(
+            (10 - sum(int(d_) * (3 if i % 2 else 1) for i, d_ in enumerate(val[:12])) % 10) % 10)
+        c.setFont("Helvetica", tsize)
+        c.setFillColorRGB(0, 0, 0)
+        c.drawCentredString(x + wpt / 2.0, top - hpt + 0.6, txt)
+    return d.width
 
 
 def starter_label_layout(lw=50.0, lh=25.0):
@@ -515,12 +580,18 @@ GALLERY_SEED = [("Modern 50×30", "Modern", "50 × 30 mm"),
                 ("Shelf offer 80×35", "Shelf offer", "80 × 35 mm · shelf")]
 
 
+GALLERY_MARK = "__gallery_v797__"
+
+
 def ensure_gallery_designs():
-    """v7.9.7: the gallery's main designs added once as ready templates;
-    Modern 50×30 becomes the ★ default when nothing is default yet."""
+    """v7.9.7: the gallery's main designs added once PER DATABASE as ready
+    templates (a hidden row marks it, so a design the shop deleted is never
+    re-added); Modern 50×30 becomes the ★ default unless the shop chose one."""
+    if not tables_ready():
+        return 0
     try:
-        from config import settings as cfg
-        if cfg.flag("label_gallery_v797", False) or not tables_ready():
+        if db.fetchone("SELECT TOP 1 template_id FROM barcode_templates WHERE template_name=?",
+                       (GALLERY_MARK,)):
             return 0
     except Exception:
         return 0
@@ -537,13 +608,12 @@ def ensure_gallery_designs():
         except Exception:
             pass
     try:
-        # Modern becomes the ★ default unless the shop chose its own: the
-        # install's plain starter label doesn't count as a choice
+        # the install's plain starter label doesn't count as the shop's choice
         cur = next((t for t in list_templates() if t.get("is_default")), None)
         if first and (cur is None or str(cur.get("template_name") or "") == "Thermal 50x25 (Code128)"):
             set_default(first)
-        cfg.set("label_gallery_v797", True)
-        cfg.save_settings()
+        mark = create_template({"template_name": GALLERY_MARK, "layout_json": "[]"})
+        db.execute("UPDATE barcode_templates SET is_active=0 WHERE template_id=?", (mark,))
     except Exception:
         pass
     return n

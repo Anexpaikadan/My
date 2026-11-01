@@ -344,6 +344,22 @@ class BarcodeDesignerView:
             if "bh" not in el:
                 el["bh"] = 14
             fld("Barcode height (mm)", "bh")
+            # v7.9.8: which number the bars hold — the short system barcode
+            # has fewer, wider bars and scans best
+            tk.Label(self.props, text="Barcode prints", font=("Segoe UI", 8, "bold"),
+                     bg=C["card_bg"], fg=C["text_secondary"]).pack(anchor="w", pady=(6, 1))
+            srcs = list(self.BAR_SOURCES.items())
+            sv = tk.StringVar(value=self.BAR_SOURCES.get(el.get("source") or "auto"))
+            scb = ttk.Combobox(self.props, textvariable=sv, state="readonly",
+                               values=[t for _k, t in srcs], font=("Segoe UI", 9))
+            scb.pack(fill="x")
+            scb.bind("<<ComboboxSelected>>", lambda e_: self._set_el(
+                el, "source", next(k for k, t in srcs if t == sv.get())))
+            dv = tk.BooleanVar(value=el.get("digits", True))
+            self._el_digits = dv
+            tk.Checkbutton(self.props, text="Digits under the bars", variable=dv, bg=C["card_bg"],
+                           activebackground=C["card_bg"], font=("Segoe UI", 9),
+                           command=lambda: self._set_el(el, "digits", dv.get())).pack(anchor="w")
         elif el.get("key") != "qr":
             fld("Font size", "font")
             tk.Label(self.props, text="Align", font=("Segoe UI", 8, "bold"),
@@ -421,6 +437,12 @@ class BarcodeDesignerView:
         scb = ttk.Combobox(left, textvariable=size_v, values=[x[0] for x in LD.SIZES], state="readonly",
                            width=26)
         scb.pack(anchor="w")
+        tk.Label(left, text="Barcode prints", font=("Segoe UI", 9, "bold"), bg=C["card_bg"]).pack(anchor="w", pady=(10, 0))
+        src_v = tk.StringVar(value=self.BAR_SOURCES["system"])
+        ttk.Combobox(left, textvariable=src_v, values=list(self.BAR_SOURCES.values()), state="readonly",
+                     width=30).pack(anchor="w")
+        tk.Label(left, text="Every design can be edited after:\nmove, resize, recolour or\ndelete any field.",
+                 font=("Segoe UI", 8), bg=C["card_bg"], fg=C["text_secondary"], justify="left").pack(anchor="w", pady=(10, 0))
         right = tk.Frame(body, bg=C["card_bg"]); right.pack(side="left", fill="both", expand=True, padx=(14, 0))
         desc = tk.Label(right, text="", font=("Segoe UI", 9), bg=C["card_bg"], fg=C["text_secondary"],
                         anchor="w", justify="left")
@@ -432,6 +454,10 @@ class BarcodeDesignerView:
         def show(*_a):
             sel = lb.curselection()
             name = LD.DESIGN_NAMES[sel[0] if sel else 0]
+            ok = [x[0] for x in LD.sizes_for(name)]       # sizes this design fits
+            scb["values"] = ok
+            if size_v.get() not in ok:
+                size_v.set(ok[0])
             _l, w, h, _sh = LD.size_of(size_v.get())
             els = LD.layout(name, w, h)
             state.update(name=name, w=w, h=h, els=els)
@@ -456,15 +482,17 @@ class BarcodeDesignerView:
         res = {}
 
         def use(mode):
-            res.update(state, mode=mode, size=size_v.get(), default=dflt_v.get())
+            res.update(state, mode=mode, size=size_v.get(), default=dflt_v.get(),
+                       source=next(k for k, t in self.BAR_SOURCES.items() if t == src_v.get()))
             top.destroy()
         tk.Button(bar, text="Cancel", relief="flat", padx=12, pady=5, command=top.destroy).pack(side="right")
-        tk.Button(bar, text="Put on this template", relief="flat", padx=12, pady=5,
+        tk.Button(bar, text="✏ Put on this template & edit", relief="flat", padx=12, pady=5,
                   state="normal" if self.template else "disabled",
                   command=lambda: use("apply")).pack(side="right", padx=4)
-        tk.Button(bar, text="＋ New template from it", font=("Segoe UI", 10, "bold"), bg=C["primary"],
+        tk.Button(bar, text="＋ New template & edit", font=("Segoe UI", 10, "bold"), bg=C["primary"],
                   fg="white", relief="flat", padx=14, pady=5, command=lambda: use("new")).pack(side="right")
         self._gallery_win, self._gallery_show, self._gallery_lb, self._gallery_size = top, show, lb, size_v
+        self._gallery_src = src_v
         self._gallery_use = use
         top.after(50, show)
         try:
@@ -480,11 +508,19 @@ class BarcodeDesignerView:
         sample = {"product_name": "Basmati Rice 5kg", "product_name_ar": "أرز بسمتي",
                   "price_vat": bd._money(24.5), "unit": "PCs", "exp_date": "2027-03-31",
                   "mfg_date": "2026-09-30", "batch": "B2611", "product_code": "P0001",
-                  "old_price": bd._money(29), "offer_text": "SAVE 15%"}
+                  "old_price": bd._money(29), "offer_text": "SAVE 15%",
+                  "company_name": self._shop_name()}
         d = dict(e)
         if d.get("key") in sample:
             d["label"] = sample[d["key"]]
         return d
+
+    def _shop_name(self):
+        try:
+            r = db.fetchone("SELECT company_name_en FROM company") or {}
+            return r.get("company_name_en") or "My Shop"
+        except Exception:
+            return "My Shop"
 
     def _default_size_label(self):
         from modules import label_designs as LD
@@ -499,8 +535,12 @@ class BarcodeDesignerView:
                 cfg.save_settings()
             except Exception:
                 pass
+        src = res.get("source") or "system"
         if res["mode"] == "apply" and self.template:
             self.elements = LD.layout(res["name"], res["w"], res["h"])
+            for e in self.elements:
+                if e["key"] == "barcode":
+                    e["source"] = src
             self.p_w.set(str(res["w"])); self.p_h.set(str(res["h"]))
             self._dims = (float(res["w"]), float(res["h"]))
             if hasattr(self, "p_border"):
@@ -513,7 +553,13 @@ class BarcodeDesignerView:
             base, n = name, 2
             while name in have:
                 name = "%s (%d)" % (base, n); n += 1
-            tid = bd.create_template(LD.template_data(name, res["name"], res["size"]))
+            data = LD.template_data(name, res["name"], res["size"])
+            els = json.loads(data["layout_json"])
+            for e in els:
+                if e["key"] == "barcode":
+                    e["source"] = src
+            data["layout_json"] = json.dumps(els)
+            tid = bd.create_template(data)
             self._load_templates()
             for idx, t in enumerate(self._templates):
                 if t["template_id"] == tid:
@@ -556,6 +602,10 @@ class BarcodeDesignerView:
         self._dims = (float(self.template.get("label_width_mm") or 50),
                       float(self.template.get("label_height_mm") or 25))
         self._tpl_props(); self._redraw()
+
+    BAR_SOURCES = {"system": "System barcode (short — scans best)",
+                   "manual": "Product barcode (on the packet)",
+                   "auto": "As chosen on the Print screen"}
 
     SIZES = [("50 × 25 mm", 50, 25), ("40 × 25 mm", 40, 25), ("38 × 25 mm", 38, 25),
              ("30 × 20 mm", 30, 20), ("60 × 40 mm", 60, 40), ("75 × 50 mm", 75, 50),
