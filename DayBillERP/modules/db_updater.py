@@ -10,7 +10,7 @@ import re
 try:                                    # one version for the whole app (config/version.py)
     from config.version import VERSION as APP_VERSION
 except Exception:
-    APP_VERSION = "7.9.5"
+    APP_VERSION = "7.9.6"
 
 # Ordered list of database patches shipped with the app.
 # (filename relative to project root, human description, version)
@@ -35,6 +35,8 @@ PATCHES = [
 
 # What changed in each version (shown in the Updates panel)
 CHANGELOG = [
+    ("7.9.6", ["📐 Item grid fits a 1366-px screen again with Disc % / Disc (no sideways scroll); full barcodes show.",
+               "💬 A discount or unit price that had to be changed says why (not just a beep)."]),
     ("7.9.5", ["🧾 Item grid of every transaction window: Disc % and Disc columns after Rate — type either, "
                "the other follows; type the Unit Price (before VAT) and the discount is worked out.",
                "➕ More columns (right-click a heading): Code, System Barcode, Brand, Location, Reorder Lvl, VAT %, "

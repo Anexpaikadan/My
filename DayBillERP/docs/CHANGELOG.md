@@ -2,6 +2,16 @@
 
 Newest first. The short guide is in the main README.md.
 
+## 📐 v7.9.6 — item grid review (UI/UX Pro Max)
+
+- Default widths retuned so the 17 default columns total 1235 px — no
+  horizontal scroll at 1366 px (it was 1371 px after 7.9.5, pushing
+  Profit / Box Qty off screen). Bar Code 114 px (full barcodes), Product
+  161 px and stretches; "Stock Details" heading → "Stock".
+- Capped values explained by a message (_tell): discount above qty ×
+  rate or outside 0–100 %, Unit Price above the Rate with Allow Price
+  Edit off.
+
 ## 🧾 v7.9.5 — discounts and more columns in the item grid
 
 - ui/invoice_grid: Disc % / Disc after Rate (shown by default; saved

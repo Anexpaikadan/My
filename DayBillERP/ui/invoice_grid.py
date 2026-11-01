@@ -33,23 +33,23 @@ except Exception:
 
 
 COLUMNS = [
-    ("idx",     "#",            36,  "center"),
-    ("barcode", "Bar Code",     95,  "center"),
-    ("product", "Product",      230, "w"),
-    ("qty",     "Qty",          60,  "center"),
-    ("unit",    "Unit",         70,  "center"),
-    ("rate",    "Rate",         75,  "e"),
+    ("idx",     "#",            32,  "center"),
+    ("barcode", "Bar Code",     114,  "center"),
+    ("product", "Product",      161, "w"),
+    ("qty",     "Qty",          55,  "center"),
+    ("unit",    "Unit",         60,  "center"),
+    ("rate",    "Rate",         70,  "e"),
     # v7.9.5: line discount as % or amount — type in either, the other follows
-    ("disc_pct", "Disc %",      58,  "e"),
-    ("disc",    "Disc",         72,  "e"),
-    ("uprice",  "Unit Price",   85,  "e"),
-    ("gross",   "Gross",        90,  "e"),
-    ("vat",     "VAT",          75,  "e"),
-    ("total",   "Total",        95,  "e"),
-    ("stock",   "Stock Details",90,  "center"),
-    ("purchase","Cost",         80,  "e"),
+    ("disc_pct", "Disc %",      56,  "e"),
+    ("disc",    "Disc",         66,  "e"),
+    ("uprice",  "Unit Price",   80,  "e"),
+    ("gross",   "Gross",        85,  "e"),
+    ("vat",     "VAT",          68,  "e"),
+    ("total",   "Total",        90,  "e"),
+    ("stock",   "Stock",70,  "center"),
+    ("purchase","Cost",         72,  "e"),
     ("x",       "X",            30,  "center"),
-    ("profit",  "Profit",       70,  "e"),
+    ("profit",  "Profit",       66,  "e"),
     ("boxqty",  "Box Qty",      60,  "center"),
     # v6.9.4 "More columns" — hidden until ticked (☰ / right-click a heading)
     ("profit_pct", "Profit %",  70,  "e"),
@@ -82,6 +82,8 @@ _PI_KEY = {"plu": "x_plu", "unit1": "x_unit1", "unit2": "x_unit2", "unit3": "x_u
            "brand": "x_brand", "location": "x_location", "reorder": "x_reorder",
            "sale_price": "x_price", "last_cost": "x_last_cost"}
 KEYS = [c[0] for c in COLUMNS]
+# v7.9.5: the default columns fit a 1366-px screen without sideways scrolling
+# (Product takes any extra width)
 # the cells you can type in, in Enter / → order (hidden or 🔒 ones are skipped)
 EDIT_KEYS = ("barcode", "product", "qty", "rate", "disc_pct", "disc", "uprice")
 NUM_KEYS = ("qty", "rate", "disc_pct", "disc", "uprice")
@@ -1600,10 +1602,16 @@ class InvoiceGrid(tk.Frame):
             ln["unit_price"] = val
         elif key == "disc_pct":
             self._manual_discount(ln)
+            if val > 100 or val < 0:
+                self._tell("A discount is 0 – 100 % — set to %g %%." % max(0.0, min(100.0, val)))
             ln.update(_disc_mode="pct", discount_percent=round(max(0.0, min(100.0, val)), 4))
         elif key == "disc":
             self._manual_discount(ln)
-            ln.update(_disc_mode="amt", discount_amount=round(max(0.0, min(val, qty * price)), 4))
+            cap = qty * price
+            if val > cap + 1e-9 or val < 0:
+                self._tell("The discount can't be more than the line (%s) — set to %s."
+                           % (format(cap, ",.2f"), format(max(0.0, min(val, cap)), ",.2f")))
+            ln.update(_disc_mode="amt", discount_amount=round(max(0.0, min(val, cap)), 4))
         elif key == "uprice":
             # the net price of one unit (before VAT) → the discount that gives it;
             # above the rate it becomes the new rate (when prices may be typed)
@@ -1619,8 +1627,18 @@ class InvoiceGrid(tk.Frame):
                 ln.update(unit_price=round(g, 4), discount_amount=0.0, discount_percent=0.0,
                           _disc_mode=None)
             else:
-                self.bell()
+                self._tell("Prices can't be typed here (Settings ▸ Sales ▸ Allow Price Edit) — "
+                           "a Unit Price can only be at or below the Rate (%s)." % format(price, ",.2f"))
         return ln
+
+    def _tell(self, msg):
+        """Say why a typed value was changed (never just a beep)."""
+        try:
+            from ui.fluent_widgets import show_toast
+            show_toast(self.winfo_toplevel(), msg, kind="info", ms=3200)
+        except Exception:
+            self.bell()
+        self._last_tell = msg
 
     def _delete_row(self, idx):
         """Remove a line via the X column (or Delete key)."""

@@ -1,7 +1,14 @@
-# DayBill ERP  v7.9.5
+# DayBill ERP  v7.9.6
 
 Billing, POS, inventory, accounts and HR for shops in 🇸🇦 Saudi Arabia, 🇦🇪 the UAE and 🇮🇳 India.
 **VAT / GST by country · ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
+
+## 📐 v7.9.6 — item grid review (UI/UX Pro Max)
+
+- All default columns fit a 1366-px screen again (no sideways scroll); the
+  Bar Code column shows full barcodes; Product takes any extra width.
+- A discount above the line value or 100 %, or a Unit Price above the Rate
+  when prices can't be typed, is corrected **with a message saying why**.
 
 ## 🧾 v7.9.5 — discounts and more columns in the item grid
 
