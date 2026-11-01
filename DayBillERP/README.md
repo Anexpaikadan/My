@@ -1,7 +1,18 @@
-# DayBill ERP  v7.9.4
+# DayBill ERP  v7.9.5
 
 Billing, POS, inventory, accounts and HR for shops in 🇸🇦 Saudi Arabia, 🇦🇪 the UAE and 🇮🇳 India.
 **VAT / GST by country · ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
+
+## 🧾 v7.9.5 — discounts and more columns in the item grid
+
+- **Disc % and Disc** after Rate in Sales, Purchase, both returns,
+  quotations and orders: type a % or an amount, the other follows (a %
+  follows the qty, an amount stays). **Unit Price** can be typed too —
+  below the rate it becomes the discount. Settings ▸ Sales ▸ Allow
+  Discount Edit and 🔒 read only are respected.
+- **More columns** (right-click a heading ▸ tick): Code, System Barcode,
+  Brand, Location, Reorder Lvl, VAT %, Sale Price, Last Cost, Total excl. VAT.
+- Purchase saves its line discounts (a reopened bill keeps its total).
 
 ## 🎨 v7.9.4 — UI/UX review of the v7.9 windows
 

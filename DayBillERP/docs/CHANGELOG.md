@@ -2,6 +2,21 @@
 
 Newest first. The short guide is in the main README.md.
 
+## 🧾 v7.9.5 — discounts and more columns in the item grid
+
+- ui/invoice_grid: Disc % / Disc after Rate (shown by default; saved
+  layouts get them next to Rate). A % follows qty × rate, an amount stays
+  and its % is shown; capped at qty × rate. Unit Price (net, before VAT)
+  can be typed: at or below the rate → discount, above → new rate when
+  prices may be typed. A typed discount replaces the offer and survives
+  a rate change. Allow Discount Edit (sales docs) and 🔒 locks respected;
+  → / ← walk the new cells, Enter flow stays Qty → Rate → next row.
+- More columns: Code, System Barcode, Brand, Location, Reorder Lvl, VAT %,
+  Sale Price, Last Cost (cost users only), Total excl. VAT. Row and footer
+  values are built by column name; the footer sums the discount.
+- ui/purchases: line discount_amount and the bill discount_amount are
+  saved, so a reopened purchase keeps its totals.
+
 ## 🎨 v7.9.4 — UI/UX review of the v7.9 windows (UI/UX Pro Max)
 
 Checked with the UI/UX Pro Max rules (colour only, contrast, target size,

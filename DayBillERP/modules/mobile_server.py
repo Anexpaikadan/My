@@ -24,7 +24,7 @@ DEFAULT_PORT = 8090
 try:
     from config.version import VERSION
 except Exception:
-    VERSION = "7.9.4"
+    VERSION = "7.9.5"
 
 
 def local_ips():
