@@ -50,7 +50,8 @@ function wa_provider() {
     return 'off';
 }
 function wa_enabled()            { return wa_provider() !== 'off'; }
-function wa_feature_on($feature) { return wa_enabled() && wa_cfg('wa_on_' . $feature, '1') === '1'; }
+// Login codes are opt-in (members keep the normal passkey login); notices are on by default once sending is set up
+function wa_feature_on($feature) { return wa_enabled() && wa_cfg('wa_on_' . $feature, $feature === 'otp' ? '0' : '1') === '1'; }
 
 // Digits with country code, e.g. "+91 98765 43210" → "919876543210"
 function wa_digits($phone) {

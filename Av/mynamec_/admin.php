@@ -8,7 +8,78 @@ $tab=isset($_GET['tab'])?$_GET['tab']:'pending';$msg='';
 $roles=array('president'=>'President','vice_president'=>'VP','secretary'=>'Secretary','developer'=>'Developer','joint_secretary'=>'Joint Secretary','treasurer'=>'Treasurer','sports_committee'=>'Sports Committee','cultural_committee'=>'Cultural Committee','finance_committee'=>'Finance Committee','committee_member'=>'Committee Member','member'=>'Member');
 $coms=array('Executive Committee','Sports Committee','Cultural Committee','Finance Committee','Charity Committee','Youth Committee','Women Committee');
 
-if($_SERVER['REQUEST_METHOD']==='POST'){
+// ════════ LOGIN HELP (reset passkey by phone number) ════════
+try { db()->exec("CREATE TABLE IF NOT EXISTS login_resets(id INT AUTO_INCREMENT PRIMARY KEY,user_id INT NOT NULL,admin_id INT NOT NULL,action VARCHAR(30) NOT NULL,note VARCHAR(200),created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,INDEX(user_id))"); } catch(Exception $e){}
+function lh_find_by_phone($raw) {
+    $d = substr(preg_replace('/\D/', '', (string)$raw), -10);
+    if (strlen($d) < 10) return null;
+    $st = db()->prepare("SELECT * FROM users WHERE whatsapp_number LIKE ?"); $st->execute(array('%' . $d));
+    foreach ($st->fetchAll() as $u) { if (substr(preg_replace('/\D/', '', $u['whatsapp_number']), -10) === $d) return $u; }
+    return null;
+}
+function lh_log($uid, $adminId, $action, $note = '') {
+    try { db()->prepare("INSERT INTO login_resets(user_id,admin_id,action,note) VALUES(?,?,?,?)")->execute(array($uid, $adminId, $action, mb_substr($note, 0, 200))); } catch(Exception $e){}
+}
+if ($_SERVER['REQUEST_METHOD']==='POST' && !empty($_POST['lh_act'])) {
+    $tab = 'login';
+    $lhId = (int)($_POST['uid'] ?? 0);
+    $st = db()->prepare("SELECT * FROM users WHERE id=?"); $st->execute(array($lhId)); $lhU = $st->fetch();
+    if (!verifyCsrf()) {
+        $msg = array('t'=>'err','m'=>'Session expired — please try again.');
+    } elseif (!$lhU) {
+        $msg = array('t'=>'err','m'=>'Member not found.');
+    } elseif ($lhU['role'] === 'developer' && !isSuperAdmin($user)) {
+        $msg = array('t'=>'err','m'=>'Only the developer can change the developer account.');
+    } else {
+        $club = setting('CLUB_NAME','Aishwarya Arts & Sports Club');
+        $site = rtrim(defined('SITE_URL') ? SITE_URL : '', '/');
+        switch ($_POST['lh_act']) {
+          case 'set_passkey':
+            $pk = preg_replace('/\D/', '', $_POST['new_passkey'] ?? '');
+            if ($pk === '') $pk = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            if (strlen($pk) !== 6) { $msg = array('t'=>'err','m'=>'The passkey must be exactly 6 digits.'); break; }
+            if (preg_match('/^(\d)\1{5}$/', $pk) || in_array($pk, array('123456','654321','012345'), true)) { $msg = array('t'=>'err','m'=>'That passkey is too easy to guess. Choose another or leave it empty to generate one.'); break; }
+            db()->prepare('UPDATE users SET passkey=?,passkey_set=1 WHERE id=?')->execute(array(password_hash($pk, PASSWORD_DEFAULT), $lhU['id']));
+            lh_log($lhU['id'], $user['id'], 'set_passkey');
+            $waText = "🔐 *{$club}*\n\nHello {$lhU['name']}, your login passkey was reset by the club admin.\n\nLogin phone: {$lhU['whatsapp_number']}\nNew passkey: *{$pk}*\n\nLog in at {$site} and change it in My Profile → Passkey. Do not share it with anyone.";
+            $msg = array('t'=>'ok','m'=>'New passkey for '.$lhU['name'].': '.$pk.' — send it to the member now. It will not be shown again.',
+                         'wa'=>makeWaLink($lhU['whatsapp_number'], $waText), 'waname'=>$lhU['name'], 'pk'=>$pk);
+            break;
+          case 'clear_passkey':
+            db()->prepare('UPDATE users SET passkey=NULL,passkey_set=0 WHERE id=?')->execute(array($lhU['id']));
+            lh_log($lhU['id'], $user['id'], 'clear_passkey');
+            $waText = "🔐 *{$club}*\n\nHello {$lhU['name']}, your login passkey was cleared by the club admin.\nOpen {$site}, enter your phone number and create a new 6-digit passkey.";
+            $msg = array('t'=>'ok','m'=>'Passkey cleared. '.$lhU['name'].' will create a new one at the next login.','wa'=>makeWaLink($lhU['whatsapp_number'], $waText),'waname'=>$lhU['name']);
+            break;
+          case 'clear_bio':
+            $n = 0;
+            try { $d = db()->prepare("DELETE FROM webauthn_credentials WHERE user_id=?"); $d->execute(array($lhU['id'])); $n = $d->rowCount(); } catch(Exception $e){}
+            lh_log($lhU['id'], $user['id'], 'clear_bio', $n.' device(s)');
+            $msg = array('t'=>'ok','m'=>'Removed '.$n.' fingerprint / Face ID login'.($n===1?'':'s').' for '.$lhU['name'].'.');
+            break;
+          case 'change_phone':
+            $np = preg_replace('/\D/', '', $_POST['new_phone'] ?? '');
+            if (strlen($np) === 10) $np = '91' . $np;
+            if (strlen($np) < 11 || strlen($np) > 15) { $msg = array('t'=>'err','m'=>'Enter a valid mobile number.'); break; }
+            $np = '+' . $np;
+            $other = lh_find_by_phone($np);
+            if ($other && (int)$other['id'] !== (int)$lhU['id']) { $msg = array('t'=>'err','m'=>'That number already belongs to '.$other['name'].'.'); break; }
+            db()->prepare('UPDATE users SET whatsapp_number=? WHERE id=?')->execute(array($np, $lhU['id']));
+            lh_log($lhU['id'], $user['id'], 'change_phone', $lhU['whatsapp_number'].' → '.$np);
+            $msg = array('t'=>'ok','m'=>'Login phone for '.$lhU['name'].' changed to '.$np.'.');
+            break;
+          case 'activate':
+            db()->prepare("UPDATE users SET status='active' WHERE id=?")->execute(array($lhU['id']));
+            lh_log($lhU['id'], $user['id'], 'activate', 'was '.$lhU['status']);
+            $msg = array('t'=>'ok','m'=>$lhU['name'].' can log in again (account active).');
+            break;
+          default:
+            $msg = array('t'=>'err','m'=>'Unknown action.');
+        }
+    }
+    $_GET['uid'] = $lhId;
+}
+if($_SERVER['REQUEST_METHOD']==='POST' && empty($_POST['lh_act'])){
     if(isset($_POST['approve'])){
         $appId = (int)$_POST['mid'];
         db()->prepare("UPDATE users SET status='active',approved_by=?,approved_at=NOW() WHERE id=?")->execute(array($user['id'],$appId));
@@ -220,6 +291,9 @@ require_once __DIR__.'/includes/header.php';
   <a href="<?=url('admin.php')?>?tab=events" class="adm-tab <?=$tab==='events'?'on':''?>">
     <span class="adm-tab-em"><img src="<?=url('assets/icons/3d/events.webp')?>" alt="" width="36" height="36" loading="lazy"></span>Events
   </a>
+  <a href="<?=url('admin.php')?>?tab=login" class="adm-tab <?=$tab==='login'?'on':''?>">
+    <span class="adm-tab-em"><img src="<?=url('assets/icons/3d/idcard.webp')?>" alt="" width="36" height="36" loading="lazy"></span>Login Help
+  </a>
   <a href="<?=url('admin.php')?>?tab=reports" class="adm-tab <?=$tab==='reports'?'on':''?>">
     <span class="adm-tab-em"><img src="<?=url('assets/icons/3d/reports.webp')?>" alt="" width="36" height="36" loading="lazy"></span>Reports
   </a>
@@ -251,11 +325,11 @@ require_once __DIR__.'/includes/header.php';
   <span><?= h($msg['m']) ?></span>
   <?php if(!empty($msg['wa'])): ?>
   <a href="<?= h($msg['wa']) ?>" target="_blank"
-    style="display:inline-flex;align-items:center;gap:.4rem;background:#25d366;color:#fff;border-radius:10px;padding:.45rem 1.1rem;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.82rem;text-decoration:none;box-shadow:0 3px 12px rgba(37,211,102,.4);flex-shrink:0">
+    style="display:inline-flex;align-items:center;gap:.4rem;background:#0E7A3E;color:#fff;border-radius:10px;padding:.45rem 1.1rem;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.82rem;text-decoration:none;box-shadow:0 3px 12px rgba(37,211,102,.4);flex-shrink:0">
     <i class="fab fa-whatsapp"></i>
     📲 Send WhatsApp to <?= h($msg['waname'] ?? '') ?>
   </a>
-  <span style="font-size:.72rem;opacity:.65">(Tap → WhatsApp opens → press Send)</span>
+  <span style="font-size:.76rem;opacity:.85">(Tap → WhatsApp opens → press Send)</span>
   <?php endif; ?>
 </div>
 <?php endif; ?>
@@ -401,6 +475,156 @@ require_once __DIR__.'/includes/header.php';
 <div class="table-wrap"><table><thead><tr><th>Title</th><th>Type</th><th>Date</th><th>Location</th></tr></thead><tbody>
 <?php foreach($events as $ev):?><tr><td><strong><?=h($ev['title'])?></strong></td><td><?=h(ucfirst($ev['event_type']))?></td><td><?=date('d M Y',strtotime($ev['event_date']))?></td><td><?=h(isset($ev['location'])?$ev['location']:'—')?></td></tr><?php endforeach;?>
 </tbody></table></div>
+
+<?php elseif($tab==='login'):?>
+<?php
+$lhQ = trim($_GET['q'] ?? '');
+$lhSel = null; $lhList = array();
+if (!empty($_GET['uid'])) { $st = db()->prepare("SELECT * FROM users WHERE id=?"); $st->execute(array((int)$_GET['uid'])); $lhSel = $st->fetch(); }
+elseif ($lhQ !== '') {
+    $digits = preg_replace('/\D/', '', $lhQ);
+    if (strlen($digits) >= 4) { $st = db()->prepare("SELECT * FROM users WHERE REPLACE(REPLACE(REPLACE(whatsapp_number,'+',''),' ',''),'-','') LIKE ? ORDER BY name LIMIT 10"); $st->execute(array('%' . $digits . '%')); }
+    else { $st = db()->prepare("SELECT * FROM users WHERE name LIKE ? ORDER BY name LIMIT 10"); $st->execute(array('%' . $lhQ . '%')); }
+    $lhList = $st->fetchAll();
+    if (count($lhList) === 1) { $lhSel = $lhList[0]; $lhList = array(); }
+}
+$lhBio = 0; $lhLog = array();
+if ($lhSel) { try { $c = db()->prepare("SELECT COUNT(*) FROM webauthn_credentials WHERE user_id=?"); $c->execute(array($lhSel['id'])); $lhBio = (int)$c->fetchColumn(); } catch(Exception $e){} }
+try {
+    $lq = "SELECT r.*,u.name uname,a.name aname FROM login_resets r LEFT JOIN users u ON u.id=r.user_id LEFT JOIN users a ON a.id=r.admin_id";
+    if ($lhSel) { $st = db()->prepare($lq . " WHERE r.user_id=? ORDER BY r.id DESC LIMIT 8"); $st->execute(array($lhSel['id'])); $lhLog = $st->fetchAll(); }
+    else { $lhLog = db()->query($lq . " ORDER BY r.id DESC LIMIT 10")->fetchAll(); }
+} catch(Exception $e){}
+$lhActNames = array('set_passkey'=>'New passkey set','clear_passkey'=>'Passkey cleared','clear_bio'=>'Fingerprint removed','change_phone'=>'Phone changed','activate'=>'Account activated');
+?>
+<style>
+.lh-card{background:#fff;border:1px solid #E3E7F5;border-radius:18px;padding:1rem 1.1rem;margin-bottom:.8rem;box-shadow:0 1px 2px rgba(11,16,51,.04),0 6px 18px rgba(11,16,51,.06)}
+.lh-card h3{font-size:.95rem;font-weight:800;margin-bottom:.25rem;display:flex;align-items:center;gap:.5rem}
+.lh-card h3 img{width:30px;height:30px}
+.lh-card p{font-size:.84rem;color:#565D82;margin-bottom:.7rem}
+.lh-row{display:flex;gap:.5rem;flex-wrap:wrap}
+.lh-row .inp{flex:1;min-width:150px}
+.lh-who{display:flex;gap:.85rem;align-items:center}
+.lh-who img,.lh-who .ph{width:58px;height:58px;border-radius:50%;object-fit:cover;background:#ECEEFF;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.lh-who b{font-size:1.05rem;display:block}
+.lh-chips{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.35rem}
+.lh-chip{font-size:.72rem;font-weight:700;padding:.15rem .55rem;border-radius:999px;background:#ECEEFF;color:#070FA8}
+.lh-chip.ok{background:#E7F8EE;color:#0E6B37}.lh-chip.bad{background:#FFECEC;color:#B80F0A}
+.lh-grid{display:grid;gap:.8rem}
+@media(min-width:760px){.lh-grid{grid-template-columns:1fr 1fr}}
+.lh-pick{display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.7rem .9rem;border:1px solid #E3E7F5;border-radius:14px;margin-bottom:.45rem;background:#fff;color:#0B1033;min-height:52px}
+.lh-pick small{color:#565D82}
+.lh-pk{font-size:2rem;font-weight:800;letter-spacing:.3em;text-align:center;padding:.6rem;border-radius:14px;background:#F5F7FF;border:1px dashed #A9B0FF;margin:.5rem 0}
+.lh-log{font-size:.8rem;color:#3B4266}
+.lh-log div{padding:.45rem 0;border-bottom:1px solid #EEF1FA}
+</style>
+<div class="adm-head"><h2>🔑 Login Help</h2><div class="adm-head-line"></div></div>
+
+<div class="lh-card">
+  <h3><img src="<?=url('assets/icons/3d/idcard.webp')?>" alt="" width="30" height="30">Find a member</h3>
+  <p>Type the member's phone number (or name) to reset their login.</p>
+  <form method="GET" class="lh-row">
+    <input type="hidden" name="tab" value="login">
+    <input class="inp" type="search" name="q" value="<?=h($lhQ)?>" placeholder="Phone number, e.g. 98765 43210" aria-label="Phone number or name" inputmode="tel" autofocus>
+    <button class="btn btn-blue" type="submit">🔍 Find</button>
+  </form>
+</div>
+
+<?php if(!empty($msg['pk'])): ?>
+<div class="lh-card" style="border-color:#A9B0FF">
+  <h3>New passkey for <?=h($msg['waname'])?></h3>
+  <div class="lh-pk" aria-label="New passkey <?=h(implode(' ', str_split($msg['pk'])))?>"><?=h($msg['pk'])?></div>
+  <div class="lh-row">
+    <a class="btn btn-green" href="<?=h($msg['wa'])?>" target="_blank" rel="noopener">💬 Send to member on WhatsApp</a>
+    <button type="button" class="btn btn-outline" onclick="navigator.clipboard&&navigator.clipboard.writeText('<?=h($msg['pk'])?>');this.textContent='Copied ✓'">📋 Copy passkey</button>
+  </div>
+  <p style="margin:.6rem 0 0">This passkey is shown only once. The member can change it later in My Profile.</p>
+</div>
+<?php endif; ?>
+
+<?php if($lhQ !== '' && !$lhSel && empty($lhList)): ?>
+<div class="alert alert-warn">No member found for “<?=h($lhQ)?>”.</div>
+<?php endif; ?>
+
+<?php foreach($lhList as $m): ?>
+<a class="lh-pick" href="<?=url('admin.php')?>?tab=login&amp;uid=<?=(int)$m['id']?>"><span><b><?=h($m['name'])?></b><br><small><?=h($m['whatsapp_number'])?> · <?=h(ucfirst($m['status']))?></small></span><span aria-hidden="true">›</span></a>
+<?php endforeach; ?>
+
+<?php if($lhSel): $lhPh = getMemberPhoto($lhSel['profile_photo'] ?? ''); $canEdit = !($lhSel['role']==='developer' && !isSuperAdmin($user)); ?>
+<div class="lh-card">
+  <div class="lh-who">
+    <?php if($lhPh): ?><img src="<?=$lhPh?>" alt=""><?php else: ?><span class="ph"><img src="<?=url('assets/icons/3d/profile.webp')?>" alt="" width="40" height="40" style="width:40px;height:40px"></span><?php endif; ?>
+    <div style="min-width:0">
+      <b><?=h($lhSel['name'])?></b>
+      <span style="font-size:.88rem;color:#3B4266"><?=h($lhSel['whatsapp_number'])?> · <?=h(isset($roles[$lhSel['role']])?$roles[$lhSel['role']]:$lhSel['role'])?></span>
+      <div class="lh-chips">
+        <span class="lh-chip <?=$lhSel['status']==='active'?'ok':'bad'?>"><?=h(ucfirst($lhSel['status']))?></span>
+        <span class="lh-chip <?=!empty($lhSel['passkey_set'])?'ok':'bad'?>"><?=!empty($lhSel['passkey_set'])?'Passkey set':'No passkey'?></span>
+        <span class="lh-chip"><?=$lhBio?> fingerprint / Face ID</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<?php if(!$canEdit): ?>
+<div class="alert alert-warn">Only the developer can change the developer account.</div>
+<?php else: ?>
+<div class="lh-grid">
+  <form method="POST" class="lh-card">
+    <?=csrfField()?><input type="hidden" name="uid" value="<?=(int)$lhSel['id']?>"><input type="hidden" name="lh_act" value="set_passkey">
+    <h3><img src="<?=url('assets/icons/3d/admin.webp')?>" alt="" width="30" height="30">Set a new passkey</h3>
+    <p>Type 6 digits, or leave empty and we make one. You then send it to the member on WhatsApp.</p>
+    <div class="lh-row">
+      <input class="inp" name="new_passkey" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="Leave empty to generate" aria-label="New 6-digit passkey" autocomplete="off">
+      <button class="btn btn-blue" type="submit">Set passkey</button>
+    </div>
+  </form>
+
+  <form method="POST" class="lh-card" onsubmit="return confirm('Clear the passkey of <?=h(addslashes($lhSel['name']))?>? They will create a new one at the next login.')">
+    <?=csrfField()?><input type="hidden" name="uid" value="<?=(int)$lhSel['id']?>"><input type="hidden" name="lh_act" value="clear_passkey">
+    <h3><img src="<?=url('assets/icons/3d/pending.webp')?>" alt="" width="30" height="30">Let them choose a new passkey</h3>
+    <p>Clears the passkey. At the next login the member enters their phone number and registered name, then picks a new passkey.</p>
+    <button class="btn btn-outline" type="submit">Clear passkey</button>
+  </form>
+
+  <form method="POST" class="lh-card">
+    <?=csrfField()?><input type="hidden" name="uid" value="<?=(int)$lhSel['id']?>"><input type="hidden" name="lh_act" value="change_phone">
+    <h3><img src="<?=url('assets/icons/3d/subscription.webp')?>" alt="" width="30" height="30">Change login phone number</h3>
+    <p>Use when the member has a new number. They log in with the new number and the same passkey.</p>
+    <div class="lh-row">
+      <input class="inp" name="new_phone" type="tel" inputmode="tel" placeholder="New mobile number" aria-label="New mobile number" required>
+      <button class="btn btn-blue" type="submit">Change number</button>
+    </div>
+  </form>
+
+  <form method="POST" class="lh-card" onsubmit="return confirm('Remove all fingerprint / Face ID logins of this member?')">
+    <?=csrfField()?><input type="hidden" name="uid" value="<?=(int)$lhSel['id']?>"><input type="hidden" name="lh_act" value="clear_bio">
+    <h3><img src="<?=url('assets/icons/3d/scan.webp')?>" alt="" width="30" height="30">Remove fingerprint / Face ID</h3>
+    <p>For a lost or changed phone. The member can add it again from their new phone.</p>
+    <button class="btn btn-outline" type="submit" <?=$lhBio?'':'disabled'?>>Remove <?=$lhBio?> device<?=$lhBio===1?'':'s'?></button>
+  </form>
+
+  <?php if($lhSel['status']!=='active'): ?>
+  <form method="POST" class="lh-card">
+    <?=csrfField()?><input type="hidden" name="uid" value="<?=(int)$lhSel['id']?>"><input type="hidden" name="lh_act" value="activate">
+    <h3><img src="<?=url('assets/icons/3d/members.webp')?>" alt="" width="30" height="30">Allow login (activate account)</h3>
+    <p>This account is <b><?=h($lhSel['status'])?></b>, so the member cannot log in.</p>
+    <button class="btn btn-green" type="submit">Activate account</button>
+  </form>
+  <?php endif; ?>
+</div>
+<?php endif; ?>
+<?php endif; ?>
+
+<?php if(!empty($lhLog)): ?>
+<div class="lh-card lh-log">
+  <h3><img src="<?=url('assets/icons/3d/reports.webp')?>" alt="" width="30" height="30"><?= $lhSel ? 'History for this member' : 'Recent login changes' ?></h3>
+  <?php foreach($lhLog as $l): ?>
+  <div><b><?=h(isset($lhActNames[$l['action']])?$lhActNames[$l['action']]:$l['action'])?></b><?= !$lhSel ? ' · '.h($l['uname']) : '' ?><?= $l['note'] ? ' · '.h($l['note']) : '' ?><br>
+    <span style="color:#565D82">by <?=h($l['aname'] ?: 'admin')?> · <?=date('d M Y, h:i a', strtotime($l['created_at']))?></span></div>
+  <?php endforeach; ?>
+</div>
+<?php endif; ?>
 
 <?php elseif($tab==='reports'):?>
 <?php

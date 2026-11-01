@@ -4,8 +4,8 @@ The website can send WhatsApp messages by itself:
 
 | Message | When |
 |---|---|
-| Login code (OTP) | Member taps “Get a login code on WhatsApp instead” |
-| Passkey reset code | Member taps “Forgot passkey? Reset it” (the code replaces the old name check) |
+| Login code (OTP) — **optional, off by default** | Member taps “Get a login code on WhatsApp instead” (only if “Login & passkey reset codes” is switched on) |
+| Passkey reset code — optional | Member taps “Forgot passkey? Reset it” (when codes are on, the code replaces the name check) |
 | Welcome message | An admin approves a new member |
 | New event | An event is added (to all active members) |
 | Blood request | A blood request is posted (to available donors of the same group) |

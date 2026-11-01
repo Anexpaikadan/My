@@ -832,11 +832,11 @@ require_once __DIR__ . '/../includes/header.php';
       <div class="scard">
         <div class="scard-title">📨 What to send</div>
         <?php foreach (array(
-            'otp'=>array('Login & passkey reset codes','6-digit code on WhatsApp to log in or reset a forgotten passkey'),
+            'otp'=>array('Login & passkey reset codes (optional)','Off = members log in with their passkey as usual. On = they can also get a 6-digit code on WhatsApp'),
             'approve'=>array('Membership approved','Welcome message when an admin approves a member'),
             'events'=>array('New events','Announcement to all active members when an event is added'),
             'blood'=>array('Blood requests','Message to available donors of the same blood group'),
-            'fees'=>array('Fee reminders','7 days, 1 day and on the day a membership ends')) as $k=>$t): $on = $s('wa_on_'.$k,'1')!=='0'; ?>
+            'fees'=>array('Fee reminders','7 days, 1 day and on the day a membership ends')) as $k=>$t): $on = $s('wa_on_'.$k, $k==='otp' ? '0' : '1')!=='0'; ?>
         <label class="sw"><span><b><?= $t[0] ?></b><small><?= $t[1] ?></small></span>
           <input type="checkbox" name="wa_on_<?= $k ?>" value="1" <?= $on?'checked':'' ?>><span class="tg" aria-hidden="true"></span></label>
         <?php endforeach; ?>

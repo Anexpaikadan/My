@@ -737,6 +737,7 @@ function heroGo(i){
         <p style="text-align:center;font-size:.76rem;margin-top:.7rem">
           <a href="#" onclick="showSetPasskey();return false" style="color:var(--p);display:inline-block;padding:.5rem">Forgot passkey? Reset it</a>
         </p>
+        <p style="text-align:center;font-size:.8rem;color:var(--t3);margin-top:-.2rem">Still stuck? Ask the club secretary to reset your login.</p>
         <p class="wa-only" style="text-align:center;font-size:.86rem;display:none">
           <a href="#" onclick="showOtpLogin();return false" style="color:var(--p);font-weight:700;display:inline-block;padding:.4rem">💬 Get a login code on WhatsApp instead</a>
         </p>

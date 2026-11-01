@@ -91,3 +91,8 @@ Bebas Neue headings now use the site font (ID card and Poster Studio keep theirs
 Cloud API. Then the site sends login and passkey-reset codes, welcome messages on approval, new-event
 announcements, blood requests to matching donors and fee reminders by itself (queued and spaced out).
 Setup steps: [`Av/mynamec_/WHATSAPP_SETUP.md`](Av/mynamec_/WHATSAPP_SETUP.md).
+
+**Login Help (Admin Panel):** search a member by phone number, then set a new passkey (typed or generated, sent with one
+tap on WhatsApp), clear the passkey so they pick a new one, change their login phone number, remove fingerprint /
+Face ID logins, or activate the account. Every change is logged. Member login is the normal passkey login; WhatsApp
+login codes are optional and off by default.
