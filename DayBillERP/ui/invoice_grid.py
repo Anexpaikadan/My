@@ -39,6 +39,9 @@ COLUMNS = [
     ("qty",     "Qty",          60,  "center"),
     ("unit",    "Unit",         70,  "center"),
     ("rate",    "Rate",         75,  "e"),
+    # v7.9.5: line discount as % or amount — type in either, the other follows
+    ("disc_pct", "Disc %",      58,  "e"),
+    ("disc",    "Disc",         72,  "e"),
     ("uprice",  "Unit Price",   85,  "e"),
     ("gross",   "Gross",        90,  "e"),
     ("vat",     "VAT",          75,  "e"),
@@ -58,13 +61,30 @@ COLUMNS = [
     ("name_ar", "Arabic Name",  170, "e"),
     ("category","Category",     110, "w"),
     ("stock_value", "Stock Value", 95, "e"),
+    # v7.9.5 product details — hidden until ticked, like the reports' columns
+    ("code",    "Code",         85,  "w"),
+    ("sys_barcode", "System Barcode", 105, "center"),
+    ("brand",   "Brand",        100, "w"),
+    ("location", "Location",    90,  "w"),
+    ("reorder", "Reorder Lvl",  80,  "center"),
+    ("vat_pct", "VAT %",        60,  "center"),
+    ("sale_price", "Sale Price", 85, "e"),
+    ("last_cost", "Last Cost",  85,  "e"),
+    ("net_total", "Total excl. VAT", 105, "e"),
 ]
 OPTIONAL = {"profit_pct", "plu", "unit1", "unit2", "unit3", "barcodes", "name_ar",
-            "category", "stock_value"}
-COST_COLUMNS = {"purchase", "profit", "profit_pct", "stock_value"}
+            "category", "stock_value", "code", "sys_barcode", "brand", "location",
+            "reorder", "vat_pct", "sale_price", "last_cost", "net_total"}
+COST_COLUMNS = {"purchase", "profit", "profit_pct", "stock_value", "last_cost"}
 _PI_KEY = {"plu": "x_plu", "unit1": "x_unit1", "unit2": "x_unit2", "unit3": "x_unit3",
            "barcodes": "x_barcodes", "name_ar": "x_name_ar", "category": "x_category",
-           "stock_value": "x_stock_value"}
+           "stock_value": "x_stock_value", "sys_barcode": "x_system_barcode",
+           "brand": "x_brand", "location": "x_location", "reorder": "x_reorder",
+           "sale_price": "x_price", "last_cost": "x_last_cost"}
+KEYS = [c[0] for c in COLUMNS]
+# the cells you can type in, in Enter / → order (hidden or 🔒 ones are skipped)
+EDIT_KEYS = ("barcode", "product", "qty", "rate", "disc_pct", "disc", "uprice")
+NUM_KEYS = ("qty", "rate", "disc_pct", "disc", "uprice")
 
 
 def filter_exact_code(q, products):
@@ -198,7 +218,7 @@ class InvoiceGrid(tk.Frame):
             pass
         # v7.8: the cells you type in — each can be made 🔒 read only in the
         # Columns tool (e.g. the sales Rate always comes from the product)
-        self.tree._ct_editable = {"barcode", "product", "qty", "rate"}
+        self.tree._ct_editable = set(EDIT_KEYS)
         self.tree.bind("<<ColumnsChanged>>", lambda e: self._sync_footer_widths(), add="+")
         self.tree.bind("<Configure>", lambda e: self.after_idle(self._sync_footer_widths), add="+")
 
@@ -327,6 +347,7 @@ class InvoiceGrid(tk.Frame):
         if not real:
             self.footer_tree.item("sum", values=([""] * len(COLUMNS)))
             return
+        tdisc = sum(float(l.get("discount_amount", 0) or 0) for l in real)
         tqty = sum(float(l.get("quantity", 0) or 0) for l in real)
         tgross = sum(float(l.get("line_amount", 0) or 0) for l in real)
         tvat = sum(float(l.get("vat_amount", 0) or 0) for l in real)
@@ -334,12 +355,12 @@ class InvoiceGrid(tk.Frame):
         ps = [self._line_profit(l) for l in real]
         tprofit = sum(p for p, _s in ps)
         tsale = sum(s for _p, s in ps)
-        self.footer_tree.item("sum", values=(
-            "", "", f"{len(real)} items", f"{tqty:g}", "", "", "",
-            money(tgross), money(tvat), money(ttot), "", "", "",
-            money(tprofit), "",
-            (f"{tprofit / tsale * 100:.2f}%" if tsale else ""),
-            "", "", "", "", "", "", "", ""))
+        sums = {"product": f"{len(real)} items", "qty": f"{tqty:g}",
+                "disc": money(tdisc) if tdisc else "", "gross": money(tgross),
+                "vat": money(tvat), "total": money(ttot), "profit": money(tprofit),
+                "profit_pct": (f"{tprofit / tsale * 100:.2f}%" if tsale else ""),
+                "net_total": money(tgross)}
+        self.footer_tree.item("sum", values=tuple(sums.get(k, "") for k in KEYS))
 
     def _row_values(self, i, ln):
         def money(x):
@@ -353,25 +374,34 @@ class InvoiceGrid(tk.Frame):
         xv = self._extra_values(ln)
         qty = float(ln["quantity"]) or 0
         uprice = (float(ln["line_amount"]) / qty) if qty else 0.0
-        return (
-            i + 1,
-            self.shown_barcode(ln),
-            ln.get("product_name_en", "") + (("   🏷 " + ln["offer_text"])
-                                             if ln.get("offer_text") else ""),
-            f"{float(ln['quantity']):g}",
-            ln.get("unit_of_measure_en", ""),
-            money(ln["unit_price"]),
-            money(uprice),
-            money(ln["line_amount"]),
-            money(ln["vat_amount"]),
-            money(ln["line_total"]),
-            f"{float(ln.get('stock_quantity', 0)):g}",
-            money(self._unit_cost(ln)),
-            "✕",
-            money(profit),
-            ln.get("box_qty", ""),
-            (f"{profit / sale * 100:.2f}%" if sale else ""),
-        ) + tuple(xv.get(k, "") for k, *_r in COLUMNS[16:])
+        disc = float(ln.get("discount_amount") or 0)
+        dpct = float(ln.get("discount_percent") or 0)
+        vals = dict(xv)
+        vals.update({
+            "idx": i + 1,
+            "barcode": self.shown_barcode(ln),
+            "product": ln.get("product_name_en", "") + (("   🏷 " + ln["offer_text"])
+                                                        if ln.get("offer_text") else ""),
+            "qty": f"{float(ln['quantity']):g}",
+            "unit": ln.get("unit_of_measure_en", ""),
+            "rate": money(ln["unit_price"]),
+            "disc_pct": (f"{dpct:g}%" if dpct else ""),
+            "disc": money(disc) if disc else "",
+            "uprice": money(uprice),
+            "gross": money(ln["line_amount"]),
+            "vat": money(ln["vat_amount"]),
+            "total": money(ln["line_total"]),
+            "stock": f"{float(ln.get('stock_quantity', 0)):g}",
+            "purchase": money(self._unit_cost(ln)),
+            "x": "✕",
+            "profit": money(profit),
+            "boxqty": ln.get("box_qty", ""),
+            "profit_pct": (f"{profit / sale * 100:.2f}%" if sale else ""),
+            "code": ln.get("product_code", ""),
+            "vat_pct": (f"{float(ln.get('vat_rate') or 0):g}%" if self._vat_applies() else "0%"),
+            "net_total": money(ln["line_amount"]),
+        })
+        return tuple(vals.get(k, "") for k in KEYS)
 
     # ── v6.9.4: profit the right way + the "More columns" ────────
     def _product_facts(self, ln):
@@ -477,6 +507,16 @@ class InvoiceGrid(tk.Frame):
         lq = ln.get("_load_qty")
         if lq and not ln.get("offer_id"):
             ln["discount_amount"] = round(float(ln.get("_load_disc") or 0) * qty / lq, 4)
+        # v7.9.5: a discount typed as % follows the qty / rate; one typed as
+        # an amount stays that amount (its % is shown)
+        mode = ln.get("_disc_mode")
+        if mode == "pct":
+            ln["discount_amount"] = round(qty * price * float(ln.get("discount_percent") or 0) / 100.0, 4)
+        if mode in ("pct", "amt"):
+            ln["discount_amount"] = max(0.0, min(float(ln.get("discount_amount") or 0), max(0.0, qty * price)))
+        if mode != "pct":               # the % shown always matches the amount
+            ln["discount_percent"] = round(float(ln.get("discount_amount") or 0) * 100.0 / (qty * price), 2) \
+                if qty * price else 0.0
         disc = float(ln.get("discount_amount", 0))
         gross = qty * price - disc
         if getattr(self, "tax_mode", "exclusive") == "inclusive" and rate:
@@ -492,8 +532,9 @@ class InvoiceGrid(tk.Frame):
             ln["line_total"] = gross + ln["vat_amount"]
 
     def _manual_price(self, ln):
-        """The user set the price by hand → no offer discount on this line."""
-        if ln.get("offer_id") or self.use_offers:
+        """The user set the price by hand → no offer discount on this line
+        (a discount the user typed — Disc % / Disc — stays)."""
+        if ln.get("offer_id") or (self.use_offers and not ln.get("_disc_mode")):
             ln.update(offer_off=True, discount_amount=0.0, discount_percent=0.0,
                       offer_id=None, offer_text="", _frozen_qty=None)
 
@@ -674,13 +715,17 @@ class InvoiceGrid(tk.Frame):
             return
         col_no = int(col.replace("#", "")) - 1
         key = COLUMNS[col_no][0]
-        if key in ("product", "barcode", "qty", "rate") and self._locked(key):
+        if key in EDIT_KEYS and self._locked(key):
             return self._say_locked(key)
+        if key in ("disc_pct", "disc", "uprice") and self._discount_edit_off():
+            return self._say_no_discount()
         if key == "product":
             self._edit_product(idx)
         elif key == "barcode":
             self._edit_barcode(idx)
-        elif key in ("qty", "rate"):
+        elif key in NUM_KEYS:
+            if key in ("disc_pct", "disc", "uprice") and not self.lines[idx].get("product_id"):
+                return
             self._edit_number(idx, key)
         elif key == "x":
             self._delete_row(idx)
@@ -698,7 +743,8 @@ class InvoiceGrid(tk.Frame):
             return False
 
     def _say_locked(self, key):
-        name = {"barcode": "Bar Code", "product": "Product", "qty": "Qty", "rate": "Rate"}.get(key, key)
+        name = {"barcode": "Bar Code", "product": "Product", "qty": "Qty", "rate": "Rate",
+                "disc_pct": "Disc %", "disc": "Disc", "uprice": "Unit Price"}.get(key, key)
         try:
             from ui.fluent_widgets import show_toast
             show_toast(self.winfo_toplevel(), "🔒  %s is read only here (right-click the heading ▸ "
@@ -1316,7 +1362,8 @@ class InvoiceGrid(tk.Frame):
             return
         # hidden, 🔒 read only, or (Rate) price editing turned off → the next
         # step of the flow, so Enter never gets stuck on a cell you can't type in
-        if self._hidden(key) or self._locked(key) or (key == "rate" and self._price_edit_off()):
+        if self._hidden(key) or self._locked(key) or (key == "rate" and self._price_edit_off()) \
+                or (key in ("disc_pct", "disc", "uprice") and self._discount_edit_off()):
             if key == "qty":
                 return self._edit_number(idx, "rate")
             nxt = idx + 1
@@ -1332,6 +1379,13 @@ class InvoiceGrid(tk.Frame):
         ln = self.lines[idx]
         if key == "qty":
             cur = ln["quantity"]
+        elif key == "disc_pct":
+            cur = ln.get("discount_percent") or 0
+        elif key == "disc":
+            cur = round(float(ln.get("discount_amount") or 0), 2)
+        elif key == "uprice":
+            q_ = float(ln.get("quantity") or 0)
+            cur = round(float(ln.get("line_amount") or 0) / q_, 4) if q_ else 0
         else:  # rate
             cur = ln["unit_price"]
         var = tk.StringVar(value=f"{float(cur):g}")
@@ -1359,10 +1413,12 @@ class InvoiceGrid(tk.Frame):
     # → at the end of a Bar Code / Qty / Rate cell goes forward one cell.
     # A number typed in Qty / Rate is kept when you leave with an arrow.
     # ↑ / ↓ in Qty / Rate go to the same cell of the row above / below.
-    CELL_ORDER = ("barcode", "product", "qty", "rate")
+    CELL_ORDER = EDIT_KEYS          # v7.9.5: → also walks Disc % · Disc · Unit Price
 
     def _cells(self):
-        return [k for k in self.CELL_ORDER if not self._hidden(k) and not self._locked(k)]
+        off = ("disc_pct", "disc", "uprice") if self._discount_edit_off() else ()
+        return [k for k in self.CELL_ORDER
+                if not self._hidden(k) and not self._locked(k) and k not in off]
 
     def _open_cell(self, idx, key):
         if key == "barcode":
@@ -1386,14 +1442,14 @@ class InvoiceGrid(tk.Frame):
                 return None
             k = cells[i]
             # an empty row has no Qty / Rate yet: skip to its Product / Bar Code
-            if k in ("qty", "rate") and not self.lines[idx].get("product_id"):
+            if k in NUM_KEYS and not self.lines[idx].get("product_id"):
                 i += step
                 continue
             return idx, k
 
     def _keep_number(self, idx, key, var):
         """Leaving Qty / Rate with an arrow keeps what was typed (no flow)."""
-        if key not in ("qty", "rate") or idx >= len(self.lines) or self._locked(key):
+        if key not in NUM_KEYS or idx >= len(self.lines) or self._locked(key):
             return
         ln = self.lines[idx]
         if not ln.get("product_id"):
@@ -1402,18 +1458,9 @@ class InvoiceGrid(tk.Frame):
             val = float(var.get())
         except ValueError:
             val = _loose_number(var.get())
-        if key == "qty":
-            ln["quantity"] = val
-        elif abs(val - float(ln.get("unit_price") or 0)) > 1e-6:
-            if key == "rate" and self.cfg is not None and self.doc_type in ("sales", "sales_return", "pos"):
-                try:
-                    if not self.cfg.flag("allow_price_edit", True):
-                        return
-                except Exception:
-                    pass
-            ln["_price_typed"] = True
-            self._manual_price(ln)
-            ln["unit_price"] = val
+        if key == "rate" and abs(val - float(ln.get("unit_price") or 0)) > 1e-6 and self._price_edit_off():
+            return
+        self._apply_number(ln, key, val)
         self._recalc(ln)
 
     def _go(self, idx, key, var, target):
@@ -1464,7 +1511,7 @@ class InvoiceGrid(tk.Frame):
             return self._go(idx, key, var, (j, key))
         e.bind("<Left>", left)
         e.bind("<Right>", right)
-        if key in ("qty", "rate"):
+        if key in NUM_KEYS:
             e.bind("<Up>", lambda ev: vert(ev, -1))
             e.bind("<Down>", lambda ev: vert(ev, +1))
 
@@ -1499,26 +1546,81 @@ class InvoiceGrid(tk.Frame):
         except ValueError:
             val = _loose_number(var.get())          # v7.0: 2,75 · ٢٫٧٥ (was 0)
         ln = self.lines[idx]
-        if key == "qty":
-            ln["quantity"] = val
-        else:  # rate
-            if abs(val - float(ln.get("unit_price") or 0)) > 1e-6:
-                ln["_price_typed"] = True          # kept when the price list changes
-                self._manual_price(ln)      # a price typed by hand replaces the offer
-            ln["unit_price"] = val
+        self._apply_number(ln, key, val)
         self._recalc(ln)
-        if key == "rate":
+        if key in ("rate", "disc_pct", "disc", "uprice"):
             self._check_loss_warning(ln)
         self._close_editor(); self._refresh()
-        # Flow: Qty -> Rate -> next row barcode
+        # Flow: Qty -> Rate -> next row barcode (Disc % / Disc / Unit Price:
+        # Enter also goes to the next row — reach them by click or →)
         if key == "qty":
             self.after(20, lambda: self._edit_number(idx, "rate"))
-        elif key == "rate":
+        else:
             nxt = idx + 1
             if nxt >= len(self.lines):
                 self.add_blank_row()
                 nxt = len(self.lines) - 1
             self.after(20, lambda: self._edit_barcode(nxt))
+
+    # ── v7.9.5: line discount (% or amount) and the net Unit Price ──
+    def _discount_edit_off(self):
+        """Settings ▸ Sales: 'Allow Discount Edit' off → the sales / POS /
+        sales-return grids show the discount but it can't be typed."""
+        if self.cfg is None or self.doc_type not in ("sales", "sales_return", "pos"):
+            return False
+        try:
+            return not self.cfg.flag("allow_discount_edit", True)
+        except Exception:
+            return False
+
+    def _say_no_discount(self):
+        try:
+            from ui.fluent_widgets import show_toast
+            show_toast(self.winfo_toplevel(), "Discount editing is switched off "
+                       "(Settings ▸ Sales ▸ Allow Discount Edit).", kind="info", ms=2600)
+        except Exception:
+            self.bell()
+        return "break"
+
+    def _manual_discount(self, ln):
+        """A discount typed by hand replaces the offer and the saved share."""
+        ln.update(offer_off=True, offer_id=None, offer_text="", _frozen_qty=None,
+                  _load_qty=None, _load_disc=None)
+
+    def _apply_number(self, ln, key, val):
+        """Put one typed number on the line (the caller recalculates)."""
+        qty = float(ln.get("quantity") or 0)
+        price = float(ln.get("unit_price") or 0)
+        if key == "qty":
+            ln["quantity"] = val
+        elif key == "rate":
+            if abs(val - price) > 1e-6:
+                ln["_price_typed"] = True          # kept when the price list changes
+                self._manual_price(ln)      # a price typed by hand replaces the offer
+            ln["unit_price"] = val
+        elif key == "disc_pct":
+            self._manual_discount(ln)
+            ln.update(_disc_mode="pct", discount_percent=round(max(0.0, min(100.0, val)), 4))
+        elif key == "disc":
+            self._manual_discount(ln)
+            ln.update(_disc_mode="amt", discount_amount=round(max(0.0, min(val, qty * price)), 4))
+        elif key == "uprice":
+            # the net price of one unit (before VAT) → the discount that gives it;
+            # above the rate it becomes the new rate (when prices may be typed)
+            r = float(ln.get("vat_rate") or 0) if self._vat_applies() else 0.0
+            incl = getattr(self, "tax_mode", "exclusive") == "inclusive"
+            g = max(0.0, val) * (1 + r / 100.0) if (incl and r) else max(0.0, val)
+            if g <= price + 1e-9:
+                self._manual_discount(ln)
+                ln.update(_disc_mode="amt", discount_amount=round(qty * (price - g), 4))
+            elif not self._price_edit_off():
+                ln["_price_typed"] = True
+                self._manual_price(ln)
+                ln.update(unit_price=round(g, 4), discount_amount=0.0, discount_percent=0.0,
+                          _disc_mode=None)
+            else:
+                self.bell()
+        return ln
 
     def _delete_row(self, idx):
         """Remove a line via the X column (or Delete key)."""

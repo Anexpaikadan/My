@@ -923,6 +923,8 @@ class PurchaseForm:
                 pass
         # v5.27: header, lines, stock, cost and journal are ONE transaction
         _was_id, _tx = self.purchase_id, None
+        # v7.9.5: line discounts (Disc % / Disc) are kept with the bill
+        disc_total = round(sum(float(l.get("discount_amount") or 0) for l in self._lines), 2)
         try:
             _tx = db.begin()
             if self.purchase_id:
@@ -931,13 +933,13 @@ class PurchaseForm:
                     allocation.unlink_document("disbursement", self.purchase_id)
                 db.execute("UPDATE purchase_invoices SET supplier_id=?, "
                            "supplier_invoice_no=?, invoice_date=?, payment_method=?, "
-                           "subtotal_amount=?, taxable_amount=?, vat_amount=?, "
+                           "subtotal_amount=?, discount_amount=?, taxable_amount=?, vat_amount=?, "
                            "total_amount=?, invoice_status=?, payment_status=?, "
                            "paid_amount=?, updated_at=GETDATE() "
                            "WHERE purchase_id=?",
                            (s["supplier_id"], self.hdr["supinv"].get() or None,
                             self.hdr["date"].get(), self.hdr["payment"].get(),
-                            sub, sub, vat, total, status, pay_status, paid,
+                            sub, disc_total, sub, vat, total, status, pay_status, paid,
                             self.purchase_id))
                 db.execute("DELETE FROM purchase_invoice_lines WHERE purchase_id=?",
                            (self.purchase_id,))
@@ -947,14 +949,14 @@ class PurchaseForm:
                 db.execute("INSERT INTO purchase_invoices (invoice_number, "
                            "supplier_invoice_no, invoice_date, supplier_id, "
                            "supplier_name_en, supplier_name_ar, supplier_vat_no, "
-                           "payment_method, subtotal_amount, taxable_amount, "
+                           "payment_method, subtotal_amount, discount_amount, taxable_amount, "
                            "vat_amount, total_amount, invoice_status, payment_status, "
-                           "paid_amount) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                           "paid_amount) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                            (pnum, self.hdr["supinv"].get() or None,
                             self.hdr["date"].get(), s["supplier_id"],
                             s["supplier_name_en"], s.get("supplier_name_ar", ""),
                             s.get("vat_registration_no", ""), self.hdr["payment"].get(),
-                            sub, sub, vat, total, status, pay_status, paid))
+                            sub, disc_total, sub, vat, total, status, pay_status, paid))
                 pid = db.last_identity("purchase_invoices", "purchase_id")
             self.purchase_id = pid
             self._save_supplier_snapshot(pid, s)
@@ -963,12 +965,13 @@ class PurchaseForm:
             for i, ln in enumerate(self._lines, 1):
                 db.execute("INSERT INTO purchase_invoice_lines (purchase_id, "
                            "line_number, product_id, product_code, product_name_en, "
-                           "quantity, unit_of_measure_en, unit_price, line_amount, "
+                           "quantity, unit_of_measure_en, unit_price, discount_amount, line_amount, "
                            "vat_category_id, vat_rate, vat_amount, line_total) "
-                           "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                           "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                            (pid, i, ln.get("product_id"), ln.get("product_code", ""),
                             ln.get("product_name_en", ""), ln.get("quantity", 0),
                             ln.get("unit_of_measure_en", "Unit"), ln.get("unit_price", 0),
+                            round(float(ln.get("discount_amount") or 0), 4),
                             ln.get("line_amount", 0), ln.get("vat_category_id"),
                             ln.get("vat_rate", 15), ln.get("vat_amount", 0),
                             ln.get("line_total", 0)))
