@@ -1,7 +1,22 @@
-# DayBill ERP  v7.9.8
+# DayBill ERP  v7.9.9
 
 Billing, POS, inventory, accounts and HR for shops in 🇸🇦 Saudi Arabia, 🇦🇪 the UAE and 🇮🇳 India.
 **VAT / GST by country · ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
+
+## 🔍 v7.9.9 — more labels, server on the network, faster database
+
+- **17 label designs, 21 sizes:** new Clothing tag (40×60 hang tag),
+  Pharmacy (batch, MFG, EXP, MRP), Price per kg, QR label, Premium black,
+  Arabic first, Sale tag; new sizes 35×25, 40×20, 50×40, 62×29 (Brother),
+  100×70, 40×60, 100×150 and A4 sheets 3×7, 4×10, 5×13. Each design is
+  offered only in sizes that fit it; all 536 combinations scan.
+- **The server shows on other PCs:** 🔍 Find also asks your subnet and
+  looks for port 1433 on every PC of the network (works without SQL
+  Browser), and offers the server as `IP,port`.
+- **🩺 Check connection** (Database Settings): name → Browser → port →
+  sign-in → speed, with the fix for the step that fails.
+- **⚡ Speed up database:** refreshes statistics, tidies fragmented
+  indexes. See docs/MULTI_COUNTER_SETUP.md ▸ Fast database.
 
 ## ▮ v7.9.8 — barcodes that scan, shop name on every label
 

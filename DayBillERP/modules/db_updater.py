@@ -10,7 +10,7 @@ import re
 try:                                    # one version for the whole app (config/version.py)
     from config.version import VERSION as APP_VERSION
 except Exception:
-    APP_VERSION = "7.9.8"
+    APP_VERSION = "7.9.9"
 
 # Ordered list of database patches shipped with the app.
 # (filename relative to project root, human description, version)
@@ -35,6 +35,12 @@ PATCHES = [
 
 # What changed in each version (shown in the Updates panel)
 CHANGELOG = [
+    ("7.9.9", ["🏷 7 more label designs (Clothing tag, Pharmacy, Price per kg, QR label, Premium black, Arabic first, "
+               "Sale tag) and 10 more sizes (A4 sheets 3×7, 4×10, 5×13, hang tag 40×60, shipping 100×150 …) — "
+               "all scan-tested.",
+               "🔍 Find also finds a server without SQL Browser (port 1433 on the local network) and offers IP,port.",
+               "🩺 Database Settings ▸ Check connection: tests name, Browser, port, sign-in and speed, and says "
+               "what to fix. ⚡ Speed up database: refreshes statistics and tidies indexes."]),
     ("7.9.8", ["▮ Barcodes scan reliably: printed as sharp vector bars sized to the printer's dots, with clear "
                "margins (tested at 203 dpi black & white: every design and size scans).",
                "🔢 Each design can print the short system barcode (default for the gallery — fewer, wider bars), "

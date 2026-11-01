@@ -103,3 +103,46 @@ counter; the counter's name is shown at the top of DayBill.
 | "Login failed for user 'daybill'" | password · Mixed Mode switched on and the service restarted |
 | "Cannot open database" | User Mapping ▸ DayBillERP ▸ db_owner |
 | Works, then stops after a restart of the server | give the server a fixed IP |
+
+**First press ⚙ Database Settings ▸ 🩺 Check connection** on the counter.
+It tests every step — the server's name, the SQL Server Browser, the TCP
+port, the sign-in, the speed — and says exactly what to fix for the step
+that fails.
+
+## The server does not show on the other PCs
+
+**🔍 Find** looks for servers three ways: the SQL Server Browser
+(broadcast, UDP 1434, to the whole network and to your own subnet), every
+PC of your network with port 1433 open, and the names you used before.
+When nothing shows:
+
+1. **Type the server as `IP,1433`** (e.g. `192.168.1.10,1433`). This needs
+   no Browser and no PC-name lookup — the most reliable way, and the
+   fastest.
+2. On the **server PC**: TCP/IP enabled and IPAll TCP Port 1433 (step A.2),
+   the SQL Server service restarted, **🛡 Allow SQL Server in Firewall**
+   pressed, and the network set to **Private** (Windows ▸ Settings ▸
+   Network ▸ the network ▸ Private) — on a *Public* network Windows blocks
+   it.
+3. To see `SERVER-PC\SQLEXPRESS` in the list: Windows ▸ Services ▸
+   **SQL Server Browser** ▸ Startup type *Automatic* ▸ Start.
+4. Both PCs on the **same network** (same router / Wi-Fi; a guest Wi-Fi
+   usually keeps PCs apart), and `ping 192.168.1.10` answers from the
+   counter.
+
+## Fast database
+
+- **Cable, not Wi-Fi**, between the counters and the server PC; Wi-Fi adds
+  delay on every request. 🩺 Check connection shows the speed (under
+  ~3 ms per request is fast).
+- Counters connect with **`IP,1433`** — no name lookup, no Browser step.
+- **⚡ Speed up database** (Database Settings) once a week or after big
+  imports: refreshes SQL Server's statistics and tidies fragmented
+  indexes. Safe while people work.
+- The **server PC**: SSD disk, never sleeps, not used for heavy other work.
+  SQL Server keeps the busy parts of the database in memory by itself —
+  give the server PC enough RAM (8 GB or more). SQL Server Express uses up
+  to about 1.4 GB for that cache; a very big shop can move to the
+  Standard edition.
+- **💾 Backup Now** regularly (Database Settings) — a safe copy, not a
+  speed setting, but a slow PC is no reason to skip it.

@@ -2,6 +2,24 @@
 
 Newest first. The short guide is in the main README.md.
 
+## 🔍 v7.9.9 — more labels, server on the network, faster database
+
+- label_designs: 7 designs (Clothing tag 40×60, Pharmacy, Price per kg, QR
+  label, Premium black, Arabic first, Sale tag) and 10 sizes (incl. A4
+  sheets 3×7 / 4×10 / 5×13 with their grids, 40×60 tag, 100×150
+  shipping); sizes_for() keeps a design to sizes that fit it and are the
+  same way round. 17 designs × their sizes × (system / product barcode) =
+  536 labels decode at 203 dpi black & white.
+- db_finder: Browser query also to the subnet broadcast; a reply's IP +
+  TCP port offered as `IP,port` (PC names often don't resolve); tcp_sweep
+  finds port 1433 on the local /24 without the Browser.
+- net_setup.diagnose: name → Browser (UDP 1434) → TCP port → sign-in →
+  speed (10 round trips), each failure with its fix; Database Settings ▸
+  🩺 Check connection shows it.
+- net_setup.optimise: sp_updatestats + REORGANIZE of indexes ≥ 30 %
+  fragmented (≥ 100 pages); Database Settings ▸ ⚡ Speed up database.
+- Guide: "The server does not show on the other PCs" and "Fast database".
+
 ## ▮ v7.9.8 — barcodes that scan, shop name on every label
 
 - Checked with a real decoder (zxing-cpp) on labels rasterised like a

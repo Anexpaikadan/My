@@ -953,11 +953,11 @@ class DbSettingsDialog:
 
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(t("settings.database"))
-        self.dialog.geometry("600x480")
+        self.dialog.geometry("600x530")
         self.dialog.resizable(False, False)
         self.dialog.grab_set()
         self.dialog.configure(bg=C["content_bg"])
-        self._center(600, 480)
+        self._center(600, 530)
 
         pad = {"padx": 30, "pady": 6}
         self._entry_map = {}
@@ -1081,6 +1081,15 @@ class DbSettingsDialog:
                   font=("Segoe UI", 9, "bold"), bg=C["primary_light"], fg=C["primary"],
                   relief="flat", padx=12, pady=6, cursor="hand2",
                   command=self._show_guide).pack(side="left", padx=5)
+        # fourth row (v7.9.9): what is wrong between this PC and the server · speed
+        net2 = tk.Frame(self.dialog, bg=C["content_bg"])
+        net2.pack(pady=(0, 12))
+        tk.Button(net2, text="🩺  Check connection", font=("Segoe UI", 9, "bold"),
+                  bg=_button_bg("#0F766E"), fg="white", relief="flat", padx=12, pady=6,
+                  cursor="hand2", command=self._check_connection).pack(side="left", padx=5)
+        tk.Button(net2, text="⚡  Speed up database", font=("Segoe UI", 9, "bold"),
+                  bg=C["primary_light"], fg=C["primary"], relief="flat", padx=12, pady=6,
+                  cursor="hand2", command=self._speed_up).pack(side="left", padx=5)
 
         self._entries = {k: v for k, v in self._entry_map.items()}
 
@@ -1099,6 +1108,86 @@ class DbSettingsDialog:
                             else "🛡 Firewall not changed — see the message.")
         (messagebox.showinfo if asked else messagebox.showwarning)("Firewall", msg, parent=self.dialog)
         return asked
+
+    def _check_connection(self):
+        """Step by step: name → SQL Browser → TCP port → sign-in → speed, each
+        with what to fix (v7.9.9)."""
+        from modules import net_setup as NS
+        conf = self._get_config()
+        self.status_var.set("🩺 Checking %s …" % conf.get("server", ""))
+        try:
+            self.dialog.update_idletasks()
+        except Exception:
+            pass
+        steps = NS.diagnose(conf.get("server", ""), conf)
+        C = cfg.theme()
+        win = tk.Toplevel(self.dialog)
+        win.title("Check connection")
+        win.configure(bg=C["content_bg"])
+        win.geometry("640x420")
+        try:
+            win.transient(self.dialog)
+        except Exception:
+            pass
+        bar = tk.Frame(win, bg=C["primary"]); bar.pack(fill="x")
+        tk.Label(bar, text="🩺  %s" % conf.get("server", ""), font=("Segoe UI", 12, "bold"),
+                 bg=C["primary"], fg="white").pack(side="left", padx=14, pady=8)
+        box = tk.Frame(win, bg=C["content_bg"]); box.pack(fill="both", expand=True, padx=14, pady=10)
+        for ok, step, detail in steps:
+            mark, col = (("✓", "#15803D") if ok else ("✗", "#B91C1C")) if ok is not None else ("•", "#B45309")
+            row = tk.Frame(box, bg=C["content_bg"]); row.pack(fill="x", pady=4, anchor="w")
+            tk.Label(row, text=mark, font=("Segoe UI", 13, "bold"), fg=col, bg=C["content_bg"],
+                     width=2).pack(side="left", anchor="n")
+            txt = tk.Frame(row, bg=C["content_bg"]); txt.pack(side="left", fill="x", expand=True)
+            tk.Label(txt, text=step, font=("Segoe UI", 10, "bold"), bg=C["content_bg"],
+                     fg=C["text_primary"], anchor="w").pack(fill="x")
+            tk.Label(txt, text=detail, font=("Segoe UI", 9), bg=C["content_bg"], fg=C["text_secondary"],
+                     anchor="w", justify="left", wraplength=560).pack(fill="x")
+        bad = [s for s in steps if s[0] is False]
+        self.status_var.set(("🩺 Problem: " + bad[0][1]) if bad else "🩺 Connection OK")
+        tk.Button(win, text="Close", relief="flat", padx=16, pady=5, command=win.destroy).pack(pady=(0, 10))
+        self._check_win, self._check_steps = win, steps
+        return steps
+
+    def _speed_up(self):
+        """Refresh statistics + tidy fragmented indexes of the chosen database."""
+        from modules import net_setup as NS
+        conf = self._get_config()
+        if not messagebox.askyesno(
+                "Speed up database",
+                "Refresh the statistics and tidy the indexes of '%s'?\n\nSafe while people work; "
+                "takes seconds to a few minutes on a big database. Best done once a week or after "
+                "importing many products / bills." % conf.get("database", ""), parent=self.dialog):
+            return None
+        try:
+            import pyodbc
+            from config.database import build_connection_string
+            cn = pyodbc.connect(build_connection_string(conf), timeout=10, autocommit=True)
+        except Exception as e:
+            messagebox.showerror("Speed up database", "Can't connect: %s" % str(e)[:200], parent=self.dialog)
+            return None
+
+        class _Conn:                                  # the small part of db's API optimise() uses
+            def execute(self, sql, params=()):
+                cn.cursor().execute(sql, params)
+
+            def fetchall(self, sql, params=()):
+                cur = cn.cursor()
+                cur.execute(sql, params)
+                cols = [d[0] for d in cur.description]
+                return [dict(zip(cols, r)) for r in cur.fetchall()]
+        try:
+            res = NS.optimise(_Conn())
+        finally:
+            cn.close()
+        msg = ("✓ Statistics refreshed\n" if res["stats"] else "") + \
+              "✓ %d fragmented index(es) tidied" % res["indexes"]
+        if res["errors"]:
+            msg += "\n\nNot done:\n" + "\n".join(res["errors"][:5])
+        self.status_var.set("⚡ Database sped up" if not res["errors"] else "⚡ Partly done — see the message")
+        (messagebox.showinfo if not res["errors"] else messagebox.showwarning)(
+            "Speed up database", msg, parent=self.dialog)
+        return res
 
     def _show_guide(self):
         """docs/MULTI_COUNTER_SETUP.md in a window (headings in bold)."""

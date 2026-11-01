@@ -27,8 +27,18 @@ SIZES = [
     ("30 × 20 mm", 30, 20, False), ("58 × 40 mm", 58, 40, False),
     ("60 × 40 mm", 60, 40, False), ("75 × 50 mm", 75, 50, False),
     ("80 × 35 mm · shelf", 80, 35, False), ("100 × 50 mm", 100, 50, False),
+    # v7.9.9
+    ("35 × 25 mm", 35, 25, False), ("40 × 20 mm", 40, 20, False),
+    ("50 × 40 mm", 50, 40, False), ("62 × 29 mm · Brother DK", 62, 29, False),
+    ("100 × 70 mm", 100, 70, False),
+    ("40 × 60 mm · hang tag", 40, 60, False), ("100 × 150 mm · shipping", 100, 150, False),
     ("A4 sheet 3 × 8 (70 × 37 mm)", 70, 37, True),
+    ("A4 sheet 3 × 7 (63.5 × 38.1 mm)", 63.5, 38.1, True),
+    ("A4 sheet 4 × 10 (48.5 × 25.4 mm)", 48.5, 25.4, True),
+    ("A4 sheet 5 × 13 (38.1 × 21.2 mm)", 38.1, 21.2, True),
 ]
+# A4 sticker sheets: columns × rows
+SHEET_GRID = {70: (3, 8), 63.5: (3, 7), 48.5: (4, 10), 38.1: (5, 13)}
 DEFAULT_SIZE = SIZES[0][0]
 
 INK, MUTED, BRAND, SALE = "#111827", "#4B5563", "#1D4ED8", "#DC2626"
@@ -51,6 +61,10 @@ def _line(x, y, w, lw=0.3, color=INK):
 
 def _bar(x, y, w, bh):
     return {"key": "barcode", "x": x, "y": y, "w": w, "bh": bh}
+
+
+def _qr(x, y, side):
+    return {"key": "qr", "x": x, "y": y, "w": side}
 
 
 # name → (description, base width, base height, own frame?, elements)
@@ -138,6 +152,63 @@ DESIGNS = {
         _t("unit", 25.5, 8.2, 22, 4, 6, False, "right"),
         _t("price_vat", 2.5, 12, 45, 4.6, 9, True, "center", serif=True),
         _bar(4.5, 16.7, 41, 7.2)]),
+    # ── v7.9.9 ──
+    "Clothing tag": ("Hang tag: shop band, name, article, size, price", 40, 60, False, [
+        _box(0, 0, 40, 8, fill=INK),
+        _shop(1, 0, 38, 8, 8, "center", color="#FFFFFF"),
+        _t("product_name", 1.5, 9.5, 37, 6, 8, True, "center"),
+        _t("product_code", 1.5, 15.5, 37, 4, 6, False, "center", color=MUTED, prefix="Art. "),
+        _t("unit", 1.5, 19.5, 37, 4.5, 7, False, "center", prefix="Size "),
+        _line(8, 25, 24, 0.4),
+        _t("price_vat", 1, 26, 38, 10, 17, True, "center"),
+        _bar(2.5, 38, 35, 20)]),
+    "Pharmacy": ("Batch, MFG, EXP badge, MRP price", 50, 30, False, [
+        _t("product_name", 1.5, 0.3, 31, 5, 7, True),
+        _shop(33, 0.3, 15.5, 5),
+        _t("batch", 1.5, 5.4, 24, 4.4, 6, False, prefix="B.No  "),
+        _t("exp_date", 26.5, 5.4, 22, 4.4, 6.5, True, color="#FFFFFF", bg=INK, prefix="EXP  "),
+        _t("mfg_date", 1.5, 9.9, 24, 4.4, 6, False, color=MUTED, prefix="MFG  "),
+        _t("price_vat", 26.5, 9.9, 22, 4.4, 7.5, True, "right", prefix="MRP "),
+        _bar(1.5, 14.8, 47, 14.8)]),
+    "Price per kg": ("Fresh / weighed food: big price per unit", 58, 40, False, [
+        _t("product_name", 2, 0.5, 54, 6, 9, True),
+        _t("product_name_ar", 2, 6.4, 54, 5.5, 8, False, "right"),
+        _t("price_vat", 2, 12, 40, 11, 20, True),
+        _t("unit", 42, 15, 14, 5, 8, True, "right", prefix="per "),
+        _bar(2, 23.5, 34, 15.5),
+        _shop(37, 30, 19, 4, 6),
+        _t("product_code", 37, 34, 19, 4, 5.5, False, "right", color=MUTED)]),
+    "QR label": ("QR code beside name, price and shop", 40, 30, False, [
+        _qr(1.5, 1.5, 15),
+        _t("product_name", 18, 1, 20.5, 5, 6, True),
+        _t("price_vat", 18, 6.5, 20.5, 6, 10, True),
+        _t("product_code", 18, 13, 20.5, 4, 5.5, False, color=MUTED),
+        _shop(1.5, 17.8, 37, 4, 6, "left"),
+        _t("unit", 18, 17.8, 20.5, 4, 6, False, "right", color=MUTED),
+        _bar(1.5, 22, 37, 7.6)]),
+    "Premium black": ("Black label, white serif type, barcode on white", 50, 30, True, [
+        _box(0, 0, 50, 30, fill=INK),
+        _shop(2, 0.6, 46, 4, 5.5, "center", color="#D1D5DB", serif=True),
+        _t("product_name", 2, 4.2, 46, 5, 8, True, "center", color="#FFFFFF", serif=True),
+        _t("price_vat", 2, 9.2, 46, 6, 12, True, "center", color="#FFFFFF", serif=True),
+        _box(3, 15.6, 44, 13.6, fill="#FFFFFF", radius=1),
+        _bar(4, 16, 42, 12.8)]),
+    "Arabic first": ("Arabic name first, English below", 50, 30, False, [
+        _t("product_name_ar", 1.5, 0.3, 47, 6, 9, True, "right"),
+        _t("product_name", 1.5, 6, 47, 4.4, 6, False, "left", color=MUTED),
+        _t("price_vat", 18, 10.2, 30.5, 6.4, 12, True, "right"),
+        _t("unit", 1.5, 10.6, 16, 6, 6, False, "left", color=MUTED),
+        _shop(1.5, 16.4, 47, 3, 5, "left"),
+        _bar(1.5, 19.3, 47, 10.4)]),
+    "Sale tag": ("Yellow sale tag, old price struck, barcode on white", 50, 30, True, [
+        _box(0, 0, 50, 30, fill="#FACC15"),
+        _t("text_label", 2, 0.3, 22, 6, 11, True, color=SALE, text="SALE"),
+        _shop(24, 0.3, 24, 6, 5.5, color=INK),
+        _t("product_name", 2, 5.8, 46, 4.6, 7, True),
+        _t("old_price", 2, 10.4, 18, 5, 7, False),
+        _t("price_vat", 20, 9.8, 28, 6, 12, True, "right"),
+        _box(2, 16, 46, 13.4, fill="#FFFFFF", radius=1),
+        _bar(3, 16.4, 44, 12.6)]),
 }
 for _d in DESIGNS.values():                     # short system barcode by default
     for _e in _d[4]:
@@ -145,13 +216,17 @@ for _d in DESIGNS.values():                     # short system barcode by defaul
             _e.setdefault("source", "system")
 DESIGN_NAMES = list(DESIGNS)
 # designs that only work (and scan) from a minimum label size, mm
-MIN_SIZE = {"Shelf": (58, 30), "Shelf offer": (58, 30)}
+MIN_SIZE = {"Shelf": (58, 30), "Shelf offer": (58, 30), "Price per kg": (50, 30),
+            "QR label": (35, 25), "Pharmacy": (38, 25), "Clothing tag": (35, 50)}
 
 
 def sizes_for(design):
-    """The SIZES this design is offered in (big enough to scan well)."""
+    """The SIZES this design is offered in: big enough to scan well, and the
+    same way round (a hang tag on tall labels, the others on wide ones)."""
     mw, mh = MIN_SIZE.get(design, (0, 0))
-    return [s for s in SIZES if s[1] >= mw and s[2] >= mh]
+    _d, bw, bh, _f, _e = DESIGNS.get(design) or DESIGNS["Modern"]
+    tall = bh > bw
+    return [s for s in SIZES if s[1] >= mw and s[2] >= mh and ((s[2] > s[1]) == tall)]
 
 _X = ("x", "w")
 _Y = ("y", "bh", "hh", "rh")
@@ -205,7 +280,7 @@ LABELS = {"product_name": "Product Name", "product_name_ar": "Product Name (Arab
           "exp_date": "Expiry Date", "mfg_date": "Mfg Date", "batch": "Batch Number",
           "product_code": "Product Code", "old_price": "Old Price", "offer_text": "Offer",
           "text_label": "Custom Text", "box": "Box", "hline": "Line",
-          "company_name": "Shop Name"}
+          "company_name": "Shop Name", "qr": "QR Code", "unit_ar": "Unit (Arabic)"}
 
 
 def size_of(label):
@@ -219,7 +294,8 @@ def template_data(name, design, size_label):
     return {"template_name": name, "barcode_type": "code128",
             "label_width_mm": w, "label_height_mm": h,
             "paper_mode": "a4sheet" if sheet else "thermal",
-            "cols_per_sheet": 3 if sheet else 1, "rows_per_sheet": 8 if sheet else 1,
+            "cols_per_sheet": SHEET_GRID.get(w, (3, 8))[0] if sheet else 1,
+            "rows_per_sheet": SHEET_GRID.get(w, (3, 8))[1] if sheet else 1,
             "gap_x_mm": 0 if sheet else 2, "gap_y_mm": 0 if sheet else 2,
             "margin_mm": 5 if sheet else 0, "dpi": 203,
             "show_border": 0 if own_frame(design) else 1,

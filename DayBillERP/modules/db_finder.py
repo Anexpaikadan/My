@@ -44,8 +44,10 @@ def local_instances():
     return out
 
 
-def parse_browser_reply(data):
-    """The SQL Server Browser's answer → ['PC\\INSTANCE', …]."""
+def parse_browser_reply(data, ip=None):
+    """The SQL Server Browser's answer → ['PC\\INSTANCE', …]. v7.9.9: with the
+    sender's ip also 'IP,port' — PC names often don't resolve on shop
+    networks, the IP always does."""
     if not data or data[0] != 0x05:
         return []
     txt = bytes(data[3:]).decode("ascii", "replace")
@@ -56,12 +58,71 @@ def parse_browser_reply(data):
         host, inst = d.get("ServerName"), d.get("InstanceName")
         if host:
             name = host if not inst or inst.upper() == "MSSQLSERVER" else "%s\\%s" % (host, inst)
+            if ip and d.get("tcp"):
+                byip = "%s,%s" % (ip, d["tcp"])
+                if byip not in out:
+                    out.append(byip)
             if name not in out:
                 out.append(name)
     return out
 
 
-def network_instances(timeout=1.5, targets=("255.255.255.255",), port=1434):
+def local_ipv4():
+    """This PC's addresses on the shop network."""
+    ips = []
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("10.255.255.255", 1))
+        ips.append(s.getsockname()[0])
+        s.close()
+    except Exception:
+        pass
+    try:
+        for ip in socket.gethostbyname_ex(socket.gethostname())[2]:
+            if ip not in ips:
+                ips.append(ip)
+    except Exception:
+        pass
+    return [ip for ip in ips if not ip.startswith(("127.", "169.254."))]
+
+
+def subnet_broadcasts():
+    """x.y.z.255 of every local /24 network (a plain 255.255.255.255 is
+    dropped by many routers and Windows setups)."""
+    return ["%s.255" % ip.rsplit(".", 1)[0] for ip in local_ipv4()]
+
+
+def tcp_sweep(port=1433, timeout=0.3, limit=254):
+    """PCs on the local /24 networks with SQL Server's port open — finds a
+    server even when the SQL Server Browser is off → ['192.168.1.10,1433']."""
+    import threading
+    hits, lock = [], threading.Lock()
+    mine = set(local_ipv4())
+
+    def probe(ip):
+        try:
+            with socket.create_connection((ip, port), timeout=timeout):
+                with lock:
+                    hits.append("%s,%d" % (ip, port))
+        except Exception:
+            pass
+    threads = []
+    for ip in mine:
+        base = ip.rsplit(".", 1)[0]
+        for i in range(1, min(254, limit) + 1):
+            t = threading.Thread(target=probe, args=("%s.%d" % (base, i),), daemon=True)
+            threads.append(t)
+            t.start()
+    for t in threads:
+        t.join(timeout + 0.5)
+    for ip in mine:                         # this PC itself
+        if "%s,%d" % (ip, port) in hits:
+            hits.remove("%s,%d" % (ip, port))
+            hits.insert(0, "%s,%d" % (ip, port))
+    return sorted(set(hits), key=hits.index)
+
+
+def network_instances(timeout=1.5, targets=None, port=1434):
     """Ask every SQL Server Browser on the network who is there (UDP 1434)."""
     found = []
     s = None
@@ -72,6 +133,8 @@ def network_instances(timeout=1.5, targets=("255.255.255.255",), port=1434):
         except OSError:
             pass
         s.settimeout(0.2)
+        if targets is None:
+            targets = ["255.255.255.255"] + subnet_broadcasts()
         for t in targets:
             try:
                 s.sendto(b"\x02", (t, port))
@@ -80,12 +143,12 @@ def network_instances(timeout=1.5, targets=("255.255.255.255",), port=1434):
         end = time.time() + timeout
         while time.time() < end:
             try:
-                data, _addr = s.recvfrom(65535)
+                data, addr = s.recvfrom(65535)
             except socket.timeout:
                 continue
             except OSError:
                 break
-            for n in parse_browser_reply(data):
+            for n in parse_browser_reply(data, addr[0] if addr else None):
                 if n not in found:
                     found.append(n)
     except Exception:
@@ -103,7 +166,7 @@ def candidates(current=None, network=True):
     """Server names worth trying, best first, no repeats."""
     names, seen = [], set()
     pool = ([current] if current else []) + local_instances() + list(COMMON) + \
-        (network_instances() if network else [])
+        (network_instances() + tcp_sweep() if network else [])
     for n in pool:
         n = str(n or "").strip()
         if n and n.lower() not in seen:
