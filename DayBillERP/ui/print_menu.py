@@ -226,7 +226,7 @@ def print_button(parent, kind, get_id, before=None, status=None, text="🖨  Pri
     return b
 
 
-def send_pdf(parent, path, label, printer_key="a4", copies=None, printer=None):
+def send_pdf(parent, path, label, printer_key="a4", copies=None, printer=None, printer_fn=None):
     """Print a ready PDF (reports, vouchers, labels) the same way as
     documents: straight to the printer, or ask first when Settings ▸
     Printing ▸ 'without asking' is off. Returns True when sent."""
@@ -241,7 +241,7 @@ def send_pdf(parent, path, label, printer_key="a4", copies=None, printer=None):
         if not got:
             return False
         printer, copies = got
-    ok = ps.print_pdf(path, printer, copies=copies)
+    ok = (printer_fn or ps.print_pdf)(path, printer, copies=copies)
     if not ok:
         messagebox.showwarning("Print", f"{label} could not be printed. {ps.last_error}",
                                parent=parent)

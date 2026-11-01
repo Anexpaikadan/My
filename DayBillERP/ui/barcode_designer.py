@@ -857,7 +857,9 @@ class BarcodeDesignerView:
             self.last_pdf = path
             if getattr(self, "_to_printer", False):
                 from ui import print_menu
-                print_menu.send_pdf(self.frame, path, "Test label", "labels")
+                from modules import label_print as _LP     # v7.9.10: true size
+                print_menu.send_pdf(self.frame, path, "Test label", "labels",
+                                    printer_fn=_LP.printer_fn_for(self.template))
             else:
                 from modules import printer_service as ps
                 ps.open_file(path)

@@ -1052,20 +1052,25 @@ def _labels(head, lines, d, kind="labels"):
         raise MobileError("Nothing to print — the products have no barcode.")
     path = doc_file(d["doc_id"], kind)
     bd.render_labels_pdf(t, items, path)
-    printed = _print_file(path, "labels", head.get("print", True) and cfg.flag("mobile_labels_autoprint", True))
+    printed = _print_file(path, "labels", head.get("print", True) and cfg.flag("mobile_labels_autoprint", True),
+                          template=t)
     msg = "%d label(s) · %s — %s" % (n, t.get("template_name") or "label",
                                      printed or "PDF ready: DayBill ▸ Mobile ▸ Inbox ▸ Print")
     return msg, {"labels": n, "printed": bool(printed)}
 
 
-def _print_file(path, printer_key, wanted):
+def _print_file(path, printer_key, wanted, template=None):
     """Print the PDF on the PC's printer for that kind. '' when not printed."""
     if not wanted:
         return ""
     try:
         from modules import printer_service as ps
         printer = ps.printer_for(printer_key)
-        if ps.print_pdf(path, printer, copies=1, silent=True):
+        fn = None
+        if template is not None:                      # v7.9.10: label rolls at true size
+            from modules import label_print as _LP
+            fn = _LP.printer_fn_for(template)
+        if (fn(path, printer, copies=1) if fn else ps.print_pdf(path, printer, copies=1, silent=True)):
             return "sent to %s" % (printer or "the printer")
     except Exception:
         pass

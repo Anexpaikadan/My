@@ -10,7 +10,7 @@ import re
 try:                                    # one version for the whole app (config/version.py)
     from config.version import VERSION as APP_VERSION
 except Exception:
-    APP_VERSION = "7.9.9"
+    APP_VERSION = "7.9.10"
 
 # Ordered list of database patches shipped with the app.
 # (filename relative to project root, human description, version)
@@ -35,6 +35,11 @@ PATCHES = [
 
 # What changed in each version (shown in the Updates panel)
 CHANGELOG = [
+    ("7.9.10", ["🏷 Labels print at their TRUE size — no more blown-up labels running off the sticker or onto "
+                "the next one (they were stretched to the printer driver's paper width).",
+                "⚙ Print Labels ▸ Printer setup: Windows driver (true size), or straight to the label printer "
+                "(TSC / XPrinter / Gprinter = TSPL, Zebra = ZPL) with size and gap; shift right / down in mm; "
+                "🎯 alignment label; 📏 calibrate gap."]),
     ("7.9.9", ["🏷 7 more label designs (Clothing tag, Pharmacy, Price per kg, QR label, Premium black, Arabic first, "
                "Sale tag) and 10 more sizes (A4 sheets 3×7, 4×10, 5×13, hang tag 40×60, shipping 100×150 …) — "
                "all scan-tested.",

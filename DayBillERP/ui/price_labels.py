@@ -294,8 +294,9 @@ class PriceLabelsView:
         self.last_pdf = path
         try:
             from ui import print_menu
+            from modules import label_print as _LP     # v7.9.10: true size
             print_menu.send_pdf(self.frame, path, f"{len(rows) * copies} shelf label(s)",
-                                "labels")
+                                "labels", printer_fn=_LP.printer_fn_for(tpl))
         except Exception:
             pass
         self.load()

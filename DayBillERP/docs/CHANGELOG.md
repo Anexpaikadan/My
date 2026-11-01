@@ -2,6 +2,25 @@
 
 Newest first. The short guide is in the main README.md.
 
+## 🏷 v7.9.10 — labels print at their true size
+
+- Cause (from photos of printed labels): printer_service._gdi_print_pdf
+  draws a PDF page as a smoothed picture scaled to the driver's printable
+  width (ratio = page width / picture width): a 50 mm label on a driver
+  set to 4 in printed 2 × too big.
+- modules/label_print: raster() renders each label at the printer dpi
+  without smoothing, thresholds to 1-bit, applies the shift; driver mode
+  sets the driver's paper to the label size (DEVMODE DMPAPER_USER) and
+  draws 1 : 1 from the paper corner (device_rect); tspl_bytes (SIZE, GAP,
+  DENSITY, SPEED, BITMAP, PRINT) and zpl_bytes (^PW ^LL ^GFA ^PQ) send the
+  label raw; calibrate_bytes (GAPDETECT / ~JC); alignment_pdf.
+- Print Labels ▸ ⚙ Printer setup (mode, shift X / Y, gap, darkness,
+  speed, dpi, alignment label, calibrate); designer Test Print, price
+  labels and PDT label jobs use printer_fn_for(template); A4 sticker
+  sheets and simple A4 sheets keep print_pdf.
+- Test: picture exactly 400 × 240 dots for 50 × 30 mm at 203 dpi, shift
+  in dots, TSPL / ZPL jobs decoded back into an image that scans.
+
 ## 🔍 v7.9.9 — more labels, server on the network, faster database
 
 - label_designs: 7 designs (Clothing tag 40×60, Pharmacy, Price per kg, QR

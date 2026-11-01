@@ -1,7 +1,23 @@
-# DayBill ERP  v7.9.9
+# DayBill ERP  v7.9.10
 
 Billing, POS, inventory, accounts and HR for shops in 🇸🇦 Saudi Arabia, 🇦🇪 the UAE and 🇮🇳 India.
 **VAT / GST by country · ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
+
+## 🏷 v7.9.10 — labels print at their true size
+
+- Labels were drawn as a picture **stretched to the width of the printer
+  driver's paper**: with the driver on a bigger paper the label came out
+  blown up — the barcode ran off the sticker (no scan) and the print
+  spilled onto the next label. Now every label roll prints **1 : 1 in mm**
+  in pure black & white.
+- **Print Labels ▸ ⚙ Printer setup:** *Windows driver — true size* (the
+  driver is told the label size: one sticker = one page), or **straight
+  to the label printer**: TSC / XPrinter / Gprinter (TSPL) or Zebra (ZPL)
+  — size and gap go to the printer itself. **Shift right / down** (mm),
+  **🎯 Print alignment label** (frame 1 mm inside the sticker),
+  **📏 Calibrate gap**, darkness, speed, dpi.
+- Same printing for Test Print, price-change labels and phone (PDT)
+  label jobs. A4 sticker sheets keep normal A4 printing.
 
 ## 🔍 v7.9.9 — more labels, server on the network, faster database
 

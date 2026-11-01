@@ -169,6 +169,7 @@ class LabelPrintPanel:
                                    primary=True)
         self.print_btn.pack(side="right", padx=(4, 14), pady=10)
         self._btn(top, "📄 PDF", lambda: self.print_labels(False)).pack(side="right", padx=4)
+        self._btn(top, "⚙ Printer setup", self.printer_setup).pack(side="right", padx=4)
 
         # design row
         dr = tk.Frame(self.frame, bg=C["content_bg"]); dr.pack(fill="x", padx=14, pady=(10, 4))
@@ -746,7 +747,12 @@ class LabelPrintPanel:
             pass
         if to_printer:
             from ui import print_menu
-            if print_menu.send_pdf(self.frame, path, "%d label(s)" % n, "labels"):
+            fn = None
+            if t.get("paper_mode") != "a4sheet":       # v7.9.10: label rolls print at TRUE size
+                from modules import label_print as LP
+                w_mm, h_mm = float(t.get("label_width_mm") or 50), float(t.get("label_height_mm") or 25)
+                fn = lambda pth, prn, copies=1: LP.print_label_pdf(pth, prn, copies, w_mm, h_mm)
+            if print_menu.send_pdf(self.frame, path, "%d label(s)" % n, "labels", printer_fn=fn):
                 self.msg_v.set("🖨 %d label(s) sent to the printer" % n)
         else:
             try:
@@ -756,6 +762,92 @@ class LabelPrintPanel:
                 pass
             self.msg_v.set("📄 %d label(s) saved: %s" % (n, path))
         return path
+
+    # ── v7.9.10: label printer setup (true size, direct TSPL / ZPL, shift) ──
+    def printer_setup(self):
+        from modules import label_print as LP
+        from modules import printer_service as ps
+        C = self.C
+        s = LP.settings()
+        top = tk.Toplevel(self.frame)
+        top.title("Label printer setup")
+        top.configure(bg=C["card_bg"])
+        top.resizable(False, False)
+        tk.Label(top, text="⚙  Label printer setup", font=("Segoe UI", 12, "bold"), bg=C["primary"],
+                 fg="white", anchor="w", padx=14, pady=8).pack(fill="x")
+        body = tk.Frame(top, bg=C["card_bg"]); body.pack(padx=16, pady=10, fill="x")
+        tk.Label(body, text="Labels never stretch any more: they print at the design's size in mm.",
+                 font=("Segoe UI", 9), bg=C["card_bg"], fg=C["text_secondary"]).grid(
+                     row=0, column=0, columnspan=3, sticky="w", pady=(0, 6))
+        mode_v = tk.StringVar(value=LP.MODES[s["label_print_mode"]])
+        tk.Label(body, text="Print by", bg=C["card_bg"], font=("Segoe UI", 9, "bold")).grid(row=1, column=0, sticky="w")
+        ttk.Combobox(body, textvariable=mode_v, values=list(LP.MODES.values()), state="readonly",
+                     width=52).grid(row=1, column=1, columnspan=2, sticky="w", pady=3)
+        vars_ = {}
+        rows = (("label_offset_x", "Shift right (mm, − = left)"), ("label_offset_y", "Shift down (mm, − = up)"),
+                ("label_gap_mm", "Gap between stickers (mm)"), ("label_density", "Darkness 1–15 (direct)"),
+                ("label_speed", "Speed 1–6 (direct)"), ("label_dpi", "Printer dpi (203 / 300)"))
+        for i, (k, lbl) in enumerate(rows, 2):
+            tk.Label(body, text=lbl, bg=C["card_bg"], font=("Segoe UI", 9)).grid(row=i, column=0, sticky="w")
+            v = tk.StringVar(value=str(s[k]))
+            tk.Entry(body, textvariable=v, width=8, relief="solid", bd=1, justify="right").grid(
+                row=i, column=1, sticky="w", pady=2)
+            vars_[k] = v
+        tk.Label(body, text="Direct = for TSC, XPrinter, Gprinter, Zebra label printers: the label size and "
+                            "gap go to the printer itself, Windows settings can't change them.",
+                 font=("Segoe UI", 8), bg=C["card_bg"], fg=C["text_secondary"], wraplength=440,
+                 justify="left").grid(row=9, column=0, columnspan=3, sticky="w", pady=(6, 0))
+        status = tk.StringVar()
+        tk.Label(top, textvariable=status, bg=C["card_bg"], fg=C["primary"], font=("Segoe UI", 9, "bold"),
+                 wraplength=460, justify="left").pack(fill="x", padx=16)
+
+        def values():
+            out = {"label_print_mode": next(k for k, t in LP.MODES.items() if t == mode_v.get())}
+            for k, v in vars_.items():
+                try:
+                    out[k] = type(LP.DEFAULTS[k])(float(v.get()))
+                except ValueError:
+                    out[k] = LP.DEFAULTS[k]
+            return out
+
+        def printer():
+            return ps.printer_for("labels")
+
+        def test():
+            LP.save_settings(values())
+            t = self.template() or {}
+            w, h = float(t.get("label_width_mm") or 50), float(t.get("label_height_mm") or 30)
+            path = LP.alignment_pdf(w, h)
+            ok = LP.print_label_pdf(path, printer(), 1, w, h)
+            status.set("🖨 Alignment label (%g × %g mm) sent — the frame should sit 1 mm inside the "
+                       "sticker; if not, set Shift and print again." % (w, h) if ok
+                       else "⚠ Not printed: %s" % ps.last_error)
+            return ok
+
+        def calibrate():
+            mode = values()["label_print_mode"]
+            if mode == "driver":
+                status.set("Calibrate gap is for the direct modes. With the Windows driver: hold the "
+                           "printer's FEED button until it feeds 2–3 stickers, or use the driver's own "
+                           "calibrate tool.")
+                return False
+            ok = LP.send_raw(LP.calibrate_bytes(mode), printer())
+            status.set("📏 The printer is measuring the sticker gap…" if ok else "⚠ %s" % ps.last_error)
+            return ok
+
+        def save():
+            LP.save_settings(values())
+            self.msg_v.set("⚙ Label printer setup saved")
+            top.destroy()
+        bar = tk.Frame(top, bg=C["card_bg"]); bar.pack(fill="x", padx=16, pady=12)
+        tk.Button(bar, text="🎯 Print alignment label", relief="flat", padx=10, pady=5, command=test).pack(side="left")
+        tk.Button(bar, text="📏 Calibrate gap", relief="flat", padx=10, pady=5, command=calibrate).pack(side="left", padx=6)
+        tk.Button(bar, text="Save", font=("Segoe UI", 10, "bold"), bg=C["primary"], fg="white", relief="flat",
+                  padx=16, pady=5, command=save).pack(side="right")
+        self._setup_win = top
+        self._setup_api = {"mode": mode_v, "vars": vars_, "test": test, "calibrate": calibrate,
+                           "save": save, "status": status}
+        return top
 
     def _make_barcodes_quiet(self):
         pids = sorted({r["product_id"] for r in self.rows if not r.get("barcode_value")})
