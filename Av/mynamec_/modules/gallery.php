@@ -37,6 +37,7 @@ if ($isAdmin && isset($_POST['upload_photo'])) {
             if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
             $fname = 'gal_' . time() . '_' . mt_rand(1000,9999) . '.' . $ext;
             if (move_uploaded_file($_FILES['photo']['tmp_name'], $uploadDir . $fname)) {
+                img_optimize($uploadDir . $fname);
                 db()->prepare("INSERT INTO gallery_images(title,description,image_path,category,is_hero,uploaded_by,position) VALUES(?,?,?,?,?,?,?)")
                    ->execute([$title, $desc, 'gallery/'.$fname, $cat, $hero, $me['id'], $pos]);
                 // If marked as hero, also add to hero_sliders

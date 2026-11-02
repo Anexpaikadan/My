@@ -74,7 +74,8 @@ function cfUp($field, $sub='crowdfund') {
   $dir = __DIR__.'/../assets/uploads/'.$sub.'/';
   if (!is_dir($dir)) mkdir($dir,0755,true);
   $fn = $sub.'_'.time().'_'.mt_rand(1000,9999).'.'.$ext;
-  return move_uploaded_file($_FILES[$field]['tmp_name'],$dir.$fn) ? $sub.'/'.$fn : null;
+  if (!move_uploaded_file($_FILES[$field]['tmp_name'],$dir.$fn)) return null;
+  img_optimize($dir.$fn); return $sub.'/'.$fn;
 }
 
 // ── ACTIONS ─────────────────────────────────────────────────

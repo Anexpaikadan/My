@@ -167,6 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isOwn && isset($_POST['up'])) {
             } else {
                 // GD failed — just save original file directly
                 if (move_uploaded_file($src, $dst)) {
+                    img_optimize($dst, 800);
                     $u[] = 'profile_photo=?';
                     $p[] = $fn;
                 }

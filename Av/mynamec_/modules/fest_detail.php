@@ -34,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_FILES['entry_photo'])) {
             if (!is_dir($dir)) mkdir($dir,0755,true);
             $fn='entry_'.time().'_'.mt_rand(1000,9999).'.'.$ext;
             if (move_uploaded_file($f['tmp_name'],$dir.$fn)) {
+                img_optimize($dir.$fn);
                 $title2=trim($_POST['entry_title']??'');
                 $ins=db()->prepare("INSERT INTO fest_entries(fest_id,member_id,image_path,title) VALUES(?,?,?,?)");
                 $ins->execute([$fid,$uid,$fn,$title2]);

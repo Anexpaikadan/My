@@ -122,222 +122,186 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['post_ann']) && canPost(
     if($t&&$b){db()->prepare('INSERT INTO announcements(title,body,category,posted_by)VALUES(?,?,?,?)')->execute([$t,$b,$c,$user['id']]);header('Location:'.url('dashboard.php').'?posted=1');exit;}
 }
 
+// ── Numbers for the dashboard tiles (each tile opens its list) ──
+$isAdmD = isAdminRole($user['role']);
+$cnt = function($sql, $args = array()) { try { $st = db()->prepare($sql); $st->execute($args); return (int)$st->fetchColumn(); } catch (Exception $e) { return 0; } };
+$sum = function($sql) { try { return (float)db()->query($sql)->fetchColumn(); } catch (Exception $e) { return 0; } };
+$T = array(
+  'new_today'    => $cnt("SELECT COUNT(*) FROM users WHERE DATE(created_at)=CURDATE()"),
+  'pending'      => $pendingCount,
+  'events_today' => $cnt("SELECT COUNT(*) FROM events WHERE event_date=CURDATE()"),
+  'enquiries'    => $cnt("SELECT COUNT(*) FROM enquiries WHERE status='new'"),
+  'blood_open'   => $cnt("SELECT COUNT(*) FROM blood_requests WHERE status IS NULL OR status IN('open','active','pending')"),
+  'active'       => (int)($stats['active'] ?? 0),
+  'donors'       => (int)($stats['donors'] ?? 0),
+  'committee'    => count($executives) + count($committeeMembers),
+  'new_month'    => $cnt("SELECT COUNT(*) FROM users WHERE created_at >= DATE_FORMAT(CURDATE(),'%Y-%m-01')"),
+  'events_month' => $cnt("SELECT COUNT(*) FROM events WHERE event_date >= DATE_FORMAT(CURDATE(),'%Y-%m-01') AND event_date < DATE_FORMAT(CURDATE() + INTERVAL 1 MONTH,'%Y-%m-01')"),
+  'collected'    => $sum("SELECT COALESCE(SUM(amount),0) FROM subscription_payments WHERE paid_at >= DATE_FORMAT(CURDATE(),'%Y-%m-01')") + $sum("SELECT COALESCE(SUM(amount),0) FROM subscriptions WHERE paid_on >= DATE_FORMAT(CURDATE(),'%Y-%m-01')"),
+  'market'       => $cnt("SELECT COUNT(*) FROM market_items WHERE created_at >= DATE_FORMAT(CURDATE(),'%Y-%m-01')"),
+  'posts'        => $cnt("SELECT COUNT(*) FROM feed_posts WHERE created_at >= DATE_FORMAT(CURDATE(),'%Y-%m-01')"),
+);
 require_once __DIR__.'/includes/header.php';
 ?>
-
 <?php
-// ── View data ──
 $hr = (int)date('G');
-$greet = $hr < 12 ? 'Good morning' : ($hr < 17 ? 'Good afternoon' : 'Good evening');
-$isAdm = isAdminRole($user['role']);
+$greet = $hr < 12 ? t('app_greet_m') : ($hr < 17 ? t('app_greet_a') : t('app_greet_e'));
 $catConf = array(
-  'general'=>array('Notice','megaphone','teal'),'match'=>array('Match','ball','lime'),'meeting'=>array('Meeting','clipboard','slate'),
-  'festival'=>array('Festival','masks','violet'),'blood'=>array('Blood','droplet','rose'),'important'=>array('Important','star','amber'),
+  'general'=>array('Notice','megaphone-fill','c-blue'),'match'=>array('Match','dribbble','c-green'),'meeting'=>array('Meeting','people-fill','c-slate'),
+  'festival'=>array('Festival','stars','c-violet'),'blood'=>array('Blood','droplet-fill','c-rose'),'important'=>array('Important','exclamation-circle-fill','c-amber'),
 );
-$groups = array();
-foreach (app_modules() as $m) { $groups[$m[4]][] = $m; }
+$tileSets = array();
+if ($isAdmD) {
+  $tileSets[t('app_today')] = array(
+    array($T['pending'],'tile_pending','hourglass-split','c-red', url('admin.php').'?tab=pending'),
+    array($T['enquiries'],'tile_enquiries','inbox-fill','c-amber', url('modules/enquiries.php')),
+    array($T['new_today'],'tile_new_members','person-plus-fill','c-green', url('modules/members.php')),
+    array($T['events_today'],'tile_events_today','calendar-event-fill','c-violet', url('modules/events.php')),
+  );
+}
+$tileSets[t('app_members_sec')] = array(
+  array($T['active'],'tile_active','people-fill','c-blue', url('modules/members.php')),
+  array($T['donors'],'tile_donors','droplet-fill','c-rose', url('modules/blood.php')),
+  array($T['committee'],'tile_committee','person-badge-fill','c-navy', url('modules/members.php').'#executives'),
+  array($T['blood_open'],'tile_blood_req','heart-pulse-fill','c-red', url('modules/blood.php')),
+);
+$tileSets[t('app_this_month')] = array(
+  array($T['events_month'],'tile_events_month','calendar3','c-violet', url('modules/events.php')),
+  $isAdmD ? array('₹'.number_format($T['collected']),'tile_collected','cash-stack','c-green', url('modules/admin_subscription.php'))
+          : array($T['new_month'],'tile_new_members','person-plus-fill','c-green', url('modules/members.php')),
+  array($T['posts'],'tile_posts','lightning-charge-fill','c-amber', url('modules/feed.php')),
+  array($T['market'],'tile_market','shop','c-teal', url('modules/market.php')),
+);
 ?>
 <style>
-/* ═══ Dashboard: dark glass launcher ═══ */
-body{background:var(--surface)}
-.dk{color:var(--text);position:relative;background:var(--surface)}
-.hero-card{position:relative;overflow:hidden;color:#fff;border-radius:26px;padding:1.1rem 1rem 1rem;margin-bottom:.4rem;
-  background:radial-gradient(60% 90% at 100% 0%,rgba(255,255,255,.18),transparent 60%),var(--brand-grad);box-shadow:0 18px 40px -20px rgba(10,20,224,.7)}
-.hero-card .club-logo{position:absolute;right:-26px;bottom:-26px;width:150px;height:150px;border-radius:50%;opacity:.16;object-fit:cover}
-.dk-in{max-width:1100px;margin:0 auto;padding:1rem 1rem 1.5rem}
-.glass{background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:var(--sh-1)}
-.hero-card .glass{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28);box-shadow:none;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-.hi{display:flex;align-items:center;gap:.85rem;padding:.4rem .1rem 1rem}
-.hi img,.hi .ph{width:56px;height:56px;border-radius:50%;object-fit:cover;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,.85)}
-.hi small{display:block;font-size:.82rem;color:rgba(255,255,255,.9);font-weight:600}
-.hi b{font-size:1.25rem;font-weight:800;letter-spacing:-.02em;line-height:1.2}
-.hi .role{display:inline-block;margin-top:.25rem;font-size:.72rem;font-weight:700;color:var(--primary-dark);background:#fff;padding:.14rem .6rem;border-radius:999px}
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem}
-.kpi{padding:.75rem .4rem;text-align:center}
-.kpi b{display:block;font-size:1.45rem;font-weight:800;letter-spacing:-.02em;line-height:1.1}
-.kpi span{font-size:.68rem;font-weight:700;color:rgba(255,255,255,.92);text-transform:uppercase;letter-spacing:.05em}
-.kpi.warn{background:#fff!important}.kpi.warn b{color:var(--accent-ink)}.kpi.warn span{color:var(--accent-ink)}
-.dk-h{display:flex;align-items:flex-end;justify-content:space-between;margin:1.6rem .1rem .9rem}
-.dk-h h2{font-size:1.35rem;font-weight:800;letter-spacing:.01em;text-transform:uppercase;color:var(--text);line-height:1.1}
-.dk-h h2::after{content:'';display:block;width:44px;height:4px;border-radius:4px;margin-top:.45rem;background:var(--brand-grad)}
-.dk-h a{font-size:.8rem;font-weight:700;color:var(--primary);padding:.3rem .2rem}
-/* app grid */
-.apps{display:grid;grid-template-columns:repeat(2,1fr);gap:.75rem}
-@media(min-width:620px){.apps{grid-template-columns:repeat(3,1fr)}}
-@media(min-width:900px){.apps{grid-template-columns:repeat(4,1fr)}}
-.app{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:.35rem;text-align:center;position:relative;min-height:168px;
-  padding:1.15rem .7rem 1rem;border-radius:22px;background:#fff;border:1px solid var(--line);box-shadow:var(--sh-1);color:var(--text);
-  transition:transform .15s,box-shadow .15s,border-color .15s;font-family:inherit;cursor:pointer}
-.app::before{content:'';position:absolute;left:18px;right:18px;top:0;height:3px;border-radius:0 0 4px 4px;background:var(--brand-grad);opacity:0;transition:opacity .15s}
-.app:hover{border-color:#cfd5f5;box-shadow:0 14px 30px -18px rgba(10,20,224,.45)}
-.app:hover::before,.app:focus-visible::before{opacity:1}
-.app:active{transform:scale(.97)}
-.app .appic{width:auto;height:auto;border:0;box-shadow:none;background:none;margin-bottom:.35rem}
-.app .appic::before{display:none}
-.app .appic .app-img{width:68px;height:68px}
-.app b{font-size:.98rem;font-weight:800;text-transform:uppercase;letter-spacing:.01em;line-height:1.15}
-.app small{font-size:.82rem;color:var(--text-3);line-height:1.3}
-.app .badge{position:absolute;top:10px;right:12px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--accent);color:#fff;font-size:.68rem;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid #fff;z-index:2}
-/* activity slider */
-.slides{display:flex;gap:.7rem;overflow-x:auto;scroll-snap-type:x mandatory;padding:.1rem .1rem .4rem;scrollbar-width:none}
-.slides::-webkit-scrollbar{display:none}
-.slide{flex:0 0 86%;max-width:420px;height:190px;border-radius:22px;scroll-snap-align:start;position:relative;overflow:hidden;color:#fff;display:flex;flex-direction:column;justify-content:flex-end;padding:1rem;box-shadow:var(--sh-1)}
-.slide img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.slide::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,16,51,.05) 20%,rgba(11,16,51,.9));z-index:1}
-.slide>*{position:relative;z-index:2}
-.slide .type{font-size:.68rem;font-weight:800;letter-spacing:.1em;color:#fff;background:var(--accent);align-self:flex-start;padding:.1rem .5rem;border-radius:6px}
-.slide b{font-size:1.08rem;font-weight:800;line-height:1.25;margin:.15rem 0}
-.slide span{font-size:.8rem;color:rgba(255,255,255,.82)}
-/* light content area */
-.lt{background:var(--surface);color:var(--text);position:relative}
-.lt-in{max-width:1100px;margin:0 auto;padding:1.3rem 1rem 1.5rem;display:grid;gap:1rem}
-@media(min-width:900px){.lt-in{grid-template-columns:1.6fr 1fr;align-items:start}}
-.panel{background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:var(--sh-1);overflow:hidden}
-.panel-h{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.95rem 1.1rem;border-bottom:1px solid var(--line)}
-.panel-h h3{font-size:1rem;font-weight:800;letter-spacing:-.01em;display:flex;align-items:center;gap:.5rem}
-.panel-h a{font-size:.8rem;font-weight:700;color:var(--primary)}
+.db-hello{display:flex;align-items:center;gap:.8rem;background:var(--dark);color:#fff;border-radius:var(--r-card);padding:1rem;position:relative;overflow:hidden;box-shadow:var(--sh-soft)}
+.db-hello::after{content:"";position:absolute;inset:auto -40px -60px auto;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(227,6,19,.55),transparent 70%)}
+.db-hello img,.db-hello .ph{width:56px;height:56px;border-radius:50%;object-fit:cover;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;border:2px solid rgba(255,255,255,.8)}
+.db-hello small{display:block;color:var(--muted);font-weight:600}
+.db-hello b{font-weight:900;text-transform:uppercase;font-style:italic;font-size:1.2rem;line-height:1.1}
+.db-hello .role{display:inline-block;margin-top:.3rem;font-size:.72rem;font-weight:800;background:var(--brand);padding:.12rem .55rem;border-radius:2rem}
+.db-panels{display:grid;gap:1rem;margin-top:.4rem}
+@media(min-width:992px){.db-panels{grid-template-columns:1.6fr 1fr;align-items:start}}
+.panel{background:#fff;border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--sh-soft);overflow:hidden}
+.panel-h{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.9rem 1.1rem;border-bottom:1px solid var(--line)}
+.panel-h h3{font-size:.95rem;font-weight:900;text-transform:uppercase;margin:0;display:flex;align-items:center;gap:.5rem}
+.panel-h a{font-size:.85rem;font-weight:700;color:var(--brand-dark);text-decoration:none}
 .panel-b{padding:.9rem 1.1rem}
-.note{display:flex;gap:.75rem;padding:.8rem 0;border-bottom:1px solid var(--line)}
+.note{display:flex;gap:.75rem;padding:.75rem 0;border-bottom:1px solid var(--line)}
 .note:last-child{border-bottom:0}
-.note .tile{width:40px;height:40px;border-radius:13px;flex-shrink:0}
-.note .tile .ic{width:20px;height:20px}
-.note b{display:block;font-size:.92rem;line-height:1.3}
-.note p{font-size:.84rem;color:var(--text-2);margin-top:.15rem;white-space:pre-line}
-.note small{font-size:.74rem;color:var(--text-3)}
-.pill{display:inline-block;font-size:.66rem;font-weight:800;padding:.1rem .5rem;border-radius:999px;margin-left:.3rem;vertical-align:middle}
-.pill.urgent{background:#FFF4E5;color:#9A3412}.pill.emergency{background:#FDECEC;color:#B91C1C}.pill.pin{background:var(--primary-soft);color:var(--primary-dark)}
+.note .ico{width:40px;height:40px;border-radius:.8rem;display:flex;align-items:center;justify-content:center;color:#fff;background:var(--c);flex-shrink:0}
+.note b{display:block;font-size:.95rem}
+.note p{font-size:.88rem;color:var(--text-2);margin:.15rem 0;white-space:pre-line}
+.note small{font-size:.76rem;color:var(--text-3)}
+.pill2{display:inline-block;font-size:.68rem;font-weight:800;padding:.08rem .5rem;border-radius:2rem;margin-left:.3rem;vertical-align:middle;background:#FFECEC;color:#B80F0A}
 .ev{display:flex;gap:.75rem;align-items:center;padding:.6rem 0;border-bottom:1px solid var(--line)}
 .ev:last-child{border-bottom:0}
-.ev .date{width:46px;height:50px;border-radius:14px;background:var(--primary-soft);color:var(--primary-dark);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;line-height:1;flex-shrink:0}
-.ev .date small{font-size:.62rem;text-transform:uppercase;margin-top:.15rem}
-.ev b{font-size:.9rem;display:block}.ev span{font-size:.78rem;color:var(--text-3)}
-.mcard{border-radius:22px;padding:1.1rem;color:#fff;position:relative;overflow:hidden;background:var(--brand-grad);box-shadow:0 14px 30px -18px rgba(10,20,224,.7)}
-.mcard .row{display:flex;align-items:center;gap:.8rem}
-.mcard img,.mcard .ph{width:56px;height:56px;border-radius:18px;object-fit:cover;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center}
-.mcard b{font-size:1.05rem;font-weight:800}
-.mcard .meta{display:flex;gap:.9rem;margin-top:.9rem;font-size:.78rem;color:rgba(255,255,255,.8)}
+.ev .date{width:48px;height:52px;border-radius:.8rem;background:var(--dark);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;line-height:1;flex-shrink:0}
+.ev .date small{font-size:.62rem;text-transform:uppercase;margin-top:.15rem;color:var(--muted)}
+.ev b{display:block;font-size:.92rem}.ev span{font-size:.8rem;color:var(--text-3)}
+.mcard{display:block;border-radius:var(--r-card);padding:1.1rem;color:#fff;text-decoration:none;background:var(--dark);position:relative;overflow:hidden;box-shadow:var(--sh-soft)}
+.mcard:hover{color:#fff}
+.mcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--brand)}
+.mcard .rowx{display:flex;gap:.8rem;align-items:center}
+.mcard img,.mcard .ph{width:54px;height:54px;border-radius:50%;object-fit:cover;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:1.5rem}
+.mcard .meta{display:flex;gap:1rem;margin-top:.9rem;font-size:.76rem;color:var(--muted)}
 .mcard .meta strong{display:block;color:#fff;font-size:.95rem}
-.people{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:.6rem}
+.people{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:.6rem}
 .person{text-align:center;font-size:.76rem}
-.person img,.person .ph{width:56px;height:56px;border-radius:18px;object-fit:cover;margin:0 auto .35rem;background:var(--primary-soft);color:var(--primary);display:flex;align-items:center;justify-content:center}
-.person b{display:block;font-size:.8rem;line-height:1.25}
-.person span{color:var(--text-3);font-size:.7rem}
+.person img,.person .ph{width:56px;height:56px;border-radius:50%;object-fit:cover;margin:0 auto .35rem;background:var(--light);display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:var(--text-3)}
+.person b{display:block;font-size:.82rem;line-height:1.2}.person span{color:var(--text-3)}
 .ach{display:flex;gap:.6rem;overflow-x:auto;scrollbar-width:none;padding-bottom:.2rem}
-.ach-i{flex:0 0 150px;border-radius:18px;background:var(--surface);border:1px solid var(--line);overflow:hidden}
-.ach-i img,.ach-i .ph{width:100%;height:96px;object-fit:cover;background:linear-gradient(145deg,#FFF1C7,#FFD873);display:flex;align-items:center;justify-content:center;color:#fff}
-.ach-i div{padding:.55rem .65rem}
-.ach-i b{font-size:.8rem;display:block;line-height:1.25}
-.ach-i span{font-size:.72rem;color:var(--text-3)}
-.empty{text-align:center;color:var(--text-3);font-size:.88rem;padding:1rem .5rem}
-details.post summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.5rem;font-weight:700;color:var(--primary);font-size:.88rem;min-height:44px}
+.ach-i{flex:0 0 150px;border-radius:.9rem;background:var(--light);border:1px solid var(--line);overflow:hidden}
+.ach-i img,.ach-i .ph{width:100%;height:96px;object-fit:cover;background:#FFF1C7;display:flex;align-items:center;justify-content:center;color:#B45309;font-size:2rem}
+.ach-i div{padding:.5rem .6rem}.ach-i b{font-size:.8rem;display:block;line-height:1.25}.ach-i span{font-size:.72rem;color:var(--text-3)}
+.slides{display:flex;gap:.7rem;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+.slides::-webkit-scrollbar{display:none}
+.slide{flex:0 0 82%;max-width:420px;height:170px;border-radius:var(--r-card);scroll-snap-align:start;position:relative;overflow:hidden;color:#fff;display:flex;flex-direction:column;justify-content:flex-end;padding:1rem;text-decoration:none;box-shadow:var(--sh-soft)}
+.slide:hover{color:#fff}
+.slide img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.slide::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,16,51,.05) 20%,rgba(11,16,51,.92));z-index:1}
+.slide>*{position:relative;z-index:2}
+.slide .type{font-size:.66rem;font-weight:800;letter-spacing:.08em;background:var(--brand);align-self:flex-start;padding:.1rem .5rem;border-radius:.4rem}
+.slide b{font-weight:900;font-size:1.05rem;text-transform:uppercase;font-style:italic;margin:.2rem 0}
+.slide span{font-size:.8rem;color:#e2e4f3}
+.empty{text-align:center;color:var(--text-3);font-size:.9rem;padding:1rem .5rem}
+details.post summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.5rem;font-weight:700;color:var(--brand-dark);min-height:44px}
 details.post summary::-webkit-details-marker{display:none}
-.sec-gap{grid-column:1/-1}
 </style>
 
-<div class="dk">
- <div class="dk-in">
-  <div class="hero-card">
-  <?php if($logoB64): ?><img class="club-logo" src="<?= $logoB64 ?>" alt=""><?php endif; ?>
-  <!-- Greeting -->
-  <div class="hi">
-    <?php if($myPhoto): ?><img src="<?= $myPhoto ?>" alt=""><?php else: ?><span class="ph"><?= app_img('profile',38) ?></span><?php endif; ?>
-    <div style="min-width:0">
-      <small><?= $greet ?></small>
+<div class="app-wrap">
+  <div class="db-hello">
+    <?php if($myPhoto): ?><img src="<?= $myPhoto ?>" alt=""><?php else: ?><span class="ph" aria-hidden="true"><i class="bi bi-person"></i></span><?php endif; ?>
+    <div style="min-width:0;position:relative;z-index:1">
+      <small><?= h($greet) ?></small>
       <b><?= h($user['name']) ?></b><br>
       <span class="role"><?= h(roleLabel($user['role'])) ?></span>
     </div>
   </div>
 
-  <!-- Key numbers -->
-  <div class="kpis">
-    <a href="<?= url('modules/members.php') ?>" class="kpi glass"><b><?= (int)($stats['total']??0) ?></b><span>Members</span></a>
-    <a href="<?= url('modules/members.php') ?>" class="kpi glass"><b><?= (int)($stats['active']??0) ?></b><span>Active</span></a>
-    <a href="<?= url('modules/blood.php') ?>" class="kpi glass"><b><?= (int)($stats['donors']??0) ?></b><span>Donors</span></a>
-    <?php if($isAdm): ?>
-    <a href="<?= url('admin.php') ?>" class="kpi glass<?= $pendingCount?' warn':'' ?>"><b><?= (int)$pendingCount ?></b><span>Pending</span></a>
-    <?php else: ?>
-    <a href="<?= url('modules/events.php') ?>" class="kpi glass"><b><?= count($evts) ?></b><span>Events</span></a>
-    <?php endif; ?>
+  <?php foreach ($tileSets as $tsName => $tiles): ?>
+  <h2 class="h-app"><?= h($tsName) ?></h2>
+  <div class="dgrid">
+    <?php foreach ($tiles as $tl): ?>
+    <a class="dtile <?= $tl[3] ?>" href="<?= h($tl[4]) ?>">
+      <i class="bi bi-<?= $tl[2] ?>" aria-hidden="true"></i>
+      <span><span class="n"><?= h((string)$tl[0]) ?></span><br><span class="l"><?= h(t($tl[1])) ?></span></span>
+    </a>
+    <?php endforeach; ?>
   </div>
+  <?php endforeach; ?>
 
-  </div>
-
-  <!-- Activity slider -->
   <?php if(!empty($sliderItems)): ?>
-  <div class="dk-h"><h2>Happening now</h2></div>
+  <h2 class="h-app">Happening now</h2>
   <div class="slides" tabindex="0" role="region" aria-label="Happening now">
     <?php foreach($sliderItems as $si): ?>
     <a class="slide" href="<?= h($si['url']) ?>" style="background:linear-gradient(145deg,<?= h($si['color']) ?>,#0B1033)">
       <?php if(!empty($si['img'])): ?><img src="<?= h($si['img']) ?>" alt="" loading="lazy" onerror="this.remove()"><?php endif; ?>
-      <span class="type"><?= h($si['type']) ?></span>
-      <b><?= h($si['title']) ?></b>
-      <span><?= h($si['sub']) ?></span>
+      <span class="type"><?= h($si['type']) ?></span><b><?= h($si['title']) ?></b><span><?= h($si['sub']) ?></span>
     </a>
     <?php endforeach; ?>
   </div>
   <?php endif; ?>
 
-  <!-- App launcher -->
-  <?php foreach($groups as $gname => $items): ?>
-  <div class="dk-h"><h2><?= h($gname) ?></h2></div>
-  <div class="apps">
-    <?php foreach($items as $m): ?>
-    <a class="app" href="<?= url($m[0]) ?>"><span class="appic"><?= app_img($m[5],68) ?></span><b><?= h($m[1]) ?></b><small><?= h(app_desc($m[0])) ?></small></a>
+  <h2 class="h-app"><?= h(t('app_all_pages')) ?></h2>
+  <div class="tiles">
+    <?php foreach (array_slice(app_modules(), 0, 11) as $m): $mm = app_meta($m[0]); ?>
+    <a class="tile-l <?= $mm[1] ?>" href="<?= url($m[0]) ?>"><span class="ico" aria-hidden="true"><i class="bi bi-<?= $mm[0] ?>"></i></span><?= h(app_label($m[0], $m[1])) ?></a>
     <?php endforeach; ?>
-  </div>
-  <?php endforeach; ?>
-
-  <?php if($isAdm): ?>
-  <div class="dk-h"><h2>Admin</h2></div>
-  <div class="apps">
-    <?php foreach(admin_modules() as $m):
-      if ($m[0]==='modules/settings.php' && !isSuperAdmin($user)) continue; ?>
-    <a class="app" href="<?= url($m[0]) ?>"><span class="appic"><?= app_img($m[5],68) ?></span><b><?= h($m[1]) ?></b><small><?= h(app_desc($m[0])) ?></small>
-      <?php if($m[0]==='admin.php' && $pendingCount): ?><span class="badge" aria-label="<?= (int)$pendingCount ?> waiting"><?= (int)$pendingCount ?></span><?php endif; ?></a>
-    <?php endforeach; ?>
-    <?php if(canPost($user['role'])): ?>
-    <button type="button" class="app" onclick="openDashScan()"><span class="appic"><?= app_img('scan',68) ?></span><b>Scan QR</b><small>Check volunteer passes</small></button>
+    <a class="tile-l c-navy" href="<?= url('more.php') ?>"><span class="ico" aria-hidden="true"><i class="bi bi-grid-3x3-gap-fill"></i></span><?= h(t('nav_more')) ?></a>
+    <?php if($isAdmD && canPost($user['role'])): ?>
+    <button type="button" class="tile-l c-blue" onclick="openDashScan()"><span class="ico" aria-hidden="true"><i class="bi bi-qr-code-scan"></i></span>Scan QR</button>
     <?php endif; ?>
   </div>
-  <?php endif; ?>
- </div>
 
- <!-- ═══ Light content sheet ═══ -->
- <div class="lt">
-  <div class="lt-in">
+  <div class="db-panels">
    <div style="display:grid;gap:1rem">
-    <!-- Notice board -->
     <section class="panel" aria-labelledby="nbH">
-      <div class="panel-h"><h3 id="nbH"><?= ic('megaphone') ?> Notice board</h3></div>
+      <div class="panel-h"><h3 id="nbH"><i class="bi bi-megaphone-fill text-danger" aria-hidden="true"></i><?= h(t('sec_notices')) ?></h3></div>
       <div class="panel-b">
         <?php if(canPost($user['role'])): ?>
         <details class="post">
-          <summary><?= ic('plus','ic-sm') ?> Post a notice</summary>
+          <summary><i class="bi bi-plus-circle-fill" aria-hidden="true"></i> Post a notice</summary>
           <form method="POST" style="margin:.4rem 0 .8rem">
-            <?php if(function_exists('csrfField')) echo csrfField(); ?>
+            <?= csrfField() ?>
             <div class="fg"><label class="lbl" for="annTitle">Title</label><input type="text" id="annTitle" name="ann_title" class="inp" required></div>
             <div class="fg"><label class="lbl" for="annBody">Message</label><textarea id="annBody" name="ann_body" class="inp" rows="3" required></textarea></div>
-            <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+            <div class="d-flex gap-2 flex-wrap">
               <select name="ann_cat" class="inp" aria-label="Notice category" style="flex:1;min-width:150px">
                 <?php foreach($catConf as $ck=>$cv): ?><option value="<?= $ck ?>"><?= $cv[0] ?></option><?php endforeach; ?>
               </select>
-              <button type="submit" name="post_ann" class="btn btn-blue"><?= ic('megaphone','ic-sm') ?> Post</button>
+              <button type="submit" name="post_ann" class="btn btn-brand"><i class="bi bi-send-fill" aria-hidden="true"></i> Post</button>
             </div>
           </form>
         </details>
         <?php endif; ?>
         <?php if(isset($_GET['posted'])): ?><div class="alert alert-ok" role="status">Notice posted.</div><?php endif; ?>
-        <?php if(empty($notices)): ?>
-          <div class="empty">No notices right now.</div>
-        <?php else: foreach($notices as $n):
-          $cc = isset($catConf[$n['category']??'']) ? $catConf[$n['category']] : $catConf['general'];
-          $pr = $n['priority'] ?? 'normal'; ?>
+        <?php if(empty($notices)): ?><div class="empty"><?= h(t('no_items')) ?></div>
+        <?php else: foreach($notices as $n): $cc = isset($catConf[$n['category']??'']) ? $catConf[$n['category']] : $catConf['general']; $pr = $n['priority'] ?? 'normal'; ?>
           <article class="note">
-            <span class="tile tone-<?= $pr==='emergency'?'rose':($pr==='urgent'?'amber':$cc[2]) ?>"><?= ic($cc[1]) ?></span>
+            <span class="ico <?= $pr==='emergency'||$pr==='urgent' ? 'c-red' : $cc[2] ?>" aria-hidden="true"><i class="bi bi-<?= $cc[1] ?>"></i></span>
             <div style="min-width:0">
-              <b><?= h($n['title']) ?>
-                <?php if(!empty($n['is_pinned'])): ?><span class="pill pin">Pinned</span><?php endif; ?>
-                <?php if($pr==='urgent'||$pr==='emergency'): ?><span class="pill <?= $pr ?>"><?= ucfirst($pr) ?></span><?php endif; ?></b>
+              <b><?= h($n['title']) ?><?php if(!empty($n['is_pinned'])): ?><span class="pill2">Pinned</span><?php endif; ?><?php if($pr==='urgent'||$pr==='emergency'): ?><span class="pill2"><?= ucfirst($pr) ?></span><?php endif; ?></b>
               <p><?= h($n['body']) ?></p>
               <small><?= h($cc[0]) ?> · <?= date('d M Y', strtotime($n['created_at'])) ?></small>
             </div>
@@ -346,32 +310,25 @@ details.post summary::-webkit-details-marker{display:none}
       </div>
     </section>
 
-    <!-- Achievements -->
     <?php if(!empty($recentAch)): ?>
     <section class="panel" aria-labelledby="achH">
-      <div class="panel-h"><h3 id="achH"><?= ic('trophy') ?> Recent achievements</h3><a href="<?= url('modules/certificate.php') ?>">See all</a></div>
+      <div class="panel-h"><h3 id="achH"><i class="bi bi-trophy-fill" style="color:#B45309" aria-hidden="true"></i><?= h(t('sec_achievements')) ?></h3><a href="<?= url('modules/certificate.php') ?>"><?= h(t('see_all')) ?></a></div>
       <div class="panel-b"><div class="ach">
-        <?php foreach($recentAch as $ra):
-          $aImg=''; if(!empty($ra['image'])) $aImg=(strpos($ra['image'],'/')!==false)?url('assets/uploads/'.$ra['image']):url('assets/uploads/achievements/'.$ra['image']); ?>
-        <div class="ach-i">
-          <?php if($aImg): ?><img src="<?= h($aImg) ?>" alt="" loading="lazy"><?php else: ?><span class="ph"><?= ic('trophy','ic-lg') ?></span><?php endif; ?>
-          <div><b><?= h($ra['title']) ?></b><span><?= h($ra['member_name'] ?? '') ?></span></div>
-        </div>
+        <?php foreach($recentAch as $ra): $aImg=''; if(!empty($ra['image'])) $aImg=(strpos($ra['image'],'/')!==false)?url('assets/uploads/'.$ra['image']):url('assets/uploads/achievements/'.$ra['image']); ?>
+        <div class="ach-i"><?php if($aImg): ?><img src="<?= h($aImg) ?>" alt="" loading="lazy"><?php else: ?><span class="ph" aria-hidden="true"><i class="bi bi-trophy"></i></span><?php endif; ?>
+          <div><b><?= h($ra['title']) ?></b><span><?= h($ra['member_name'] ?? '') ?></span></div></div>
         <?php endforeach; ?>
       </div></div>
     </section>
     <?php endif; ?>
 
-    <!-- Committee -->
     <?php if(!empty($executives) || !empty($committeeMembers)): ?>
     <section class="panel" aria-labelledby="comH">
-      <div class="panel-h"><h3 id="comH"><?= ic('users') ?> Committee</h3><a href="<?= url('modules/members.php') ?>">All members</a></div>
+      <div class="panel-h"><h3 id="comH"><i class="bi bi-person-badge-fill text-primary" aria-hidden="true"></i><?= h(t('sec_committee')) ?></h3><a href="<?= url('modules/members.php') ?>"><?= h(t('see_all')) ?></a></div>
       <div class="panel-b"><div class="people">
         <?php foreach(array_merge($executives, $committeeMembers) as $m): $ph = getMemberPhoto($m['profile_photo']); ?>
-        <div class="person">
-          <?php if($ph): ?><img src="<?= $ph ?>" alt="" loading="lazy"><?php else: ?><span class="ph"><?= ic('user') ?></span><?php endif; ?>
-          <b><?= h($m['name']) ?></b><span><?= h(!empty($m['committee_position']) ? $m['committee_position'] : roleLabel($m['role'])) ?></span>
-        </div>
+        <div class="person"><?php if($ph): ?><img src="<?= $ph ?>" alt="" loading="lazy"><?php else: ?><span class="ph" aria-hidden="true"><i class="bi bi-person"></i></span><?php endif; ?>
+          <b><?= h($m['name']) ?></b><span><?= h(!empty($m['committee_position']) ? $m['committee_position'] : roleLabel($m['role'])) ?></span></div>
         <?php endforeach; ?>
       </div></div>
     </section>
@@ -379,12 +336,11 @@ details.post summary::-webkit-details-marker{display:none}
    </div>
 
    <div style="display:grid;gap:1rem">
-    <!-- Member card -->
     <a class="mcard" href="<?= url('modules/idcard.php') ?>" aria-label="Open my ID card">
-      <div class="row">
-        <?php if($myPhoto): ?><img src="<?= $myPhoto ?>" alt=""><?php else: ?><span class="ph"><?= ic('user','ic-lg') ?></span><?php endif; ?>
-        <div style="min-width:0"><b><?= h($user['name']) ?></b><br><span style="font-size:.8rem;color:rgba(255,255,255,.8)"><?= h(roleLabel($user['role'])) ?></span></div>
-        <span style="margin-left:auto"><?= ic('idcard') ?></span>
+      <div class="rowx">
+        <?php if($myPhoto): ?><img src="<?= $myPhoto ?>" alt=""><?php else: ?><span class="ph" aria-hidden="true"><i class="bi bi-person"></i></span><?php endif; ?>
+        <div style="min-width:0"><b style="font-weight:900;text-transform:uppercase"><?= h($user['name']) ?></b><br><span style="font-size:.8rem;color:var(--muted)"><?= h(roleLabel($user['role'])) ?></span></div>
+        <i class="bi bi-person-vcard ms-auto fs-4" aria-hidden="true"></i>
       </div>
       <div class="meta">
         <div>Member ID<strong>AV<?= str_pad($user['id'],4,'0',STR_PAD_LEFT) ?></strong></div>
@@ -392,29 +348,24 @@ details.post summary::-webkit-details-marker{display:none}
         <div>Status<strong><?= h(ucfirst($user['status'] ?? 'active')) ?></strong></div>
       </div>
     </a>
-
-    <!-- Upcoming events -->
     <section class="panel" aria-labelledby="evH">
-      <div class="panel-h"><h3 id="evH"><?= ic('calendar') ?> Upcoming events</h3><a href="<?= url('modules/events.php') ?>">View all</a></div>
+      <div class="panel-h"><h3 id="evH"><i class="bi bi-calendar-event-fill" style="color:#6D28D9" aria-hidden="true"></i><?= h(t('sec_events')) ?></h3><a href="<?= url('modules/events.php') ?>"><?= h(t('see_all')) ?></a></div>
       <div class="panel-b">
-        <?php if(empty($evts)): ?><div class="empty">No upcoming events.</div><?php else: foreach($evts as $ev): ?>
-        <div class="ev">
-          <div class="date"><?= date('d',strtotime($ev['event_date'])) ?><small><?= date('M',strtotime($ev['event_date'])) ?></small></div>
-          <div><b><?= h($ev['title']) ?></b><?php if(!empty($ev['location'])): ?><span><?= h($ev['location']) ?></span><?php endif; ?></div>
-        </div>
+        <?php if(empty($evts)): ?><div class="empty"><?= h(t('no_items')) ?></div><?php else: foreach($evts as $ev): ?>
+        <div class="ev"><div class="date"><?= date('d',strtotime($ev['event_date'])) ?><small><?= date('M',strtotime($ev['event_date'])) ?></small></div>
+          <div><b><?= h($ev['title']) ?></b><?php if(!empty($ev['location'])): ?><span><?= h($ev['location']) ?></span><?php endif; ?></div></div>
         <?php endforeach; endif; ?>
       </div>
     </section>
    </div>
   </div>
- </div>
 </div>
 
   <!-- QR Scan Popup (admin only, no widget bar) -->
   <?php if(isAdminRole($user['role']) || canPost($user['role'])): ?>
   <div id="scanPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9000;flex-direction:column;align-items:center;justify-content:center;padding:1rem">
     <div style="width:100%;max-width:360px;background:#0B1033;border-radius:18px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.5)">
-      <div style="background:#0A14E0;padding:.9rem 1.1rem;display:flex;align-items:center;justify-content:space-between">
+      <div style="background:#E30613;padding:.9rem 1.1rem;display:flex;align-items:center;justify-content:space-between">
         <div style="font-weight:800;font-size:.95rem;color:#fff">Scan volunteer QR</div>
         <button type="button" onclick="closeDashScan()" aria-label="Close scanner" style="background:rgba(255,255,255,.15);border:none;color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center">✕</button>
       </div>

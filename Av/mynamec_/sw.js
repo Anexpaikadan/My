@@ -1,5 +1,5 @@
 // Aishwarya Club PWA Service Worker v2
-const CACHE = 'aasc-v2';
+const CACHE = 'aasc-v3';
 
 self.addEventListener('install', function(e) {
   self.skipWaiting();
@@ -33,8 +33,8 @@ self.addEventListener('push', function(e) {
   var title   = data.title || 'Aishwarya Arts & Sports Club';
   var options = {
     body:    data.body    || 'You have a new notification',
-    icon:    data.icon    || '/assets/logo.jpg',
-    badge:   data.badge   || '/assets/logo.jpg',
+    icon:    data.icon    || '/assets/icons/app/icon-192.png',
+    badge:   data.badge   || '/assets/icons/app/icon-192.png',
     image:   data.image   || undefined,
     data:    { url: data.url || '/' },
     vibrate: [200, 100, 200],

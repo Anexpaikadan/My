@@ -134,7 +134,7 @@ if (!empty($_POST['action'])) {
         $dir = __DIR__.'/../assets/uploads/fests/posters/';
         if (!is_dir($dir)) mkdir($dir,0755,true);
         $fn = 'poster_'.time().'.'.$ext;
-        if (move_uploaded_file($pf['tmp_name'],$dir.$fn)) $posterPath = $fn;
+        if (move_uploaded_file($pf['tmp_name'],$dir.$fn)) { img_optimize($dir.$fn); $posterPath = $fn; }
       }
     }
 
@@ -147,7 +147,7 @@ if (!empty($_POST['action'])) {
         $dir2 = __DIR__.'/../assets/uploads/fests/sponsors/';
         if (!is_dir($dir2)) mkdir($dir2,0755,true);
         $fn2 = 'sponsor_'.time().'.'.$ext2;
-        if (move_uploaded_file($sf['tmp_name'],$dir2.$fn2)) $sponsorLogo = $fn2;
+        if (move_uploaded_file($sf['tmp_name'],$dir2.$fn2)) { img_optimize($dir2.$fn2, 600); $sponsorLogo = $fn2; }
       }
     }
 
@@ -204,6 +204,7 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_FILES['entry_photo']) && $fes
         if (!is_dir($dir)) mkdir($dir,0755,true);
         $fn = 'entry_'.time().'_'.mt_rand(1000,9999).'.'.$ext;
         if (move_uploaded_file($f['tmp_name'],$dir.$fn)) {
+            img_optimize($dir.$fn);
           $title2 = trim($_POST['entry_title']??'');
           $db2 = db()->prepare("INSERT INTO fest_entries(fest_id,member_id,image_path,title) VALUES(?,?,?,?)");
           $db2->execute([$festId,$uid,$fn,$title2]);

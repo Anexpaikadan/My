@@ -303,6 +303,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_item'])) {
       if (!in_array($ext,['jpg','jpeg','png','webp'])||$f['size']>8*1024*1024) continue;
       $fn = 'mkt_'.$iid.'_'.time().'_'.$fi.'.'.$ext;
       if (@move_uploaded_file($f['tmp_name'],$dir.$fn)) {
+        img_optimize($dir.$fn);
         db()->prepare("INSERT INTO market_images(item_id,image_path,sort_order) VALUES(?,?,?)")
            ->execute([$iid,$fn,$existCount+$uploaded]);
         $uploaded++;

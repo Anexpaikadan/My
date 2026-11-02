@@ -24,79 +24,31 @@ $_socialIcons = [
 ?>
 
 <footer class="app-foot">
-  <div class="af-in">
-    <div>
-      <div class="af-name"><?= h(setting('CLUB_NAME','Aishwarya Arts & Sports Club')) ?></div>
-      <div class="af-place"><?= h(setting('CLUB_PLACE','Vettikkattiri')) ?>, Kerala, India</div>
-    </div>
-    <div class="af-social">
-      <?php
-      $phone = setting('CLUB_PHONE','');
-      if ($phone) {
-          echo '<a href="'.h('https://wa.me/'.preg_replace('/\D/','',$phone)).'" target="_blank" rel="noopener" aria-label="WhatsApp" class="af-ic" style="background:#25d366"><i class="fab fa-whatsapp" aria-hidden="true"></i></a>';
-      }
-      foreach($_socialIcons as $key=>$info) {
-          if (!empty($_socials[$key])) {
-              echo '<a href="'.h($_socials[$key]).'" target="_blank" rel="noopener" aria-label="'.h($info['label']).'" class="af-ic" style="background:'.$info['bg'].'"><i class="'.$info['icon'].'" aria-hidden="true"></i></a>';
-          }
-      }
-      ?>
-      <a href="<?= url('index.php') ?>" class="af-site"><?= ic('globe','ic-sm') ?> Website</a>
-    </div>
-  </div>
-  <div class="af-copy">© <?= date('Y') ?> <?= h(setting('CLUB_NAME','Aishwarya Arts & Sports Club')) ?> · All rights reserved · <b>anexpaikadan</b></div>
+  © <?= date('Y') ?> <b><?= h(setting('CLUB_NAME','Aishwarya Arts & Sports Club')) ?></b> · <?= h(setting('CLUB_PLACE','Vettikkattiri')) ?><br>
+  <span><?= h(t('developed_by')) ?> <b>anexpaikadan</b></span>
 </footer>
 
 <?php
-$_curFile = basename($_SERVER['PHP_SELF']);
-$_bnUser  = isset($user) ? $user : (function_exists('currentUser') ? currentUser() : null);
-$_bnLogd  = !empty($_bnUser['id']);
-$_bnName  = ($_bnLogd && !empty($_bnUser['name'])) ? explode(' ',$_bnUser['name'])[0] : 'Login';
-$_bnTabs  = array(
-  array('dashboard.php',        'Home',   'home'),
-  array('modules/events.php',   'Events', 'calendar'),
-  array('modules/feed.php',     'Feed',   'bolt'),
-  array('modules/market.php',   'Market', 'store'),
-  array($_bnLogd ? 'modules/profile.php' : 'login.php', $_bnName, 'user'),
-);
+// ── Bottom tab bar (phone): 5 tabs, centre raised button ──
+$_tbUser = isset($user) ? $user : (function_exists('currentUser') ? currentUser() : null);
+$_tbAdm  = $_tbUser && isAdminRole($_tbUser['role']);
+$_tbCur  = isset($curRel) ? $curRel : basename($_SERVER['PHP_SELF']);
+$_tabs = $_tbAdm
+  ? array(array('dashboard.php',t('nav_home'),'house-door'), array('modules/members.php',t('nav_members'),'people'),
+          array('admin.php',t('nav_admin'),'shield-lock','mid'), array('modules/events.php',t('nav_events'),'calendar-event'), array('more.php',t('nav_more'),'grid-3x3-gap'))
+  : array(array('dashboard.php',t('nav_home'),'house-door'), array('modules/events.php',t('nav_events'),'calendar-event'),
+          array('modules/market.php',t('nav_market'),'bag','mid'), array('modules/feed.php',t('nav_feed'),'lightning-charge'), array('more.php',t('nav_more'),'grid-3x3-gap'));
 ?>
-<style>
-.app-foot{background:var(--ink);border-top:4px solid transparent;border-image:var(--brand-grad) 1;color:rgba(255,255,255,.78);padding:1.6rem 1rem 1rem;margin-top:2rem}
-.af-in{max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:space-between}
-.af-name{font-weight:800;color:#fff;font-size:.98rem}
-.af-place{font-size:.8rem}
-.af-social{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
-.af-ic{width:44px;height:44px;border-radius:14px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:1rem}
-.af-site{display:inline-flex;align-items:center;gap:.4rem;min-height:44px;padding:0 .9rem;border-radius:14px;border:1px solid rgba(255,255,255,.18);color:#fff;font-size:.84rem;font-weight:600}
-.af-copy{max-width:1200px;margin:1rem auto 0;padding-top:.8rem;border-top:1px solid rgba(255,255,255,.1);text-align:center;font-size:.78rem}
-.af-copy b{color:#fff}
-/* bottom tab bar (glass) */
-#bnav{position:fixed;left:.6rem;right:.6rem;bottom:calc(.55rem + env(safe-area-inset-bottom,0px));z-index:990;
-  height:66px;border-radius:24px;display:flex;align-items:center;justify-content:space-around;padding:0 .3rem;
-  background:rgba(255,255,255,.92);backdrop-filter:saturate(180%) blur(18px);-webkit-backdrop-filter:saturate(180%) blur(18px);
-  border:1px solid var(--line);box-shadow:0 14px 34px -12px rgba(11,16,51,.35);max-width:560px;margin:0 auto}
-.bn{flex:1;min-width:0;height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-  color:var(--text-3);font-size:.68rem;font-weight:700;border-radius:18px;position:relative;transition:color .15s}
-.bn .ic{width:23px;height:23px;transition:transform .2s}
-.bn span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px}
-.bn.on{color:var(--primary)}
-.bn.on .ic{color:var(--primary);transform:translateY(-1px)}
-.bn.on::after{content:'';position:absolute;bottom:4px;width:5px;height:5px;border-radius:50%;background:var(--accent)}
-.bn:active .ic{transform:scale(.88)}
-.bn-mid{flex:0 0 auto;width:58px;height:58px;margin:0 .15rem;border-radius:50%;color:#fff;
-  background:var(--brand-grad);box-shadow:0 10px 24px -8px rgba(10,20,224,.7),0 0 0 4px #fff;transform:translateY(-14px)}
-.bn-mid span{display:none}
-.bn-mid .ic{width:26px;height:26px}
-.bn-mid.on{color:#fff}.bn-mid.on::after{display:none}.bn-mid.on .ic{color:#fff}
-body{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))!important}
-@media(min-width:960px){#bnav{display:none}body{padding-bottom:0!important}}
-</style>
-<nav id="bnav" aria-label="Quick navigation">
-<?php foreach($_bnTabs as $t): $on = ($_curFile === basename($t[0])); $mid = ($t[2]==='bolt'); ?>
-  <a href="<?= url($t[0]) ?>" class="bn<?= $mid?' bn-mid':'' ?><?= $on?' on':'' ?>"<?= $on?' aria-current="page"':'' ?><?= $mid?' aria-label="Feed"':'' ?>><?= ic($t[2]) ?><span><?= h($t[1]) ?></span></a>
+<nav class="tabbar" id="bnav" aria-label="Quick navigation">
+<?php foreach($_tabs as $_t): $_on = ($_tbCur === $_t[0]); $_mid = !empty($_t[3]); ?>
+  <a href="<?= url($_t[0]) ?>" class="<?= $_mid ? 'mid' : '' ?><?= $_on ? ' on' : '' ?>"<?= $_on ? ' aria-current="page"' : '' ?>>
+    <?php if($_mid): ?><span class="ring"><i class="bi bi-<?= $_t[2] ?>-fill" aria-hidden="true"></i></span>
+    <?php else: ?><span class="pill"><i class="bi bi-<?= $_t[2] ?><?= $_on ? '-fill' : '' ?>" aria-hidden="true"></i></span><?php endif; ?>
+    <span><?= h($_t[1]) ?></span>
+  </a>
 <?php endforeach; ?>
 </nav>
-<!-- ══════════════════ /BOTTOM NAV ══════════════════ -->
+<script src="<?= url('assets/vendor/bootstrap/js/bootstrap.bundle.min.js') ?>"></script>
 
 <!-- Accessibility helper: connect each form label to the field right after it,
      and give icon-only buttons/links a name from their title -->
@@ -110,7 +62,7 @@ body{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))!important}
     if (!c.id) c.id='fld-auto-'+(++n);
     l.htmlFor=c.id;
   });
-  // Module banner: same look everywhere — 3D icon, emoji removed from the title
+  // Module banner: same look everywhere — icon, emoji removed from the title
   var hero = document.querySelector('.hero,.ft-hero,.bh-header,.bc-hero,.ach-hero,.cf-hero,.ev-header,.fm-hero,.gal-hero,.gf-hero,.mk-hero,.adm-header');
   if (hero) {
     var t = hero.querySelector('h1,.bh-title,.ev-htitle,.adm-hname');
@@ -122,10 +74,11 @@ body{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))!important}
       }
       t.classList.add('ph-title');
       if (t.matches('.bh-title,.ev-htitle')) { var sp = t.querySelector('span'); if (sp) sp.classList.add('ph-sub'); }
-      var img = document.body.getAttribute('data-mod-img');
-      if (img && !hero.querySelector('.hero-ic')) {
-        var im = new Image(); im.src = img; im.alt = ''; im.className = 'hero-ic'; im.width = 78; im.height = 78;
-        t.parentNode.insertBefore(im, t);
+      var ico = document.body.getAttribute('data-mod-icon');
+      if (ico && !hero.querySelector('.hero-ic')) {
+        var sp2 = document.createElement('span'); sp2.className = 'hero-ic'; sp2.setAttribute('aria-hidden','true');
+        sp2.innerHTML = '<i class="bi bi-' + ico.replace(/[^a-z0-9-]/g,'') + '"></i>';
+        t.parentNode.insertBefore(sp2, t);
       }
       if (getComputedStyle(t).textAlign !== 'center') t.parentNode.classList.add('ph-left');
     }
@@ -204,7 +157,7 @@ function showPushPopup(){
     '<div style="font-size:2.5rem;margin-bottom:.5rem" aria-hidden="true">🔔</div>' +
     '<div id="pushTitle" style="font-size:1.05rem;font-weight:800;color:#0B1033;margin-bottom:.4rem">Stay Updated!</div>' +
     '<div style="font-size:.88rem;color:#475569;line-height:1.6;margin-bottom:1rem">Get notified about club events and announcements on your phone.</div>' +
-    '<button type="button" id="pushEnableBtn" style="width:100%;min-height:48px;padding:.65rem;background:#0A14E0;color:#fff;border:none;border-radius:14px;font-weight:800;font-size:.9rem;cursor:pointer;margin-bottom:.4rem">🔔 Enable Notifications</button>' +
+    '<button type="button" id="pushEnableBtn" style="width:100%;min-height:48px;padding:.65rem;background:#E30613;color:#fff;border:none;border-radius:.6rem;font-weight:800;font-size:.9rem;cursor:pointer;margin-bottom:.4rem">🔔 Enable Notifications</button>' +
     '<button type="button" id="pushLaterBtn" style="width:100%;min-height:44px;padding:.5rem;background:#f1f5f9;border:none;border-radius:10px;font-size:.88rem;color:#475569;cursor:pointer">Maybe Later</button>' +
     '</div>';
 

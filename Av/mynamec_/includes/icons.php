@@ -128,11 +128,54 @@ function app_desc($file) {
     return isset($d[$file]) ? $d[$file] : '';
 }
 
+// Bootstrap Icon, tile colour and Malayalam name for each page (new Bootstrap design)
+function app_meta($file) {
+    $m = array(
+        'dashboard.php'                 => array('house-door-fill',   'c-navy',   'ഹോം'),
+        'index.php'                     => array('globe2',            'c-slate',  'വെബ്സൈറ്റ്'),
+        'modules/feed.php'              => array('lightning-charge-fill','c-red',  'ഫീഡ്'),
+        'modules/events.php'            => array('calendar-event-fill','c-violet','പരിപാടികൾ'),
+        'modules/members.php'           => array('people-fill',       'c-blue',   'അംഗങ്ങൾ'),
+        'modules/blood.php'             => array('droplet-fill',      'c-rose',   'ബ്ലഡ് ഹബ്'),
+        'modules/market.php'            => array('shop',              'c-green',  'മാർക്കറ്റ്'),
+        'modules/gallery.php'           => array('images',            'c-teal',   'ഗാലറി'),
+        'modules/skills.php'            => array('star-fill',         'c-amber',  'കഴിവുകൾ'),
+        'modules/football.php'          => array('dribbble',          'c-green',  'ഫുട്ബോൾ'),
+        'modules/arts_festival.php'     => array('mask',              'c-violet', 'കലോത്സവം'),
+        'modules/onam.php'              => array('flower1',           'c-amber',  'ഓണം'),
+        'modules/fest_manager.php'      => array('trophy-fill',       'c-red',    'ഫെസ്റ്റുകൾ'),
+        'modules/election.php'          => array('check2-square',     'c-blue',   'തിരഞ്ഞെടുപ്പ്'),
+        'modules/creative_studio.php'   => array('palette-fill',      'c-pink',   'പോസ്റ്റർ സ്റ്റുഡിയോ'),
+        'modules/donation.php'          => array('heart-fill',        'c-rose',   'സംഭാവന'),
+        'modules/crowdfund.php'         => array('cash-coin',         'c-amber',  'ക്രൗഡ് ഫണ്ട്'),
+        'modules/groundfund.php'        => array('wallet2',           'c-teal',   'ഗ്രൗണ്ട് ഫണ്ട്'),
+        'modules/profile.php'           => array('person-circle',     'c-navy',   'പ്രൊഫൈൽ'),
+        'modules/idcard.php'            => array('person-vcard-fill', 'c-blue',   'ഐഡി കാർഡ്'),
+        'modules/certificate.php'       => array('award-fill',        'c-amber',  'സർട്ടിഫിക്കറ്റുകൾ'),
+        'modules/subscription.php'      => array('credit-card-fill',  'c-violet', 'അംഗത്വ ഫീസ്'),
+        'admin.php'                     => array('shield-lock-fill',  'c-red',    'അഡ്മിൻ പാനൽ'),
+        'modules/admin_subscription.php'=> array('receipt',           'c-amber',  'പേയ്മെന്റുകൾ'),
+        'modules/broadcast.php'         => array('megaphone-fill',    'c-green',  'വാട്സാപ്പ് ബ്രോഡ്കാസ്റ്റ്'),
+        'modules/settings.php'          => array('gear-fill',         'c-slate',  'ക്ലബ് ക്രമീകരണങ്ങൾ'),
+        'modules/site.php'              => array('window-desktop',    'c-blue',   'പബ്ലിക് വെബ്സൈറ്റ്'),
+        'modules/enquiries.php'         => array('inbox-fill',        'c-red',    'അന്വേഷണങ്ങൾ'),
+        'more.php'                      => array('grid-3x3-gap-fill', 'c-navy',   'കൂടുതൽ'),
+    );
+    return isset($m[$file]) ? $m[$file] : array('app', 'c-slate', '');
+}
+// Label in the chosen language
+function app_label($file, $en) {
+    if (function_exists('lang_current') && lang_current() === 'ml') { $m = app_meta($file); if ($m[2] !== '') return $m[2]; }
+    return $en;
+}
+
 function admin_modules() {
     return array(
         array('admin.php',                       'Admin Panel',   'shield',    'coral', 'Admin', 'admin'),
         array('modules/admin_subscription.php',  'Payments',      'card',      'amber', 'Admin', 'payments'),
         array('modules/broadcast.php',           'WA Broadcast',  'megaphone', 'lime', 'Admin', 'broadcast'),
+        array('modules/site.php',                'Public Website','globe',     'sky',   'Admin', 'website'),
+        array('modules/enquiries.php',           'Enquiries',     'mail',      'coral', 'Admin', 'feed'),
         array('modules/settings.php',            'Club Settings', 'settings',  'slate', 'Admin', 'settings'),
     );
 }
