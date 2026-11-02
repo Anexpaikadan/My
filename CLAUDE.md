@@ -135,7 +135,7 @@ require_once __DIR__ . '/../includes/header.php';
   Daybill keeps its libraries **in the repo** (`daybill/assets/pdf-lib.min.js`, `qrcode.js`) and serves no CDN code.
 - **No build system or bundler.** Bust the browser cache by hand: club `club.css?v=N` (in `includes/header.php`,
   `index.php`, `contact.php`), Daybill `style.css?v=21`, `app.js?v=8`: **bump the number** whenever you edit those files.
-  The club PWA cache is named in `sw.js` (`const CACHE = 'aasc-v3'`): bump it when you change cached files.
+  The club PWA cache is named in `sw.js` (`const CACHE = 'aasc-v4'`): bump it when you change cached files.
 - PWA: `manifest.php` + `sw.js` in both apps.
 
 ## 4. Assets
