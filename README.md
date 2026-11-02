@@ -96,3 +96,20 @@ Setup steps: [`Av/mynamec_/WHATSAPP_SETUP.md`](Av/mynamec_/WHATSAPP_SETUP.md).
 tap on WhatsApp), clear the passkey so they pick a new one, change their login phone number, remove fingerprint /
 Face ID logins, or activate the account. Every change is logged. Member login is the normal passkey login; WhatsApp
 login codes are optional and off by default.
+
+**Bootstrap redesign (2026-11):** mobile-first, built for a 390px phone first. Bootstrap 5.3, Bootstrap Icons and Font
+Awesome are now stored in the site (no CDN), with one custom stylesheet `assets/css/club.css`.
+- **Public site (dark):** hero photo with "Join the Club", WhatsApp and Call buttons; about points; program cards with
+  details pop-up; achievements (gold), gallery and events sliders; fee cards; timings; numbered rules; shop with offer
+  prices, photo slideshow and "Enquire on WhatsApp"; contact; 3-button bottom bar (Home / Market / Login).
+- **Join the Club form:** saved under Admin → Enquiries, thank-you card, then WhatsApp opens with the details.
+  Spam protection: hidden honeypot field and 5 requests per hour per address.
+- **English / Malayalam** switch on every page; all fixed texts are in `includes/lang.php`.
+- **Admin → Public Website:** main photo, every heading and text (English and Malayalam), section on/off switches,
+  programs, fee cards, timings, rules, contact numbers, map, and the WhatsApp link preview (with on/off switch).
+  Gallery, achievements and market items have a "show on public website" switch; market items an old price.
+- **Member/admin app (light):** dark sidebar on desktop, dark top bar, 5-tab bottom bar on phones and a "More" page
+  with all modules; colourful dashboard tiles (Today / Members / This month).
+- **Passkey check:** admins type their login passkey again before deleting anything or changing money
+  (fees, payments, donations, campaigns). It stays valid for 5 minutes.
+- Uploaded photos are resized automatically (max 1200px, JPG 80%). New app icons made from the logo.

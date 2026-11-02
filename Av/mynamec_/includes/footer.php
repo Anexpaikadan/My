@@ -49,6 +49,10 @@ $_tabs = $_tbAdm
 <?php endforeach; ?>
 </nav>
 <script src="<?= url('assets/vendor/bootstrap/js/bootstrap.bundle.min.js') ?>"></script>
+<script>
+// wide tables that scroll sideways can be scrolled with the keyboard too
+document.querySelectorAll('.table-wrap').forEach(function(w){ if(w.scrollWidth > w.clientWidth + 2){ w.tabIndex = 0; w.setAttribute('role','region'); if(!w.hasAttribute('aria-label')) w.setAttribute('aria-label','Table (scroll sideways)'); } });
+</script>
 
 <!-- Accessibility helper: connect each form label to the field right after it,
      and give icon-only buttons/links a name from their title -->
