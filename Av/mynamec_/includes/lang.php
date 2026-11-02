@@ -63,6 +63,12 @@ function lang_strings() {
         // passkey check
         'sudo_title' => 'Confirm it is you', 'sudo_sub' => 'Enter your 6-digit login passkey to continue.',
         'sudo_btn' => 'Confirm', 'sudo_wrong' => 'Wrong passkey. Try again.',
+        // contact page
+        'ct_title' => 'Send a message', 'ct_sub' => 'Write to us about membership, events or anything else. We reply on WhatsApp.',
+        'ct_email' => 'Email (optional)', 'ct_subject' => 'Subject', 'ct_message' => 'Message', 'ct_send' => 'Send message',
+        'ct_sent' => 'Message sent!', 'ct_sent_sub' => 'Thank you. We will get back to you soon.', 'ct_again' => 'Send another',
+        'ct_group' => 'WhatsApp group', 'ct_group_join' => 'Join our community group', 'ct_portal' => 'Member portal',
+        'ct_portal_go' => 'Log in or apply to join', 'ct_err' => 'Please enter your name and a message.',
     ),
     'ml' => array(
         'nav_home' => 'ഹോം', 'nav_market' => 'മാർക്കറ്റ്', 'nav_login' => 'ലോഗിൻ', 'nav_dashboard' => 'ഡാഷ്ബോർഡ്',
@@ -95,6 +101,11 @@ function lang_strings() {
         'tile_blood_req' => 'രക്ത അഭ്യർത്ഥനകൾ', 'tile_market' => 'മാർക്കറ്റ് സാധനങ്ങൾ', 'tile_posts' => 'ഫീഡ് പോസ്റ്റുകൾ',
         'sudo_title' => 'ഇത് നിങ്ങളാണെന്ന് ഉറപ്പാക്കൂ', 'sudo_sub' => 'തുടരാൻ നിങ്ങളുടെ 6 അക്ക ലോഗിൻ പാസ്‌കീ നൽകുക.',
         'sudo_btn' => 'ഉറപ്പാക്കുക', 'sudo_wrong' => 'തെറ്റായ പാസ്‌കീ. വീണ്ടും ശ്രമിക്കുക.',
+        'ct_title' => 'സന്ദേശം അയക്കുക', 'ct_sub' => 'അംഗത്വം, പരിപാടികൾ, മറ്റെന്തും ഞങ്ങളോട് ചോദിക്കൂ. വാട്സാപ്പിൽ മറുപടി നൽകും.',
+        'ct_email' => 'ഇമെയിൽ (ആവശ്യമെങ്കിൽ)', 'ct_subject' => 'വിഷയം', 'ct_message' => 'സന്ദേശം', 'ct_send' => 'സന്ദേശം അയക്കുക',
+        'ct_sent' => 'സന്ദേശം അയച്ചു!', 'ct_sent_sub' => 'നന്ദി. ഞങ്ങൾ ഉടൻ ബന്ധപ്പെടും.', 'ct_again' => 'വീണ്ടും അയക്കുക',
+        'ct_group' => 'വാട്സാപ്പ് ഗ്രൂപ്പ്', 'ct_group_join' => 'ഞങ്ങളുടെ ഗ്രൂപ്പിൽ ചേരൂ', 'ct_portal' => 'അംഗങ്ങളുടെ പോർട്ടൽ',
+        'ct_portal_go' => 'ലോഗിൻ ചെയ്യുക / അംഗമാകുക', 'ct_err' => 'പേരും സന്ദേശവും നൽകുക.',
     ),
     );
 }

@@ -1,208 +1,150 @@
 <?php
 require_once __DIR__ . '/includes/config.php';
+require_once __DIR__ . '/includes/icons.php';
+require_once __DIR__ . '/includes/lang.php';
+require_once __DIR__ . '/includes/og.php';
+require_once __DIR__ . '/includes/site_schema.php';
+lang_current();
 
 // AJAX contact form
-if (!empty($_POST['ajax']) && ($_POST['action']??'')==='contact') {
+if (!empty($_POST['ajax']) && ($_POST['action'] ?? '') === 'contact') {
     header('Content-Type: application/json');
-    $n=trim($_POST['name']??''); $e=trim($_POST['email']??'');
-    $s=trim($_POST['subject']??''); $m=trim($_POST['message']??'');
-    if (!$n||!$m){ echo json_encode(['ok'=>false,'msg'=>'Name and message are required.']); exit; }
-    try { db()->prepare('INSERT INTO contact_messages(name,email,subject,message)VALUES(?,?,?,?)')->execute([$n,$e,$s,$m]); echo json_encode(['ok'=>true,'msg'=>'Message sent! We will get back to you soon. 🙏']); } catch(Exception $ex){ echo json_encode(['ok'=>false,'msg'=>'Database error. Please try WhatsApp instead.']); }
+    // spam: hidden field must stay empty
+    if (trim($_POST['website'] ?? '') !== '') { echo json_encode(['ok'=>true]); exit; }
+    $n = mb_substr(trim($_POST['name'] ?? ''), 0, 150);    $e = mb_substr(trim($_POST['email'] ?? ''), 0, 200);
+    $s = mb_substr(trim($_POST['subject'] ?? ''), 0, 200); $m = mb_substr(trim($_POST['message'] ?? ''), 0, 4000);
+    if ($n === '' || $m === '') { echo json_encode(['ok'=>false,'msg'=>t('ct_err')]); exit; }
+    try { db()->prepare('INSERT INTO contact_messages(name,email,subject,message)VALUES(?,?,?,?)')->execute([$n,$e,$s,$m]); echo json_encode(['ok'=>true]); }
+    catch (Exception $ex) { echo json_encode(['ok'=>false,'msg'=>'Database error. Please try WhatsApp instead.']); }
     exit;
 }
 
-$logo = getLogoB64();
-$wa   = preg_replace('/\D/','',CLUB_PHONE);
+$logo      = getLogoB64();
+$clubName  = setting('CLUB_NAME', 'Aishwarya Arts & Sports Club');
+$clubPlace = setting('CLUB_PLACE', 'Vettikkattiri');
+$siteWa    = site_whatsapp();
+$sitePhone = preg_replace('/[^\d+]/', '', site_cfg('site_phone', setting('CLUB_PHONE', '')));
+$siteAddr  = tset(site_cfg('site_address', $clubPlace . ', Kerala, India'), site_cfg('site_address_ml', ''));
+$siteMap   = site_cfg('site_map', '');
+$siteInsta = site_cfg('social_instagram', '');
+$waGroup   = defined('CLUB_WA_GROUP') && strpos(CLUB_WA_GROUP, 'YOUR_GROUP') === false ? CLUB_WA_GROUP : '';
+$isEmbed   = (bool)preg_match('#^https://(www\.)?google\.[a-z.]+/maps/embed#', $siteMap);
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= lang_current() ?>">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
-<title>Contact Us | <?= h(CLUB_NAME) ?></title>
-<?php if(defined('LOGO_URL')): ?><link rel="icon" href="<?= h(LOGO_URL) ?>"><?php endif; ?>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title><?= h(t('sec_contact') . ' · ' . $clubName) ?></title>
+<?= og_tags(array('title' => t('sec_contact') . ' · ' . $clubName, 'url' => rtrim(SITE_URL, '/') . '/contact.php')) ?>
+<link rel="manifest" href="<?= url('manifest.php') ?>">
+<meta name="theme-color" content="#0B1033">
+<link rel="apple-touch-icon" href="<?= url('assets/icons/app/apple-touch-icon.png') ?>">
+<link rel="icon" type="image/png" href="<?= url('assets/icons/app/favicon-64.png') ?>">
+<link rel="stylesheet" href="<?= url('assets/vendor/bootstrap/css/bootstrap.min.css') ?>">
+<link rel="stylesheet" href="<?= url('assets/vendor/bootstrap-icons/bootstrap-icons.min.css') ?>">
+<link rel="stylesheet" href="<?= url('assets/css/club.css') ?>?v=2">
 <style>
-:root{--primary:#0A14E0;--accent:#E30613;--accent2:#FFB3B0;--text:#1a1a2e;--text2:#4a5568;--text3:#5f6f86;--border:rgba(0,0,0,.08);--shadow:0 4px 24px rgba(0,0,0,.09);--radius:14px}
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{font-family:'Plus Jakarta Sans',sans-serif;background:#fff;color:var(--text);line-height:1.65;overflow-x:hidden}
-a{text-decoration:none;color:inherit}
-/* Kerala stripe */
-.kstrip{height:4px;background:repeating-linear-gradient(90deg,#E30613 0,#E30613 10px,#b71c1c 10px,#b71c1c 20px,#0A14E0 20px,#0A14E0 30px,#FFB3B0 30px,#FFB3B0 40px)}
-/* Nav */
-.top-bar{background:linear-gradient(105deg,#D9050F 0%,#8A0A8E 50%,#0A14E0 100%);padding:.6rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
-.nav-brand{display:flex;align-items:center;gap:.65rem;color:#fff}
-.nav-logo-img{width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid rgba(200,146,42,.5)}
-.nav-logo-ph{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.15);border:2px solid rgba(200,146,42,.4);display:flex;align-items:center;justify-content:center;font-size:.95rem}
-.brand-name{font-family:'Plus Jakarta Sans',sans-serif;font-size:.95rem;font-weight:700;line-height:1.2;color:#fff}
-.brand-sub{font-size:.62rem;color:rgba(255,255,255,.75);letter-spacing:.1em}
-.back-btn{display:inline-flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.85);padding:.42rem 1rem;border-radius:8px;font-size:.84rem;font-weight:600;transition:all .2s}
-.back-btn:hover{background:rgba(255,255,255,.22);color:#fff}
-/* Hero */
-.contact-hero{background:linear-gradient(135deg,#0A14E0 0%,#0A14E0 60%,#1A23C9 100%);padding:4.5rem 1.5rem;text-align:center;color:#fff;position:relative;overflow:hidden}
-.contact-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 70% 30%,rgba(200,146,42,.15),transparent 60%)}
-.contact-hero h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(2rem,4vw,2.8rem);font-weight:700;position:relative}
-.contact-hero p{font-size:1rem;color:rgba(255,255,255,.72);max-width:500px;margin:.7rem auto 0;position:relative}
-/* Form card */
-.form-card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);padding:2rem}
-label.flbl{font-size:.75rem;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem;display:block}
-.finp{width:100%;background:#f7f9fc;border:1.5px solid rgba(0,0,0,.1);border-radius:10px;padding:.78rem 1rem;font-family:'Plus Jakarta Sans',sans-serif;font-size:1rem;color:var(--text);outline:none;transition:all .25s;margin-bottom:1rem}
-.finp:focus{border-color:var(--primary);background:#fff;box-shadow:0 0 0 3px rgba(10,20,224,.1)}
-.finp::placeholder{color:#6E7A93}
-textarea.finp{resize:vertical;min-height:130px}
-.btn-send{width:100%;padding:.85rem;background:var(--primary);color:#fff;border:none;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.95rem;cursor:pointer;transition:all .25s;display:flex;align-items:center;justify-content:center;gap:.5rem}
-.btn-send:hover:not(:disabled){background:#0A14E0;transform:translateY(-1px);box-shadow:0 8px 24px rgba(10,20,224,.3)}
-.btn-send:disabled{opacity:.55;cursor:not-allowed}
-.alert-box{border-radius:9px;padding:.75rem 1rem;font-size:.86rem;font-weight:500;margin-bottom:1rem;display:none;line-height:1.45}
-.alert-box.err{background:#fff0f0;border:1px solid #fecaca;color:#991b1b;display:block}
-.alert-box.ok{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;display:block}
-/* Info cards */
-.info-card{background:#f7f9fc;border:1px solid var(--border);border-radius:var(--radius);padding:1.4rem;display:flex;align-items:flex-start;gap:1rem;margin-bottom:1rem;transition:all .25s}
-.info-card:hover{background:#fff;box-shadow:var(--shadow);transform:translateX(4px)}
-.info-icon{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--primary),#0A14E0);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;flex-shrink:0}
-.info-lbl{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:.18rem}
-.info-val{font-weight:600;font-size:.9rem;color:var(--text)}
-.info-val a{color:var(--primary);transition:color .2s}
-.info-val a:hover{color:var(--accent)}
-/* WA button */
-.btn-wa{display:inline-flex;align-items:center;justify-content:center;gap:.55rem;width:100%;padding:.85rem;background:#25d366;color:#fff;border:none;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.95rem;cursor:pointer;transition:all .25s;margin-top:.5rem}
-.btn-wa:hover{background:#1ebe5d;transform:translateY(-1px);box-shadow:0 8px 24px rgba(37,211,102,.3)}
-/* Map */
-.map-wrap{border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow);height:340px}
-.map-wrap iframe{width:100%;height:100%;border:none}
-/* Footer */
-.mini-footer{background:#0B1033;color:rgba(255,255,255,.78);text-align:center;padding:1.2rem;font-size:.78rem}
-.mini-footer b{color:var(--accent2)}
-/* Reveal */
-.rv{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
-.rv.in{opacity:1;transform:translateY(0)}
-.rl{opacity:0;transform:translateY(24px);transition:opacity .65s ease,transform .65s ease}
-.rl.in{opacity:1;transform:translateX(0)}
-.rr{opacity:0;transform:translateY(24px);transition:opacity .65s ease,transform .65s ease}
-.rr.in{opacity:1;transform:translateX(0)}
-/* WA float */
-.wa-float{position:fixed;bottom:1.5rem;right:1.5rem;width:52px;height:52px;border-radius:50%;background:#25d366;color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.4rem;z-index:900;box-shadow:0 6px 22px rgba(37,211,102,.42);transition:all .22s;border:none;cursor:pointer;text-decoration:none}
-.wa-float:hover{background:#1ebe5d;transform:scale(1.1);color:#fff}
+.cf-card{background:var(--dark);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-card);padding:1.2rem}
+.cf-card .form-control{min-height:52px;background:var(--page-dark);border:1.5px solid rgba(255,255,255,.15);color:#fff;font-size:1rem;border-radius:.8rem}
+.cf-card .form-control:focus{border-color:var(--accent-text);box-shadow:0 0 0 .2rem rgba(143,151,255,.25)}
+.cf-card .form-control::placeholder{color:#8d8a8a}
+.cf-card textarea.form-control{min-height:140px}
 </style>
 </head>
-<body>
-<a href="https://wa.me/<?= h($wa) ?>" target="_blank" rel="noopener" class="wa-float" aria-label="Chat on WhatsApp"><i class="fab fa-whatsapp" aria-hidden="true"></i></a>
-<div class="kstrip"></div>
+<body class="pub" data-bs-no-jquery>
+<a href="#main" class="skip-link">Skip to content</a>
 
-<!-- Top bar nav -->
-<div class="top-bar">
-  <a href="<?= url('index.php') ?>" class="nav-brand">
-    <?php if($logo): ?><img src="<?= $logo ?>" class="nav-logo-img" alt=""><?php else: ?><div class="nav-logo-ph">⚜</div><?php endif; ?>
-    <div><div class="brand-name">Aishwarya A&S Club</div><div class="brand-sub">Vettikkattiri · Kerala</div></div>
-  </a>
-  <a href="<?= url('index.php') ?>" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Home</a>
-</div>
-
-<!-- Hero -->
-<div class="contact-hero">
-  <h1>Get In Touch</h1>
-  <p>We'd love to hear from you. Reach out for membership, events or any queries about <?= h(CLUB_NAME) ?>.</p>
-</div>
-
-<!-- Main content -->
-<div class="container py-5" style="max-width:1100px">
-  <div class="row g-4 align-items-start">
-
-    <!-- Contact Form -->
-    <div class="col-lg-6 rl">
-      <div class="form-card">
-        <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.5rem;color:var(--primary);margin-bottom:.3rem">Send a Message</h3>
-        <p style="font-size:.86rem;color:var(--text3);margin-bottom:1.5rem">Fill the form and we'll reply on WhatsApp shortly.</p>
-        <div class="alert-box" id="contactAlert"></div>
-        <div id="contactFormWrap">
-          <label class="flbl" for="cName">Your Name *</label>
-          <input type="text"  class="finp" id="cName" placeholder="Full name">
-          <label class="flbl" for="cEmail">Email Address</label>
-          <input type="email" class="finp" id="cEmail" placeholder="your@email.com">
-          <label class="flbl" for="cSubject">Subject</label>
-          <input type="text"  class="finp" id="cSubject" placeholder="What is this about?">
-          <label class="flbl" for="cMsg">Message *</label>
-          <textarea           class="finp" id="cMsg" placeholder="Write your message here…"></textarea>
-          <button class="btn-send" id="btnSend" onclick="sendContact()">
-            <i class="fas fa-paper-plane"></i> Send Message
-          </button>
-        </div>
-        <div id="contactSuccess" style="display:none;text-align:center;padding:2rem 0">
-          <div style="font-size:3rem;margin-bottom:.8rem">✅</div>
-          <h5 style="font-family:'Plus Jakarta Sans',sans-serif;color:var(--primary);margin-bottom:.4rem">Message Sent!</h5>
-          <p style="font-size:.88rem;color:var(--text2)">Thank you for reaching out. We'll get back to you soon via WhatsApp.</p>
-          <button onclick="document.getElementById('contactSuccess').style.display='none';document.getElementById('contactFormWrap').style.display='block'" style="margin-top:1rem;background:none;border:1.5px solid var(--primary);color:var(--primary);border-radius:8px;padding:.5rem 1.2rem;font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;cursor:pointer">Send Another</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Right: Info + Map -->
-    <div class="col-lg-6 rr">
-      <!-- Contact info cards -->
-      <div class="info-card">
-        <div class="info-icon"><i class="fas fa-map-marker-alt"></i></div>
-        <div><div class="info-lbl">Location</div><div class="info-val"><?= h(CLUB_PLACE) ?>, Kerala, India</div></div>
-      </div>
-      <div class="info-card">
-        <div class="info-icon"><i class="fab fa-whatsapp"></i></div>
-        <div><div class="info-lbl">WhatsApp</div><div class="info-val"><a href="https://wa.me/<?= h($wa) ?>" target="_blank"><?= h(CLUB_PHONE) ?></a></div></div>
-      </div>
-      <div class="info-card">
-        <div class="info-icon"><i class="fab fa-whatsapp"></i></div>
-        <div><div class="info-lbl">WhatsApp Group</div><div class="info-val"><a href="<?= h(CLUB_WA_GROUP) ?>" target="_blank">Join Our Community Group →</a></div></div>
-      </div>
-      <div class="info-card">
-        <div class="info-icon"><i class="fas fa-users"></i></div>
-        <div><div class="info-lbl">Member Portal</div><div class="info-val"><a href="<?= url('login.php') ?>">Login / Apply to Join →</a></div></div>
-      </div>
-
-      <!-- WhatsApp direct button -->
-      <a href="https://wa.me/<?= h($wa) ?>" target="_blank" class="btn-wa">
-        <i class="fab fa-whatsapp" style="font-size:1.15rem"></i> Chat Directly on WhatsApp
-      </a>
-
-      <!-- Map -->
-      <div class="map-wrap mt-4">
-        <iframe title="Map showing the club location"
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3914.1234567890!2d76.0000000!3d11.0000000!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zVmV0dGlra2F0dGlyaSwgS2VyYWxh!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
-          allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
-        </iframe>
-      </div>
-    </div>
-
+<header class="pub-top">
+  <div class="in">
+    <a href="<?= url('index.php') ?>" class="d-flex align-items-center gap-2 text-decoration-none" aria-label="<?= h($clubName) ?> — <?= h(t('nav_home')) ?>">
+      <?php if($logo): ?><img class="logo" src="<?= $logo ?>" alt="" width="44" height="44"><?php endif; ?>
+      <span><span class="name d-block"><?= h($clubName) ?></span><span class="sub"><?= h($clubPlace) ?> · Kerala</span></span>
+    </a>
+    <a class="lang" href="<?= h(lang_url(lang_current() === 'ml' ? 'en' : 'ml')) ?>" lang="<?= lang_current() === 'ml' ? 'en' : 'ml' ?>" aria-label="<?= h(t('lang_label')) ?>"><i class="bi bi-translate" aria-hidden="true"></i><?= h(t('lang_switch')) ?></a>
   </div>
-</div>
+</header>
 
-<div class="kstrip"></div>
-<div class="mini-footer">© <?= date('Y') ?> <b><?= h(CLUB_NAME) ?></b> · <?= h(CLUB_PLACE) ?> · All rights reserved</div>
+<main id="main" tabindex="-1">
+<section aria-labelledby="ctH"><div class="wrap">
+  <h1 class="h-sec h-big" id="ctH"><?= h(t('sec_contact')) ?></h1>
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <div class="cf-card">
+        <h2 class="fw-bold fs-5 text-uppercase mb-1"><?= h(t('ct_title')) ?></h2>
+        <p class="text-2 small mb-3"><?= h(t('ct_sub')) ?></p>
+        <div class="alert alert-danger py-2 d-none" id="cfErr" role="alert"></div>
+        <form id="cfForm" novalidate>
+          <div class="mb-3"><label class="form-label" for="cName"><?= h(t('form_name')) ?> *</label><input class="form-control" id="cName" name="name" autocomplete="name" required></div>
+          <div class="mb-3"><label class="form-label" for="cEmail"><?= h(t('ct_email')) ?></label><input class="form-control" id="cEmail" name="email" type="email" autocomplete="email"></div>
+          <div class="mb-3"><label class="form-label" for="cSubject"><?= h(t('ct_subject')) ?></label><input class="form-control" id="cSubject" name="subject"></div>
+          <div class="mb-3"><label class="form-label" for="cMsg"><?= h(t('ct_message')) ?> *</label><textarea class="form-control" id="cMsg" name="message" required></textarea></div>
+          <div class="hp" aria-hidden="true"><label for="cWeb">Website</label><input id="cWeb" name="website" tabindex="-1" autocomplete="off"></div>
+          <button type="submit" class="btn btn-brand btn-lg w-100" id="cfSend"><i class="bi bi-send-fill" aria-hidden="true"></i><?= h(t('ct_send')) ?></button>
+        </form>
+        <div class="thanks d-none" id="cfThanks" role="status">
+          <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+          <h3 class="fw-bold fs-5 mt-2"><?= h(t('ct_sent')) ?></h3>
+          <p class="text-2"><?= h(t('ct_sent_sub')) ?></p>
+          <button type="button" class="btn btn-line" id="cfAgain"><?= h(t('ct_again')) ?></button>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="ct-box">
+        <div class="ct-row"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i><div><small class="text-2 d-block"><?= h(t('address')) ?></small><span style="white-space:pre-line"><?= h($siteAddr) ?></span></div></div>
+        <?php if($sitePhone): ?><div class="ct-row"><i class="bi bi-telephone-fill" aria-hidden="true"></i><div><small class="text-2 d-block"><?= h(t('phone')) ?></small><a href="tel:<?= h($sitePhone) ?>"><?= h($sitePhone) ?></a></div></div><?php endif; ?>
+        <?php if($waGroup): ?><div class="ct-row"><i class="bi bi-people-fill" aria-hidden="true"></i><div><small class="text-2 d-block"><?= h(t('ct_group')) ?></small><a href="<?= h($waGroup) ?>" target="_blank" rel="noopener"><?= h(t('ct_group_join')) ?> →</a></div></div><?php endif; ?>
+        <div class="ct-row"><i class="bi bi-person-badge-fill" aria-hidden="true"></i><div><small class="text-2 d-block"><?= h(t('ct_portal')) ?></small><a href="<?= url('index.php') ?>?login=1"><?= h(t('ct_portal_go')) ?> →</a></div></div>
+        <div class="d-grid gap-2 mt-2">
+          <?php if($siteWa): ?><a class="btn btn-wa" href="https://wa.me/<?= h($siteWa) ?>" target="_blank" rel="noopener"><i class="bi bi-whatsapp" aria-hidden="true"></i><?= h(t('hero_whatsapp')) ?></a><?php endif; ?>
+          <?php if($sitePhone): ?><a class="btn btn-line" href="tel:<?= h($sitePhone) ?>"><i class="bi bi-telephone" aria-hidden="true"></i><?= h(t('hero_call')) ?></a><?php endif; ?>
+          <?php if($siteInsta): ?><a class="btn btn-line" href="<?= h($siteInsta) ?>" target="_blank" rel="noopener"><i class="bi bi-instagram" aria-hidden="true"></i><?= h(t('instagram')) ?></a><?php endif; ?>
+          <?php if($siteMap && !$isEmbed): ?><a class="btn btn-line" href="<?= h($siteMap) ?>" target="_blank" rel="noopener"><i class="bi bi-map" aria-hidden="true"></i><?= h(t('open_map')) ?></a><?php endif; ?>
+        </div>
+      </div>
+      <?php if($isEmbed): ?><iframe class="map mt-3" src="<?= h($siteMap) ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Map: <?= h($clubName) ?>"></iframe><?php endif; ?>
+    </div>
+  </div>
+</div></section>
+</main>
 
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<footer class="pub-foot"><div class="wrap">
+  © <?= date('Y') ?> <?= h($clubName) ?> · <?= h($clubPlace) ?>
+  <br><span class="dev"><i class="bi bi-code-slash" aria-hidden="true"></i><?= h(t('developed_by')) ?> <b class="text-white">anexpaikadan</b></span>
+</div></footer>
+
+<nav class="bnav3" aria-label="Quick links">
+  <a href="<?= url('index.php') ?>"><span class="pill"><i class="bi bi-house-door-fill" aria-hidden="true"></i></span><?= h(t('nav_home')) ?></a>
+  <a href="<?= url('modules/market.php') ?>" class="mid"><span class="ring"><i class="bi bi-bag-fill" aria-hidden="true"></i></span><?= h(t('nav_market')) ?></a>
+  <?php if(isLoggedIn()): ?>
+    <a href="<?= url('dashboard.php') ?>"><span class="pill"><i class="bi bi-person-circle" aria-hidden="true"></i></span><?= h(t('nav_account')) ?></a>
+  <?php else: ?>
+    <a href="<?= url('index.php') ?>?login=1"><span class="pill"><i class="bi bi-box-arrow-in-right" aria-hidden="true"></i></span><?= h(t('nav_login')) ?></a>
+  <?php endif; ?>
+</nav>
+
 <script>
-function sendContact() {
-  var n=$('#cName').val().trim(), e=$('#cEmail').val().trim();
-  var s=$('#cSubject').val().trim(), m=$('#cMsg').val().trim();
-  if (!n||!m) { showA('err','<i class="fas fa-exclamation-circle me-1"></i>Name and message are required.'); return; }
-  showA('ok','<i class="fas fa-spinner fa-spin me-1"></i>Sending…');
-  $('#btnSend').prop('disabled',true);
-  $.ajax({
-    url:'', method:'POST',
-    data:{ajax:'1',action:'contact',name:n,email:e,subject:s,message:m},
-    dataType:'json',
-    success:function(d){
-      if(d.ok){ $('#contactFormWrap').hide(); $('#contactSuccess').show(); $('#contactAlert').hide(); }
-      else { $('#btnSend').prop('disabled',false); showA('err','<i class="fas fa-times-circle me-1"></i>'+d.msg); }
-    },
-    error:function(){ $('#btnSend').prop('disabled',false); showA('err','Network error. Please try WhatsApp.'); }
+(function(){
+  var f = document.getElementById('cfForm'), err = document.getElementById('cfErr'), btn = document.getElementById('cfSend');
+  var ERR = <?= json_encode(t('ct_err'), JSON_UNESCAPED_UNICODE) ?>, NET = <?= json_encode(t('form_err_net'), JSON_UNESCAPED_UNICODE) ?>;
+  function fail(m){ err.textContent = m; err.classList.remove('d-none'); }
+  f.addEventListener('submit', function(e){
+    e.preventDefault(); err.classList.add('d-none');
+    if(!f.name.value.trim()){ fail(ERR); f.name.focus(); return; }
+    if(!f.message.value.trim()){ fail(ERR); f.message.focus(); return; }
+    var fd = new FormData(f); fd.append('ajax', '1'); fd.append('action', 'contact');
+    btn.disabled = true;
+    fetch(location.pathname, {method:'POST', body:fd, credentials:'same-origin'}).then(function(r){ return r.json(); }).then(function(d){
+      btn.disabled = false;
+      if(!d.ok) return fail(d.msg || NET);
+      f.reset(); f.classList.add('d-none'); document.getElementById('cfThanks').classList.remove('d-none');
+    }).catch(function(){ btn.disabled = false; fail(NET); });
   });
-}
-function showA(type,msg){ $('#contactAlert').removeClass('err ok').addClass(type).html(msg).show(); }
-
-// Reveal animations
-var obs=new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting)$(x.target).addClass('in');});},{threshold:.1});
-$('.rv,.rl,.rr').each(function(){obs.observe(this);});
+  document.getElementById('cfAgain').addEventListener('click', function(){
+    document.getElementById('cfThanks').classList.add('d-none'); f.classList.remove('d-none'); f.name.focus();
+  });
+})();
 </script>
 </body>
 </html>
