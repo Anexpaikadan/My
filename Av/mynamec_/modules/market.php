@@ -731,7 +731,7 @@ if ($page==='item' && $item): ?>
       <?php foreach($related as $ri): ?>
       <a href="<?php echo $SELF.'?p=item&id='.(int)$ri['id']; ?>" class="mk-card">
         <?php if($ri['thumb']): ?>
-        <img class="mk-card-img" src="<?php echo h($SITE.'/assets/uploads/market/'.$ri['thumb']); ?>" loading="lazy">
+        <img class="mk-card-img" src="<?php echo h($SITE.'/assets/uploads/market/'.$ri['thumb']); ?>" alt="" loading="lazy">
         <?php else: ?>
         <div class="mk-card-img-placeholder"><?php echo $CATS[$ri['category']][0]??'🛍️'; ?></div>
         <?php endif; ?>
@@ -1056,7 +1056,7 @@ else: ?>
   ?>
   <div class="mk-card<?php echo $ci['status']==='sold'?' mk-card-sold':''; ?>" onclick="window.location='<?php echo $SELF.'?p=item&id='.(int)$ci['id']; ?>'">
     <?php if($ciImg): ?>
-    <img class="mk-card-img" src="<?php echo h($ciImg); ?>" loading="lazy">
+    <img class="mk-card-img" src="<?php echo h($ciImg); ?>" alt="" loading="lazy">
     <?php else: ?>
     <div class="mk-card-img-placeholder"><?php echo $CATS[$ci['category']][0]??'🛍️'; ?></div>
     <?php endif; ?>

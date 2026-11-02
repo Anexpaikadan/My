@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $reqId = (int)$_POST['req_id'];
     $action = $_POST['action'];
 
-    if ($action === 'approve') {
+    if ($action === 'approve') { require_once __DIR__ . '/../includes/sudo.php'; sudo_require(); 
         $stmt = db()->prepare("SELECT * FROM subscription_requests WHERE id = ?");
         $stmt->execute([$reqId]);
         $req = $stmt->fetch();
@@ -173,7 +173,7 @@ require_once __DIR__.'/../includes/header.php';
                   💬 Share Bank Info
                 </button>
                 
-                <form method="POST" style="margin:0; display:inline; width:100%;">
+                <form method="POST" style="margin:0; display:inline; width:100%;" data-sudo>
                   <input type="hidden" name="req_id" value="<?= $r['id'] ?>">
                   <input type="hidden" name="action" value="approve">
                   <button type="submit" style="background:#0A14E0; color:#fff; border:none; border-radius:6px; padding:0.35rem 0.7rem; font-weight:700; font-size:0.75rem; cursor:pointer; width:100%;">

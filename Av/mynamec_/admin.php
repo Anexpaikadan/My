@@ -357,7 +357,7 @@ require_once __DIR__.'/includes/header.php';
 
 <?php elseif($tab==='members'):?>
 <div class="adm-head"><h2>👥 All Members</h2><div class="adm-head-line"></div></div>
-<div class="search-row"><input type="text" class="inp" id="ms" placeholder="Search…" oninput="ft()" style="flex:1;min-width:160px"><select class="inp" id="mr" onchange="ft()" style="max-width:155px"><option value="">All Roles</option><?php foreach($roles as $rv=>$rl):?><option value="<?=$rv?>"><?=$rl?></option><?php endforeach;?></select><select class="inp" id="mst" onchange="ft()" style="max-width:130px"><option value="">All Status</option><option value="active">Active</option><option value="pending">Pending</option><option value="inactive">Inactive</option></select></div>
+<div class="search-row"><input type="text" class="inp" id="ms" placeholder="Search…" oninput="ft()" style="flex:1;min-width:160px"><select class="inp" id="mr" aria-label="Filter by role" onchange="ft()" style="max-width:155px"><option value="">All Roles</option><?php foreach($roles as $rv=>$rl):?><option value="<?=$rv?>"><?=$rl?></option><?php endforeach;?></select><select class="inp" id="mst" aria-label="Filter by status" onchange="ft()" style="max-width:130px"><option value="">All Status</option><option value="active">Active</option><option value="pending">Pending</option><option value="inactive">Inactive</option></select></div>
 <style>
 .mcard{background:#fff;border-radius:14px;padding:.85rem 1rem;margin-bottom:.6rem;box-shadow:0 2px 10px rgba(0,0,0,.07);display:flex;align-items:center;gap:.75rem;transition:all .2s}
 .mcard:hover{box-shadow:0 4px 18px rgba(10,20,224,.14);transform:translateY(-1px)}
@@ -373,7 +373,7 @@ require_once __DIR__.'/includes/header.php';
 .mcard-status-active{background:#e8f5e9;color:#2e7d32}
 .mcard-status-pending{background:#fff8e1;color:#f57f17}
 .mcard-status-inactive,.mcard-status-rejected{background:#ffebee;color:#b71c1c}
-.mcard-wa{font-size:.7rem;color:#25d366;text-decoration:none;display:flex;align-items:center;gap:.2rem;margin-top:.15rem}
+.mcard-wa{font-size:.7rem;color:#157a3f;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:.2rem;margin-top:.15rem}
 .mcard-pos{font-size:.68rem;color:#64748b;margin-top:.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mcard-acts{display:flex;gap:.3rem;flex-shrink:0}
 #mlist{display:none}

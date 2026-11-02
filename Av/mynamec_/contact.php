@@ -43,7 +43,7 @@ $isEmbed   = (bool)preg_match('#^https://(www\.)?google\.[a-z.]+/maps/embed#', $
 <link rel="icon" type="image/png" href="<?= url('assets/icons/app/favicon-64.png') ?>">
 <link rel="stylesheet" href="<?= url('assets/vendor/bootstrap/css/bootstrap.min.css') ?>">
 <link rel="stylesheet" href="<?= url('assets/vendor/bootstrap-icons/bootstrap-icons.min.css') ?>">
-<link rel="stylesheet" href="<?= url('assets/css/club.css') ?>?v=2">
+<link rel="stylesheet" href="<?= url('assets/css/club.css') ?>?v=3">
 <style>
 .cf-card{background:var(--dark);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-card);padding:1.2rem}
 .cf-card .form-control{min-height:52px;background:var(--page-dark);border:1.5px solid rgba(255,255,255,.15);color:#fff;font-size:1rem;border-radius:.8rem}

@@ -410,7 +410,7 @@ $money = function($v){ $v = trim((string)$v); if ($v === '') return 'On request'
 <link rel="stylesheet" href="<?= url('assets/vendor/bootstrap/css/bootstrap.min.css') ?>">
 <link rel="stylesheet" href="<?= url('assets/vendor/bootstrap-icons/bootstrap-icons.min.css') ?>">
 <link rel="stylesheet" href="<?= url('assets/vendor/fontawesome/css/all.min.css') ?>">
-<link rel="stylesheet" href="<?= url('assets/css/club.css') ?>?v=2">
+<link rel="stylesheet" href="<?= url('assets/css/club.css') ?>?v=3">
 <style>
 /* login pop-up (logic unchanged; classes renamed so they don't clash with Bootstrap) */
 .overlay{display:none;position:fixed;inset:0;z-index:2000;background:rgba(5,8,25,.7);align-items:flex-end;justify-content:center}

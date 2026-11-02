@@ -373,7 +373,7 @@ body{padding:1.1rem 1rem 3rem;display:flex;flex-direction:column;align-items:cen
 
 <div class="topbar">
   <a href="<?= url('dashboard.php') ?>" class="back">← Dashboard</a>
-  <span style="font-size:.71rem;color:#94a3b8;font-weight:600;letter-spacing:.07em">MEMBER ID CARD</span>
+  <span style="font-size:.71rem;color:#5d6b80;font-weight:600;letter-spacing:.07em">MEMBER ID CARD</span>
 </div>
 
 <?php if(isset($_GET['applied'])): ?>

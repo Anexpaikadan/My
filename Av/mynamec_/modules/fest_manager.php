@@ -225,7 +225,7 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_FILES['entry_photo']) && $fes
 }
 
 // ── Load fests ──────────────────────────────────────────────
-$allFests = db()->query("SELECT f.*,(SELECT COUNT(*) FROM fest_entries WHERE fest_id=f.id) cnt FROM fests ORDER BY created_at DESC")->fetchAll();
+$allFests = db()->query("SELECT f.*,(SELECT COUNT(*) FROM fest_entries WHERE fest_id=f.id) cnt FROM fests f ORDER BY f.created_at DESC")->fetchAll();
 
 $pageTitle = '🎪 Fest Manager — '.$CLUB;
 $pageOG = ['title'=>$pageTitle,'desc'=>'Club fests — '.$CLUB,'image'=>$SITE.'/og_image.php','url'=>$SITE.'/modules/fest_manager.php'];
