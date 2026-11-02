@@ -157,6 +157,7 @@ if (!empty($_POST['action'])) {
     if (!$item || ((int)$item['user_id'] !== $uid && !$isAdmin)) {
       echo json_encode(['ok'=>false,'msg'=>'Not allowed']); exit;
     }
+    if ($isAdmin) { require_once __DIR__ . '/../includes/sudo.php'; sudo_require(); }   // admins confirm their passkey first
     $imgs = db()->prepare("SELECT image_path FROM market_images WHERE item_id=?");
     $imgs->execute([$iid]);
     foreach ($imgs->fetchAll() as $img) {
@@ -290,6 +291,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_item'])) {
       $iid = (int)db()->lastInsertId();
       $feed_publish_iid = ($initStatus === 'active') ? $iid : 0;
     }
+    // Offer: old (crossed-out) price, and "show on public website" (admins choose; new posts are shown)
+    require_once __DIR__ . '/../includes/site_schema.php'; site_tables();
+    $oldP = preg_replace('/[^\d.]/', '', $_POST['old_price'] ?? '');
+    try { db()->prepare("UPDATE market_items SET old_price=? WHERE id=?")->execute([$oldP !== '' ? (float)$oldP : null, $iid]); } catch(Exception $e){}
+    if ($isAdmin) { try { db()->prepare("UPDATE market_items SET show_public=? WHERE id=?")->execute([!empty($_POST['show_public']) ? 1 : 0, $iid]); } catch(Exception $e){} }
     // Upload images (max 3)
     $existCount = (int)db()->query("SELECT COUNT(*) FROM market_images WHERE item_id={$iid}")->fetchColumn();
     $dir = __DIR__.'/../assets/uploads/market/';
@@ -771,6 +777,16 @@ elseif ($page==='new' || $page==='edit'):
       <label class="lbl">💰 Price (optional)</label>
       <input type="text" name="price" class="inp" value="<?php echo h($fi['price']??''); ?>" placeholder="₹500 or Free">
     </div>
+    <div class="fg">
+      <label class="lbl" for="mkOld">🏷️ Old price (optional, shows "Offer")</label>
+      <input type="text" name="old_price" id="mkOld" class="inp" inputmode="decimal" value="<?php echo h(isset($fi['old_price']) && $fi['old_price'] !== null ? rtrim(rtrim($fi['old_price'],'0'),'.') : ''); ?>" placeholder="₹650">
+    </div>
+    <?php if($isAdmin): ?>
+    <div class="fg" style="display:flex;align-items:center;gap:.6rem">
+      <input class="form-check-input" type="checkbox" role="switch" name="show_public" value="1" id="mkPub" style="width:2.8rem;height:1.5rem;margin:0"<?php echo (!isset($fi['show_public']) || (int)$fi['show_public'] === 1) ? ' checked' : ''; ?>>
+      <label for="mkPub" style="font-weight:600">Show on public website</label>
+    </div>
+    <?php endif; ?>
   </div>
 
   <div class="fg" id="subWrap" style="display:none">
@@ -1080,6 +1096,7 @@ else: ?>
 
 <script>
 var SELF='<?php echo $SELF; ?>';
+var MK_ADMIN=<?php echo $isAdmin ? 'true' : 'false'; ?>;
 var SITE='<?php echo $SITE; ?>';
 var CLUBNAME=<?php echo json_encode($CLUB); ?>;
 var LOGIN='<?php echo url('login.php'); ?>';
@@ -1209,6 +1226,11 @@ function setStatus(id,status,btn){
 // ── Delete a listing ──
 function mkDel(id){
   if(!confirm('Delete this listing permanently? This cannot be undone.'))return;
+  if(MK_ADMIN && window.sudoThen && !mkDel._ok){ sudoThen(function(){ mkDel._ok=true; mkDelGo(id); }); return; }
+  mkDelGo(id);
+}
+function mkDelGo(id){
+  mkDel._ok=false;
   var fd=new FormData();fd.append('action','delete');fd.append('item_id',id);
   fetch(SELF,{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(res){
     if(res.msg==='login_required'){toast('🔑 Please log in','e');return;}

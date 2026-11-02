@@ -61,6 +61,7 @@ if ($isAdmin && isset($_POST['upload_photo'])) {
 
 // Delete photo
 if ($isAdmin && isset($_POST['delete_photo'])) {
+    require_once __DIR__ . '/../includes/sudo.php'; sudo_require();
     $pid = (int)$_POST['pid'];
     $row = db()->prepare("SELECT image_path FROM gallery_images WHERE id=?");
     $row->execute([$pid]); $row = $row->fetch();
@@ -77,6 +78,13 @@ if ($isAdmin && isset($_POST['toggle_active'])) {
     $pid = (int)$_POST['pid'];
     db()->prepare("UPDATE gallery_images SET is_active = 1-is_active WHERE id=?")->execute([$pid]);
     $msg = ['ok','Updated.'];
+}
+
+// Toggle "show on public website"
+if ($isAdmin && isset($_POST['toggle_public'])) {
+    require_once __DIR__ . '/../includes/site_schema.php'; site_tables();
+    db()->prepare("UPDATE gallery_images SET show_public = 1-IFNULL(show_public,1) WHERE id=?")->execute([(int)$_POST['pid']]);
+    $msg = ['ok','Website setting updated.'];
 }
 
 // Toggle hero
@@ -256,7 +264,7 @@ require_once __DIR__ . '/../includes/header.php';
     <img src="<?= h($src) ?>" alt="<?= h($p['title']??'Photo') ?>" loading="lazy">
     <!-- Badges -->
     <?php if($p['is_hero']): ?><span class="badge-hero">⭐ Homepage</span><?php endif; ?>
-    <?php if(!$p['is_active'] && $isAdmin): ?><span class="badge-hidden">Hidden</span><?php endif; ?>
+    <?php if(!$p['is_active'] && $isAdmin): ?><span class="badge-hidden">Hidden</span><?php elseif($isAdmin && isset($p['show_public']) && (int)$p['show_public'] === 0): ?><span class="badge-hidden">Not on website</span><?php endif; ?>
     <!-- Overlay -->
     <div class="gal-overlay">
       <div class="gal-caption"><?= h($p['title']??'') ?></div>
@@ -275,7 +283,11 @@ require_once __DIR__ . '/../includes/header.php';
       </form>
       <form method="POST" action="<?= url('modules/gallery.php') ?>" style="display:inline" onclick="event.stopPropagation()">
         <input type="hidden" name="pid" value="<?= $p['id'] ?>">
-        <button type="submit" name="delete_photo" class="act-btn act-del" title="Delete" onclick="return confirm('Delete this photo?')">🗑</button>
+        <button type="submit" name="toggle_public" class="act-btn act-hide" title="<?= (isset($p['show_public']) && (int)$p['show_public'] === 0) ? 'Show on public website' : 'Hide from public website' ?>">🌐</button>
+      </form>
+      <form method="POST" action="<?= url('modules/gallery.php') ?>" style="display:inline" onclick="event.stopPropagation()" data-sudo data-confirm="Delete this photo?">
+        <input type="hidden" name="pid" value="<?= $p['id'] ?>">
+        <button type="submit" name="delete_photo" class="act-btn act-del" title="Delete">🗑</button>
       </form>
     </div>
     <?php endif; ?>

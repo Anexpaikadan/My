@@ -340,7 +340,13 @@ $_pLoggedIn = !empty($_SESSION['user_id']);
 site_tables();
 $P = function($k, $d = '') { return site_cfg($k, $d); };
 $Pml = function($k, $d = '') { return tset(site_cfg($k, $d), site_cfg($k . '_ml', '')); };   // English / Malayalam text
-$Pon = function($k) { return site_cfg('pub_show_' . $k, '1') !== '0'; };                   // section switch
+$Pon = function($k) {                                                                         // section switch (falls back to the old Homepage switches)
+    $old = array('about'=>'home_about_show','programs'=>'home_activities_show','achievements'=>'home_achievements_show','gallery'=>'home_gallery_show',
+                 'events'=>'home_events_show','notices'=>'home_notices_show','committee'=>'home_committee_show');
+    $v = site_cfg('pub_show_' . $k, '');
+    if ($v === '' && isset($old[$k])) $v = site_cfg($old[$k], '1');
+    return $v !== '0';
+};
 $Ptitle = function($k) use ($Pml) { $v = $Pml('pub_title_' . $k, ''); return $v !== '' ? $v : t('sec_' . $k); };
 $heroPhoto = $P('hero_photo', '');
 if ($heroPhoto === '' && !empty($heroSlides[0]['img'])) $heroPhoto = $heroSlides[0]['img'];
@@ -370,7 +376,7 @@ try {
     $products = db()->query("SELECT m.* FROM market_items m WHERE m.status='active' AND (m.show_public IS NULL OR m.show_public=1) ORDER BY m.featured DESC, m.created_at DESC LIMIT 8")->fetchAll();
     foreach ($products as &$pr) {
         $st = db()->prepare("SELECT image_path FROM market_images WHERE item_id=? ORDER BY sort_order,id LIMIT 6"); $st->execute(array($pr['id']));
-        $pr['imgs'] = array_map(function($r){ return url('assets/uploads/' . ltrim($r['image_path'], '/')); }, $st->fetchAll());
+        $pr['imgs'] = array_map(function($r){ $ip = ltrim($r['image_path'], '/'); return url('assets/uploads/' . (strpos($ip, '/') === false ? 'market/' . $ip : $ip)); }, $st->fetchAll());
     }
     unset($pr);
 } catch(Exception $e){}
@@ -382,7 +388,9 @@ $siteInsta = $P('social_instagram', '');
 $joinOptions = array_values(array_filter(array_map('trim', explode(',', $Pml('join_options', 'Football,Cricket,Arts,Blood donor,Volunteer')))));
 $userNow   = $_pLoggedIn ? currentUser() : null;
 $isAdminNow = $userNow && isAdminRole($userNow['role']);
-$money = function($v){ return is_numeric($v) ? '₹' . number_format((float)$v, (floor($v) == $v) ? 0 : 2) : $v; };
+// price text: "500" → "₹500"; "₹500 or Free" stays as written; empty → on request
+$num   = function($v){ return (float)preg_replace('/[^\d.]/', '', (string)$v); };
+$money = function($v){ $v = trim((string)$v); if ($v === '') return 'On request'; return is_numeric($v) ? '₹' . number_format((float)$v, (floor($v) == $v) ? 0 : 2) : $v; };
 ?>
 <!DOCTYPE html>
 <html lang="<?= lang_current() ?>">
@@ -647,12 +655,12 @@ foreach ($sliders as $key => $sl): $slJson[$key] = $sl[1]; ?>
 <section class="sec-alt" id="shop" aria-labelledby="shopH"><div class="wrap">
   <h2 class="h-sec" id="shopH"><?= h($Ptitle('shop')) ?></h2>
   <div class="shop-grid">
-    <?php foreach($products as $k => $pr): $offer = !empty($pr['old_price']) && (float)$pr['old_price'] > (float)$pr['price']; ?>
+    <?php foreach($products as $k => $pr): $offer = !empty($pr['old_price']) && $num($pr['price']) > 0 && (float)$pr['old_price'] > $num($pr['price']); ?>
     <button type="button" class="prod" data-prod="<?= $k ?>">
       <?php if($offer): ?><span class="tag-offer"><?= h(t('offer')) ?></span><?php endif; ?>
       <span class="ph d-block"><?php if(!empty($pr['imgs'][0])): ?><img src="<?= h($pr['imgs'][0]) ?>" alt="" loading="lazy" width="400" height="400"><?php else: ?><span class="d-flex h-100 align-items-center justify-content-center fs-1" aria-hidden="true">🛍️</span><?php endif; ?></span>
       <span class="bd d-block"><span class="nm d-block"><?= h($pr['title']) ?></span>
-        <span class="price"><?= (float)$pr['price'] > 0 ? h($money($pr['price'])) : h('Free / on request') ?><?php if($offer): ?><s><?= h($money($pr['old_price'])) ?></s><?php endif; ?></span></span>
+        <span class="price"><?= h($money($pr['price'])) ?><?php if($offer): ?><s><?= h($money($pr['old_price'])) ?></s><?php endif; ?></span></span>
     </button>
     <?php endforeach; ?>
   </div>
@@ -1321,9 +1329,9 @@ var PROGS = <?= json_encode(array_map(function($p){ return array(
   'img'=>!empty($p['photo']) ? url($p['photo']) : '', 's'=>$p['suitable_for'] ?? '', 't'=>$p['time_text'] ?? '', 'c'=>$p['contact_person'] ?? '',
   'link'=>$p['reg_link'] ?? ''); }, $programs), JSON_UNESCAPED_UNICODE) ?>;
 var ITEMS = <?= json_encode($slJson, JSON_UNESCAPED_UNICODE) ?>;
-var PRODS = <?= json_encode(array_map(function($p) use ($money){
-  $old = !empty($p['old_price']) && (float)$p['old_price'] > (float)$p['price'];
-  return array('n'=>$p['title'], 'd'=>$p['description'] ?? '', 'imgs'=>$p['imgs'], 'p'=>(float)$p['price'] > 0 ? $money($p['price']) : 'Free / on request',
+var PRODS = <?= json_encode(array_map(function($p) use ($money, $num){
+  $old = !empty($p['old_price']) && $num($p['price']) > 0 && (float)$p['old_price'] > $num($p['price']);
+  return array('n'=>$p['title'], 'd'=>$p['description'] ?? '', 'imgs'=>$p['imgs'], 'p'=>$money($p['price']),
     'o'=>$old ? $money($p['old_price']) : '', 'url'=>rtrim(SITE_URL, '/') . '/modules/market.php?p=item&id=' . (int)$p['id']); }, $products), JSON_UNESCAPED_UNICODE) ?>;
 var WA = <?= json_encode($siteWa) ?>;
 var CLUB = <?= json_encode($clubName, JSON_UNESCAPED_UNICODE) ?>;

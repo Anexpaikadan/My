@@ -432,8 +432,8 @@ require_once __DIR__.'/includes/header.php';
 <div class="card" style="max-width:560px"><div class="card-body">
 <form method="POST" action="<?=url('admin.php')?>?tab=add">
   <div class="g2">
-    <div class="fg"><label class="lbl">Name *</label><input type="text" name="name" class="inp" required></div>
-    <div class="fg"><label class="lbl">WhatsApp *</label><input type="tel" name="phone" class="inp" required placeholder="+91…"></div>
+    <div class="fg"><label class="lbl">Name *</label><input type="text" name="name" class="inp" required value="<?= h($_GET['name'] ?? '') ?>"></div>
+    <div class="fg"><label class="lbl">WhatsApp *</label><input type="tel" name="phone" class="inp" required placeholder="+91…" value="<?= h($_GET['phone'] ?? '') ?>"></div>
     <div class="fg"><label class="lbl">Blood</label><select name="bg" class="inp"><option value="">—</option><?php foreach(array('A+','A-','B+','B-','AB+','AB-','O+','O-') as $bg):?><option><?=$bg?></option><?php endforeach;?></select></div>
     <div class="fg"><label class="lbl">Role</label><select name="role" class="inp"><?php foreach($roles as $rv=>$rl):?><option value="<?=$rv?>"><?=$rl?></option><?php endforeach;?></select></div>
     <div class="fg"><label class="lbl">Position</label><input type="text" name="cp" class="inp" placeholder="e.g. Sports Head"></div>

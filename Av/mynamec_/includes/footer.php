@@ -213,5 +213,62 @@ window.addEventListener('load', function(){
 });
 <?php endif; ?>
 </script>
+<?php if(!empty($user)): ?>
+<!-- Passkey check before deleting or changing money (includes/sudo.php) -->
+<div class="modal fade" id="mSudo" tabindex="-1" aria-labelledby="mSudoT" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content" style="border-radius:1rem">
+    <form id="sudoForm" autocomplete="off">
+      <div class="modal-body text-center p-4">
+        <span class="d-inline-flex align-items-center justify-content-center rounded-circle mb-2" style="width:56px;height:56px;background:var(--brand);color:#fff;font-size:1.5rem" aria-hidden="true"><i class="bi bi-shield-lock-fill"></i></span>
+        <h2 class="fs-5 fw-bold mb-1" id="mSudoT"><?= h(t('sudo_title')) ?></h2>
+        <p class="small text-2 mb-3"><?= h(t('sudo_sub')) ?></p>
+        <label class="visually-hidden" for="sudoKey">Passkey</label>
+        <input class="form-control form-control-lg text-center" id="sudoKey" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="current-password" style="letter-spacing:.4em;font-size:1.4rem">
+        <div class="small mt-2" id="sudoMsg" role="alert" style="color:var(--brand-dark);min-height:1.2em"></div>
+        <div class="d-grid gap-2 mt-2">
+          <button type="submit" class="btn btn-brand"><?= h(t('sudo_btn')) ?></button>
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?= h(t('close')) ?></button>
+        </div>
+      </div>
+    </form>
+  </div></div>
+</div>
+<script>
+(function(){
+  var API = <?= json_encode(url('sudo.php')) ?>, CSRF = <?= json_encode(csrfToken()) ?>;
+  var el = document.getElementById('mSudo'), md = bootstrap.Modal.getOrCreateInstance(el), next = null, freshUntil = 0;
+  var key = document.getElementById('sudoKey'), msg = document.getElementById('sudoMsg');
+  el.addEventListener('shown.bs.modal', function(){ key.value = ''; msg.textContent = ''; key.focus(); });
+  // run fn() now if the passkey was confirmed in the last few minutes, otherwise ask first
+  window.sudoThen = function(fn){
+    if(Date.now() < freshUntil){ fn(); return; }
+    fetch(API, {credentials:'same-origin'}).then(function(r){ return r.json(); }).then(function(d){
+      if(d.fresh){ freshUntil = Date.now() + 240000; fn(); } else { next = fn; md.show(); }
+    }).catch(function(){ next = fn; md.show(); });
+  };
+  document.getElementById('sudoForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var fd = new FormData(); fd.append('passkey', key.value); fd.append('_csrf', CSRF);
+    fetch(API, {method:'POST', body:fd, credentials:'same-origin'}).then(function(r){ return r.json(); }).then(function(d){
+      if(!d.ok){ msg.textContent = d.msg || 'Error'; key.value = ''; key.focus(); return; }
+      freshUntil = Date.now() + 240000; var fn = next; next = null; md.hide(); if(fn) setTimeout(fn, 150);
+    }).catch(function(){ msg.textContent = 'Network error'; });
+  });
+  // <form data-sudo> and <a data-sudo> / <button data-sudo> ask first
+  document.addEventListener('submit', function(e){
+    var f = e.target; if(!f.hasAttribute || !f.hasAttribute('data-sudo') || f._sudoOk) return;
+    var sub = e.submitter || null; e.preventDefault();
+    var conf = f.getAttribute('data-confirm'); if(conf && !confirm(conf)) return;
+    sudoThen(function(){ f._sudoOk = true; if(f.requestSubmit) f.requestSubmit(sub && sub.form === f ? sub : undefined); else f.submit(); f._sudoOk = false; });
+  }, true);
+  document.addEventListener('click', function(e){
+    var a = e.target.closest && e.target.closest('a[data-sudo],button[data-sudo]:not([type=submit])'); if(!a || a._sudoOk) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    var conf = a.getAttribute('data-confirm'); if(conf && !confirm(conf)) return;
+    sudoThen(function(){ if(a.tagName === 'A' && a.href){ location.href = a.href; } else { a._sudoOk = true; a.click(); a._sudoOk = false; } });
+  }, true);
+})();
+</script>
+<?php endif; ?>
 </body>
 </html>

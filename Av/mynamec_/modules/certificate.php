@@ -61,10 +61,15 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
       db()->prepare("INSERT INTO achievements(member_id,member_name,title,category,medal_type,description,achievement_date,image,status,created_by)VALUES(?,?,?,?,?,?,?,?,?,?)")
          ->execute(array($mid,$mname,trim($_POST['title']),trim($_POST['category']),trim($_POST['medal_type']),trim($_POST['description']??''),$_POST['ach_date']??null,$img,'active',$uid));
       $msg = ['t'=>'ok','m'=>'✅ Achievement added!'];
+      $eid = (int)db()->lastInsertId();
     }
+    // "Show on public website" switch
+    require_once __DIR__ . '/../includes/site_schema.php'; site_tables();
+    try { db()->prepare("UPDATE achievements SET show_public=? WHERE id=?")->execute(array(!empty($_POST['show_public']) ? 1 : 0, (int)$eid)); } catch(Exception $e){}
   }
 
   if ($isAdmin && isset($_POST['del_achievement'])) {
+    require_once __DIR__ . '/../includes/sudo.php'; sudo_require();
     $eid = (int)$_POST['del_id'];
     db()->prepare("DELETE FROM achievements WHERE id=?")->execute([$eid]);
     $msg = ['t'=>'ok','m'=>'🗑 Achievement deleted.'];
@@ -367,6 +372,10 @@ textarea.inp2{resize:vertical;min-height:70px}
         <label class="lbl2">Photo / Certificate Image (optional)</label>
         <input type="file" name="ach_image" accept="image/*" style="width:100%;padding:.45rem;border:1.5px dashed #c7d2fe;border-radius:9px;font-size:.82rem">
       </div>
+      <div class="form-check form-switch" style="margin-bottom:.9rem;display:flex;align-items:center;gap:.6rem;padding-left:0">
+        <input class="form-check-input" type="checkbox" role="switch" name="show_public" value="1" id="achPub" style="width:2.8rem;height:1.5rem;margin:0;float:none"<?= (!$editItem || !isset($editItem['show_public']) || (int)$editItem['show_public'] === 1) ? ' checked' : '' ?>>
+        <label class="form-check-label" for="achPub" style="font-weight:600">Show on public website</label>
+      </div>
       <?php if ($editItem): ?>
       <div style="margin-bottom:.9rem;display:flex;align-items:center;gap:.5rem">
         <label class="lbl2" style="margin:0">Visibility:</label>
@@ -563,7 +572,7 @@ textarea.inp2{resize:vertical;min-height:70px}
       <?php if ($isAdmin): ?>
       <div class="ach-admin-btns" style="margin-top:.5rem">
         <a href="?edit=<?=$a['id']?>" class="ach-btn" style="background:#ECEEFF;color:#0A14E0">✏️ Edit</a>
-        <form method="POST" style="display:inline" onsubmit="return confirm('Delete this achievement?')">
+        <form method="POST" style="display:inline" data-sudo data-confirm="Delete this achievement?">
           <input type="hidden" name="del_id" value="<?=$a['id']?>">
           <button type="submit" name="del_achievement" class="ach-btn" style="background:#ffebee;color:#b71c1c">🗑</button>
         </form>
@@ -626,7 +635,7 @@ textarea.inp2{resize:vertical;min-height:70px}
       <?php if ($isAdmin): ?>
       <div style="display:flex;gap:.3rem;margin-top:.5rem">
         <a href="?edit=<?=$a['id']?>" class="ach-btn" style="background:#ECEEFF;color:#0A14E0;padding:.25rem .6rem;border-radius:7px;font-size:.7rem;font-weight:700;text-decoration:none">✏️</a>
-        <form method="POST" style="display:inline" onsubmit="return confirm('Delete?')">
+        <form method="POST" style="display:inline" data-sudo data-confirm="Delete this achievement?">
           <input type="hidden" name="del_id" value="<?=$a['id']?>">
           <button name="del_achievement" style="background:#ffebee;color:#b71c1c;border:none;border-radius:7px;padding:.25rem .6rem;font-size:.7rem;font-weight:700;cursor:pointer">🗑</button>
         </form>
