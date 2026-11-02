@@ -9,7 +9,8 @@ $products = pub_on('shop') ? q('SELECT * FROM products WHERE active = 1 ORDER BY
 $wa = pub_wa_phone();
 $joinWa = wa_link($wa, t('wa_join_enquiry', gym_title()));
 $phones = array_filter([setting('phone1'), setting('phone2')]);
-$icons = ['bi-fire', 'bi-trophy-fill', 'bi-lightning-charge-fill', 'bi-heart-pulse-fill', 'bi-shield-fill-check', 'bi-people-fill'];
+$programs = programs_list();
+$achievements = pub_on('achievements') ? achievements_public() : [];
 
 $title = pub('pub_hero_title');
 $bare = true;
@@ -41,14 +42,38 @@ require __DIR__ . '/includes/header.php';
   </section>
 <?php endif; ?>
 
-<?php if (pub_on('programs') && pub_lines('pub_programs')): ?>
-  <section class="pub-sec">
+<?php if (pub_on('programs') && $programs): ?>
+  <section class="pub-sec" id="programs">
     <h2 class="pub-h"><?= e(pub('pub_programs_title')) ?></h2>
-    <div class="pub-grid">
-      <?php foreach (pub_lines('pub_programs') as $i => [$name, $text]): ?>
-        <div class="pub-card"><i class="bi <?= $icons[$i % count($icons)] ?> pub-card-ico"></i><h3><?= e($name) ?></h3><?php if ($text !== ''): ?><p><?= e($text) ?></p><?php endif; ?></div>
+    <div class="prog-grid">
+      <?php foreach ($programs as $p): $img = safe_img($p['image']); ?>
+        <button type="button" class="prog-card" data-program="<?= $p['id'] ?>">
+          <span class="prog-img"<?= $img !== '' ? ' style="background-image:url(\'' . e($img) . '\')"' : '' ?>><?php if ($img === ''): ?><i class="bi bi-fire"></i><?php endif; ?></span>
+          <span class="prog-body"><span class="prog-name"><?= e($p['name']) ?></span>
+            <?php if ($p['short_text'] !== ''): ?><span class="prog-short"><?= e($p['short_text']) ?></span><?php endif; ?>
+            <span class="prog-more"><?= e(t('more_details')) ?> <i class="bi bi-arrow-right"></i></span></span>
+        </button>
       <?php endforeach; ?>
     </div>
+  </section>
+<?php endif; ?>
+
+<?php if ($achievements): ?>
+  <section class="pub-sec" id="champions">
+    <h2 class="pub-h d-flex align-items-center"><span class="me-auto"><?= e(pub('pub_achievements_title')) ?></span>
+      <span class="ach-arrows"><button type="button" class="btn btn-sm btn-outline-light" data-ach-go="-1" aria-label="Back"><i class="bi bi-chevron-left"></i></button>
+        <button type="button" class="btn btn-sm btn-outline-light" data-ach-go="1" aria-label="Next"><i class="bi bi-chevron-right"></i></button></span></h2>
+    <div class="ach-track" id="achTrack">
+      <?php foreach ($achievements as $a): $img = safe_img($a['image']); ?>
+        <button type="button" class="ach-card" data-ach="<?= $a['id'] ?>">
+          <span class="ach-img<?= $img === '' ? ' noimg' : '' ?>"<?= $img !== '' ? ' style="background-image:url(\'' . e($img) . '\')"' : '' ?>><?php if ($img === ''): ?><i class="bi bi-trophy-fill"></i><img src="assets/logo.png" alt="" class="ach-logo"><?php endif; ?>
+            <span class="ach-badge"><i class="bi bi-trophy-fill"></i></span></span>
+          <span class="ach-body"><span class="ach-title"><?= e($a['title']) ?></span><span class="ach-name"><?= e($a['athlete']) ?></span>
+            <?php if ($a['event'] !== '' || $a['ach_date']): ?><span class="ach-event"><?= e(trim($a['event'] . ($a['ach_date'] ? ' · ' . date('M Y', strtotime($a['ach_date'])) : ''), ' ·')) ?></span><?php endif; ?></span>
+        </button>
+      <?php endforeach; ?>
+    </div>
+    <div class="ach-dots" id="achDots"></div>
   </section>
 <?php endif; ?>
 
@@ -129,11 +154,11 @@ require __DIR__ . '/includes/header.php';
       <input class="form-control form-control-lg mb-2" id="trPlace" name="place" maxlength="100" autocomplete="address-level2">
       <label class="form-label small" for="trPhone"><?= e(t('whatsapp_number')) ?> *</label>
       <input class="form-control form-control-lg mb-2" id="trPhone" name="phone" type="tel" inputmode="tel" required pattern="[+0-9 ]{10,16}" placeholder="9XXXXXXXXX" autocomplete="tel">
-      <?php if (pub_lines('pub_programs')): ?>
+      <?php if ($programs): ?>
         <label class="form-label small d-block"><?= e(t('interested_in')) ?></label>
         <div class="d-flex flex-wrap gap-1 cat-opt">
-          <?php foreach (pub_lines('pub_programs') as $i => [$name]): ?>
-            <input type="radio" class="btn-check" name="program" value="<?= e($name) ?>" id="trp<?= $i ?>"><label class="btn btn-sm btn-outline-light" for="trp<?= $i ?>"><?= e($name) ?></label>
+          <?php foreach ($programs as $i => $p): ?>
+            <input type="radio" class="btn-check" name="program" value="<?= e($p['name']) ?>" id="trp<?= $i ?>"><label class="btn btn-sm btn-outline-light" for="trp<?= $i ?>"><?= e($p['name']) ?></label>
           <?php endforeach; ?>
         </div>
       <?php endif; ?>
@@ -141,4 +166,28 @@ require __DIR__ . '/includes/header.php';
     <div class="modal-footer"><button class="btn btn-primary btn-lg w-100"><i class="bi bi-send"></i> <?= e(t('submit_request')) ?></button></div>
   </form></div>
 </div>
-<?php require __DIR__ . '/includes/footer.php';
+
+<div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="infoName" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><div class="modal-content pub-modal overflow-hidden">
+    <div class="info-img" id="infoImg"><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button></div>
+    <div class="modal-body">
+      <div class="info-kicker" id="infoKicker"></div>
+      <h2 class="h3 fw-bold text-uppercase mb-1" id="infoName"></h2>
+      <p class="info-short" id="infoShort"></p>
+      <div class="info-rows" id="infoRows"></div>
+      <p class="mb-0" id="infoDetails" style="white-space:pre-line"></p>
+    </div>
+    <div class="modal-footer border-0 pt-0" id="infoFoot">
+      <button type="button" class="btn btn-primary btn-lg w-100" id="infoTrial"><i class="bi bi-lightning-charge-fill"></i> <?= e(pub('pub_trial_text')) ?></button>
+    </div>
+  </div></div>
+</div>
+<script>window.VM_HOME = <?= json_encode([
+    'programs' => array_map('program_json', $programs),
+    'ach' => array_map(fn($a) => ['id' => (int)$a['id'], 'title' => $a['title'], 'name' => $a['athlete'], 'event' => $a['event'],
+        'date' => $a['ach_date'] ? date('d M Y', strtotime($a['ach_date'])) : '', 'details' => (string)$a['details'], 'img' => safe_img($a['image'])], $achievements),
+    't' => ['for' => t('suitable_for'), 'when' => t('class_time'), 'trainer' => t('trainer'), 'program' => pub('pub_programs_title'), 'ach' => pub('pub_achievements_title')],
+], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;</script>
+<?php
+$scripts = ['assets/home.js?v=' . APP_VERSION];
+require __DIR__ . '/includes/footer.php';

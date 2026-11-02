@@ -2,7 +2,7 @@
 // Public website (home page, shop, rules): texts and settings the admin changes in
 // "Public page" (public_settings.php), the gym rules, product images and the public bottom bar.
 
-const PUB_SECTIONS = ['about', 'programs', 'fees', 'timings', 'rules', 'shop', 'contact'];
+const PUB_SECTIONS = ['about', 'programs', 'achievements', 'fees', 'timings', 'rules', 'shop', 'contact'];
 
 function pub_defaults(): array
 {
@@ -15,6 +15,7 @@ function pub_defaults(): array
         'pub_about_title'    => 'Why Valley MMA',
         'pub_about_text'     => "Real fight training from coaches who compete.\nA friendly team for beginners – no experience needed.\nGet fit, learn to defend yourself and build confidence.",
         'pub_programs_title' => 'Programs',
+        'pub_achievements_title' => 'Our Champions',
         'pub_programs'       => "MMA | Striking, wrestling and ground work – the complete fight game\nBoxing | Footwork, defence and powerful punches\nMuay Thai | Kicks, knees, elbows and clinch work\nFitness | Strength, stamina and fat loss with fight conditioning",
         'pub_fees_title'     => 'Membership Fees',
         'pub_fees_note'      => 'One-time admission fee: ₹500. Renew every 30 days.',
@@ -30,7 +31,7 @@ function pub_defaults(): array
         'pub_whatsapp'       => '',
         'shop_whatsapp'      => '',
         'pub_show_about' => '1', 'pub_show_programs' => '1', 'pub_show_fees' => '1', 'pub_show_timings' => '1',
-        'pub_show_rules' => '1', 'pub_show_shop' => '1', 'pub_show_contact' => '1',
+        'pub_show_rules' => '1', 'pub_show_shop' => '1', 'pub_show_contact' => '1', 'pub_show_achievements' => '1',
     ];
 }
 
@@ -69,6 +70,51 @@ function hero_url(): string
 function pub_wa_phone(string $k = 'pub_whatsapp'): string
 {
     return pub($k) !== '' ? pub($k) : (pub('pub_whatsapp') !== '' ? pub('pub_whatsapp') : setting('phone1'));
+}
+
+// ---- Programs and achievements -------------------------------------
+
+// A photo path saved in the database: only the app's own folders, and only when the file is there.
+function safe_img(string $path): string
+{
+    return preg_match('#^(assets/programs|media/(programs|achievements))/[\w.-]+\.(jpg|png|webp)$#', $path) && is_file(__DIR__ . '/../' . $path) ? $path : '';
+}
+
+function programs_list(bool $all = false): array
+{
+    static $cache = [];
+    return $cache[(int)$all] ??= q('SELECT * FROM programs' . ($all ? '' : ' WHERE active = 1') . ' ORDER BY sort_order, id')->fetchAll();
+}
+
+// Program data for the pop-up on the public page.
+function program_json(array $p): array
+{
+    return ['id' => (int)$p['id'], 'name' => $p['name'], 'short' => $p['short_text'], 'details' => (string)$p['details'],
+        'for' => $p['suitable_for'], 'schedule' => $p['schedule'], 'trainer' => $p['trainer'], 'trainerAbout' => $p['trainer_about'],
+        'img' => safe_img($p['image'])];
+}
+
+function achievements_public(): array
+{
+    return q('SELECT a.*, m.photo FROM achievements a LEFT JOIN members m ON m.id = a.member_id
+              WHERE a.show_public = 1 ORDER BY a.sort_order, a.image = \'\', a.ach_date IS NULL, a.ach_date DESC, a.id DESC LIMIT 30')->fetchAll();
+}
+
+// Saves an uploaded photo into media/<folder> and returns its path ('' when no file, null when not a photo).
+function save_media_upload(string $field, string $folder, int $max = 1200): ?string
+{
+    if (empty($_FILES[$field]['name'])) {
+        return '';
+    }
+    $f = save_photo($_FILES[$field], $max, __DIR__ . '/../media/' . $folder);
+    return $f === null ? null : 'media/' . $folder . '/' . $f;
+}
+
+function delete_media(string $path): void
+{
+    if (str_starts_with($path, 'media/') && safe_img($path) !== '') {
+        @unlink(__DIR__ . '/../' . $path);
+    }
 }
 
 // ---- WhatsApp / social link preview (Open Graph) -------------------

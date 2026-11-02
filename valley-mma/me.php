@@ -101,6 +101,7 @@ $dow = (int)date('N');
 $marks = day_marks($month . '-01', date('Y-m-t'), (int)$m['id']);
 $freeze = current_freeze((int)$m['id']);
 $leaves = q('SELECT * FROM gym_leaves WHERE to_date >= ? AND from_date <= ? ORDER BY from_date', [today(), date('Y-m-d', strtotime('+14 day'))])->fetchAll();
+$myAch = q('SELECT * FROM achievements WHERE member_id = ? ORDER BY ach_date IS NULL, ach_date DESC, id DESC', [$m['id']])->fetchAll();
 $progress = levels() && $m['status'] !== 'pending' ? level_progress($m) : null;
 $unread = (int)q('SELECT COUNT(*) FROM complaints WHERE member_id = ? AND member_unread = 1', [$m['id']])->fetchColumn();
 $payAmount = $balance > 0 ? $balance : ($st !== 'active' && $plan ? (float)$plan['price'] : 0);
@@ -169,6 +170,18 @@ $payAmount = $balance > 0 ? $balance : ($st !== 'active' && $plan ? (float)$plan
 </div>
 
 <?php if ($progress): ?>
+<?php if ($myAch): ?>
+<div class="card mb-3"><div class="card-header"><i class="bi bi-trophy-fill text-warning"></i> <?= e(t('my_achievements')) ?></div>
+  <div class="list-group list-group-flush">
+    <?php foreach ($myAch as $a): $img = safe_img($a['image']); ?>
+      <div class="list-group-item d-flex align-items-center gap-2">
+        <span class="ach-thumb"<?= $img !== '' ? ' style="background-image:url(\'' . e($img) . '\')"' : '' ?>><?php if ($img === ''): ?><i class="bi bi-trophy-fill"></i><?php endif; ?></span>
+        <span class="small"><b class="d-block"><?= e($a['title']) ?></b><span class="small-muted"><?= e(trim($a['event'] . ($a['ach_date'] ? ' · ' . fdate($a['ach_date']) : ''), ' ·')) ?></span></span>
+      </div>
+    <?php endforeach; ?>
+  </div>
+</div>
+<?php endif; ?>
 <div class="card mb-3"><div class="card-header"><i class="bi bi-award-fill text-primary"></i> <?= e(t('my_position')) ?></div>
   <div class="card-body"><?= level_progress_html($progress) ?>
     <?php if ($progress['level']['note'] !== ''): ?><div class="small-muted mt-1"><?= e($progress['level']['note']) ?></div><?php endif; ?></div>

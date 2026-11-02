@@ -7,7 +7,7 @@ require_admin();
 
 $text = [ // setting => max length
     'pub_hero_title' => 80, 'pub_hero_text' => 250, 'pub_join_text' => 30, 'pub_trial_text' => 40,
-    'pub_about_title' => 60, 'pub_about_text' => 1500, 'pub_programs_title' => 60, 'pub_programs' => 2000,
+    'pub_about_title' => 60, 'pub_about_text' => 1500, 'pub_programs_title' => 60, 'pub_achievements_title' => 60,
     'pub_fees_title' => 60, 'pub_fees_note' => 300, 'pub_timings_title' => 60, 'pub_timings' => 1000,
     'pub_rules_title' => 60, 'pub_shop_title' => 30, 'pub_shop_text' => 250, 'pub_contact_title' => 60,
     'pub_address' => 300, 'pub_map_url' => 500, 'pub_instagram' => 300, 'pub_whatsapp' => 20, 'shop_whatsapp' => 20,
@@ -87,7 +87,8 @@ $ta = fn($k, $rows, $help = '') => '<label class="form-label small" for="' . $k 
       </div></div>
     <?php
     $sec('about', 'pub_about_title', 'bi-star-fill', $ta('pub_about_text', 4, t('one_per_line')));
-    $sec('programs', 'pub_programs_title', 'bi-fire', $ta('pub_programs', 5, t('title_pipe_text')));
+    $sec('programs', 'pub_programs_title', 'bi-fire', '<div class="small mb-2">' . e(t('programs_from_page')) . '</div><a href="programs.php" class="btn btn-sm btn-outline-primary"><i class="bi bi-fire"></i> ' . e(t('programs_admin')) . '</a>');
+    $sec('achievements', 'pub_achievements_title', 'bi-trophy-fill', '<div class="small mb-2">' . e(t('achievements_from_page')) . '</div><a href="achievements.php" class="btn btn-sm btn-outline-primary"><i class="bi bi-trophy"></i> ' . e(t('achievements')) . '</a>');
     $sec('fees', 'pub_fees_title', 'bi-cash-coin', '<div class="small mb-2">' . e(t('fees_from_plans')) . ' <a href="plans.php">' . e(t('plans')) . '</a></div>'
         . '<label class="form-label small" for="pub_fees_note">' . e(t('note')) . '</label><input class="form-control" id="pub_fees_note" name="pub_fees_note" value="' . $pv('pub_fees_note') . '" maxlength="300">');
     $sec('timings', 'pub_timings_title', 'bi-clock-fill', $ta('pub_timings', 4, t('day_pipe_time')));

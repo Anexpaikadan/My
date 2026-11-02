@@ -4,7 +4,7 @@
 declare(strict_types=1);
 
 // App version: shown in the app (More, login, Scanner test). Must match window.VM_JS in assets/app.js.
-const APP_VERSION = '4.4';
+const APP_VERSION = '4.5';
 
 $CONFIG = require __DIR__ . '/../config.php';
 date_default_timezone_set($CONFIG['timezone'] ?? 'Asia/Kolkata');
@@ -66,7 +66,7 @@ function db(): PDO
 function migrate(PDO $pdo): void
 {
     $v = (int)$pdo->query("SELECT v FROM settings WHERE k = 'schema_version'")->fetchColumn();
-    if ($v >= 8) {
+    if ($v >= 9) {
         return;
     }
     if ($v < 2) {
@@ -106,7 +106,9 @@ function migrate(PDO $pdo): void
     run_sql($pdo, file_get_contents(__DIR__ . '/../sql/shop.sql'));
     // v8: free trial / join requests from the public page
     run_sql($pdo, file_get_contents(__DIR__ . '/../sql/join_requests.sql'));
-    $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '8') ON DUPLICATE KEY UPDATE v = '8'");
+    // v9: programs with photos and details, member achievements
+    run_sql($pdo, file_get_contents(__DIR__ . '/../sql/programs.sql'));
+    $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '9') ON DUPLICATE KEY UPDATE v = '9'");
 }
 
 // Sets level_id from the attendance days (add a WHERE).
@@ -440,6 +442,8 @@ function nav_sections(): array
             ['activities.php', 'daily_activity', 'bi-calendar-week', 'activities'],
             ['leaves.php', 'gym_leaves', 'bi-calendar-x', 'leaves'],
             ['public_settings.php', 'public_page', 'bi-globe2', 'public'],
+            ['programs.php', 'programs_admin', 'bi-fire', 'programs'],
+            ['achievements.php', 'achievements', 'bi-trophy-fill', 'achievements'],
             ['products.php', 'products', 'bi-bag-fill', 'products'],
             ['settings.php', 'settings', 'bi-gear-fill', 'settings'],
             ['backup.php', 'backup', 'bi-cloud-arrow-down-fill', 'backup'],

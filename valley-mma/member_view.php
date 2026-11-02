@@ -44,6 +44,7 @@ if ($progress && $progress['level'] && $m['status'] !== 'pending') {
 if ($m['status'] !== 'pending' || $m['details_at']) {
     $msgs['wa_send_rules'] = t('wa_hello', $m['name']) . "\n\n" . rules_text();
 }
+$achievements = q('SELECT * FROM achievements WHERE member_id = ? ORDER BY ach_date IS NULL, ach_date DESC, id DESC', [$id])->fetchAll();
 $openComplaints = (int)q("SELECT COUNT(*) FROM complaints WHERE member_id = ? AND status <> 'resolved'", [$id])->fetchColumn();
 $freezes = q('SELECT * FROM member_freezes WHERE member_id = ? ORDER BY from_date DESC', [$id])->fetchAll();
 $curFreeze = current_freeze($id);
@@ -143,6 +144,22 @@ require __DIR__ . '/includes/header.php';
         <button class="btn btn-sm btn-primary w-100"><i class="bi bi-snow"></i> <?= e(t('save')) ?></button>
       </form>
     <?php }; ?>
+    <?php if ($m['status'] !== 'pending'): ?>
+    <div class="card mb-3" id="achievements"><div class="card-header d-flex align-items-center gap-2"><i class="bi bi-trophy-fill text-warning"></i>
+      <span class="me-auto"><?= e(t('achievements')) ?></span>
+      <a href="achievements.php?edit=new&member=<?= $id ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg"></i> <?= e(t('add')) ?></a></div>
+      <?php if (!$achievements): ?><div class="card-body small-muted py-2"><?= e(t('no_achievements')) ?></div><?php endif; ?>
+      <div class="list-group list-group-flush">
+        <?php foreach ($achievements as $a): $img = safe_img($a['image']); ?>
+          <a href="achievements.php?edit=<?= $a['id'] ?>&from=member" class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+            <span class="ach-thumb"<?= $img !== '' ? ' style="background-image:url(\'' . e($img) . '\')"' : '' ?>><?php if ($img === ''): ?><i class="bi bi-trophy-fill"></i><?php endif; ?></span>
+            <span class="me-auto small"><b class="d-block"><?= e($a['title']) ?></b><span class="small-muted"><?= e(trim($a['event'] . ($a['ach_date'] ? ' · ' . fdate($a['ach_date']) : ''), ' ·')) ?></span></span>
+            <?php if ($a['show_public']): ?><i class="bi bi-globe2 text-success" title="<?= e(t('public')) ?>"></i><?php endif; ?>
+          </a>
+        <?php endforeach; ?>
+      </div>
+    </div>
+    <?php endif; ?>
     <?php if ($progress && $m['status'] !== 'pending'): $mm = $m; ?>
     <div class="card mb-3" id="position"><div class="card-header d-flex align-items-center gap-2"><i class="bi bi-award-fill text-primary"></i>
       <span class="me-auto"><?= e(t('position')) ?></span>
