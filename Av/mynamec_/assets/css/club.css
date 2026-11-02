@@ -62,7 +62,7 @@ img{max-width:100%}
    PUBLIC (dark)
    ================================================================ */
 body.pub{background:var(--page-dark);color:#fff;padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
-.pub a{color:inherit}
+.pub a:not(.btn){color:inherit}
 .pub .text-2{color:var(--muted)}
 .pub .wrap{max-width:1120px;margin:0 auto;padding:0 16px}
 .pub section{padding:2.6rem 0}
@@ -193,7 +193,7 @@ body.pub{background:var(--page-dark);color:#fff;padding-bottom:calc(84px + env(s
 .mrow small{display:block;color:var(--muted);font-size:.78rem}
 .m-photo{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:.9rem;background:var(--dark-2)}
 .thanks{text-align:center;padding:1.2rem .4rem}
-.thanks i{font-size:3.6rem;color:var(--wa)}
+.thanks>i{font-size:3.6rem;color:var(--wa)}
 .hp{position:absolute!important;left:-9999px!important;width:1px;height:1px;opacity:0}
 @media(prefers-reduced-motion:reduce){.btn-glow{animation:none}html{scroll-behavior:auto}.sl-track{scroll-behavior:auto}}
 
