@@ -22,6 +22,7 @@ $soon = date('Y-m-d', strtotime('+' . (int)setting('expiry_days', '7') . ' day')
 $s = get('s');
 $status = get('status');
 $planId = (int)get('plan');
+$batchF = get('batch') === 'none' ? -1 : (int)get('batch');
 
 $where = [];
 $args = [];
@@ -48,6 +49,12 @@ if ($status === 'pending' || $status === 'inactive') {
 if ($planId) {
     $where[] = 'm.plan_id = ?';
     $args[] = $planId;
+}
+if ($batchF > 0) {
+    $where[] = 'm.batch_id = ?';
+    $args[] = $batchF;
+} elseif ($batchF === -1) {
+    $where[] = 'm.batch_id IS NULL';
 }
 $sqlWhere = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 $count = (int)q("SELECT COUNT(*) FROM members m $sqlWhere", $args)->fetchColumn();
@@ -82,6 +89,12 @@ require __DIR__ . '/includes/header.php';
         <?php foreach ($plans as $p): ?><option value="<?= $p['id'] ?>"<?= $planId === (int)$p['id'] ? ' selected' : '' ?>><?= e($p['name']) ?></option><?php endforeach; ?>
       </select>
     </div>
+    <?php if (batches(true)): ?><div class="col-6 col-md-2">
+      <select class="form-select" name="batch" onchange="this.form.submit()" aria-label="<?= e(t('batch')) ?>">
+        <option value=""><?= e(t('all_batches')) ?></option>
+        <?php foreach (batches(true) as $b): ?><option value="<?= $b['id'] ?>"<?= $batchF === (int)$b['id'] ? ' selected' : '' ?>><?= e($b['name']) ?></option><?php endforeach; ?>
+        <option value="none"<?= $batchF === -1 ? ' selected' : '' ?>><?= e(t('no_batch')) ?></option>
+      </select></div><?php endif; ?>
     <div class="col-12 col-md-2"><button class="btn btn-dark w-100"><i class="bi bi-search"></i> <?= e(t('search')) ?></button></div>
   </div>
 </form>
@@ -120,7 +133,7 @@ require __DIR__ . '/includes/header.php';
 <?php if ($pages > 1): ?>
 <nav class="mt-3"><ul class="pagination justify-content-center flex-wrap">
   <?php for ($i = 1; $i <= $pages; $i++): ?>
-    <li class="page-item<?= $i === $page ? ' active' : '' ?>"><a class="page-link" href="?<?= e(http_build_query(['s' => $s, 'status' => $status, 'plan' => $planId ?: '', 'page' => $i])) ?>"><?= $i ?></a></li>
+    <li class="page-item<?= $i === $page ? ' active' : '' ?>"><a class="page-link" href="?<?= e(http_build_query(['s' => $s, 'status' => $status, 'plan' => $planId ?: '', 'batch' => $batchF === -1 ? 'none' : ($batchF ?: ''), 'page' => $i])) ?>"><?= $i ?></a></li>
   <?php endfor; ?>
 </ul></nav>
 <?php endif; ?>

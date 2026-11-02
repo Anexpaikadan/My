@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS join_requests (
   place VARCHAR(100) NOT NULL DEFAULT '',
   phone VARCHAR(20) NOT NULL,
   program VARCHAR(60) NOT NULL DEFAULT '',
+  batch_id INT UNSIGNED NULL,
   /* new → following / waiting → trial (trial attended) → joined, or not_interested */
   status ENUM('new','following','waiting','trial','joined','not_interested') NOT NULL DEFAULT 'new',
   trial_date DATE NULL,

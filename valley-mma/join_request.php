@@ -46,9 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             q('UPDATE members SET password_hash = ?, invite_token = COALESCE(invite_token, ?) WHERE id = ?', [$hash, bin2hex(random_bytes(16)), $m['id']]);
             $mid = (int)$m['id'];
         } else {
-            q("INSERT INTO members (adm_no, name, phone, place, join_date, password_hash, card_token, status, invite_token, notes)
-               VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)",
-                [next_adm_no(), $r['name'], $r['phone'], $r['place'], today(), $hash, bin2hex(random_bytes(8)), bin2hex(random_bytes(16)),
+            q("INSERT INTO members (adm_no, name, phone, place, join_date, password_hash, card_token, status, invite_token, batch_id, notes)
+               VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)",
+                [next_adm_no(), $r['name'], $r['phone'], $r['place'], today(), $hash, bin2hex(random_bytes(8)), bin2hex(random_bytes(16)), $r['batch_id'],
                     mb_substr(t_en('from_trial_request') . ($r['program'] !== '' ? ' (' . $r['program'] . ')' : ''), 0, 500)]);
             $mid = (int)db()->lastInsertId();
         }
@@ -71,6 +71,9 @@ $pass = $m ? (string)($_SESSION['invite_pass'][$m['id']] ?? '') : '';
 $inviteMsg = '';
 if ($m && $m['invite_token']) {
     $inviteMsg = invite_text($m, $pass);
+    if ($mb = batch_by_id($m['batch_id'] !== null ? (int)$m['batch_id'] : null)) {
+        $inviteMsg .= "\n\n🕒 " . t('my_batch') . ': ' . batch_label($mb) . ' (' . batch_days($mb) . ')';
+    }
     if ($r['trial_days'] > 0) {
         $inviteMsg .= "\n\n" . t('wa_trial_days', (int)$r['trial_days'], fdate($r['trial_date']),
             fdate(date('Y-m-d', strtotime($r['trial_date'] . ' +' . ((int)$r['trial_days'] - 1) . ' day'))));
@@ -91,7 +94,8 @@ require __DIR__ . '/includes/header.php';
         <span class="req-ava big"><?= e(mb_strtoupper(mb_substr($r['name'], 0, 1))) ?></span>
         <div class="me-auto"><div class="fw-bold fs-5"><?= e($r['name']) ?></div>
           <div class="small-muted"><?= e($r['place']) ?><?= $r['program'] !== '' ? ' · ' . e($r['program']) : '' ?></div>
-          <div class="small-muted"><?= e(t('requested_on', fdate($r['created_at']))) ?></div></div>
+          <div class="small-muted"><?= e(t('requested_on', fdate($r['created_at']))) ?></div>
+          <?php if ($rb = batch_by_id($r['batch_id'] !== null ? (int)$r['batch_id'] : null)): ?><div class="mt-1"><?= batch_badge($rb) ?></div><?php endif; ?></div>
         <span class="badge bg-<?= REQ_STATUS[$r['status']] ?>"><?= e(t('rq_' . $r['status'])) ?></span>
       </div>
       <div class="d-grid gap-2">

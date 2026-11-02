@@ -406,3 +406,17 @@ body.pub-dark .dev-credit { color: #8E8B8B; }
 .ach-img.noimg { background: radial-gradient(circle at 50% 40%, #4a3a12 0%, #231f17 55%, #1b1a1a 100%); display: flex; flex-direction: column; justify-content: center; gap: 1rem; }
 .ach-img.noimg > i { font-size: 4.5rem; filter: drop-shadow(0 6px 18px rgba(232, 185, 35, .45)); }
 .ach-logo { width: 60%; opacity: .85; }
+
+/* Batches */
+.batch-ico { width: 2.6rem; height: 2.6rem; flex: none; border-radius: .8rem; display: grid; place-items: center; font-size: 1.3rem; background: #FBE7E6; color: var(--vm-blue); }
+.batch-ico.muted { background: #F3F2F2; color: #8E8B8B; }
+.batch-card:hover { border-color: var(--vm-blue); }
+.border-dashed { border-style: dashed !important; }
+.pub-batches { display: grid; gap: .6rem; }
+.pub-batch { display: flex; align-items: center; gap: .8rem; background: #232121; border: 1px solid #302e2e; border-radius: 1rem; padding: .8rem 1rem; }
+.pub-batch b { display: block; text-transform: uppercase; font-weight: 800; }
+.pub-batch small { display: block; color: #b5b1b1; font-size: .78rem; }
+.pub-batch-ico { width: 2.6rem; height: 2.6rem; flex: none; border-radius: 50%; display: grid; place-items: center; background: rgba(200, 22, 14, .18); color: var(--vm-green); font-size: 1.2rem; }
+.pub-batch-time { text-align: right; font-weight: 900; font-size: 1.05rem; white-space: nowrap; }
+.pub-batch-time small { font-weight: 600; }
+.progress { --bs-progress-bar-bg: var(--vm-blue); }

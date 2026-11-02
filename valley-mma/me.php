@@ -169,6 +169,13 @@ $payAmount = $balance > 0 ? $balance : ($st !== 'active' && $plan ? (float)$plan
   </div>
 </div>
 
+<?php if ($myBatch = batch_by_id($m['batch_id'] !== null ? (int)$m['batch_id'] : null)): ?>
+<div class="card mb-3"><div class="card-body d-flex align-items-center gap-3">
+  <span class="batch-ico"><i class="bi bi-clock-history"></i></span>
+  <div class="me-auto"><div class="small-muted"><?= e(t('my_batch')) ?></div><div class="fw-bold"><?= e($myBatch['name']) ?></div>
+    <div class="small"><?= e(batch_time($myBatch)) ?> · <?= e(batch_days($myBatch)) ?><?= $myBatch['trainer'] !== '' ? ' · ' . e($myBatch['trainer']) : '' ?></div></div>
+</div></div>
+<?php endif; ?>
 <?php if ($progress): ?>
 <?php if ($myAch): ?>
 <div class="card mb-3"><div class="card-header"><i class="bi bi-trophy-fill text-warning"></i> <?= e(t('my_achievements')) ?></div>

@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS members (
   approved_at DATETIME NULL,
   /* Position (level): changes by attendance when level_auto = 1, or set by the admin */
   level_id INT UNSIGNED NULL,
+  batch_id INT UNSIGNED NULL,
   level_auto TINYINT(1) NOT NULL DEFAULT 1,
   level_since DATE NULL,
   /* old students: attendance days before the app (counted for the position) */
@@ -159,7 +160,7 @@ INSERT IGNORE INTO settings (k, v) VALUES
   ('trial_days', '7'),
   ('auto_backup', '1'),
   ('backup_keep', '14'),
-  ('schema_version', '9');
+  ('schema_version', '10');
 
 INSERT IGNORE INTO plans (id, name, duration_value, duration_unit, price, description, sort_order) VALUES
   (1, 'Monthly', 1, 'month', 1500, 'MMA, boxing, kickboxing and fitness training', 1),

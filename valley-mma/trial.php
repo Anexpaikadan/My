@@ -12,6 +12,8 @@ $name = mb_substr(trim(post('name')), 0, 100);
 $place = mb_substr(trim(post('place')), 0, 100);
 $phone = clean_phone(post('phone'));
 $program = mb_substr(trim(post('program')), 0, 60);
+$batch = batch_by_id((int)post('batch_id'));
+$batchId = $batch && $batch['show_public'] && $batch['active'] ? (int)$batch['id'] : null;
 $ip = $_SERVER['REMOTE_ADDR'] ?? '';
 $error = '';
 if (post('website') !== '') { // hidden field: only robots fill it
@@ -26,13 +28,14 @@ if ($error === '') {
     $digits = substr(preg_replace('/\D/', '', $phone), -10);
     $same = q("SELECT id FROM join_requests WHERE phone LIKE ? AND status NOT IN ('joined', 'not_interested') ORDER BY id DESC LIMIT 1", ['%' . $digits])->fetch();
     if ($same) { // asked again: update the open request instead of a second one
-        q("UPDATE join_requests SET name = ?, place = ?, program = ?, status = IF(status = 'waiting', 'new', status), updated_at = NOW() WHERE id = ?",
-            [$name, $place, $program, $same['id']]);
+        q("UPDATE join_requests SET name = ?, place = ?, program = ?, batch_id = ?, status = IF(status = 'waiting', 'new', status), updated_at = NOW() WHERE id = ?",
+            [$name, $place, $program, $batchId, $same['id']]);
     } else {
-        q('INSERT INTO join_requests (name, place, phone, program, ip) VALUES (?, ?, ?, ?, ?)', [$name, $place, $phone, $program, $ip]);
+        q('INSERT INTO join_requests (name, place, phone, program, batch_id, ip) VALUES (?, ?, ?, ?, ?, ?)', [$name, $place, $phone, $program, $batchId, $ip]);
     }
 }
-$wa = wa_link(pub_wa_phone(), t('wa_trial_request', gym_title(), $name, $place, $phone, $program !== '' ? $program : '–'));
+$wa = wa_link(pub_wa_phone(), t('wa_trial_request', gym_title(), $name, $place, $phone, $program !== '' ? $program : '–')
+    . ($batchId ? "\n" . t('preferred_batch') . ': ' . batch_label($batch) : ''));
 
 $title = t('book_free_trial');
 $bare = true;

@@ -10,6 +10,7 @@ $wa = pub_wa_phone();
 $joinWa = wa_link($wa, t('wa_join_enquiry', gym_title()));
 $phones = array_filter([setting('phone1'), setting('phone2')]);
 $programs = programs_list();
+$pubBatches = array_values(array_filter(batches(), fn($b) => $b['show_public']));
 $achievements = pub_on('achievements') ? achievements_public() : [];
 
 $title = pub('pub_hero_title');
@@ -95,14 +96,27 @@ require __DIR__ . '/includes/header.php';
   </section>
 <?php endif; ?>
 
-<?php if (pub_on('timings') && pub_lines('pub_timings')): ?>
-  <section class="pub-sec">
+<?php if (pub_on('timings') && ($pubBatches || pub_lines('pub_timings'))): ?>
+  <section class="pub-sec" id="timings">
     <h2 class="pub-h"><?= e(pub('pub_timings_title')) ?></h2>
-    <div class="pub-times">
-      <?php foreach (pub_lines('pub_timings') as [$day, $time]): ?>
-        <div><span><?= e($day) ?></span><b><?= e($time) ?></b></div>
+    <?php if ($pubBatches): ?>
+      <div class="pub-batches">
+        <?php foreach ($pubBatches as $b): $h = (int)substr($b['start_time'], 0, 2); ?>
+          <div class="pub-batch"><span class="pub-batch-ico"><i class="bi bi-<?= $h < 12 ? 'sunrise' : ($h < 18 ? 'sun' : 'moon-stars') ?>-fill"></i></span>
+            <span class="me-auto"><b><?= e($b['name']) ?></b><small><?= e(batch_days($b)) ?><?= $b['trainer'] !== '' ? ' · ' . e($b['trainer']) : '' ?><?= $b['note'] !== '' ? ' · ' . e($b['note']) : '' ?></small></span>
+            <span class="pub-batch-time"><?= e(time_text($b['start_time'])) ?><small><?= e(time_text($b['end_time'])) ?></small></span></div>
+        <?php endforeach; ?>
+      </div>
+      <?php foreach (pub_lines('pub_timings') as [$day, $time]): if (stripos($time, 'closed') === false && stripos($day, 'sunday') === false) continue; ?>
+        <p class="pub-note"><i class="bi bi-info-circle"></i> <?= e($day . ($time !== '' ? ': ' . $time : '')) ?></p>
       <?php endforeach; ?>
-    </div>
+    <?php else: ?>
+      <div class="pub-times">
+        <?php foreach (pub_lines('pub_timings') as [$day, $time]): ?>
+          <div><span><?= e($day) ?></span><b><?= e($time) ?></b></div>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
   </section>
 <?php endif; ?>
 
@@ -154,6 +168,11 @@ require __DIR__ . '/includes/header.php';
       <input class="form-control form-control-lg mb-2" id="trPlace" name="place" maxlength="100" autocomplete="address-level2">
       <label class="form-label small" for="trPhone"><?= e(t('whatsapp_number')) ?> *</label>
       <input class="form-control form-control-lg mb-2" id="trPhone" name="phone" type="tel" inputmode="tel" required pattern="[+0-9 ]{10,16}" placeholder="9XXXXXXXXX" autocomplete="tel">
+      <?php if ($pubBatches): ?>
+        <label class="form-label small" for="trBatch"><?= e(t('preferred_batch')) ?></label>
+        <select class="form-select form-select-lg mb-2" id="trBatch" name="batch_id"><option value=""><?= e(t('any_time')) ?></option>
+          <?php foreach ($pubBatches as $b): ?><option value="<?= $b['id'] ?>"><?= e($b['name'] . ' · ' . batch_time($b)) ?></option><?php endforeach; ?></select>
+      <?php endif; ?>
       <?php if ($programs): ?>
         <label class="form-label small d-block"><?= e(t('interested_in')) ?></label>
         <div class="d-flex flex-wrap gap-1 cat-opt">

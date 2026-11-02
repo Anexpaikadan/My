@@ -156,3 +156,8 @@ INSERT INTO complaint_msgs (complaint_id, by_admin, message, created_at) VALUES
 INSERT INTO join_requests (name, place, phone, program, status, created_at, updated_at) VALUES
   ('Rinshad K', 'Wandoor', '9876512345', 'MMA', 'new', NOW() - INTERVAL 2 HOUR, NOW() - INTERVAL 2 HOUR),
   ('Akhil Raj', 'Manjeri', '9876523456', 'Boxing', 'following', NOW() - INTERVAL 2 DAY, NOW() - INTERVAL 1 DAY);
+
+/* Members in batches */
+UPDATE members SET batch_id = 1 WHERE id IN (1, 2, 5, 8, 11);
+UPDATE members SET batch_id = 2 WHERE id IN (3, 4, 6, 9, 12);
+UPDATE members SET batch_id = 3 WHERE id IN (7, 10);

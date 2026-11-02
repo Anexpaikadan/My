@@ -30,6 +30,15 @@ $absent = (int)q("SELECT COUNT(*) FROM members WHERE status = 'active' AND expir
 $frozen = count(frozen_ids());
 $newRequests = (int)q("SELECT COUNT(*) FROM join_requests WHERE status = 'new'")->fetchColumn();
 $openRequests = (int)q("SELECT COUNT(*) FROM join_requests WHERE status IN ('new', 'following', 'waiting', 'trial')")->fetchColumn();
+$todayBatches = array_values(array_filter(batches(), fn($b) => str_contains($b['days'], (string)date('N'))));
+$nowT = date('H:i:s');
+$nextBatch = null;
+foreach ($todayBatches as $b) {
+    if ($nowT <= $b['end_time']) {
+        $nextBatch = $b;
+        break;
+    }
+}
 $openComplaints = (int)q("SELECT COUNT(*) FROM complaints WHERE status <> 'resolved'")->fetchColumn();
 $newComplaints = complaints_unread_admin();
 $firstLevel = levels()[0] ?? null;
@@ -53,6 +62,8 @@ $groups = [
         ['payments.php?from=' . $today . '&to=' . $today, 'bi-cash-stack', 'ico-blue', money($todayPay['s']), t('todays_collection'), t('n_payments', (int)$todayPay['c'])],
         ['ledger.php?type=expense&from=' . $today . '&to=' . $today, 'bi-receipt-cutoff', 'ico-red', money($todayAcc['expense']), t('todays_expense'), ''],
         ['alerts.php?tab=birthdays', 'bi-cake2-fill', 'ico-amber', count($birthdays), t('birthdays_today'), ''],
+        ['batches.php' . ($nextBatch ? '?id=' . $nextBatch['id'] : ''), 'bi-clock-history', 'ico-dark', count($todayBatches), t('batches_today'),
+            $nextBatch ? ($nowT >= $nextBatch['start_time'] ? t('running_now') . ': ' : t('next') . ': ') . $nextBatch['name'] . ' ' . time_text($nextBatch['start_time']) : ''],
     ],
     'sec_members' => [
         ['join_requests.php', 'bi-person-raised-hand', 'ico-red', $openRequests, t('join_requests'), $newRequests ? t('n_new', $newRequests) : t('free_trial')],

@@ -4,7 +4,7 @@
 declare(strict_types=1);
 
 // App version: shown in the app (More, login, Scanner test). Must match window.VM_JS in assets/app.js.
-const APP_VERSION = '4.5';
+const APP_VERSION = '4.6';
 
 $CONFIG = require __DIR__ . '/../config.php';
 date_default_timezone_set($CONFIG['timezone'] ?? 'Asia/Kolkata');
@@ -66,7 +66,7 @@ function db(): PDO
 function migrate(PDO $pdo): void
 {
     $v = (int)$pdo->query("SELECT v FROM settings WHERE k = 'schema_version'")->fetchColumn();
-    if ($v >= 9) {
+    if ($v >= 10) {
         return;
     }
     if ($v < 2) {
@@ -108,7 +108,15 @@ function migrate(PDO $pdo): void
     run_sql($pdo, file_get_contents(__DIR__ . '/../sql/join_requests.sql'));
     // v9: programs with photos and details, member achievements
     run_sql($pdo, file_get_contents(__DIR__ . '/../sql/programs.sql'));
-    $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '9') ON DUPLICATE KEY UPDATE v = '9'");
+    // v10: batches (class times); members and trial requests get a batch
+    run_sql($pdo, file_get_contents(__DIR__ . '/../sql/batches.sql'));
+    foreach (['members' => 'level_id', 'join_requests' => 'program'] as $table => $after) {
+        $cols = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '$table'")->fetchAll(PDO::FETCH_COLUMN);
+        if (!in_array('batch_id', $cols, true)) {
+            $pdo->exec("ALTER TABLE $table ADD COLUMN batch_id INT UNSIGNED NULL AFTER $after, ADD KEY idx_batch (batch_id)");
+        }
+    }
+    $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '10') ON DUPLICATE KEY UPDATE v = '10'");
 }
 
 // Sets level_id from the attendance days (add a WHERE).
@@ -429,6 +437,7 @@ function nav_sections(): array
             ['member_edit.php?old=1', 'add_old_student', 'bi-person-check-fill', 'add_member'],
             ['plans.php', 'plans', 'bi-card-checklist', 'plans'],
             ['attendance.php', 'attendance', 'bi-qr-code-scan', 'attendance'],
+            ['batches.php', 'batches', 'bi-clock-history', 'batches'],
             ['alerts.php', 'alerts', 'bi-bell-fill', 'alerts'],
             ['levels.php', 'positions', 'bi-award-fill', 'levels'],
             ['complaints.php', 'complaints', 'bi-chat-left-text-fill', 'complaints'],
@@ -635,6 +644,67 @@ function delete_payment(array $p): void
         q('UPDATE members SET plan_id = ?, start_date = ?, expiry_date = ? WHERE id = ?',
             [$p['prev_plan_id'], $p['prev_start'], $p['prev_expiry'], $p['member_id']]);
     }
+}
+
+// ---- Batches (class times) ----------------------------------------
+
+function batches(bool $all = false): array
+{
+    static $cache = [];
+    return $cache[(int)$all] ??= q('SELECT * FROM batches' . ($all ? '' : ' WHERE active = 1') . ' ORDER BY sort_order, start_time, id')->fetchAll();
+}
+
+function batch_by_id(?int $id): ?array
+{
+    foreach (batches(true) as $b) {
+        if ((int)$b['id'] === (int)$id) {
+            return $b;
+        }
+    }
+    return null;
+}
+
+function time_text(string $t): string
+{
+    return date('g:i A', strtotime($t));
+}
+
+function batch_time(array $b): string
+{
+    return time_text($b['start_time']) . ' – ' . time_text($b['end_time']);
+}
+
+// "Mon – Sat", "Mon, Wed, Fri", "Every day"
+function batch_days(array $b): string
+{
+    $d = array_values(array_unique(array_map('intval', str_split((string)$b['days']))));
+    sort($d);
+    if (count($d) === 7) {
+        return t('every_day');
+    }
+    $short = fn($n) => mb_substr(t('day' . $n), 0, 3);
+    $run = count($d) > 2 && $d[count($d) - 1] - $d[0] === count($d) - 1;
+    return $run ? $short($d[0]) . ' – ' . $short($d[count($d) - 1]) : implode(', ', array_map($short, $d));
+}
+
+function batch_label(?array $b): string
+{
+    return $b ? $b['name'] . ' · ' . batch_time($b) : '';
+}
+
+function batch_badge(?array $b): string
+{
+    return $b ? '<span class="badge text-bg-light border"><i class="bi bi-clock"></i> ' . e($b['name']) . ' · ' . e(time_text($b['start_time'])) . '</span>' : '';
+}
+
+// Minutes late for the member's batch (0 when on time, no batch, or not a batch day).
+function late_minutes(?array $b, string $date, string $checkIn): int
+{
+    if (!$b || !str_contains((string)$b['days'], (string)date('N', strtotime($date))) || $checkIn === '00:00:00') {
+        return 0;
+    }
+    $late = (int)floor((strtotime($date . ' ' . $checkIn) - strtotime($date . ' ' . $b['start_time'])) / 60);
+    return $late > 0 && $checkIn < $b['end_time'] ? $late : 0;
 }
 
 // ---- Positions (levels) by attendance -------------------------------

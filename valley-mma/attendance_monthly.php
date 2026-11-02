@@ -10,9 +10,16 @@ $daysIn = (int)date('t', strtotime($first));
 $last = $month . '-' . $daysIn;
 $memberId = (int)get('member');
 $who = get('who', 'all');
+$batchId = get('batch') === 'none' ? -1 : (int)get('batch');
 
 $where = $memberId ? 'WHERE m.id = ?' : ($who === 'active' ? 'WHERE m.status = \'active\' AND m.expiry_date >= ?' : 'WHERE (m.expiry_date >= ? OR m.id IN (SELECT member_id FROM attendance WHERE att_date BETWEEN ? AND ?))');
 $args = $memberId ? [$memberId] : ($who === 'active' ? [$first] : [$first, $first, $last]);
+if ($batchId && !$memberId) {
+    $where .= $batchId > 0 ? ' AND m.batch_id = ?' : ' AND m.batch_id IS NULL';
+    if ($batchId > 0) {
+        $args[] = $batchId;
+    }
+}
 $members = q("SELECT m.id, m.name, m.adm_no FROM members m $where ORDER BY m.name", $args)->fetchAll();
 $grid = [];
 foreach (q('SELECT member_id, DAY(att_date) d FROM attendance WHERE att_date BETWEEN ? AND ?', [$first, $last])->fetchAll() as $r) {
@@ -40,6 +47,10 @@ require __DIR__ . '/includes/header.php';
     <div class="col-6 col-md-3"><select class="form-select" name="who" onchange="this.form.submit()">
       <option value="all"<?= $who === 'all' ? ' selected' : '' ?>><?= e(t('all_members')) ?></option>
       <option value="active"<?= $who === 'active' ? ' selected' : '' ?>><?= e(t('active_members')) ?></option></select></div>
+    <?php if (batches(true)): ?><div class="col-6 col-md-3"><select class="form-select" name="batch" onchange="this.form.submit()" aria-label="<?= e(t('batch')) ?>">
+      <option value=""><?= e(t('all_batches')) ?></option>
+      <?php foreach (batches(true) as $b): ?><option value="<?= $b['id'] ?>"<?= $batchId === (int)$b['id'] ? ' selected' : '' ?>><?= e($b['name']) ?></option><?php endforeach; ?>
+      <option value="none"<?= $batchId === -1 ? ' selected' : '' ?>><?= e(t('no_batch')) ?></option></select></div><?php endif; ?>
     <?php if ($memberId): ?><div class="col-12 col-md-3"><a class="btn btn-light w-100" href="?month=<?= e($month) ?>"><?= e(t('show_all')) ?></a></div><?php endif; ?>
   </div>
 </form>

@@ -20,7 +20,7 @@ function mark(int $memberId, string $date, string $method): bool
 
 function today_list(): array
 {
-    return q('SELECT a.id, a.check_in, a.method, m.id member_id, m.name, m.adm_no, m.photo, m.expiry_date
+    return q('SELECT a.id, a.check_in, a.method, m.id member_id, m.name, m.adm_no, m.photo, m.expiry_date, m.batch_id
               FROM attendance a JOIN members m ON m.id = a.member_id WHERE a.att_date = ? ORDER BY a.check_in DESC', [today()])->fetchAll();
 }
 
@@ -116,7 +116,8 @@ $labels = ['qr' => ['bi-qr-code', t('show_qr')], 'card' => ['bi-upc-scan', t('sc
 $today = today_list();
 $mdate = valid_date(get('date')) && get('date') <= today() ? get('date') : today();
 $present = q('SELECT member_id FROM attendance WHERE att_date = ?', [$mdate])->fetchAll(PDO::FETCH_COLUMN);
-$all = q("SELECT id, name, adm_no, phone, photo, expiry_date, status FROM members WHERE status <> 'pending' ORDER BY status = 'active' DESC, (expiry_date >= CURDATE()) DESC, name")->fetchAll();
+$all = q("SELECT id, name, adm_no, phone, photo, expiry_date, status, batch_id FROM members WHERE status <> 'pending' ORDER BY status = 'active' DESC, (expiry_date >= CURDATE()) DESC, name")->fetchAll();
+$batchList = batches();
 
 $title = t('attendance');
 $active = 'attendance';
@@ -183,14 +184,16 @@ require __DIR__ . '/includes/header.php';
       <div class="card-header d-flex flex-wrap gap-2 align-items-center">
         <input class="form-control w-auto" type="date" name="date" value="<?= e($mdate) ?>" max="<?= today() ?>" onchange="location.href='attendance.php?tab=manual&date='+this.value">
         <input class="form-control" style="max-width:260px" type="search" placeholder="<?= e(t('search_ph')) ?>" data-filter="#manualList .list-group-item">
+        <?php if ($batchList): ?><select class="form-select w-auto" id="batchFilter" aria-label="<?= e(t('batch')) ?>"><option value=""><?= e(t('all_batches')) ?></option>
+          <?php foreach ($batchList as $b): ?><option value="<?= $b['id'] ?>"><?= e($b['name'] . ' · ' . time_text($b['start_time'])) ?></option><?php endforeach; ?></select><?php endif; ?>
         <button class="btn btn-primary ms-auto"><i class="bi bi-check2-all"></i> <?= e(t('mark_selected')) ?></button>
       </div>
       <div class="list-group list-group-flush" id="manualList">
         <?php foreach ($all as $m): $is = in_array($m['id'], $present); $st = member_status($m['expiry_date'], $m['status']); $blk = attendance_block($m); ?>
-          <label class="list-group-item d-flex align-items-center gap-2<?= $st === 'expired' ? ' row-expired' : '' ?>" data-text="<?= e(mb_strtolower($m['name'] . ' ' . $m['adm_no'] . ' ' . $m['phone'])) ?>">
+          <label class="list-group-item d-flex align-items-center gap-2<?= $st === 'expired' ? ' row-expired' : '' ?>" data-batch="<?= (int)$m['batch_id'] ?>" data-text="<?= e(mb_strtolower($m['name'] . ' ' . $m['adm_no'] . ' ' . $m['phone'])) ?>">
             <input class="form-check-input fs-4 m-0" type="checkbox" name="members[]" value="<?= $m['id'] ?>"<?= $is ? ' checked disabled' : ($blk !== '' ? ' disabled' : '') ?>>
             <img src="<?= e(photo_url($m)) ?>" class="avatar" alt="" loading="lazy">
-            <span class="me-auto"><span class="fw-semibold d-block"><?= e($m['name']) ?></span><span class="small-muted"><?= e($m['adm_no']) ?></span></span>
+            <span class="me-auto"><span class="fw-semibold d-block"><?= e($m['name']) ?></span><span class="small-muted"><?= e($m['adm_no']) ?><?= ($b = batch_by_id($m['batch_id'] !== null ? (int)$m['batch_id'] : null)) ? ' · ' . e($b['name']) : '' ?></span></span>
             <?= $is ? '<span class="badge bg-success">' . e(t('present')) . '</span>' : status_badge($m['expiry_date'], $m['status']) ?>
           </label>
         <?php endforeach; ?>
@@ -202,11 +205,12 @@ require __DIR__ . '/includes/header.php';
     <div class="card">
       <div class="list-group list-group-flush">
         <?php if (!$today): ?><div class="p-4 text-center text-muted"><?= e(t('no_attendance')) ?></div><?php endif; ?>
-        <?php foreach ($today as $a): ?>
+        <?php foreach ($today as $a): $b = batch_by_id($a['batch_id'] !== null ? (int)$a['batch_id'] : null); $late = late_minutes($b, date('Y-m-d'), $a['check_in']); ?>
           <div class="list-group-item d-flex align-items-center gap-2">
             <img src="<?= e(photo_url($a)) ?>" class="avatar" alt="" loading="lazy">
             <a class="me-auto text-dark text-decoration-none" href="member_view.php?id=<?= $a['member_id'] ?>"><span class="fw-semibold d-block"><?= e($a['name']) ?></span>
-              <span class="small-muted"><?= e(substr($a['check_in'], 0, 5)) ?> · <?= e(t('via_' . $a['method'])) ?></span></a>
+              <span class="small-muted"><?= e(substr($a['check_in'], 0, 5)) ?> · <?= e(t('via_' . $a['method'])) ?><?= $b ? ' · ' . e($b['name']) : '' ?></span></a>
+            <?php if ($late): ?><span class="badge bg-warning text-dark"><?= e(t('late_min', $late)) ?></span><?php endif; ?>
             <?= member_status($a['expiry_date']) === 'expired' ? status_badge($a['expiry_date']) : '' ?>
             <form method="post" data-verify="<?= e(t('confirm_delete')) ?>"><?= csrf_field() ?>
               <input type="hidden" name="action" value="remove"><input type="hidden" name="id" value="<?= $a['id'] ?>">
@@ -217,6 +221,14 @@ require __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
+<script>
+(function () { // show only one batch in "mark by hand"
+  var f = document.getElementById('batchFilter');
+  if (f) f.addEventListener('change', function () {
+    document.querySelectorAll('#manualList [data-batch]').forEach(function (r) { r.classList.toggle('d-none', !!f.value && r.dataset.batch !== f.value); });
+  });
+})();
+</script>
 <script>window.VM_ATT = <?= json_encode(['csrf' => csrf_token(), 'ok' => t('marked_present'), 'camErr' => t('camera_error'), 'noQr' => t('no_qr_in_photo'), 'httpsCam' => t('camera_https_only'), 'facing' => setting('att_camera', 'environment')], JSON_UNESCAPED_UNICODE) ?>;</script>
 <?php
 $scripts = ['assets/vendor/qrcode.js', 'assets/qr.js', 'assets/vendor/jsQR.js', 'assets/qrscan.js?v=1', 'assets/attendance.js?v=6'];

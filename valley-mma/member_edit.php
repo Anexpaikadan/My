@@ -45,6 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     $d['plan_id'] = isset($plansById[(int)post('plan_id')]) ? (int)post('plan_id') : null;
+    $d['batch_id'] = batch_by_id((int)post('batch_id')) ? (int)post('batch_id') : null;
 
     if ($d['join_date'] === '') {
         $d['join_date'] = today();
@@ -70,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        $cols = array_merge(member_personal_cols(), array_keys($text), ['join_date', 'start_date', 'expiry_date', 'plan_id']);
+        $cols = array_merge(member_personal_cols(), array_keys($text), ['join_date', 'start_date', 'expiry_date', 'plan_id', 'batch_id']);
         $vals = [];
         foreach ($cols as $c) {
             $v = $d[$c] ?? null;
@@ -158,6 +159,10 @@ $f = fn($k) => e($d[$k] ?? '');
       <div class="col-6 col-md-4"><label class="form-label" for="expiry_date"><?= e(t('expiry_date')) ?></label>
         <input class="form-control" type="date" id="expiry_date" name="expiry_date" value="<?= $f('expiry_date') ?>" data-plan-end></div>
       <div class="col-12 small-muted"><?= e(t('expiry_hint')) ?></div>
+      <?php if (batches(true)): ?><div class="col-md-6"><label class="form-label" for="batch_id"><?= e(t('batch')) ?></label>
+        <select class="form-select" id="batch_id" name="batch_id"><option value=""><?= e(t('no_batch')) ?></option>
+          <?php foreach (batches(true) as $b): ?><option value="<?= $b['id'] ?>"<?= (int)($d['batch_id'] ?? 0) === (int)$b['id'] ? ' selected' : '' ?>><?= e(batch_label($b) . ' · ' . batch_days($b)) ?></option><?php endforeach; ?>
+        </select></div><?php endif; ?>
     </div>
   </div></div>
 
