@@ -1,0 +1,26 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font:16px system-ui,sans-serif;background:#f3f5f9;margin:0;color:#111827}
+.top{background:#2563eb;color:#fff;padding:18px;font-size:22px;font-weight:800}
+.c{background:#fff;margin:14px;border-radius:12px;padding:16px;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+input{width:100%;box-sizing:border-box;height:52px;font-size:18px;border:2px solid #2563eb;border-radius:12px;padding:0 12px}
+button{width:100%;height:52px;border:0;border-radius:12px;background:#2563eb;color:#fff;font-size:18px;font-weight:700;margin-top:10px}
+button.g{background:#fff;color:#2563eb;border:1px solid #cbd5e1}
+.m{color:#6b7280;font-size:14px}.err{color:#dc2626;font-weight:700}
+</style></head><body>
+<div class="top">DayBill · setup</div>
+<div class="c"><div class="err">{{PROBLEM}}</div>
+<b>Server address</b>
+<p class="m">In the shop (same Wi-Fi): the address shown in DayBill ▸ Mobile &amp; Van, e.g. <b>http://192.168.1.10:8090</b><br>
+Van (internet): the address DayBill shows under “Van phones open”, e.g. <b>https://van.yourshop.com/van.html</b></p>
+<input id="u" value="{{URL}}" placeholder="http://192.168.1.10:8090" autocapitalize="off" autocorrect="off">
+<button onclick="DayBillAndroid.setServer(document.getElementById('u').value)">Connect</button>
+<button class="g" onclick="DayBillAndroid.scanCamera()">📷 Scan the QR from the DayBill screen</button>
+<button class="g" onclick="DayBillAndroid.choosePrinter()">🖨 Choose Bluetooth printer</button>
+<p class="m">Printer: <span id="p"></span></p></div>
+<script>
+document.getElementById('p').textContent = DayBillAndroid.printerName() || 'none';
+window.daybillScan = function (c) { document.getElementById('u').value = c; DayBillAndroid.setServer(c); };
+</script>
+</body></html>

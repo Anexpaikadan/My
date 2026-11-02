@@ -1,0 +1,19 @@
+# made while DayBill runs — never part of the product
+__pycache__/
+*.pyc
+config/app_settings.json
+config/db_config.json
+config/connector_config.json
+config/dbtool_profiles/
+config/*.key
+logs/
+backups/
+# made by BUILD_EXE.bat
+build/
+dist/
+build_log.txt
+# made by Updates ▸ Install a new version — never part of the product
+update_daybill.bat
+update_staging/
+update_backup_*/
+update_download.zip
