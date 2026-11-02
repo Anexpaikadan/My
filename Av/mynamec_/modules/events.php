@@ -53,7 +53,7 @@ function ev_rsvp_data($eid,$uid){
 }
 
 // Delete event (admin)
-if ($isAdmin && isset($_POST['del_event'])) {
+if ($isAdmin && isset($_POST['del_event'])) { require_once __DIR__ . '/../includes/sudo.php'; sudo_require(); 
     db()->prepare("DELETE FROM events WHERE id=?")->execute([(int)$_POST['eid']]);
     header('Location:'.url('modules/events.php').'?msg=deleted'); exit;
 }
@@ -341,7 +341,7 @@ require_once __DIR__.'/../includes/header.php';
   </div>
   <?php if($isAdmin): ?>
   <div class="ev-admin-bar">
-    <form method="POST" onsubmit="return confirm('Delete this event?')">
+    <form method="POST" data-confirm="Delete this event?" data-sudo>
       <input type="hidden" name="eid" value="<?= $ev['id'] ?>">
       <button type="submit" name="del_event" class="ev-del-btn">
         🗑 Remove
@@ -383,7 +383,7 @@ require_once __DIR__.'/../includes/header.php';
       <div class="ev-past-date"><?= date('d M', strtotime($ev['event_date'])) ?></div>
       <div style="font-size:.62rem;color:#5d6b80;text-align:right"><?= date('Y', strtotime($ev['event_date'])) ?></div>
       <?php if($isAdmin): ?>
-      <form method="POST" style="margin-top:.3rem" onsubmit="return confirm('Delete?')">
+      <form method="POST" style="margin-top:.3rem" data-confirm="Delete?" data-sudo>
         <input type="hidden" name="eid" value="<?= $ev['id'] ?>">
         <button type="submit" name="del_event"
           style="background:#fff5f5;border:1px solid #fecaca;color:#b71c1c;

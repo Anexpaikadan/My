@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 
   // Delete tournament
-  if ($isAdmin && isset($_POST['del_tournament'])) {
+  if ($isAdmin && isset($_POST['del_tournament'])) { require_once __DIR__ . '/../includes/sudo.php'; sudo_require(); 
     $tid = (int)$_POST['del_tid'];
     if ($tid) {
       db()->prepare("DELETE FROM tournament_registrations WHERE tournament_id=?")->execute([$tid]);
@@ -125,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 
   // Delete team
-  if ($isAdmin && isset($_POST['del_team'])) {
+  if ($isAdmin && isset($_POST['del_team'])) { require_once __DIR__ . '/../includes/sudo.php'; sudo_require(); 
     db()->prepare("DELETE FROM tournament_teams WHERE id=?")->execute([(int)$_POST['del_team_id']]);
     $msg = ['t'=>'ok','m'=>'🗑 Team deleted.'];
   }
@@ -159,7 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 
   // Delete match
-  if ($isAdmin && isset($_POST['del_match'])) {
+  if ($isAdmin && isset($_POST['del_match'])) { require_once __DIR__ . '/../includes/sudo.php'; sudo_require(); 
     db()->prepare("DELETE FROM tournament_matches WHERE id=?")->execute([(int)$_POST['del_match_id']]);
     $msg = ['t'=>'ok','m'=>'🗑 Match deleted.'];
   }
@@ -402,7 +402,7 @@ require_once __DIR__ . '/../includes/header.php';
       </button>
     </form>
     <!-- Delete -->
-    <form method="POST" style="display:inline;margin-left:auto" onsubmit="return confirm('⚠️ DELETE this entire tournament including all teams and matches? This CANNOT be undone.')">
+    <form method="POST" style="display:inline;margin-left:auto" data-confirm="⚠️ DELETE this entire tournament including all teams and matches? This CANNOT be undone." data-sudo>
       <input type="hidden" name="del_tid" value="<?=$tid?>">
       <button type="submit" name="del_tournament" style="font-size:.72rem;padding:.28rem .7rem;border-radius:8px;border:1.5px solid #fecaca;background:#fff0f0;color:#991b1b;font-weight:700;cursor:pointer">🗑 Delete Tournament</button>
     </form>
@@ -457,7 +457,7 @@ require_once __DIR__ . '/../includes/header.php';
         <td style="text-align:center;font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.88rem;color:#0A14E0"><?=$tm['pts']?></td>
         <?php if ($isAdmin): ?>
         <td>
-          <form method="POST" style="display:inline" onsubmit="return confirm('Delete team?')">
+          <form method="POST" style="display:inline" data-confirm="Delete team?" data-sudo>
             <input type="hidden" name="del_team_id" value="<?=$tm['id']?>">
             <button type="submit" name="del_team" style="background:none;border:none;color:#b71c1c;cursor:pointer;font-size:.9rem">🗑</button>
           </form>
@@ -517,7 +517,7 @@ require_once __DIR__ . '/../includes/header.php';
           <input type="number" name="g2" min="0" max="30" value="<?=$mx['team2_goals']?>" class="inp-sm" style="width:52px;text-align:center">
           <button type="submit" name="update_score" class="btn-g" style="padding:.4rem .8rem;font-size:.75rem">✅</button>
         </form>
-        <form method="POST" onsubmit="return confirm('Delete match?')">
+        <form method="POST" data-confirm="Delete match?" data-sudo>
           <input type="hidden" name="del_match_id" value="<?=$mx['id']?>">
           <button type="submit" name="del_match" class="btn-r">🗑</button>
         </form>

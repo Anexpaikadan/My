@@ -220,6 +220,9 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
 
     // Save club info
     if ($act === 'save_club') {
+        foreach (array('fee_monthly','fee_annual') as $_ff) {   // fee change → confirm passkey
+            if (isset($_POST[$_ff]) && trim($_POST[$_ff]) !== (string)getSetting($_ff, setting(strtoupper($_ff), ''))) { require_once __DIR__ . '/../includes/sudo.php'; sudo_require(); }
+        }
         $fields = ['club_name','club_place','club_tagline','club_phone','club_wa_group',
                    'club_wa_number','fee_monthly','fee_annual','hero_title','hero_subtitle'];
         foreach ($fields as $f) {
@@ -270,7 +273,7 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
     }
 
     // Delete activity
-    if ($act === 'del_activity' && isset($_POST['act_id'])) {
+    if ($act === 'del_activity' && isset($_POST['act_id'])) { require_once __DIR__ . '/../includes/sudo.php'; sudo_require(); 
         db()->prepare("DELETE FROM club_activities WHERE id=?")->execute([(int)$_POST['act_id']]);
         $msg = ['t'=>'ok','m'=>'Activity deleted.'];
     }
@@ -560,7 +563,7 @@ require_once __DIR__ . '/../includes/header.php';
               <input type="hidden" name="act_id" value="<?= $act['id'] ?>">
               <button type="submit" class="sbtn sbtn-grey sbtn-sm" title="Toggle"><?= $act['is_active']?'👁':'🙈' ?></button>
             </form>
-            <form method="POST" style="display:inline" onsubmit="return confirm('Delete this activity?')">
+            <form method="POST" style="display:inline" data-confirm="Delete this activity?" data-sudo>
               <input type="hidden" name="act" value="del_activity">
               <input type="hidden" name="act_id" value="<?= $act['id'] ?>">
               <button type="submit" class="sbtn sbtn-red sbtn-sm" title="Delete">🗑</button>
@@ -653,7 +656,7 @@ require_once __DIR__ . '/../includes/header.php';
 
   <!-- ══ TAB: FEES ══ -->
   <div class="stab-panel" id="stab-fees">
-    <form method="POST">
+    <form method="POST" data-sudo-fields="fee_monthly,fee_annual">
       <input type="hidden" name="act" value="save_club">
       <div class="scard">
         <div class="scard-title">💳 Membership Fees</div>

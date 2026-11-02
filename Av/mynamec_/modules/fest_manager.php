@@ -170,7 +170,7 @@ if (!empty($_POST['action'])) {
   }
 
   // Admin: delete fest
-  if ($act === 'delete_fest' && $isAdmin) {
+  if ($act === 'delete_fest' && $isAdmin) { require_once __DIR__ . '/../includes/sudo.php'; sudo_require(); 
     $fid = (int)($_POST['fest_id'] ?? 0);
     db()->prepare("DELETE FROM fest_likes WHERE fest_id=?")->execute([$fid]);
     db()->prepare("DELETE FROM fest_entries WHERE fest_id=?")->execute([$fid]);

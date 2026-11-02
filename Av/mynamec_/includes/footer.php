@@ -256,7 +256,11 @@ window.addEventListener('load', function(){
   });
   // <form data-sudo> and <a data-sudo> / <button data-sudo> ask first
   document.addEventListener('submit', function(e){
-    var f = e.target; if(!f.hasAttribute || !f.hasAttribute('data-sudo') || f._sudoOk) return;
+    var f = e.target; if(!f.hasAttribute || f._sudoOk) return;
+    // data-sudo-fields="fee_monthly,fee_annual": ask only when one of these fields was changed
+    var only = f.getAttribute('data-sudo-fields');
+    if(only){ var changed = only.split(',').some(function(n){ var x = f.elements[n.trim()]; return x && x.value !== x.defaultValue; }); if(!changed) return; }
+    else if(!f.hasAttribute('data-sudo')) return;
     var sub = e.submitter || null; e.preventDefault();
     var conf = f.getAttribute('data-confirm'); if(conf && !confirm(conf)) return;
     sudoThen(function(){ f._sudoOk = true; if(f.requestSubmit) f.requestSubmit(sub && sub.form === f ? sub : undefined); else f.submit(); f._sudoOk = false; });

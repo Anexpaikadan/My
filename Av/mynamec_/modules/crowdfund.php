@@ -83,7 +83,7 @@ $flash = null;
 $act   = $_POST['act'] ?? '';
 
 // Save campaign (create/edit)
-if ($act === 'save_campaign' && $isAdmin) {
+if ($act === 'save_campaign' && $isAdmin) { require_once __DIR__ . '/../includes/sudo.php'; sudo_require(); 
   $cid    = (int)($_POST['cid'] ?? 0);
   $title  = trim($_POST['title'] ?? '');
   $desc   = trim($_POST['description'] ?? '');
@@ -128,7 +128,7 @@ if ($isAdmin && in_array($act,['approve','pause','complete','reject'])) {
 }
 
 // Delete campaign
-if ($isAdmin && $act === 'del_campaign') {
+if ($isAdmin && $act === 'del_campaign') { require_once __DIR__ . '/../includes/sudo.php'; sudo_require(); 
   $cid = (int)($_POST['cid'] ?? 0);
   if ($cid > 0) {
     try { db()->prepare("DELETE FROM cf_donations WHERE campaign_id=?")->execute([$cid]); } catch(Exception $e){}
@@ -185,7 +185,7 @@ if ($act === 'donate') {
 }
 
 // Admin verify/reject donation
-if ($isAdmin && in_array($act,['verify_donation','reject_donation'])) {
+if ($isAdmin && in_array($act,['verify_donation','reject_donation'])) { require_once __DIR__ . '/../includes/sudo.php'; sudo_require(); 
   $did = (int)($_POST['did'] ?? 0);
   if ($act === 'verify_donation') {
     $don = db()->prepare("SELECT * FROM cf_donations WHERE id=?"); $don->execute([$did]); $don=$don->fetch();
@@ -490,7 +490,7 @@ if ($view==='campaign' && !empty($camp)):
   <?php if($isAdmin): ?><div class="cf-tab" onclick="cftab('admin',this)" style="color:#b71c1c">🛡️ Admin</div><?php endif; ?>
 </div>
 <?php if($isAdmin): ?>
-<form method="POST" style="padding:0 0 .8rem" onsubmit="return confirm('DELETE this campaign permanently?\nAll donations will also be removed.\nThis cannot be undone!')">
+<form method="POST" style="padding:0 0 .8rem" data-confirm="DELETE this campaign permanently? All donations will also be removed. This cannot be undone!" data-sudo>
   <input type="hidden" name="act" value="del_campaign">
   <input type="hidden" name="cid" value="<?php echo $campId; ?>">
   <button type="submit" style="width:100%;background:#b71c1c;color:#fff;border:none;border-radius:10px;padding:.55rem;font-size:.82rem;font-weight:800;cursor:pointer;letter-spacing:.02em">
@@ -558,8 +558,8 @@ if ($view==='campaign' && !empty($camp)):
       <span class="don-badge db-<?php echo $don['status']; ?>"><?php echo ucfirst($don['status']); ?></span>
       <?php if($isAdmin && $don['status']==='pending'): ?>
       <div style="display:flex;gap:.25rem;margin-top:.25rem;justify-content:flex-end">
-        <form method="POST" style="display:inline"><input type="hidden" name="act" value="verify_donation"><input type="hidden" name="did" value="<?php echo $don['id']; ?>"><input type="hidden" name="cid" value="<?php echo $campId; ?>"><button style="background:#2e7d32;color:#fff;border:none;border-radius:6px;padding:.22rem .5rem;font-size:.65rem;font-weight:700;cursor:pointer">✅</button></form>
-        <form method="POST" style="display:inline"><input type="hidden" name="act" value="reject_donation"><input type="hidden" name="did" value="<?php echo $don['id']; ?>"><input type="hidden" name="cid" value="<?php echo $campId; ?>"><button style="background:#b71c1c;color:#fff;border:none;border-radius:6px;padding:.22rem .5rem;font-size:.65rem;font-weight:700;cursor:pointer">✗</button></form>
+        <form method="POST" style="display:inline" data-sudo><input type="hidden" name="act" value="verify_donation"><input type="hidden" name="did" value="<?php echo $don['id']; ?>"><input type="hidden" name="cid" value="<?php echo $campId; ?>"><button style="background:#2e7d32;color:#fff;border:none;border-radius:6px;padding:.22rem .5rem;font-size:.65rem;font-weight:700;cursor:pointer">✅</button></form>
+        <form method="POST" style="display:inline" data-sudo><input type="hidden" name="act" value="reject_donation"><input type="hidden" name="did" value="<?php echo $don['id']; ?>"><input type="hidden" name="cid" value="<?php echo $campId; ?>"><button style="background:#b71c1c;color:#fff;border:none;border-radius:6px;padding:.22rem .5rem;font-size:.65rem;font-weight:700;cursor:pointer">✗</button></form>
       </div>
       <?php endif; ?>
     </div>
@@ -599,7 +599,7 @@ if ($view==='campaign' && !empty($camp)):
       <!-- Edit & Delete -->
       <div style="display:flex;gap:.5rem;margin-bottom:.6rem">
         <a href="?view=edit&id=<?php echo $campId; ?>" style="flex:1;background:#455a64;color:#fff;border:none;border-radius:9px;padding:.52rem;font-size:.8rem;font-weight:700;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:.3rem">✏️ Edit Campaign</a>
-        <form method="POST" style="flex:1" onsubmit="return confirm('DELETE this campaign? This cannot be undone!')">
+        <form method="POST" style="flex:1" data-confirm="DELETE this campaign? This cannot be undone!" data-sudo>
           <input type="hidden" name="act" value="del_campaign">
           <input type="hidden" name="cid" value="<?php echo $campId; ?>">
           <button style="width:100%;background:#b71c1c;color:#fff;border:none;border-radius:9px;padding:.52rem;font-size:.8rem;font-weight:700;cursor:pointer">🗑️ Delete Campaign</button>
@@ -703,7 +703,7 @@ elseif ($view==='edit' && $isAdmin && !empty($editCamp)):
 <a href="?view=campaign&id=<?php echo $editCamp['id']; ?>" style="display:inline-flex;align-items:center;gap:.3rem;font-size:.8rem;font-weight:700;color:var(--cf1);text-decoration:none;margin-bottom:.8rem">← Back</a>
 <div class="cf-form-card">
   <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.96rem;letter-spacing:.01em;color:var(--cf1);margin-bottom:1rem">✏️ EDIT CAMPAIGN</div>
-  <form method="POST" enctype="multipart/form-data">
+  <form method="POST" enctype="multipart/form-data" data-sudo>
     <input type="hidden" name="act" value="save_campaign">
     <input type="hidden" name="cid" value="<?php echo $editCamp['id']; ?>">
     <div class="fg"><label class="lbl">Title *</label><input type="text" name="title" class="inp" required value="<?php echo h($editCamp['title']); ?>"></div>
@@ -757,7 +757,7 @@ elseif ($view==='create' && $isAdmin):
 <a href="?" style="display:inline-flex;align-items:center;gap:.3rem;font-size:.8rem;font-weight:700;color:var(--cf1);text-decoration:none;margin-bottom:.8rem">← Back</a>
 <div class="cf-form-card">
   <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.96rem;letter-spacing:.01em;color:var(--cf1);margin-bottom:1rem">➕ CREATE CAMPAIGN</div>
-  <form method="POST" enctype="multipart/form-data">
+  <form method="POST" enctype="multipart/form-data" data-sudo>
     <input type="hidden" name="act" value="save_campaign">
     <div class="fg"><label class="lbl">Campaign Title *</label><input type="text" name="title" class="inp" required placeholder="e.g. Medical Aid for Rajan Family"></div>
     <div class="fg"><label class="lbl">Category</label>
@@ -837,8 +837,8 @@ elseif ($view==='pending' && $isAdmin):
   </div>
   <?php endif; ?>
   <div style="display:flex;gap:.4rem">
-    <form method="POST" style="flex:1"><input type="hidden" name="act" value="verify_donation"><input type="hidden" name="did" value="<?php echo $pd2['id']; ?>"><input type="hidden" name="cid" value="<?php echo $pd2['camp_id']; ?>"><input type="hidden" name="back" value="pending"><button style="width:100%;background:#2e7d32;color:#fff;border:none;border-radius:9px;padding:.55rem;font-weight:700;cursor:pointer;font-size:.82rem">✅ Verify</button></form>
-    <form method="POST" style="flex:1"><input type="hidden" name="act" value="reject_donation"><input type="hidden" name="did" value="<?php echo $pd2['id']; ?>"><input type="hidden" name="cid" value="<?php echo $pd2['camp_id']; ?>"><input type="hidden" name="back" value="pending"><button style="width:100%;background:#b71c1c;color:#fff;border:none;border-radius:9px;padding:.55rem;font-weight:700;cursor:pointer;font-size:.82rem">✗ Reject</button></form>
+    <form method="POST" style="flex:1" data-sudo><input type="hidden" name="act" value="verify_donation"><input type="hidden" name="did" value="<?php echo $pd2['id']; ?>"><input type="hidden" name="cid" value="<?php echo $pd2['camp_id']; ?>"><input type="hidden" name="back" value="pending"><button style="width:100%;background:#2e7d32;color:#fff;border:none;border-radius:9px;padding:.55rem;font-weight:700;cursor:pointer;font-size:.82rem">✅ Verify</button></form>
+    <form method="POST" style="flex:1" data-sudo><input type="hidden" name="act" value="reject_donation"><input type="hidden" name="did" value="<?php echo $pd2['id']; ?>"><input type="hidden" name="cid" value="<?php echo $pd2['camp_id']; ?>"><input type="hidden" name="back" value="pending"><button style="width:100%;background:#b71c1c;color:#fff;border:none;border-radius:9px;padding:.55rem;font-weight:700;cursor:pointer;font-size:.82rem">✗ Reject</button></form>
   </div>
 </div>
 <?php endforeach; ?>
@@ -878,7 +878,7 @@ else:
     <?php if($c2['is_featured']): ?><div class="cf-feat">⭐ Featured</div><?php endif; ?>
     <!-- Admin delete directly on card -->
     <?php if($isAdmin): ?>
-    <form method="POST" style="position:absolute;bottom:.6rem;right:.6rem" onsubmit="return confirm('Delete «<?php echo addslashes(h($c2['title'])); ?>»?')">
+    <form method="POST" style="position:absolute;bottom:.6rem;right:.6rem" onsubmit="return confirm('Delete «<?php echo addslashes(h($c2['title'])); ?>»?')" data-sudo>
       <input type="hidden" name="act" value="del_campaign">
       <input type="hidden" name="cid" value="<?php echo $c2['id']; ?>">
       <button type="submit" class="cf-del-btn">🗑️ Delete</button>

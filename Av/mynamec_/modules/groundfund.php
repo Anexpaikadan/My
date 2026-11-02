@@ -26,6 +26,7 @@ try {
 if (isset($_POST['ajax'])) {
   header('Content-Type: application/json');
   if (!$isAdmin) { echo json_encode(['ok'=>false,'msg'=>'Not allowed']); exit; }
+  require_once __DIR__ . '/../includes/sudo.php'; sudo_require();   // every action here changes money
   $a = $_POST['ajax'];
   try {
     if ($a==='add_payment') {
@@ -442,7 +443,8 @@ function gfFilterSearch(){
 }
 function gfClose(id){document.getElementById(id).classList.remove('on');document.body.style.overflow='';}
 function gfOpen(id){document.getElementById(id).classList.add('on');document.body.style.overflow='hidden';}
-function gfPost(data,cb){fetch(GF_SELF,{method:'POST',body:new URLSearchParams(data)}).then(function(r){return r.json();}).then(cb).catch(function(){gfToast('Error',1);});}
+function gfPost(data,cb){if(window.sudoThen){sudoThen(function(){gfPostGo(data,cb);});}else gfPostGo(data,cb);}
+function gfPostGo(data,cb){fetch(GF_SELF,{method:'POST',body:new URLSearchParams(data)}).then(function(r){return r.json();}).then(cb).catch(function(){gfToast('Error',1);});}
 <?php if($isAdmin): ?>
 function gfOpenPay(mid,name){document.getElementById('payMid').value=mid;document.getElementById('payWho').textContent='For '+name;document.getElementById('payAmt').value='';document.getElementById('payNote').value='';gfOpen('ovPay');}
 function gfSavePay(){var amt=document.getElementById('payAmt').value;if(!amt||amt<=0){gfToast('Enter amount',1);return;}gfPost({ajax:'add_payment',member_id:document.getElementById('payMid').value,amount:amt,pay_date:document.getElementById('payDate').value,method:document.getElementById('payMethod').value,note:document.getElementById('payNote').value},function(res){if(res.ok){gfToast(res.msg);gfClose('ovPay');setTimeout(function(){location.reload();},700);}else gfToast(res.msg||'Error',1);});}

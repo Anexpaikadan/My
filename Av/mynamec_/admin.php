@@ -136,7 +136,7 @@ if($_SERVER['REQUEST_METHOD']==='POST' && empty($_POST['lh_act'])){
         }
     }
     if(isset($_POST['pann'])){db()->prepare('UPDATE announcements SET is_pinned=? WHERE id=?')->execute(array((int)$_POST['pv'],(int)$_POST['aid']));$msg=array('t'=>'ok','m'=>'Updated.');}
-    if(isset($_POST['dann'])){db()->prepare('DELETE FROM announcements WHERE id=?')->execute(array((int)$_POST['aid']));$msg=array('t'=>'ok','m'=>'Deleted.');}
+    if(isset($_POST['dann'])){require_once __DIR__ . '/includes/sudo.php'; sudo_require(); db()->prepare('DELETE FROM announcements WHERE id=?')->execute(array((int)$_POST['aid']));$msg=array('t'=>'ok','m'=>'Deleted.');}
 }
 
 $pending=db()->query("SELECT * FROM users WHERE status='pending' ORDER BY created_at DESC")->fetchAll();
@@ -454,7 +454,7 @@ require_once __DIR__.'/includes/header.php';
   <td><?=h($a['author'])?></td><td><?=date('d M Y',strtotime($a['created_at']))?></td><td><?=$a['is_pinned']?'📌':'—'?></td>
   <td><div style="display:flex;gap:.3rem">
     <form method="POST" action="<?=url('admin.php')?>?tab=anns"><input type="hidden" name="aid" value="<?=$a['id']?>"><input type="hidden" name="pv" value="<?=$a['is_pinned']?0:1?>"><button type="submit" name="pann" class="btn btn-blue btn-sm"><?=$a['is_pinned']?'Unpin':'📌'?></button></form>
-    <form method="POST" action="<?=url('admin.php')?>?tab=anns" onsubmit="return confirm('Delete?')"><input type="hidden" name="aid" value="<?=$a['id']?>"><button type="submit" name="dann" class="btn btn-red btn-sm">🗑</button></form>
+    <form method="POST" action="<?=url('admin.php')?>?tab=anns" data-confirm="Delete?" data-sudo><input type="hidden" name="aid" value="<?=$a['id']?>"><button type="submit" name="dann" class="btn btn-red btn-sm">🗑</button></form>
   </div></td>
 </tr><?php endforeach;?>
 </tbody></table></div>
