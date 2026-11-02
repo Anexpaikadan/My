@@ -1,6 +1,7 @@
 <?php
 // modules/members.php — Members Directory with Role Separation
 require_once __DIR__.'/../includes/config.php';
+ensure_user_columns();
 // OG tags for WhatsApp/Facebook share
 $pageOG = [
   'title' => '👥 Members — Aishwarya Arts & Sports Club',

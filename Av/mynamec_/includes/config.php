@@ -378,6 +378,22 @@ function img_optimize($path, $max = 1200, $quality = 80) {
     @unlink($tmp); return false;
 }
 
+// Add member columns that some pages need, if an older database lacks them (runs once per request, only where called)
+function ensure_user_columns() {
+    static $done = false; if ($done) return; $done = true;
+    try { $have = db()->query("SHOW COLUMNS FROM users")->fetchAll(PDO::FETCH_COLUMN); } catch (Exception $e) { return; }
+    $want = array(
+        'privacy_phone'    => "VARCHAR(10) DEFAULT 'members'",
+        'privacy_photo'    => "VARCHAR(10) DEFAULT 'members'",
+        'rejection_reason' => "VARCHAR(255) NULL",
+        'approved_by'      => "INT NULL",
+        'approved_at'      => "DATETIME NULL",
+    );
+    foreach ($want as $col => $def) {
+        if (!in_array($col, $have, true)) { try { db()->exec("ALTER TABLE users ADD COLUMN $col $def"); } catch (Exception $e) {} }
+    }
+}
+
 // CSRF
 function csrfToken() {
     if (empty($_SESSION['_csrf'])) $_SESSION['_csrf'] = bin2hex(random_bytes(32));

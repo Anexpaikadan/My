@@ -1,6 +1,7 @@
 <?php
 // modules/blood.php — PHP 7.3+ compatible
 require_once __DIR__ . '/../includes/config.php';
+ensure_user_columns();
 require_once __DIR__ . '/../includes/wa_gateway.php';
 // OG tags — must be set BEFORE requireLogin() so bots get logo+title
 $pageOG = [
@@ -191,7 +192,7 @@ require_once __DIR__ . '/../includes/header.php';
 .bh-bg-btn:active{transform:scale(.94)}
 .bh-bg-btn.on{background:linear-gradient(145deg,#b71c1c,#c62828);
   border-color:transparent;box-shadow:0 4px 16px rgba(183,28,28,.4)}
-.bh-bg-btn.has-donors{border-color:#ef9a9a;background:#fff5f5}
+.bh-bg-btn.has-donors:not(.on){border-color:#ef9a9a;background:#fff5f5}
 .bh-bg-group{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.12rem;
   color:#b71c1c;line-height:1}
 .bh-bg-btn.on .bh-bg-group{color:#fff}
