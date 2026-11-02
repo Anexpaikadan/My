@@ -88,7 +88,7 @@ There is **no component library, no Storybook and no docs**. Reusable UI comes f
      `.inp`, `.lbl`, `.fg`, `.g2 .g3`, `.alert-ok|err|warn|info`, `.popup-ov > .popup-box` (`openPopup(id)`/`closePopup(id)`),
      `.hero` (module banner: icon from `data-mod-icon`), `.section`, `.stats-row .stat`, `.table-wrap`.
 3. **PHP helper functions:** `h()` (escape every output), `url('modules/x.php')`, `setting('CLUB_NAME', default)`,
-   `csrfField()`/`verifyCsrf()`, `getLogoB64()`, `img_optimize()`, `ensure_user_columns()` (`includes/config.php`), `photoUrl()`,
+   `csrfField()`/`verifyCsrf()`, `getLogoB64()` (`includes/config.php`), `img_optimize()`, `ensure_user_columns()` (`includes/extras.php` — **never add functions to config.php**: the server keeps its own copy with the real DB password, so new helpers go in extras.php and pages require it), `photoUrl()`,
    `handlePhotoUpload()` (`modules/upload_helper.php`), `t('key')`/`tset($en,$ml)`/`lang_current()` (`includes/lang.php`),
    `site_cfg()`/`og_tags()` (`includes/og.php`), `sudo_require()` (`includes/sudo.php`), `app_meta()`/`app_modules()` (`includes/icons.php`).
    **Language:** every fixed text comes from `includes/lang.php` (`en` and `ml` arrays with the same keys); `?setlang=ml` sets a cookie.

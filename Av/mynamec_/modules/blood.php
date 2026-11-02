@@ -1,6 +1,7 @@
 <?php
 // modules/blood.php — PHP 7.3+ compatible
 require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/extras.php';
 ensure_user_columns();
 require_once __DIR__ . '/../includes/wa_gateway.php';
 // OG tags — must be set BEFORE requireLogin() so bots get logo+title

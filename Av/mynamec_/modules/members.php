@@ -1,6 +1,7 @@
 <?php
 // modules/members.php — Members Directory with Role Separation
 require_once __DIR__.'/../includes/config.php';
+require_once __DIR__ . '/../includes/extras.php';
 ensure_user_columns();
 // OG tags for WhatsApp/Facebook share
 $pageOG = [

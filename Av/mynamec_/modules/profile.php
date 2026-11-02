@@ -1,6 +1,7 @@
 <?php
 // modules/profile.php — Member Profile with Privacy & Role-Based Display
 require_once __DIR__.'/../includes/config.php';
+require_once __DIR__ . '/../includes/extras.php';
 ensure_user_columns();
 // OG tags — must be set BEFORE requireLogin() so bots get logo+title
 $pageOG = [

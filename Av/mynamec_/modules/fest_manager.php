@@ -5,6 +5,7 @@
 // PHP 7.3+ compatible — Aishwarya Arts & Sports Club
 
 require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/extras.php';
 requireLogin();
 $me      = currentUser();
 $isAdmin = isAdminRole($me['role']);

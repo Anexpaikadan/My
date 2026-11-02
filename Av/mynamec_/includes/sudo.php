@@ -11,6 +11,7 @@
 // For fetch() calls:  sudoThen(function(){ ...fetch... });
 // ================================================================
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/extras.php';
 if (!function_exists('sudo_fresh')) {
 
 define('SUDO_WINDOW', 300);   // seconds

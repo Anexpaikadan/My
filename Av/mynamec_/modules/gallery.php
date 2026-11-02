@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/extras.php';
 $pageOG = [
   'title' => '📸 Gallery — Aishwarya Arts & Sports Club',
   'desc'  => 'Photo gallery of club events and activities — AASC, Vettikkattiri, Kerala',

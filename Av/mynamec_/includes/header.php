@@ -5,6 +5,7 @@
 // Phone: dark top bar + 5-tab bottom bar (footer.php). Desktop: dark sidebar.
 // ================================================================
 require_once __DIR__.'/config.php';
+require_once __DIR__ . '/extras.php';
 require_once __DIR__.'/icons.php';
 require_once __DIR__.'/lang.php';
 require_once __DIR__.'/og.php';

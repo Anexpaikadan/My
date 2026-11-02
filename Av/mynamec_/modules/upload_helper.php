@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../includes/extras.php';
 // modules/upload_helper.php — Shared photo upload utility
 function handlePhotoUpload($field, $subdir) {
     if (!isset($_FILES[$field]) || $_FILES[$field]['error'] !== 0) return null;

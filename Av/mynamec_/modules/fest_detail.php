@@ -2,6 +2,7 @@
 // fest_detail.php — loaded inside popup for each fest
 // Shows entries, upload form, likes, prizes, share
 require_once __DIR__.'/../includes/config.php';
+require_once __DIR__ . '/../includes/extras.php';
 requireLogin();
 $me      = currentUser();
 $isAdmin = isAdminRole($me['role']);

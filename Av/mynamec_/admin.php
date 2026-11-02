@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__.'/includes/config.php';
+require_once __DIR__ . '/includes/extras.php';
 ensure_user_columns();
 require_once __DIR__.'/includes/whatsapp_otp.php';
 require_once __DIR__.'/includes/wa_gateway.php';

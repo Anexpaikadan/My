@@ -10,6 +10,7 @@ $pageOG = [
   'url'   => 'https://mynamecc.online/modules/crowdfund.php',
 ];
 require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/extras.php';
 $me      = currentUser();           // null for guests
 $isGuest = !$me;
 // Module admin: Finance Committee + Secretary + Developer

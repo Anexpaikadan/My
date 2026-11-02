@@ -5,6 +5,7 @@ error_reporting(E_ALL);
 $configFile = __DIR__ . '/../includes/config.php';
 if (!file_exists($configFile)) { die("Config missing"); }
 require_once $configFile;
+require_once __DIR__ . '/../includes/extras.php';
 
 if (!function_exists('db'))           { die("db() missing"); }
 if (!function_exists('requireLogin')) { function requireLogin() { return true; } }
