@@ -1,4 +1,4 @@
-<?php require 'config.php';
+<?php require __DIR__.'/inc/config.php';
 // Product given: mark each product entry വാങ്ങി (taken) with one tap
 [$f,$role]=fund_access($_GET['id']??$_POST['id']??0);$u=me();$fid=$f['id'];nav($f,$role,'home');
 $tab=($_GET['t']??'')==='taken'?'taken':'no';

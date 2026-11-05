@@ -1,4 +1,4 @@
-<?php require 'config.php';
+<?php require __DIR__.'/inc/config.php';
 if(me())redirect('dashboard.php');
 if($_SERVER['REQUEST_METHOD']==='POST'){csrf_check();
  $s=$pdo->prepare('SELECT * FROM users WHERE username=?');$s->execute([trim($_POST['username'])]);$u=$s->fetch();
@@ -8,7 +8,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){csrf_check();
  else{session_regenerate_id(true);$_SESSION['uid']=$u['id'];redirect('dashboard.php');}
 }
 head('Login');?>
-<div class="text-center mb-3"><img src="logo.png" style="max-width:220px;width:70%" alt=""></div>
+<div class="text-center mb-3"><img src="assets/img/logo.png" style="max-width:220px;width:70%" alt=""></div>
 <div class="card p-3"><h5>Login / ലോഗിൻ</h5>
 <form method="post"><?=csrf_field()?>
 <input class="form-control mb-2" name="username" placeholder="Mobile / Username" required>

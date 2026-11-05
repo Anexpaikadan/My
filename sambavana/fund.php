@@ -1,4 +1,4 @@
-<?php require 'config.php';
+<?php require __DIR__.'/inc/config.php';
 // Fund dashboard: totals, option buttons, search contributors (tap one to open it and add a payment)
 [$f,$role]=fund_access($_GET['id']??0);$u=me();$fid=$f['id'];nav($f,$role,'home');
 $q=trim($_GET['q']??'');

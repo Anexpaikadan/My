@@ -1,4 +1,6 @@
 <?php
+// Shared setup for every page: session, database, helpers, page header/footer. Pages: require __DIR__.'/inc/config.php';
+const V='8'; // bump to make phones reload css/js/manifest
 session_set_cookie_params(['httponly'=>true,'samesite'=>'Lax','secure'=>(!empty($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=='off')]);
 session_start();
 require __DIR__.'/db_config.php';
@@ -229,72 +231,16 @@ $GLOBALS['BACK']=false;
 function head($title){
  $u=me();$fl=$_SESSION['flash']??null;unset($_SESSION['flash']);
  echo '<!doctype html><html lang="ml"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="'.e($GLOBALS['THEME']??'#ffffff').'"><title>'.e($title).' - സംഭാവന</title>
-<link rel="icon" href="logo.png"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="സംഭാവന"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;600;700&display=swap" rel="stylesheet"><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"><link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-<style>
+<link rel="icon" href="assets/img/logo.png"><link rel="manifest" href="manifest.json?v='.V.'"><link rel="apple-touch-icon" href="assets/img/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="സംഭാവന"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;600;700&display=swap" rel="stylesheet"><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"><link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="assets/css/app.css?v='.V.'" rel="stylesheet"><style>
 :root{'.theme_vars($GLOBALS['THEME']??APP_COLOR).';--g:#2e9e4f;--bg:#f4f5f7;--bs-link-color:var(--p);--bs-link-hover-color:var(--pd);--bs-link-color-rgb:var(--prgb);--bs-link-hover-color-rgb:var(--prgb);--bs-body-font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Malayalam","Nirmala UI","Kartika",sans-serif}
-html{-webkit-tap-highlight-color:transparent}
-body{background:var(--bg);padding-bottom:84px;line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;touch-action:manipulation;overscroll-behavior-y:none}
-.small,small{font-size:.9em}
-.form-control,.form-select{border-radius:12px;border-color:#dfe1e6}
-.form-control:focus,.form-select:focus{border-color:var(--p);box-shadow:0 0 0 .2rem rgba(var(--prgb),.15)}
-.form-control::placeholder{color:#9a9ca5}
-.form-check-input:checked{background-color:var(--p);border-color:var(--p)}
-.bal{background:#fdecee;color:#b02a37;border-radius:8px;padding:0 7px;font-weight:600;white-space:nowrap}
-.ok{background:#e6f6ea;color:#1e7b3c;border-radius:8px;padding:0 7px;font-weight:600;white-space:nowrap}
-.nm-due{color:#c62828!important;font-weight:600}
-.nm-paid{color:#1b6b1b!important;font-weight:600}
-.itm{background:var(--pl);color:var(--pd);border-radius:8px;padding:0 7px;font-size:.85em;white-space:nowrap}
-.dl{border-radius:8px;padding:0 7px;font-size:.85em;white-space:nowrap;font-weight:600}
-.dl-no{background:#fff4e0;color:#a35b00}.dl-taken{background:#e6f6ea;color:#1e7b3c}
-#toast{position:fixed;left:50%;bottom:96px;transform:translate(-50%,20px);background:#222;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:3000;max-width:92%;text-align:center}
-#toast.show{opacity:1;transform:translate(-50%,0)}
-@view-transition{navigation:auto}
-.page{animation:pin .2s ease-out}
-@keyframes pin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-body.go .page{opacity:.5;transition:opacity .15s}
-#lb{position:fixed;top:0;left:0;height:3px;width:0;background:#ffd54a;z-index:2000}
-body.go #lb{animation:lb 2.5s ease-out forwards}
-@keyframes lb{to{width:90%}}
-@media (prefers-reduced-motion:reduce){.page{animation:none}}
-a.card,.btn,.tile,.bnav a,.pick{transition:transform .08s,background .15s}
-a.card:active,.btn:active,.tile:active{transform:scale(.97)}
-.appbar{position:sticky;top:0;z-index:60;background:#fff;box-shadow:0 1px 0 #e6e7eb;padding-top:env(safe-area-inset-top)}
-.themed .appbar{background:var(--p);color:#fff;box-shadow:none}
-.appbar .in{max-width:820px;margin:0 auto;height:56px;display:flex;align-items:center;gap:6px;padding:0 10px}
-.appbar .ttl{flex:1;min-width:0;font-weight:700;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ib{width:40px;height:40px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:inherit;text-decoration:none;font-size:22px;flex:none}
-.ib:active{background:rgba(127,127,127,.2)}
-.av{width:36px;height:36px;border-radius:50%;background:var(--p);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;text-decoration:none;flex:none}
-.themed .av{background:#fff;color:var(--p)}
-.sheet .modal-dialog{position:fixed;left:0;right:0;bottom:0;margin:0 auto;width:100%;max-width:820px}
-.sheet .modal-content{border:0;border-radius:22px 22px 0 0;max-height:92vh;overflow-y:auto}
-.sheet.fade .modal-dialog{transform:translateY(100%);transition:transform .3s ease}
-.sheet.show .modal-dialog{transform:none}
-.grab{width:44px;height:5px;border-radius:3px;background:#d5d7dd;margin:8px auto 0}
-.card{border:0;box-shadow:0 1px 3px rgba(0,0,0,.07);border-radius:16px}
-.btn{border-radius:12px;font-weight:600}
-.btn-sm{border-radius:10px}
-.btn-primary{--bs-btn-bg:var(--p);--bs-btn-border-color:var(--p);--bs-btn-hover-bg:var(--pd);--bs-btn-hover-border-color:var(--pd);--bs-btn-active-bg:var(--pd);--bs-btn-active-border-color:var(--pd);--bs-btn-disabled-bg:var(--p);--bs-btn-disabled-border-color:var(--p)}
-.btn-outline-primary{--bs-btn-color:var(--p);--bs-btn-border-color:var(--p);--bs-btn-hover-bg:var(--p);--bs-btn-hover-border-color:var(--p);--bs-btn-active-bg:var(--p);--bs-btn-active-border-color:var(--p)}
-.btn-success{--bs-btn-bg:#25a244;--bs-btn-border-color:#25a244;--bs-btn-hover-bg:#1e8a39;--bs-btn-hover-border-color:#1e8a39;--bs-btn-active-bg:#1e8a39;--bs-btn-active-border-color:#1e8a39}
-.btn-outline-success{--bs-btn-color:#1e8a39;--bs-btn-border-color:#25a244;--bs-btn-hover-bg:#25a244;--bs-btn-hover-border-color:#25a244;--bs-btn-active-bg:#25a244}
-.text-success{color:#1e8a39!important}
-.progress-bar.bg-success{background:var(--p)!important}
-.bnav{position:fixed;left:0;right:0;bottom:0;background:#fff;box-shadow:0 -1px 0 #e6e7eb;display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:50}
-.bnav a{flex:1;text-align:center;padding:7px 2px 6px;font-size:11px;color:#6b6e76;text-decoration:none;position:relative}
-.bnav a span{display:block;line-height:1.2;margin-bottom:1px}
-.bnav a span i{display:inline-block;font-size:21px;padding:1px 16px;border-radius:16px}
-.bnav a.on{color:var(--p);font-weight:700}
-.bnav a.on span i{background:var(--pl)}
-.bdg{position:absolute;top:2px;right:16%;background:#dc3545;color:#fff;border-radius:10px;padding:0 5px;font-size:10px}
-@media print{.noprint{display:none!important}body{background:#fff;padding:0}}
 </style></head><body class="'.(isset($GLOBALS['THEME'])?'themed':'').'">
 <div id="lb"></div><header class="appbar noprint"><div class="in">';
  // app bar: back arrow + page title on inner pages, logo on the main screens
  $back=$GLOBALS['BACK'];
  if($back===false)$back=in_array(basename($_SERVER['SCRIPT_NAME']),['dashboard.php','admin.php','admin_funds.php','account.php','index.php'],true)?null:($u?($u['role']==='admin'?'admin.php':'dashboard.php'):'index.php');
  if($back)echo '<a class="ib" href="'.e($back).'" aria-label="Back"><i class="bi bi-arrow-left"></i></a><div class="ttl">'.e($title).'</div>';
- else echo '<a class="d-flex align-items-center gap-2 text-decoration-none flex-grow-1" href="dashboard.php"><img src="logo.png" height="32" alt=""><b style="color:var(--p);font-size:16px">സംഭാവന</b></a>';
+ else echo '<a class="d-flex align-items-center gap-2 text-decoration-none flex-grow-1" href="dashboard.php"><img src="assets/img/logo.png" height="32" alt=""><b style="color:var(--p);font-size:16px">സംഭാവന</b></a>';
  echo '<button id="inst" type="button" class="btn btn-sm btn-primary d-none">📲 Install</button>';
  if($u)echo '<a class="av" href="account.php" title="'.e($u['name']).'">'.e(sn($u['name'],null)).'</a>';
  echo '</div></header><div class="container py-3 page" style="max-width:820px">';
@@ -302,8 +248,8 @@ a.card:active,.btn:active,.tile:active{transform:scale(.97)}
  // Malayalam turns into ????? when the tables are latin1 (shared hosting default). Checked once per login.
  if($u&&$u['role']!=='collector'){
   if(!isset($_SESSION['cs'])){global $pdo;$_SESSION['cs']=(int)$pdo->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND DATA_TYPE IN('varchar','text','char') AND CHARACTER_SET_NAME NOT LIKE 'utf8mb4%'")->fetchColumn();}
-  if($_SESSION['cs'])echo '<div class="alert alert-danger noprint small">⚠ Database cannot store Malayalam (it saves ?????). Admin: run <b>migrate_5.sql</b> once in phpMyAdmin, then log out and in again.</div>';
-  if(!empty($_SESSION['schema_err']))echo '<div class="alert alert-warning noprint small">⚠ Database update could not run by itself. Run <b>migrate_6.sql</b> once in phpMyAdmin, then log out and in again.</div>';
+  if($_SESSION['cs'])echo '<div class="alert alert-danger noprint small">⚠ Database cannot store Malayalam (it saves ?????). Admin: run <b>sql/migrate_5.sql</b> once in phpMyAdmin, then log out and in again.</div>';
+  if(!empty($_SESSION['schema_err']))echo '<div class="alert alert-warning noprint small">⚠ Database update could not run by itself. Run <b>sql/migrate_6.sql</b> once in phpMyAdmin, then log out and in again.</div>';
  }
 }
 function foot(){
@@ -311,5 +257,5 @@ function foot(){
  if($n=$GLOBALS['NAV']){echo '<nav class="bnav noprint">';
   foreach($n[0] as $i){echo '<a class="'.($i[0]===$n[1]?'on':'').'" href="'.$i[3].'"><span><i class="bi '.$i[1].'"></i></span>'.$i[2].($i[0]==='transfer'&&$n[2]?'<b class="bdg">'.$n[2].'</b>':'').'</a>';}
   echo '</nav>';}
- echo '<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script><script src="app.js"></script></body></html>';
+ echo '<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script><script src="assets/js/app.js?v='.V.'"></script></body></html>';
 }

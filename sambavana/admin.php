@@ -1,4 +1,4 @@
-<?php require 'config.php';require_login(['admin']);
+<?php require __DIR__.'/inc/config.php';require_login(['admin']);
 // Admin manages accounts. Deleting a user also deletes their funds (password confirmed).
 $https=(!empty($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=='off')||($_SERVER['HTTP_X_FORWARDED_PROTO']??'')==='https';
 $base=($https?'https':'http').'://'.$_SERVER['HTTP_HOST'].rtrim(dirname($_SERVER['SCRIPT_NAME']),'/').'/';

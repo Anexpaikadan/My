@@ -1,4 +1,4 @@
-<?php require 'config.php';$u=require_login(['user','collector']);
+<?php require __DIR__.'/inc/config.php';$u=require_login(['user','collector']);
 // App-icon shortcuts (long-press the icon): New entry / Add payment in the fund used last
 $to=($_GET['to']??'')==='pay'?'pay.php':'entry.php';
 if($u['role']==='collector')$fid=(int)$u['fund_id'];

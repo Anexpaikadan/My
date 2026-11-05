@@ -1,4 +1,4 @@
-<?php require 'config.php';
+<?php require __DIR__.'/inc/config.php';
 [$f,$role]=fund_access($_GET['id']??0);$u=me();$fid=$f['id'];nav($f,$role,'transfer');
 $mem=members($f);$cols=array_values(array_filter($mem,fn($m)=>$m['role']==='collector'));
 $pendOf=function($cid)use($pdo,$fid){$q=$pdo->prepare("SELECT COALESCE(SUM(amount),0) FROM handovers WHERE fund_id=? AND collector_id=? AND status='pending'");$q->execute([$fid,$cid]);return (float)$q->fetchColumn();};

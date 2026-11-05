@@ -1,4 +1,4 @@
-<?php require 'config.php';
+<?php require __DIR__.'/inc/config.php';
 [$f,$role]=fund_access($_GET['id']??0);$fid=$f['id'];$r=(int)($_GET['r']??1);
 nav($f,$role,'reports');$mem=members($f);$d=($_GET['d']??'1')==='1';$ds=($_GET['ds']??'0')==='1';$R=['title'=>'','lines'=>[],'head'=>[],'rows'=>[],'foot'=>[]];
 $cr=$pdo->prepare('SELECT name,username FROM users WHERE id=?');$cr->execute([$f['creator_id']]);$cr=$cr->fetch();

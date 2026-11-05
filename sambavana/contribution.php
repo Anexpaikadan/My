@@ -1,4 +1,4 @@
-<?php require 'config.php';$u=require_login(['user','collector']);
+<?php require __DIR__.'/inc/config.php';$u=require_login(['user','collector']);
 $s=$pdo->prepare('SELECT c.*,fi.name item_name FROM contributions c'.ITEM_JOIN.'WHERE c.id=?');$s->execute([(int)($_GET['id']??$_POST['id']??0)]);$c=$s->fetch();
 if(!$c){http_response_code(404);die('Not found');}
 [$f,$role]=fund_access($c['fund_id']);nav($f,$role,'home');if($c['cancelled']){die('This entry was cancelled');}

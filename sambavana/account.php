@@ -1,4 +1,4 @@
-<?php require 'config.php';$u=require_login();
+<?php require __DIR__.'/inc/config.php';$u=require_login();
 // Own account: change name, password (current password needed). Admin can also change the login username.
 if($_SERVER['REQUEST_METHOD']==='POST'&&($_POST['do']??'')==='newfund'&&$u['role']==='user'){csrf_check();
  $t=trim($_POST['title']??'');

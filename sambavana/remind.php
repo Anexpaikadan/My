@@ -1,4 +1,4 @@
-<?php require 'config.php';
+<?php require __DIR__.'/inc/config.php';
 [$f,$role]=fund_access($_GET['id']??0);$fid=$f['id'];nav($f,$role,'remind');
 head('Pending balances');
 if(!$f['reminders']){echo '<div class="alert alert-secondary">Balance reminders are off. Creator can turn them on in Settings.</div>';foot();exit;}

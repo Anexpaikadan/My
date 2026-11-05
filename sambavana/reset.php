@@ -1,4 +1,4 @@
-<?php require 'config.php';
+<?php require __DIR__.'/inc/config.php';
 $tok=(string)($_GET['t']??$_POST['t']??'');
 $s=$pdo->prepare("SELECT id,name FROM users WHERE reset_token=? AND reset_expires>NOW() AND role='user'");
 $s->execute([hash('sha256',$tok)]);$usr=$tok===''?false:$s->fetch();
@@ -14,7 +14,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){csrf_check();
  redirect('reset.php?t='.urlencode($tok));
 }
 head('Reset password');?>
-<div class="text-center mb-3"><img src="logo.png" style="max-width:220px;width:70%" alt=""></div>
+<div class="text-center mb-3"><img src="assets/img/logo.png" style="max-width:220px;width:70%" alt=""></div>
 <div class="card p-3"><h5>New password</h5><p class="small text-muted">Hello <?=e($usr['name'])?></p>
 <form method="post"><?=csrf_field()?><input type="hidden" name="t" value="<?=e($tok)?>">
 <input class="form-control mb-2" type="password" name="p1" placeholder="New password (min 6)" required>

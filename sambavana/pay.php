@@ -1,4 +1,4 @@
-<?php require 'config.php';
+<?php require __DIR__.'/inc/config.php';
 // Add payment: pick a contributor, enter the amount; it is added to what they paid before.
 [$f,$role]=fund_access($_GET['id']??$_POST['id']??0);$u=me();$fid=$f['id'];nav($f,$role,'pay');
 if($_SERVER['REQUEST_METHOD']==='POST'){csrf_check();

@@ -1,4 +1,4 @@
-<?php require 'config.php';
+<?php require __DIR__.'/inc/config.php';
 // Add many contributions at once from Excel (.xlsx) or CSV, to a running fund. Upload -> check (preview) -> import.
 [$f,$role]=fund_access($_GET['id']??$_POST['id']??0);if($role!=='creator'){http_response_code(403);die('Creator only');}
 $u=me();$fid=$f['id'];nav($f,$role,'entry');$GLOBALS['BACK']="settings.php?id=$fid";

@@ -1,4 +1,4 @@
-<?php require 'config.php';$u=require_login();
+<?php require __DIR__.'/inc/config.php';$u=require_login();
 if($u['role']==='admin')redirect('admin.php');
 if($u['role']==='collector')redirect('fund.php?id='.(int)$u['fund_id']);
 $s=$pdo->prepare('SELECT * FROM funds WHERE creator_id=? ORDER BY status=\'closed\',id DESC');$s->execute([$u['id']]);$funds=$s->fetchAll();

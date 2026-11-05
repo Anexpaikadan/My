@@ -1,4 +1,4 @@
-<?php require 'config.php';
+<?php require __DIR__.'/inc/config.php';
 [$f,$role]=fund_access($_GET['id']??0);$u=me();$fid=$f['id'];nav($f,$role,'entry');
 if($f['status']==='closed'){head('Entry');echo '<div class="alert alert-secondary">🔒 This fund is closed. Creator can reopen it in Settings.</div>';foot();exit;}
 $items=fund_items($fid);

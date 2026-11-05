@@ -1,4 +1,4 @@
-<?php require 'config.php';require_login(['admin']);
+<?php require __DIR__.'/inc/config.php';require_login(['admin']);
 // Admin: list of all funds; delete a fund with everything in it (password confirmed)
 if($_SERVER['REQUEST_METHOD']==='POST'){csrf_check();
  if(($_POST['do']??'')==='delete'){

@@ -1,4 +1,4 @@
-<?php require 'config.php';
+<?php require __DIR__.'/inc/config.php';
 if(me())redirect('dashboard.php');
 $sent=false;
 if($_SERVER['REQUEST_METHOD']==='POST'){csrf_check();
@@ -7,7 +7,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){csrf_check();
  $sent=true; // same answer whether or not the number exists
 }
 head('Forgot password');?>
-<div class="text-center mb-3"><img src="logo.png" style="max-width:220px;width:70%" alt=""></div>
+<div class="text-center mb-3"><img src="assets/img/logo.png" style="max-width:220px;width:70%" alt=""></div>
 <div class="card p-3"><h5>Forgot password / പാസ്‌വേഡ് മറന്നോ?</h5>
 <?php if($sent):?><div class="alert alert-success">Request sent. If this mobile number is registered, the admin will send you a reset link (WhatsApp).<br>അഡ്മിൻ റീസെറ്റ് ലിങ്ക് അയച്ചുതരും.</div>
 <?php else:?><form method="post"><?=csrf_field()?>

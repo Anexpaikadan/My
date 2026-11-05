@@ -1,4 +1,4 @@
-<?php require 'config.php';require_login(['user']);
+<?php require __DIR__.'/inc/config.php';require_login(['user']);
 $s=$pdo->prepare('SELECT * FROM contributions WHERE id=?');$s->execute([(int)($_GET['id']??$_POST['id']??0)]);$c=$s->fetch();
 if(!$c){http_response_code(404);die('Not found');}
 [$f,$role]=fund_access($c['fund_id']);

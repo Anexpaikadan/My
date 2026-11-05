@@ -1,4 +1,4 @@
-<?php require 'config.php';
+<?php require __DIR__.'/inc/config.php';
 [$f,$role]=fund_access($_GET['id']??$_POST['id']??0);if($role!=='creator'){http_response_code(403);die('Creator only');}
 $fid=$f['id'];nav($f,$role,'home');
 if($_SERVER['REQUEST_METHOD']==='POST'){csrf_check();$do=$_POST['do']??'add';
