@@ -12,4 +12,4 @@ Excel export: Reports > any report > 📊 Excel.
 Malayalam shows as ????? : the database tables are latin1. Run migrate_5.sql once (phpMyAdmin, your
   database selected > SQL). Text already saved as ????? is lost and must be typed again.
 Fund colours: every fund has its own colour (first red, second green, ...). Change it in Fund > Settings > Fund colour.
-Product delivery: Fund > Delivery, or the Product box on a receipt: Taken (contributor took it) / Sent (sent to them).
+Product given: Fund > Product given, or the Product box on a receipt: one button ✔ വാങ്ങി (taken), Undo to remove.

@@ -8,9 +8,9 @@ $paid=function()use($pdo,$cid){$q=$pdo->prepare('SELECT COALESCE(SUM(amount),0) 
 if($_SERVER['REQUEST_METHOD']==='POST'){csrf_check();$do=$_POST['do']??'';
  $back="contribution.php?id=$cid";
  // product given: creator or collector, any time
- if($do==='deliver'&&$c['item_id']){$v=$_POST['v']??'';$v=isset(DELIVERY[$v])?$v:null;
+ if($do==='deliver'&&$c['item_id']){$v=($_POST['v']??'')==='taken'?'taken':null;
   $pdo->prepare('UPDATE contributions SET delivery=?,delivered_at='.($v?'NOW()':'NULL').' WHERE id=?')->execute([$v,$cid]);
-  flash($v?DELIVERY[$v][0].' Product '.strtolower(DELIVERY[$v][1]):'Product marked not given');redirect($back);}
+  flash($v?'✔ വാങ്ങി — product taken':'↩ Marked not taken');redirect($back);}
  if($role!=='creator'||!$open){flash('Only the fund creator can change payments (fund must be open)','danger');redirect($back);}
  $p=$pdo->prepare('SELECT * FROM payments WHERE id=? AND contribution_id=?');$p->execute([(int)($_POST['pid']??0),$cid]);$p=$p->fetch();
  if(!$p){flash('Payment not found','danger');redirect($back);}
@@ -28,7 +28,7 @@ $pay=$pdo->prepare('SELECT p.*,u.name,u.short_name FROM payments p JOIN users u 
 $paidAmt=$paid();$bal=$c['amount']-$paidAmt;$pc=$c['amount']>0?(int)min(100,round($paidAmt/$c['amount']*100)):0;
 $head="*{$f['title']}*\nReceipt #{$c['serial_no']}\nName: {$c['name']}\n".($c['item_name']?"Item: ".item_label($c)." (₹".money($c['amount']/$c['qty'])." each)\n":'');
 $only=$head."Contribution: ₹".money($c['amount'])."\nThank you 🙏";
-if($c['item_id'])$head.='Product: '.($c['delivery']?DELIVERY[$c['delivery']][0].' '.DELIVERY[$c['delivery']][1].' ('.date('d-m-Y',strtotime($c['delivered_at'])).')':'⏳ Not given yet')."\n";
+if($c['item_id'])$head.='Product: '.($c['delivery']?'✔ വാങ്ങി ('.date('d-m-Y',strtotime($c['delivered_at'])).')':'⏳ വാങ്ങിയില്ല')."\n";
 $full=$head."Total: ₹".money($c['amount'])."\nPaid: ₹".money($paidAmt)."\nBalance: ₹".money($bal).($bal<=0?' ✅':' ⏳')."\n";
 if($pays){$full.="\nPayments:\n";foreach($pays as $i=>$p)$full.=($i+1).") ".date('d-m-Y',strtotime($p['created_at']))." – ₹".money($p['amount'])."\n";}
 $full.="\nThank you 🙏";
@@ -52,11 +52,10 @@ head('#'.$c['serial_no'].' '.$c['name']);?>
 </div>
 <?php if($c['item_id']):$d=$c['delivery'];?>
 <div class="card p-3 mb-3 noprint"><div class="d-flex justify-content-between align-items-center mb-2"><b><i class="bi bi-box-seam"></i> Product / ഉൽപ്പന്നം</b><?=dl_badge($c)?></div>
-<form method="post" class="d-grid gap-2" style="grid-template-columns:1fr 1fr 1fr"><?=csrf_field()?><input type="hidden" name="id" value="<?=$cid?>"><input type="hidden" name="do" value="deliver">
-<button name="v" value="" class="btn btn-sm <?=!$d?'btn-secondary':'btn-outline-secondary'?>">⏳ Not given</button>
-<button name="v" value="taken" class="btn btn-sm <?=$d==='taken'?'btn-primary':'btn-outline-primary'?>">🤲 Taken<br><small>വാങ്ങി</small></button>
-<button name="v" value="sent" class="btn btn-sm <?=$d==='sent'?'btn-primary':'btn-outline-primary'?>">🚚 Sent<br><small>എത്തിച്ചു</small></button></form>
-<?php if($c['delivered_at']):?><small class="text-muted mt-1"><?=DELIVERY[$d][1]?> on <?=date('d M Y, g:i a',strtotime($c['delivered_at']))?></small><?php endif;?></div>
+<form method="post"><?=csrf_field()?><input type="hidden" name="id" value="<?=$cid?>"><input type="hidden" name="do" value="deliver">
+<?php if(!$d):?><button name="v" value="taken" class="btn btn-primary btn-lg w-100">✔ വാങ്ങി / Taken</button>
+<?php else:?><div class="d-flex align-items-center gap-2"><span class="flex-grow-1 small text-muted">Taken on <?=date('d M Y, g:i a',strtotime($c['delivered_at']))?></span><button name="v" value="" class="btn btn-sm btn-outline-secondary">↩ Undo</button></div><?php endif;?>
+</form></div>
 <?php endif;?>
 <div class="d-grid gap-2 mb-3 noprint">
 <?php if($bal>0&&$open):?><a class="btn btn-primary btn-lg" href="pay.php?id=<?=$f['id']?>&c=<?=$cid?>"><i class="bi bi-cash-coin"></i> Add payment / പണം ചേർക്കുക</a><?php endif;?>

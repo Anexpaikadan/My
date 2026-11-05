@@ -7,7 +7,7 @@ $dv=$_GET['dv']??'';
 $sql='SELECT c.*,MAX(fi.name) item_name,COALESCE(SUM(p.amount),0) paid,u.name uname,u.short_name FROM contributions c'.ITEM_JOIN.'LEFT JOIN payments p ON p.contribution_id=c.id JOIN users u ON u.id=c.created_by WHERE c.fund_id=? AND c.cancelled=0';
 $args=[$fid];
 if($it>0){$sql.=' AND c.item_id=?';$args[]=$it;}
-if($dv==='no')$sql.=' AND c.item_id IS NOT NULL AND c.delivery IS NULL';elseif(in_array($dv,['taken','sent'],true)){$sql.=' AND c.delivery=?';$args[]=$dv;}
+if($dv==='no')$sql.=' AND c.item_id IS NOT NULL AND c.delivery IS NULL';elseif($dv==='taken')$sql.=' AND c.delivery IS NOT NULL';
 if($q!==''){$sql.=' AND (c.name LIKE ? OR c.serial_no=? OR c.mobile LIKE ?)';$args[]="%$q%";$args[]=ctype_digit($q)?(int)$q:-1;$args[]=ctype_digit($q)&&strlen($q)>=4?"%$q%":'-';}
 $s=$pdo->prepare($sql.' GROUP BY c.id ORDER BY c.serial_no DESC');$s->execute($args);$rows=$s->fetchAll();
 [$t,$p,$b]=fund_totals($fid);
@@ -18,7 +18,7 @@ $opt=[];
 if($open){$opt[]=['bi-plus-circle-fill','New contribution','പുതിയ സംഭാവന',"entry.php?id=$fid",'main'];$opt[]=['bi-cash-coin','Add payment','പണം സ്വീകരിക്കുക',"pay.php?id=$fid",'main pay'];}
 $opt[]=['bi-search','Search contributor','തിരയുക','#search','js'];
 if($items){$dq=$pdo->prepare('SELECT COUNT(*) FROM contributions WHERE fund_id=? AND cancelled=0 AND item_id IS NOT NULL AND delivery IS NULL');$dq->execute([$fid]);$dn=(int)$dq->fetchColumn();
- $opt[]=['bi-box-seam','Delivery'.($dn?" ($dn)":''),'വിതരണം',"delivery.php?id=$fid",''];}
+ $opt[]=['bi-box-seam','Product given'.($dn?" ($dn)":''),'വാങ്ങി',"delivery.php?id=$fid",''];}
 if($f['reminders'])$opt[]=['bi-bell','Pending','ബാക്കി',"remind.php?id=$fid",''];
 $opt[]=[$role==='creator'?'bi-bar-chart-line':'bi-share',$role==='creator'?'Report':'Share','റിപ്പോർട്ട്',"reports.php?id=$fid",''];
 $opt[]=['bi-arrow-left-right','Transfer','കൈമാറ്റം',"handover.php?id=$fid",''];
@@ -61,7 +61,7 @@ head($f['title']);?>
 <div id="search" class="card p-2 mb-2"><form class="d-flex gap-1 noprint"><input type="hidden" name="id" value="<?=$fid?>">
 <input id="sq" class="form-control" name="q" value="<?=e($q)?>" type="search" placeholder="Name, No. or mobile / തിരയുക" enterkeyhint="search">
 <?php if($items):?><select class="form-select" name="item" style="max-width:34%" onchange="this.form.submit()"><option value="0">All</option><?php foreach($items as $x):?><option value="<?=$x['id']?>" <?=$it==$x['id']?'selected':''?>><?=e($x['name'])?></option><?php endforeach;?></select>
-<select class="form-select" name="dv" style="max-width:30%" onchange="this.form.submit()"><option value="">Delivery</option><?php foreach(['no'=>'⏳ Not given','taken'=>'🤲 Taken','sent'=>'🚚 Sent'] as $k=>$v):?><option value="<?=$k?>" <?=$dv===$k?'selected':''?>><?=$v?></option><?php endforeach;?></select><?php endif;?>
+<select class="form-select" name="dv" style="max-width:30%" onchange="this.form.submit()"><option value="">വാങ്ങി?</option><?php foreach(['no'=>'⏳ വാങ്ങിയില്ല','taken'=>'✔ വാങ്ങി'] as $k=>$v):?><option value="<?=$k?>" <?=$dv===$k?'selected':''?>><?=$v?></option><?php endforeach;?></select><?php endif;?>
 <button class="btn btn-primary" aria-label="Search"><i class="bi bi-search"></i></button></form>
 <small class="text-muted px-1 pt-1"><?=count($rows)?> contributor<?=count($rows)==1?'':'s'?><?=$q!==''||$it||$dv?' found · <a href="fund.php?id='.$fid.'#search">show all</a>':''?> · tap a name to open it and add payment</small></div>
 <?php foreach($rows as $r):$bal=$r['amount']-$r['paid'];?>

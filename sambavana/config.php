@@ -81,9 +81,8 @@ function item_of($fid,$iid){
 function item_label($c){return !empty($c['item_name'])?$c['item_name'].' × '.(int)$c['qty']:'';}
 // Contributor name colour: red while balance is due, dark green when fully paid
 function nm($name,$bal){return '<span class="'.($bal>0?'nm-due':'nm-paid').'">'.e($name).'</span>';}
-// Product entries: did the contributor take the product, or was it sent to them?
-const DELIVERY=['taken'=>['🤲','Taken','വാങ്ങി'],'sent'=>['🚚','Sent','എത്തിച്ചു']];
-function dl_badge($c){if(empty($c['item_id']))return '';$d=$c['delivery']??null;return '<span class="dl dl-'.($d?:'no').'">'.($d?DELIVERY[$d][0].' '.DELIVERY[$d][1]:'⏳ Not given').'</span>';}
+// Product entries: has the contributor taken (വാങ്ങി) the product? (any value in `delivery` = taken)
+function dl_badge($c){if(empty($c['item_id']))return '';return !empty($c['delivery'])?'<span class="dl dl-taken">✔ വാങ്ങി</span>':'<span class="dl dl-no">⏳ വാങ്ങിയില്ല</span>';}
 function bal_badge($b){return $b<=0?'<span class="ok">✔ Paid</span>':'<span class="bal">Bal ₹'.money($b).'</span>';}
 const ITEM_JOIN=' LEFT JOIN fund_items fi ON fi.id=c.item_id ';
 
@@ -244,7 +243,7 @@ body{background:var(--bg);padding-bottom:84px;line-height:1.6;-webkit-font-smoot
 .nm-paid{color:#1b6b1b!important;font-weight:600}
 .itm{background:var(--pl);color:var(--pd);border-radius:8px;padding:0 7px;font-size:.85em;white-space:nowrap}
 .dl{border-radius:8px;padding:0 7px;font-size:.85em;white-space:nowrap;font-weight:600}
-.dl-no{background:#fff4e0;color:#a35b00}.dl-taken{background:#e6f6ea;color:#1e7b3c}.dl-sent{background:#e3f0fd;color:#0b5cad}
+.dl-no{background:#fff4e0;color:#a35b00}.dl-taken{background:#e6f6ea;color:#1e7b3c}
 #toast{position:fixed;left:50%;bottom:96px;transform:translate(-50%,20px);background:#222;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:3000;max-width:92%;text-align:center}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 @view-transition{navigation:auto}

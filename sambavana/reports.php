@@ -14,8 +14,8 @@ if($r===1){ // Fund report
  $R['title']='Contribution List: '.$f['title'];
  $s=$pdo->prepare('SELECT c.*,MAX(fi.name) item_name,COALESCE(SUM(p.amount),0) paid,u.name uname,u.short_name FROM contributions c'.ITEM_JOIN.'LEFT JOIN payments p ON p.contribution_id=c.id JOIN users u ON u.id=c.created_by WHERE c.fund_id=? AND c.cancelled=0 GROUP BY c.id ORDER BY c.serial_no');$s->execute([$fid]);
  if($xls){ // full sheet with real numbers; same columns as the import template + extra
-  $R['head']=['Sl','Name','Mobile','Amount','Paid','Item','Qty','Balance','By','Date','Delivery'];
-  foreach($s as $c)$R['rows'][]=[(int)$c['serial_no'],$c['name'],(string)$c['mobile'],(float)$c['amount'],(float)$c['paid'],(string)$c['item_name'],$c['qty']?(int)$c['qty']:'',(float)($c['amount']-$c['paid']),sn($c['uname'],$c['short_name']),date('d-m-Y',strtotime($c['created_at'])),$c['item_id']?($c['delivery']?DELIVERY[$c['delivery']][1]:'Not given'):''];
+  $R['head']=['Sl','Name','Mobile','Amount','Paid','Item','Qty','Balance','By','Date','Taken'];
+  foreach($s as $c)$R['rows'][]=[(int)$c['serial_no'],$c['name'],(string)$c['mobile'],(float)$c['amount'],(float)$c['paid'],(string)$c['item_name'],$c['qty']?(int)$c['qty']:'',(float)($c['amount']-$c['paid']),sn($c['uname'],$c['short_name']),date('d-m-Y',strtotime($c['created_at'])),$c['item_id']?($c['delivery']?'Taken':'Not taken'):''];
  }else{
   $R['head']=array_merge(['Sl','Name'],$hasItems?['Item']:[],$d?['Amount','Status','By']:['Amount','By']);
   foreach($s as $c){$b=$c['amount']-$c['paid'];$R['cls'][count($R['rows'])]=$b>0?'nm-due':'nm-paid';$R['rows'][]=array_merge([$c['serial_no'],$c['name']],$hasItems?[item_label($c)]:[],[money($c['amount'])],$d?[$b<=0?'✅':'Bal '.money($b)]:[],[sn($c['uname'],$c['short_name'])]);}
@@ -34,11 +34,11 @@ if($r===1){ // Fund report
  foreach($s as $x)$tx[]=[$x['created_at'],$mm['role']==='collector'?'Handed to creator':'Handover from '.$x['name'],($mm['role']==='collector'?'-':'+').money($x['amount'])];
  usort($tx,fn($a,$b)=>strcmp($a[0],$b[0]));$R['rows']=$tx;$R['foot']=['Cash on hand: ₹'.money($mm['cash'])];
 }elseif($r===6){ // Product-wise
- $R['title']='Product Report: '.$f['title'];$R['head']=['Product','Price','Entries','Qty','Amount','Paid','Balance','Taken','Sent','Not given'];$tq=$ta=$tp=0;
- $s=$pdo->prepare('SELECT fi.name,fi.price,COUNT(c.id) n,COALESCE(SUM(c.qty),0) q,COALESCE(SUM(c.amount),0) amt,COALESCE(SUM(pp.paid),0) paid,COALESCE(SUM(CASE WHEN c.delivery=\'taken\' THEN c.qty END),0) tk,COALESCE(SUM(CASE WHEN c.delivery=\'sent\' THEN c.qty END),0) st,COALESCE(SUM(CASE WHEN c.id IS NOT NULL AND c.delivery IS NULL THEN c.qty END),0) ng FROM fund_items fi LEFT JOIN contributions c ON c.item_id=fi.id AND c.cancelled=0 LEFT JOIN (SELECT contribution_id,SUM(amount) paid FROM payments GROUP BY contribution_id) pp ON pp.contribution_id=c.id WHERE fi.fund_id=? GROUP BY fi.id ORDER BY fi.id');$s->execute([$fid]);
- foreach($s as $x){$R['rows'][]=[$x['name'],money($x['price']),(int)$x['n'],(int)$x['q'],money($x['amt']),money($x['paid']),money($x['amt']-$x['paid']),(int)$x['tk'],(int)$x['st'],(int)$x['ng']];$tq+=$x['q'];$ta+=$x['amt'];$tp+=$x['paid'];}
+ $R['title']='Product Report: '.$f['title'];$R['head']=['Product','Price','Entries','Qty','Amount','Paid','Balance','Taken','Not taken'];$tq=$ta=$tp=0;
+ $s=$pdo->prepare('SELECT fi.name,fi.price,COUNT(c.id) n,COALESCE(SUM(c.qty),0) q,COALESCE(SUM(c.amount),0) amt,COALESCE(SUM(pp.paid),0) paid,COALESCE(SUM(CASE WHEN c.delivery IS NOT NULL THEN c.qty END),0) tk,COALESCE(SUM(CASE WHEN c.id IS NOT NULL AND c.delivery IS NULL THEN c.qty END),0) ng FROM fund_items fi LEFT JOIN contributions c ON c.item_id=fi.id AND c.cancelled=0 LEFT JOIN (SELECT contribution_id,SUM(amount) paid FROM payments GROUP BY contribution_id) pp ON pp.contribution_id=c.id WHERE fi.fund_id=? GROUP BY fi.id ORDER BY fi.id');$s->execute([$fid]);
+ foreach($s as $x){$R['rows'][]=[$x['name'],money($x['price']),(int)$x['n'],(int)$x['q'],money($x['amt']),money($x['paid']),money($x['amt']-$x['paid']),(int)$x['tk'],(int)$x['ng']];$tq+=$x['q'];$ta+=$x['amt'];$tp+=$x['paid'];}
  $o=$pdo->prepare('SELECT COUNT(*),COALESCE(SUM(amount),0) FROM contributions WHERE fund_id=? AND cancelled=0 AND item_id IS NULL');$o->execute([$fid]);[$on,$oa]=$o->fetch(PDO::FETCH_NUM);
- if($on)$R['rows'][]=['Other (any amount)','',$on,'',money($oa),'','','','',''];
+ if($on)$R['rows'][]=['Other (any amount)','',$on,'',money($oa),'','','',''];
  $R['foot']=["Products qty: $tq","Products total: ₹".money($ta),"Paid: ₹".money($tp),"Balance: ₹".money($ta-$tp)];
 }else{ // Collector -> creator payments
  $r=5;$R['title']='Collector to Creator Payments: '.$f['title'];$R['head']=['Collector','Received','Handed','Balance on hand'];$tr=$th=$tb=0;
