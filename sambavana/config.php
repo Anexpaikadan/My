@@ -4,6 +4,23 @@ session_start();
 require __DIR__.'/db_config.php';
 $pdo=new PDO('mysql:host='.DB_HOST.';dbname='.DB_NAME.';charset=utf8mb4',DB_USER,DB_PASS,
  [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]);
+// Database updates run by themselves (once per login): no phpMyAdmin needed for new columns.
+const SCHEMA=6;
+if(($_SESSION['schema']??0)<SCHEMA){
+ try{
+  $has=fn($t,$c)=>(bool)$pdo->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='$t'".($c?" AND COLUMN_NAME='$c'":''))->fetchColumn();
+  if(!$has('fund_items',null))$pdo->exec("CREATE TABLE fund_items(id INT AUTO_INCREMENT PRIMARY KEY,fund_id INT NOT NULL,name VARCHAR(100) NOT NULL,price DECIMAL(12,2) NOT NULL,active TINYINT NOT NULL DEFAULT 1,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(fund_id) REFERENCES funds(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+  if(!$has('contributions','item_id'))$pdo->exec('ALTER TABLE contributions ADD item_id INT NULL AFTER mobile, ADD qty INT NULL AFTER item_id');
+  if(!$has('contributions','delivery'))$pdo->exec("ALTER TABLE contributions ADD delivery ENUM('taken','sent') NULL, ADD delivered_at DATETIME NULL");
+  if(!$has('funds','color')){
+   $pdo->exec('ALTER TABLE funds ADD color VARCHAR(7) NULL');
+   // existing funds: each creator's funds get red, green, blue, ... in order
+   $n=[];$cols=['#d32f2f','#2e7d32','#1565c0','#6a1b9a','#ef6c00','#00838f','#ad1457','#3513d6'];$up=$pdo->prepare('UPDATE funds SET color=? WHERE id=?');
+   foreach($pdo->query('SELECT id,creator_id FROM funds ORDER BY creator_id,id') as $r){$i=$n[$r['creator_id']]=($n[$r['creator_id']]??-1)+1;$up->execute([$cols[$i%8],$r['id']]);}
+  }
+  $_SESSION['schema']=SCHEMA;unset($_SESSION['schema_err']);
+ }catch(Exception $x){$_SESSION['schema_err']=1;}
+}
 
 function e($s){return htmlspecialchars((string)$s,ENT_QUOTES,'UTF-8');}
 // 500 -> "500", 1500.5 -> "1,500.50" (no .00 on whole rupees)
@@ -64,6 +81,9 @@ function item_of($fid,$iid){
 function item_label($c){return !empty($c['item_name'])?$c['item_name'].' × '.(int)$c['qty']:'';}
 // Contributor name colour: red while balance is due, dark green when fully paid
 function nm($name,$bal){return '<span class="'.($bal>0?'nm-due':'nm-paid').'">'.e($name).'</span>';}
+// Product entries: did the contributor take the product, or was it sent to them?
+const DELIVERY=['taken'=>['🤲','Taken','വാങ്ങി'],'sent'=>['🚚','Sent','എത്തിച്ചു']];
+function dl_badge($c){if(empty($c['item_id']))return '';$d=$c['delivery']??null;return '<span class="dl dl-'.($d?:'no').'">'.($d?DELIVERY[$d][0].' '.DELIVERY[$d][1]:'⏳ Not given').'</span>';}
 function bal_badge($b){return $b<=0?'<span class="ok">✔ Paid</span>':'<span class="bal">Bal ₹'.money($b).'</span>';}
 const ITEM_JOIN=' LEFT JOIN fund_items fi ON fi.id=c.item_id ';
 
@@ -173,8 +193,18 @@ function del_sheet($action,$do){
 <script>document.querySelectorAll("[data-del]").forEach(function(b){b.onclick=function(){document.getElementById("delid").value=b.dataset.del;document.getElementById("delwhat").textContent=b.dataset.what;bootstrap.Modal.getOrCreateInstance(document.getElementById("del")).show();setTimeout(function(){document.querySelector("#del input[name=pw]").focus();},350);};});</script>';
 }
 $GLOBALS['NAV']=null;
+// ---- Colours: every fund has its own theme colour; the whole screen follows it inside a fund ----
+const APP_COLOR='#3513d6';
+const FUND_COLORS=['#d32f2f'=>'Red','#2e7d32'=>'Green','#1565c0'=>'Blue','#6a1b9a'=>'Purple','#ef6c00'=>'Orange','#00838f'=>'Teal','#ad1457'=>'Pink','#3513d6'=>'Indigo'];
+// mix a colour toward black (p<0) or white (p>0)
+function mix($hex,$p){[$r,$g,$b]=sscanf($hex,'#%02x%02x%02x');$t=$p<0?0:255;$p=abs($p);return sprintf('#%02x%02x%02x',round($r+($t-$r)*$p),round($g+($t-$g)*$p),round($b+($t-$b)*$p));}
+function theme_vars($c){[$r,$g,$b]=sscanf($c,'#%02x%02x%02x');return "--p:$c;--pd:".mix($c,-.22).";--p2:".mix($c,.25).";--pl:".mix($c,.88).";--pl2:".mix($c,.95).";--prgb:$r,$g,$b";}
+function fund_color($f){$c=strtolower((string)($f['color']??''));if(isset(FUND_COLORS[$c]))return $c;$k=array_keys(FUND_COLORS);return $k[(int)$f['id']%count($k)];}
+// New fund: the first colour this user is not using yet (first fund red, second green, ...)
+function next_color($uid){global $pdo;$s=$pdo->prepare('SELECT color FROM funds WHERE creator_id=?');$s->execute([$uid]);$used=array_map('strtolower',array_filter($s->fetchAll(PDO::FETCH_COLUMN)));
+ foreach(array_keys(FUND_COLORS) as $c)if(!in_array($c,$used,true))return $c;$k=array_keys(FUND_COLORS);return $k[count($used)%count($k)];}
 function nav($f,$role,$active){
- global $pdo;$id=$f['id'];
+ global $pdo;$id=$f['id'];$GLOBALS['THEME']=fund_color($f);
  $items=[['home','bi-house-door','Home',"fund.php?id=$id"],['entry','bi-plus-square','Entry',"entry.php?id=$id"]];
  if($f['status']==='open')$items[]=['pay','bi-cash-coin','Pay',"pay.php?id=$id"];
  if($role==='creator'){$items[]=['reports','bi-bar-chart-line','Reports',"reports.php?id=$id"];$items[]=['transfer','bi-arrow-left-right','Transfer',"handover.php?id=$id"];}
@@ -197,57 +227,67 @@ function nav_main($active){
 $GLOBALS['BACK']=false;
 function head($title){
  $u=me();$fl=$_SESSION['flash']??null;unset($_SESSION['flash']);
- echo '<!doctype html><html lang="ml"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#3513d6"><title>'.e($title).' - സംഭാവന</title>
+ echo '<!doctype html><html lang="ml"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="'.e($GLOBALS['THEME']??'#ffffff').'"><title>'.e($title).' - സംഭാവന</title>
 <link rel="icon" href="logo.png"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="സംഭാവന"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;600;700&display=swap" rel="stylesheet"><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"><link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 <style>
-:root{--p:#3513d6;--g:#7ed957;--bs-link-color:#3513d6;--bs-link-hover-color:#2a0fae;--bs-body-font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Malayalam","Nirmala UI","Kartika",sans-serif}
-body{background:#f6f5fd;padding-bottom:84px;line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+:root{'.theme_vars($GLOBALS['THEME']??APP_COLOR).';--g:#2e9e4f;--bg:#f4f5f7;--bs-link-color:var(--p);--bs-link-hover-color:var(--pd);--bs-link-color-rgb:var(--prgb);--bs-link-hover-color-rgb:var(--prgb);--bs-body-font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Malayalam","Nirmala UI","Kartika",sans-serif}
+html{-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);padding-bottom:84px;line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;touch-action:manipulation;overscroll-behavior-y:none}
 .small,small{font-size:.9em}
-.form-control::placeholder{color:#8a8aa0}
-.bal{background:#fdecee;color:#b02a37;border-radius:6px;padding:0 6px;font-weight:600;white-space:nowrap}
-.ok{background:#e8f8e1;color:#2f7d14;border-radius:6px;padding:0 6px;font-weight:600;white-space:nowrap}
+.form-control,.form-select{border-radius:12px;border-color:#dfe1e6}
+.form-control:focus,.form-select:focus{border-color:var(--p);box-shadow:0 0 0 .2rem rgba(var(--prgb),.15)}
+.form-control::placeholder{color:#9a9ca5}
+.form-check-input:checked{background-color:var(--p);border-color:var(--p)}
+.bal{background:#fdecee;color:#b02a37;border-radius:8px;padding:0 7px;font-weight:600;white-space:nowrap}
+.ok{background:#e6f6ea;color:#1e7b3c;border-radius:8px;padding:0 7px;font-weight:600;white-space:nowrap}
 .nm-due{color:#c62828!important;font-weight:600}
 .nm-paid{color:#1b6b1b!important;font-weight:600}
+.itm{background:var(--pl);color:var(--pd);border-radius:8px;padding:0 7px;font-size:.85em;white-space:nowrap}
+.dl{border-radius:8px;padding:0 7px;font-size:.85em;white-space:nowrap;font-weight:600}
+.dl-no{background:#fff4e0;color:#a35b00}.dl-taken{background:#e6f6ea;color:#1e7b3c}.dl-sent{background:#e3f0fd;color:#0b5cad}
 #toast{position:fixed;left:50%;bottom:96px;transform:translate(-50%,20px);background:#222;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:3000;max-width:92%;text-align:center}
 #toast.show{opacity:1;transform:translate(-50%,0)}
-.itm{background:#ece8ff;color:#3513d6;border-radius:6px;padding:0 6px;font-size:.85em;white-space:nowrap}
-html{-webkit-tap-highlight-color:transparent}
-body{touch-action:manipulation;overscroll-behavior-y:none}
 @view-transition{navigation:auto}
-.page{animation:pin .22s ease-out}
-@keyframes pin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.page{animation:pin .2s ease-out}
+@keyframes pin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 body.go .page{opacity:.5;transition:opacity .15s}
-#lb{position:fixed;top:0;left:0;height:3px;width:0;background:var(--g);z-index:2000}
+#lb{position:fixed;top:0;left:0;height:3px;width:0;background:#ffd54a;z-index:2000}
 body.go #lb{animation:lb 2.5s ease-out forwards}
 @keyframes lb{to{width:90%}}
 @media (prefers-reduced-motion:reduce){.page{animation:none}}
-a.card,.btn,.tile,.bnav a{transition:transform .08s,background .15s}
+a.card,.btn,.tile,.bnav a,.pick{transition:transform .08s,background .15s}
 a.card:active,.btn:active,.tile:active{transform:scale(.97)}
-.appbar{position:sticky;top:0;z-index:60;background:#fff;border-bottom:3px solid var(--g);padding-top:env(safe-area-inset-top)}
+.appbar{position:sticky;top:0;z-index:60;background:#fff;box-shadow:0 1px 0 #e6e7eb;padding-top:env(safe-area-inset-top)}
+.themed .appbar{background:var(--p);color:#fff;box-shadow:none}
 .appbar .in{max-width:820px;margin:0 auto;height:56px;display:flex;align-items:center;gap:6px;padding:0 10px}
 .appbar .ttl{flex:1;min-width:0;font-weight:700;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ib{width:40px;height:40px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#222;text-decoration:none;font-size:22px;flex:none}
-.ib:active{background:#ece8ff}
+.ib{width:40px;height:40px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:inherit;text-decoration:none;font-size:22px;flex:none}
+.ib:active{background:rgba(127,127,127,.2)}
 .av{width:36px;height:36px;border-radius:50%;background:var(--p);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;text-decoration:none;flex:none}
+.themed .av{background:#fff;color:var(--p)}
 .sheet .modal-dialog{position:fixed;left:0;right:0;bottom:0;margin:0 auto;width:100%;max-width:820px}
-.sheet .modal-content{border:0;border-radius:20px 20px 0 0;max-height:92vh;overflow-y:auto}
+.sheet .modal-content{border:0;border-radius:22px 22px 0 0;max-height:92vh;overflow-y:auto}
 .sheet.fade .modal-dialog{transform:translateY(100%);transition:transform .3s ease}
 .sheet.show .modal-dialog{transform:none}
-.grab{width:44px;height:5px;border-radius:3px;background:#d0d0dc;margin:8px auto 0}
-.card{border:0;box-shadow:0 1px 4px #3513d614;border-radius:12px}
-.btn-primary{--bs-btn-bg:#3513d6;--bs-btn-border-color:#3513d6;--bs-btn-hover-bg:#2a0fae;--bs-btn-hover-border-color:#2a0fae;--bs-btn-active-bg:#2a0fae;--bs-btn-active-border-color:#2a0fae}
-.btn-outline-primary{--bs-btn-color:#3513d6;--bs-btn-border-color:#3513d6;--bs-btn-hover-bg:#3513d6;--bs-btn-hover-border-color:#3513d6;--bs-btn-active-bg:#3513d6;--bs-btn-active-border-color:#3513d6}
-.btn-success{--bs-btn-bg:#7ed957;--bs-btn-border-color:#7ed957;--bs-btn-color:#10300a;--bs-btn-hover-bg:#6cc946;--bs-btn-hover-border-color:#6cc946;--bs-btn-hover-color:#10300a;--bs-btn-active-bg:#6cc946;--bs-btn-active-color:#10300a}
-.text-success{color:#3a9a1c!important}
-.bnav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #ddd;display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:50}
-.bnav a{flex:1;text-align:center;padding:6px 2px 5px;font-size:11px;color:#666;text-decoration:none;position:relative;border-top:3px solid transparent}
+.grab{width:44px;height:5px;border-radius:3px;background:#d5d7dd;margin:8px auto 0}
+.card{border:0;box-shadow:0 1px 3px rgba(0,0,0,.07);border-radius:16px}
+.btn{border-radius:12px;font-weight:600}
+.btn-sm{border-radius:10px}
+.btn-primary{--bs-btn-bg:var(--p);--bs-btn-border-color:var(--p);--bs-btn-hover-bg:var(--pd);--bs-btn-hover-border-color:var(--pd);--bs-btn-active-bg:var(--pd);--bs-btn-active-border-color:var(--pd);--bs-btn-disabled-bg:var(--p);--bs-btn-disabled-border-color:var(--p)}
+.btn-outline-primary{--bs-btn-color:var(--p);--bs-btn-border-color:var(--p);--bs-btn-hover-bg:var(--p);--bs-btn-hover-border-color:var(--p);--bs-btn-active-bg:var(--p);--bs-btn-active-border-color:var(--p)}
+.btn-success{--bs-btn-bg:#25a244;--bs-btn-border-color:#25a244;--bs-btn-hover-bg:#1e8a39;--bs-btn-hover-border-color:#1e8a39;--bs-btn-active-bg:#1e8a39;--bs-btn-active-border-color:#1e8a39}
+.btn-outline-success{--bs-btn-color:#1e8a39;--bs-btn-border-color:#25a244;--bs-btn-hover-bg:#25a244;--bs-btn-hover-border-color:#25a244;--bs-btn-active-bg:#25a244}
+.text-success{color:#1e8a39!important}
+.progress-bar.bg-success{background:var(--p)!important}
+.bnav{position:fixed;left:0;right:0;bottom:0;background:#fff;box-shadow:0 -1px 0 #e6e7eb;display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:50}
+.bnav a{flex:1;text-align:center;padding:7px 2px 6px;font-size:11px;color:#6b6e76;text-decoration:none;position:relative}
 .bnav a span{display:block;line-height:1.2;margin-bottom:1px}
 .bnav a span i{display:inline-block;font-size:21px;padding:1px 16px;border-radius:16px}
 .bnav a.on{color:var(--p);font-weight:700}
-.bnav a.on span i{background:#ece8ff}
+.bnav a.on span i{background:var(--pl)}
 .bdg{position:absolute;top:2px;right:16%;background:#dc3545;color:#fff;border-radius:10px;padding:0 5px;font-size:10px}
 @media print{.noprint{display:none!important}body{background:#fff;padding:0}}
-</style></head><body>
+</style></head><body class="'.(isset($GLOBALS['THEME'])?'themed':'').'">
 <div id="lb"></div><header class="appbar noprint"><div class="in">';
  // app bar: back arrow + page title on inner pages, logo on the main screens
  $back=$GLOBALS['BACK'];
@@ -262,6 +302,7 @@ a.card:active,.btn:active,.tile:active{transform:scale(.97)}
  if($u&&$u['role']!=='collector'){
   if(!isset($_SESSION['cs'])){global $pdo;$_SESSION['cs']=(int)$pdo->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND DATA_TYPE IN('varchar','text','char') AND CHARACTER_SET_NAME NOT LIKE 'utf8mb4%'")->fetchColumn();}
   if($_SESSION['cs'])echo '<div class="alert alert-danger noprint small">⚠ Database cannot store Malayalam (it saves ?????). Admin: run <b>migrate_5.sql</b> once in phpMyAdmin, then log out and in again.</div>';
+  if(!empty($_SESSION['schema_err']))echo '<div class="alert alert-warning noprint small">⚠ Database update could not run by itself. Run <b>migrate_6.sql</b> once in phpMyAdmin, then log out and in again.</div>';
  }
 }
 function foot(){

@@ -7,6 +7,10 @@ $paid=function()use($pdo,$cid){$q=$pdo->prepare('SELECT COALESCE(SUM(amount),0) 
 // Creator only: correct or remove a payment
 if($_SERVER['REQUEST_METHOD']==='POST'){csrf_check();$do=$_POST['do']??'';
  $back="contribution.php?id=$cid";
+ // product given: creator or collector, any time
+ if($do==='deliver'&&$c['item_id']){$v=$_POST['v']??'';$v=isset(DELIVERY[$v])?$v:null;
+  $pdo->prepare('UPDATE contributions SET delivery=?,delivered_at='.($v?'NOW()':'NULL').' WHERE id=?')->execute([$v,$cid]);
+  flash($v?DELIVERY[$v][0].' Product '.strtolower(DELIVERY[$v][1]):'Product marked not given');redirect($back);}
  if($role!=='creator'||!$open){flash('Only the fund creator can change payments (fund must be open)','danger');redirect($back);}
  $p=$pdo->prepare('SELECT * FROM payments WHERE id=? AND contribution_id=?');$p->execute([(int)($_POST['pid']??0),$cid]);$p=$p->fetch();
  if(!$p){flash('Payment not found','danger');redirect($back);}
@@ -24,19 +28,20 @@ $pay=$pdo->prepare('SELECT p.*,u.name,u.short_name FROM payments p JOIN users u 
 $paidAmt=$paid();$bal=$c['amount']-$paidAmt;$pc=$c['amount']>0?(int)min(100,round($paidAmt/$c['amount']*100)):0;
 $head="*{$f['title']}*\nReceipt #{$c['serial_no']}\nName: {$c['name']}\n".($c['item_name']?"Item: ".item_label($c)." (₹".money($c['amount']/$c['qty'])." each)\n":'');
 $only=$head."Contribution: ₹".money($c['amount'])."\nThank you 🙏";
+if($c['item_id'])$head.='Product: '.($c['delivery']?DELIVERY[$c['delivery']][0].' '.DELIVERY[$c['delivery']][1].' ('.date('d-m-Y',strtotime($c['delivered_at'])).')':'⏳ Not given yet')."\n";
 $full=$head."Total: ₹".money($c['amount'])."\nPaid: ₹".money($paidAmt)."\nBalance: ₹".money($bal).($bal<=0?' ✅':' ⏳')."\n";
 if($pays){$full.="\nPayments:\n";foreach($pays as $i=>$p)$full.=($i+1).") ".date('d-m-Y',strtotime($p['created_at']))." – ₹".money($p['amount'])."\n";}
 $full.="\nThank you 🙏";
 $cr=$role==='creator'&&$open;
 head('#'.$c['serial_no'].' '.$c['name']);?>
 <style>
-.ph{border-radius:20px;padding:16px;background:#fff;box-shadow:0 2px 10px #3513d61a}
+.ph{border-radius:20px;padding:16px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.08)}
 .ph .sum{display:grid;grid-template-columns:repeat(3,1fr);text-align:center;margin-top:12px}
 .ph .sum small{display:block;color:#666;font-size:12px}.ph .sum b{font-size:1.1rem}
 .tl{position:relative;padding-left:22px}
-.tl:before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:#e3dff7}
-.tl .pt{position:relative;background:#fff;border-radius:14px;padding:10px 12px;margin-bottom:8px;box-shadow:0 1px 4px #3513d614;display:flex;align-items:center;gap:8px}
-.tl .pt:before{content:"";position:absolute;left:-19px;top:16px;width:12px;height:12px;border-radius:50%;background:var(--g);border:2px solid #fff;box-shadow:0 0 0 2px #7ed95766}
+.tl:before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:var(--pl)}
+.tl .pt{position:relative;background:#fff;border-radius:14px;padding:10px 12px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.07);display:flex;align-items:center;gap:8px}
+.tl .pt:before{content:"";position:absolute;left:-19px;top:16px;width:12px;height:12px;border-radius:50%;background:var(--p);border:2px solid #fff;box-shadow:0 0 0 2px rgba(var(--prgb),.3)}
 </style>
 <div class="ph mb-3">
 <div class="d-flex justify-content-between align-items-start gap-2"><div><span class="text-muted small">No. <?=$c['serial_no']?><?=$c['mobile']?' · '.e($c['mobile']):''?></span><h5 class="m-0"><?=nm($c['name'],$bal)?></h5>
@@ -45,6 +50,14 @@ head('#'.$c['serial_no'].' '.$c['name']);?>
 <div class="progress mt-3" style="height:8px"><div class="progress-bar bg-success" style="width:<?=$pc?>%"></div></div>
 <div class="sum"><div><small>Total</small><b>₹<?=money($c['amount'])?></b></div><div><small>Paid</small><b class="text-success">₹<?=money($paidAmt)?></b></div><div><small>Balance</small><b class="text-danger">₹<?=money(max(0,$bal))?></b></div></div>
 </div>
+<?php if($c['item_id']):$d=$c['delivery'];?>
+<div class="card p-3 mb-3 noprint"><div class="d-flex justify-content-between align-items-center mb-2"><b><i class="bi bi-box-seam"></i> Product / ഉൽപ്പന്നം</b><?=dl_badge($c)?></div>
+<form method="post" class="d-grid gap-2" style="grid-template-columns:1fr 1fr 1fr"><?=csrf_field()?><input type="hidden" name="id" value="<?=$cid?>"><input type="hidden" name="do" value="deliver">
+<button name="v" value="" class="btn btn-sm <?=!$d?'btn-secondary':'btn-outline-secondary'?>">⏳ Not given</button>
+<button name="v" value="taken" class="btn btn-sm <?=$d==='taken'?'btn-primary':'btn-outline-primary'?>">🤲 Taken<br><small>വാങ്ങി</small></button>
+<button name="v" value="sent" class="btn btn-sm <?=$d==='sent'?'btn-primary':'btn-outline-primary'?>">🚚 Sent<br><small>എത്തിച്ചു</small></button></form>
+<?php if($c['delivered_at']):?><small class="text-muted mt-1"><?=DELIVERY[$d][1]?> on <?=date('d M Y, g:i a',strtotime($c['delivered_at']))?></small><?php endif;?></div>
+<?php endif;?>
 <div class="d-grid gap-2 mb-3 noprint">
 <?php if($bal>0&&$open):?><a class="btn btn-primary btn-lg" href="pay.php?id=<?=$f['id']?>&c=<?=$cid?>"><i class="bi bi-cash-coin"></i> Add payment / പണം ചേർക്കുക</a><?php endif;?>
 <div class="d-flex gap-2"><a class="btn btn-success flex-fill" target="_blank" href="<?=e(wa($full,$c['mobile']))?>"><i class="bi bi-whatsapp"></i> Receipt</a>

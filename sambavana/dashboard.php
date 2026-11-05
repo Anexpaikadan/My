@@ -13,26 +13,26 @@ $pc=fn($p,$t)=>$t>0?(int)min(100,round($p/$t*100)):0;
 $h=(int)date('G');$hi=$h<12?'Good morning':($h<17?'Good afternoon':'Good evening');
 nav_main('home');head('Home');?>
 <style>
-.hero{background:linear-gradient(135deg,#3513d6,#6a3df0);color:#fff;border-radius:20px;padding:18px;box-shadow:0 6px 18px #3513d640}
+.hero{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;border-radius:20px;padding:18px;box-shadow:0 6px 18px rgba(var(--prgb),.25)}
 .hero .big{font-size:1.9rem;font-weight:800;line-height:1.1}
 .hero .progress{background:#ffffff40;height:8px}
-.hero .progress-bar{background:var(--g)}
+.hero .progress-bar{background:#fff}
 .hero .k{font-size:.8rem;opacity:.85}
-.stat{background:#fff;border-radius:16px;padding:12px 6px;text-align:center;box-shadow:0 1px 4px #3513d614;text-decoration:none;color:#222;display:block}
+.stat{background:#fff;border-radius:16px;padding:12px 6px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07);text-decoration:none;color:#222;display:block}
 .stat b{display:block;font-size:1.25rem}
 .stat i{font-size:1.2rem;color:var(--p)}
 .fund{border-radius:18px;overflow:hidden}
-.fund .top{display:block;padding:14px 14px 10px;color:#222;text-decoration:none}
-.fund .progress{height:7px}
-.chip{font-size:.75rem;border-radius:20px;padding:1px 9px;background:#ece8ff;color:var(--p);font-weight:600}
-.chip.closed{background:#eee;color:#666}
-.acts{display:flex;border-top:1px solid #f0eef8}
+.fund .top{display:block;padding:14px 14px 12px;color:#fff;text-decoration:none;background:linear-gradient(135deg,var(--p),var(--p2))}
+.fund .top small{color:#ffffffd9}
+.fund .progress{height:7px;background:#ffffff40}.fund .progress-bar{background:#fff}
+.chip{font-size:.75rem;border-radius:20px;padding:1px 9px;background:#ffffff2e;color:#fff;font-weight:600}
+.acts{display:flex;border-top:1px solid #eef0f3}
 .acts a{flex:1;text-align:center;padding:8px 2px;font-size:11px;color:#555;text-decoration:none}
 .acts a i{display:block;font-size:19px;color:var(--p)}
-.acts a:active{background:#f3f1ff}
-.rec{display:flex;align-items:center;gap:10px;padding:10px 12px;color:#222;text-decoration:none;border-bottom:1px solid #f3f2f8}
+.acts a:active{background:var(--pl2)}
+.rec{display:flex;align-items:center;gap:10px;padding:10px 12px;color:#222;text-decoration:none;border-bottom:1px solid #eef0f3}
 .rec:last-child{border-bottom:0}
-.rec .dot{width:36px;height:36px;border-radius:12px;background:#ece8ff;color:var(--p);display:flex;align-items:center;justify-content:center;font-weight:700;flex:none;font-size:13px}
+.rec .dot{width:36px;height:36px;border-radius:12px;background:var(--pl);color:var(--p);display:flex;align-items:center;justify-content:center;font-weight:700;flex:none;font-size:13px}
 </style>
 <div class="hero mb-3">
 <div class="k"><?=$hi?>, <?=e($u['name'])?> 👋</div>
@@ -48,18 +48,17 @@ nav_main('home');head('Home');?>
 </div>
 <div class="d-flex justify-content-between align-items-center mb-2"><h6 class="m-0 fw-bold">My Funds / എന്റെ ഫണ്ടുകൾ</h6></div>
 <?php foreach($funds as $f):$id=$f['id'];?>
-<div class="card fund mb-3">
+<div class="card fund mb-3" style="<?=theme_vars(fund_color($f))?>">
 <a class="top" href="fund.php?id=<?=$id?>">
-<div class="d-flex justify-content-between align-items-start gap-2"><b style="font-size:1.05rem"><?=e($f['title'])?></b><i class="bi bi-chevron-right text-muted"></i></div>
-<div class="d-flex gap-1 my-1"><span class="chip"><?=e(ucfirst($f['type']))?></span><span class="chip <?=$f['status']==='closed'?'closed':''?>"><?=$f['status']==='closed'?'🔒 Closed':'● Open'?></span><small class="text-muted ms-auto"><?=$f['n']?> entries</small></div>
-<div class="progress my-2"><div class="progress-bar bg-success" style="width:<?=$pc($f['p'],$f['t'])?>%"></div></div>
-<div class="row g-0 text-center small"><div class="col-4"><small class="text-muted d-block">Total</small><b>₹<?=money($f['t'])?></b></div><div class="col-4 border-start"><small class="text-muted d-block">Paid</small><b class="text-success">₹<?=money($f['p'])?></b></div><div class="col-4 border-start"><small class="text-muted d-block">Balance</small><b class="text-danger">₹<?=money($f['b'])?></b></div></div>
+<div class="d-flex justify-content-between align-items-start gap-2"><b style="font-size:1.1rem"><?=e($f['title'])?></b><i class="bi bi-chevron-right"></i></div>
+<div class="d-flex gap-1 my-1 align-items-center"><span class="chip"><?=$f['status']==='closed'?'🔒 Closed':'● Open'?></span><small class="ms-auto"><?=$f['n']?> entries</small></div>
+<div class="progress my-2"><div class="progress-bar" style="width:<?=$pc($f['p'],$f['t'])?>%"></div></div>
+<div class="row g-0 text-center small"><div class="col-4"><small class="d-block">Total</small><b>₹<?=money($f['t'])?></b></div><div class="col-4"><small class="d-block">Paid</small><b>₹<?=money($f['p'])?></b></div><div class="col-4"><small class="d-block">Balance</small><b>₹<?=money($f['b'])?></b></div></div>
 </a>
 <div class="acts">
-<?php if($f['status']==='open'):?><a href="entry.php?id=<?=$id?>"><i class="bi bi-plus-square"></i>Entry</a><?php endif;?>
+<?php if($f['status']==='open'):?><a href="entry.php?id=<?=$id?>"><i class="bi bi-plus-square"></i>Entry</a><a href="pay.php?id=<?=$id?>"><i class="bi bi-cash-coin"></i>Pay</a><?php endif;?>
 <a href="reports.php?id=<?=$id?>"><i class="bi bi-bar-chart-line"></i>Reports</a>
 <a href="remind.php?id=<?=$id?>"><i class="bi bi-bell"></i>Pending<?=$f['pend']?' ('.$f['pend'].')':''?></a>
-<a href="items.php?id=<?=$id?>"><i class="bi bi-bag"></i>Products</a>
 </div></div>
 <?php endforeach;if(!$funds):?>
 <div class="card p-4 text-center mb-3"><div style="font-size:42px">🪙</div><b>No funds yet</b><p class="small text-muted mb-2">Create your first fund, e.g. പായസം ചലഞ്ച്</p>

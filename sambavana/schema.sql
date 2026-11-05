@@ -27,6 +27,7 @@ CREATE TABLE funds(
  show_target TINYINT NOT NULL DEFAULT 0,
  reminders TINYINT NOT NULL DEFAULT 0,
  status ENUM('open','closed') NOT NULL DEFAULT 'open',
+ color VARCHAR(7) NULL,                   -- fund theme colour, e.g. #d32f2f
  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
  FOREIGN KEY(creator_id) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -38,6 +39,8 @@ CREATE TABLE contributions(
  mobile VARCHAR(15) NULL,
  item_id INT NULL,                        -- fund_items.id when the entry is a product (Payasam × qty)
  qty INT NULL,
+ delivery ENUM('taken','sent') NULL,      -- product: contributor took it / it was sent to them
+ delivered_at DATETIME NULL,
  amount DECIMAL(12,2) NOT NULL,
  cancelled TINYINT NOT NULL DEFAULT 0,
  created_by INT NOT NULL,

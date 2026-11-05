@@ -36,7 +36,7 @@ head('Entry');?>
 #em.show .modal-dialog{transform:none}
 #em .grab{width:44px;height:5px;border-radius:3px;background:#d0d0dc;margin:8px auto 0}
 #em .bigamt{font-size:1.6rem;font-weight:700;color:var(--p)}
-#em .bigamt[readonly]{background:#f3f1ff}
+#em .bigamt[readonly]{background:var(--pl2)}
 #em .prod .btn{text-align:left;line-height:1.3}
 #qty{max-width:90px;text-align:center;font-weight:700}
 </style>

@@ -20,18 +20,18 @@ $sel=(int)($_GET['c']??0);
 head('Add payment');
 if($f['status']!=='open'){echo '<div class="alert alert-secondary">🔒 This fund is closed. Payments are locked.</div>';foot();exit;}?>
 <style>
-.pick{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border-radius:14px;margin-bottom:6px;box-shadow:0 1px 4px #3513d614;cursor:pointer;border:2px solid transparent}
+.pick{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border-radius:14px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,.07);cursor:pointer;border:2px solid transparent}
 .pick:active{transform:scale(.98)}
-.pick.on{border-color:var(--p);background:#f6f4ff}
-.pick .no{width:40px;height:40px;border-radius:12px;background:#ece8ff;color:var(--p);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:none}
+.pick.on{border-color:var(--p);background:var(--pl2)}
+.pick .no{width:40px;height:40px;border-radius:12px;background:var(--pl);color:var(--p);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:none}
 #sq{border-radius:14px}
-.sum{display:grid;grid-template-columns:repeat(3,1fr);text-align:center;background:#f6f4ff;border-radius:14px;padding:8px 4px}
+.sum{display:grid;grid-template-columns:repeat(3,1fr);text-align:center;background:var(--pl2);border-radius:14px;padding:8px 4px}
 .sum small{display:block;color:#666;font-size:12px}
 .amt{font-size:2rem;font-weight:800;text-align:center;color:var(--p);border-radius:14px}
 .calc{border-radius:14px;padding:10px 12px;background:#e8f8e1;color:#1b5e20;font-weight:600}
 .calc.bad{background:#fdecee;color:#b02a37}
 </style>
-<div class="position-sticky pt-1 pb-2" style="top:59px;z-index:20;background:#f6f5fd">
+<div class="position-sticky pt-1 pb-2" style="top:59px;z-index:20;background:var(--bg)">
 <input id="sq" class="form-control form-control-lg" type="search" placeholder="🔍 Search name, No. or mobile / തിരയുക" autocomplete="off" enterkeyhint="search">
 <div class="d-flex justify-content-between align-items-center mt-1 small"><span class="text-muted"><span id="cnt"><?=count($rows)?></span> <?=$all?'contributors':'with balance'?></span>
 <a href="pay.php?id=<?=$fid?>&all=<?=$all?0:1?>"><?=$all?'Only with balance':'Show all'?></a></div></div>

@@ -6,6 +6,9 @@ if($_SERVER['REQUEST_METHOD']==='POST'){csrf_check();$do=$_POST['do']??'';
   $t=(float)($_POST['target']??0);
   $pdo->prepare('UPDATE funds SET target_amount=?,show_target=?,reminders=? WHERE id=?')->execute([$t>0?$t:null,isset($_POST['show_target'])?1:0,isset($_POST['reminders'])?1:0,$fid]);
   flash('Settings saved');
+ }elseif($do==='color'){
+  $c=strtolower($_POST['color']??'');
+  if(isset(FUND_COLORS[$c])){$pdo->prepare('UPDATE funds SET color=? WHERE id=?')->execute([$c,$fid]);flash('Fund colour: '.FUND_COLORS[$c]);}
  }elseif($do==='details'){
   $ti=trim($_POST['title']??'');
   if($ti==='')flash('Title required','danger');
@@ -20,6 +23,10 @@ nav($f,$role,'home');head('Settings');
 $cn=$pdo->prepare('SELECT name FROM users WHERE id=?');$cn->execute([$f['creator_id']]);$cn=$cn->fetchColumn();
 $share="*{$f['title']}*\n{$f['description']}\n\nCreator: $cn";
 if($f['show_target']&&$f['target_amount']>0)$share.="\nTarget: ₹".money($f['target_amount']);?>
+<div class="card p-3 mb-3"><b class="mb-2"><i class="bi bi-palette"></i> Fund colour / നിറം</b>
+<form method="post" class="d-flex flex-wrap gap-2"><?=csrf_field()?><input type="hidden" name="id" value="<?=$fid?>"><input type="hidden" name="do" value="color">
+<?php foreach(FUND_COLORS as $c=>$n):$on=fund_color($f)===$c;?><button name="color" value="<?=$c?>" class="btn p-0 d-flex align-items-center justify-content-center" title="<?=$n?>" aria-label="<?=$n?>" style="width:46px;height:46px;border-radius:50%;background:<?=$c?>;color:#fff;font-size:22px;<?=$on?'box-shadow:0 0 0 3px #fff,0 0 0 5px '.$c:''?>"><?=$on?'<i class="bi bi-check-lg"></i>':''?></button><?php endforeach;?>
+</form><small class="text-muted mt-2">The whole fund screen uses this colour.</small></div>
 <div class="card p-3 mb-3"><b class="mb-2"><i class="bi bi-sliders"></i> Options / ക്രമീകരണം</b>
 <form method="post"><?=csrf_field()?><input type="hidden" name="id" value="<?=$fid?>"><input type="hidden" name="do" value="settings">
 <label class="small text-muted">🎯 Target amount ₹ (leave 0 for none)</label>
