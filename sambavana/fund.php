@@ -58,11 +58,10 @@ head($f['title']);?>
 <div class="tiles mb-3 noprint">
 <?php foreach($opt as $o):?><a class="tile <?=$o[4]!=='js'?$o[4]:''?>" href="<?=$o[3]?>"<?=$o[4]==='js'?' data-search':''?>><i class="bi <?=$o[0]?>"></i><span><?=$o[1]?><br><small><?=$o[2]?></small></span></a><?php endforeach;?>
 </div>
-<div id="search" class="card p-2 mb-2"><form class="d-flex gap-1 noprint"><input type="hidden" name="id" value="<?=$fid?>">
-<input id="sq" class="form-control" name="q" value="<?=e($q)?>" type="search" placeholder="Name, No. or mobile / തിരയുക" enterkeyhint="search">
-<?php if($items):?><select class="form-select" name="item" style="max-width:34%" onchange="this.form.submit()"><option value="0">All</option><?php foreach($items as $x):?><option value="<?=$x['id']?>" <?=$it==$x['id']?'selected':''?>><?=e($x['name'])?></option><?php endforeach;?></select>
-<select class="form-select" name="dv" style="max-width:30%" onchange="this.form.submit()"><option value="">വാങ്ങി?</option><?php foreach(['no'=>'⏳ വാങ്ങിയില്ല','taken'=>'✔ വാങ്ങി'] as $k=>$v):?><option value="<?=$k?>" <?=$dv===$k?'selected':''?>><?=$v?></option><?php endforeach;?></select><?php endif;?>
-<button class="btn btn-primary" aria-label="Search"><i class="bi bi-search"></i></button></form>
+<div id="search" class="card p-2 mb-2"><form class="noprint"><input type="hidden" name="id" value="<?=$fid?>">
+<div class="d-flex gap-1"><input id="sq" class="form-control form-control-lg flex-grow-1" style="min-width:0" name="q" value="<?=e($q)?>" type="search" placeholder="🔍 Search / തിരയുക" enterkeyhint="search">
+<button class="btn btn-primary px-3" aria-label="Search"><i class="bi bi-search"></i></button></div>
+<?php if($items):?><div class="d-flex gap-1 mt-1"><select class="form-select" name="item" onchange="this.form.submit()"><option value="0">All</option><?php foreach($items as $x):?><option value="<?=$x['id']?>" <?=$it==$x['id']?'selected':''?>><?=e($x['name'])?></option><?php endforeach;?></select><select class="form-select" name="dv" onchange="this.form.submit()"><option value="">വാങ്ങി?</option><?php foreach(['no'=>'⏳ വാങ്ങിയില്ല','taken'=>'✔ വാങ്ങി'] as $k=>$v):?><option value="<?=$k?>" <?=$dv===$k?'selected':''?>><?=$v?></option><?php endforeach;?></select></div><?php endif;?></form>
 <small class="text-muted px-1 pt-1"><?=count($rows)?> contributor<?=count($rows)==1?'':'s'?><?=$q!==''||$it||$dv?' found · <a href="fund.php?id='.$fid.'#search">show all</a>':''?> · tap a name to open it and add payment</small></div>
 <?php foreach($rows as $r):$bal=$r['amount']-$r['paid'];?>
 <a href="contribution.php?id=<?=$r['id']?>" class="card p-2 mb-1 text-decoration-none text-dark">

@@ -204,6 +204,8 @@ function next_color($uid){global $pdo;$s=$pdo->prepare('SELECT color FROM funds 
  foreach(array_keys(FUND_COLORS) as $c)if(!in_array($c,$used,true))return $c;$k=array_keys(FUND_COLORS);return $k[count($used)%count($k)];}
 function nav($f,$role,$active){
  global $pdo;$id=$f['id'];$GLOBALS['THEME']=fund_color($f);
+ // remember this fund for the app-icon shortcuts (go.php)
+ if(($_COOKIE['lastfund']??'')!=(string)$id&&!headers_sent())setcookie('lastfund',(string)$id,['expires'=>time()+31536000,'path'=>'/','samesite'=>'Lax','httponly'=>true]);
  $items=[['home','bi-house-door','Home',"fund.php?id=$id"],['entry','bi-plus-square','Entry',"entry.php?id=$id"]];
  if($f['status']==='open')$items[]=['pay','bi-cash-coin','Pay',"pay.php?id=$id"];
  if($role==='creator'){$items[]=['reports','bi-bar-chart-line','Reports',"reports.php?id=$id"];$items[]=['transfer','bi-arrow-left-right','Transfer',"handover.php?id=$id"];}

@@ -20,5 +20,31 @@
    "type": "image/png",
    "purpose": "any maskable"
   }
+ ],
+ "shortcuts": [
+  {
+   "name": "New entry / പുതിയ സംഭാവന",
+   "short_name": "New entry",
+   "url": "./go.php?to=entry",
+   "icons": [
+    {
+     "src": "sc-entry.png",
+     "sizes": "192x192",
+     "type": "image/png"
+    }
+   ]
+  },
+  {
+   "name": "Add payment / പണം സ്വീകരിക്കുക",
+   "short_name": "Add payment",
+   "url": "./go.php?to=pay",
+   "icons": [
+    {
+     "src": "sc-pay.png",
+     "sizes": "192x192",
+     "type": "image/png"
+    }
+   ]
+  }
  ]
 }
