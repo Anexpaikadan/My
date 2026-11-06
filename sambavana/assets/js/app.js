@@ -36,14 +36,10 @@ window.addEventListener('pageshow',function(){document.body.classList.remove('go
   f.querySelectorAll('button,[type=submit]').forEach(function(x){x.disabled=false;if(x.dataset.t){x.innerHTML=x.dataset.t;delete x.dataset.t;}});});});
 window.addEventListener('offline',function(){toast('📶 You are offline / ഓഫ്‌ലൈൻ');});
 
-// Share long text: phone share sheet (full text, no link limit) > WhatsApp link > copy
-function copyText(t){if(navigator.clipboard&&window.isSecureContext)return navigator.clipboard.writeText(t);
- var a=document.createElement('textarea');a.value=t;a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();return Promise.resolve();}
+// WhatsApp Share: the phone's share screen takes the FULL text (a WhatsApp link gets cut when long)
 document.addEventListener('click',function(e){
- var b=e.target.closest('[data-share],[data-copy]');if(!b)return;e.preventDefault();
- var t=document.getElementById(b.dataset.share||b.dataset.copy).value;
- if(b.dataset.copy){copyText(t).then(function(){toast('📋 Copied — open WhatsApp and paste / പേസ്റ്റ് ചെയ്യുക');});return;}
- if(navigator.share){navigator.share({text:t}).catch(function(){});return;}
- if(b.dataset.wa){window.open(b.dataset.wa,'_blank');return;}
- copyText(t).then(function(){toast('📋 List copied — open WhatsApp and paste');});
+ var b=e.target.closest('[data-share]');if(!b)return;e.preventDefault();
+ var t=document.getElementById(b.dataset.share).value;
+ if(navigator.share&&/android|iphone|ipad/i.test(navigator.userAgent)){navigator.share({text:t}).catch(function(){});return;}
+ window.open(b.dataset.wa,'_blank');
 });

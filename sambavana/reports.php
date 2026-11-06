@@ -18,7 +18,7 @@ if($r===1){ // Fund report
   foreach($s as $c)$R['rows'][]=[(int)$c['serial_no'],$c['name'],(string)$c['mobile'],(float)$c['amount'],(float)$c['paid'],(string)$c['item_name'],$c['qty']?(int)$c['qty']:'',(float)($c['amount']-$c['paid']),sn($c['uname'],$c['short_name']),date('d-m-Y',strtotime($c['created_at'])),$c['item_id']?($c['delivery']?'Taken':'Not taken'):''];
  }else{
   $R['head']=array_merge(['Sl','Name'],$hasItems?['Item']:[],$d?['Amount','Status','By']:['Amount','By']);
-  foreach($s as $c){$b=$c['amount']-$c['paid'];$R['cls'][count($R['rows'])]=$b>0?'nm-due':'nm-paid';$R['rows'][]=array_merge([$c['serial_no'],$c['name']],$hasItems?[item_label($c)]:[],[money($c['amount'])],$d?[$b<=0?'✅':'Bal '.money($b)]:[],[sn($c['uname'],$c['short_name'])]);}
+  foreach($s as $c){$b=$c['amount']-$c['paid'];$R['cls'][count($R['rows'])]=$b>0?'nm-due':'nm-paid';$R['rows'][]=array_merge([$c['serial_no'],$c['name']],$hasItems?[item_label($c)]:[],[money($c['amount'])],$d?[$b<=0?'Paid':'Bal '.money($b)]:[],[sn($c['uname'],$c['short_name'])]);}
  }
  [$t,$p,$b]=fund_totals($fid);$R['foot']=$d?["Total: ₹".money($t),"Paid: ₹".money($p),"Balance: ₹".money($b)]:["Total contribution: ₹".money($t)];
 }elseif($r===3){ // Member-wise
@@ -58,7 +58,7 @@ if($ds&&$r!==1){$top=[];if(trim((string)$f['description'])!=='')$top[]=trim($f['
 // WhatsApp text
 $txt="*{$R['title']}*\n";foreach($R['lines'] as $l)$txt.="$l\n";
 if($R['rows'])$txt.="\n".implode(' | ',$R['head'])."\n";
-foreach($R['rows'] as $i=>$row){if(isset($R['cls'][$i]))$row[1]=($R['cls'][$i]==='nm-due'?'🔴 ':'🟢 ').$row[1];$txt.=implode(' | ',$row)."\n";}
+foreach($R['rows'] as $row)$txt.=implode(' | ',$row)."\n";
 if($R['foot'])$txt.="\n".implode("\n",$R['foot']);
 head('Report');
 $tabs=[1=>'Fund',2=>'Contributions',3=>'Members',4=>'Member cash',5=>'Handover']+($hasItems||$r===6?[6=>'Products']:[]);?>
@@ -68,9 +68,9 @@ $tabs=[1=>'Fund',2=>'Contributions',3=>'Members',4=>'Member cash',5=>'Handover']
 <select class="form-select" name="m" onchange="this.form.submit()"><?php foreach($mem as $m):?><option value="<?=$m['id']?>" <?=$m['id']==$msel?'selected':''?>><?=e($m['name'])?></option><?php endforeach;?></select></form><?php endif;?>
 <?php if($r===2):?><div class="btn-group btn-group-sm mb-2"><a class="btn btn-<?=$d?'primary':'outline-primary'?>" href="reports.php?id=<?=$fid?>&r=2&d=1&ds=<?=$ds?1:0?>">With paid &amp; balance</a><a class="btn btn-<?=!$d?'primary':'outline-primary'?>" href="reports.php?id=<?=$fid?>&r=2&d=0&ds=<?=$ds?1:0?>">Contribution only</a></div><?php endif;?>
 <?php if($r!==1):?><a class="form-check form-switch d-block mb-2 text-decoration-none text-dark" href="reports.php?<?=e(http_build_query(['id'=>$fid,'r'=>$r,'d'=>$d?1:0,'m'=>$msel,'ds'=>$ds?0:1]))?>"><input class="form-check-input" type="checkbox" <?=$ds?'checked':''?> tabindex="-1" style="pointer-events:none"> <span class="form-check-label">Add fund description / വിവരണം ചേർക്കുക</span></a><?php endif;?>
-<div class="mb-3"><?=wa_share($txt,'Share full report')?>
-<div class="d-flex gap-1 mt-1"><button class="btn btn-outline-danger btn-sm" onclick="window.print()">📄 PDF</button>
-<a class="btn btn-outline-success btn-sm" href="reports.php?<?=e(http_build_query(['id'=>$fid,'r'=>$r,'d'=>$d?1:0,'m'=>$msel,'ds'=>$ds?1:0,'xls'=>1]))?>" download>📊 Excel</a></div></div></div>
+<div class="mb-3 d-flex flex-wrap gap-1"><?=wa_share($txt)?>
+<button class="btn btn-outline-danger btn-sm" onclick="window.print()">📄 PDF</button>
+<a class="btn btn-outline-success btn-sm" href="reports.php?<?=e(http_build_query(['id'=>$fid,'r'=>$r,'d'=>$d?1:0,'m'=>$msel,'ds'=>$ds?1:0,'xls'=>1]))?>" download>📊 Excel</a></div></div>
 <div class="card p-3"><h5><?=e($R['title'])?></h5>
 <?php foreach($R['lines'] as $l)echo '<div class="small">'.nl2br(e($l)).'</div>';?>
 <?php if($R['rows']):?><div class="table-responsive mt-2"><table class="table table-sm table-bordered mb-1"><thead class="table-light"><tr><?php foreach($R['head'] as $h)echo '<th>'.e($h).'</th>';?></tr></thead><tbody>
