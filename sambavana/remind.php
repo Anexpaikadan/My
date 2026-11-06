@@ -4,7 +4,7 @@ head('Pending balances');
 if(!$f['reminders']){echo '<div class="alert alert-secondary">Balance reminders are off. Creator can turn them on in Settings.</div>';foot();exit;}
 $s=$pdo->prepare('SELECT c.*,MAX(fi.name) item_name,COALESCE(SUM(p.amount),0) paid FROM contributions c'.ITEM_JOIN.'LEFT JOIN payments p ON p.contribution_id=c.id WHERE c.fund_id=? AND c.cancelled=0 GROUP BY c.id HAVING c.amount>paid ORDER BY c.serial_no');
 $s->execute([$fid]);$rows=$s->fetchAll();$tot=0;$list="*{$f['title']}* – Pending balances\n".PAY_LEGEND."\n\n";
-foreach($rows as $r){$b=$r['amount']-$r['paid'];$tot+=$b;$list.="#{$r['serial_no']} ".PAY_DOT[pay_level($r['amount'],$b)]." {$r['name']} – ₹".money($b).' ('.paid_pct($r['amount'],$b)."% paid)\n";}
+foreach($rows as $r){$b=$r['amount']-$r['paid'];$tot+=$b;$list.="#{$r['serial_no']} ".PAY_DOT[pay_level($r['amount'],$b)]." {$r['name']} – ₹".money($b)."\n";}
 $list.="\nTotal pending: ₹".money($tot);?>
 <h5><i class="bi bi-bell" aria-hidden="true"></i> Pending balances / ബാക്കി</h5>
 <?php if($rows):?><div class="d-flex justify-content-between align-items-center mb-2"><b class="text-danger">₹<?=money($tot)?> (<?=count($rows)?>)</b>

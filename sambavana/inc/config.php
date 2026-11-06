@@ -1,6 +1,6 @@
 <?php
 // Shared setup for every page: session, database, helpers, page header/footer. Pages: require __DIR__.'/inc/config.php';
-const V='15'; // bump to make phones reload css/js/manifest
+const V='16'; // bump to make phones reload css/js/manifest
 session_set_cookie_params(['httponly'=>true,'samesite'=>'Lax','secure'=>(!empty($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=='off')]);
 session_start();
 require __DIR__.'/db_config.php';
@@ -90,7 +90,7 @@ function item_label($c){return !empty($c['item_name'])?$c['item_name'].' × '.(i
 // Contributor name colour: red while balance is due, dark green when fully paid
 // How much is paid: 🟢 full · 🟡 50%+ · 🟠 below 50% · 🔴 nothing (names in the app use the same colours)
 const PAY_DOT=['paid'=>'🟢','half'=>'🟡','some'=>'🟠','none'=>'🔴'];
-const PAY_LEGEND='🟢 Paid · 🟡 50%+ paid · 🟠 below 50% · 🔴 Not paid';
+const PAY_LEGEND='🟢 Paid · 🟡 Half paid · 🟠 Part paid · 🔴 Not paid';
 function paid_pct($amt,$bal){return $amt>0?(int)floor(min(100,max(0,($amt-$bal)/$amt*100))):100;}
 function pay_level($amt,$bal){if($bal<=0)return 'paid';$p=paid_pct($amt,$bal);return $p>=50?'half':($p>0?'some':'none');}
 // Contributor name coloured by payment: green paid, yellow 50%+, orange some, red nothing

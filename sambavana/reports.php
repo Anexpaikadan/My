@@ -18,7 +18,7 @@ if($r===1){ // Fund report
   foreach($s as $c)$R['rows'][]=[(int)$c['serial_no'],$c['name'],(string)$c['mobile'],(float)$c['amount'],(float)$c['paid'],(string)$c['item_name'],$c['qty']?(int)$c['qty']:'',(float)($c['amount']-$c['paid']),sn($c['uname'],$c['short_name']),date('d-m-Y',strtotime($c['created_at'])),$c['item_id']?($c['delivery']?'Taken':'Not taken'):''];
  }else{
   $R['head']=array_merge(['Sl','Name'],$hasItems?['Item']:[],$d?['Amount','Status','By']:['Amount','By']);
-  foreach($s as $c){$b=$c['amount']-$c['paid'];$R['lvl'][count($R['rows'])]=pay_level($c['amount'],$b);$R['cls'][count($R['rows'])]='nm-'.pay_level($c['amount'],$b);$R['rows'][]=array_merge([$c['serial_no'],$c['name']],$hasItems?[item_label($c)]:[],[money($c['amount'])],$d?[$b<=0?'Paid':'Bal '.money($b).' · '.paid_pct($c['amount'],$b).'%']:[],[sn($c['uname'],$c['short_name'])]);}
+  foreach($s as $c){$b=$c['amount']-$c['paid'];$R['lvl'][count($R['rows'])]=pay_level($c['amount'],$b);$R['cls'][count($R['rows'])]='nm-'.pay_level($c['amount'],$b);$R['rows'][]=array_merge([$c['serial_no'],$c['name']],$hasItems?[item_label($c)]:[],[money($c['amount'])],$d?[$b<=0?'Paid':'Bal '.money($b)]:[],[sn($c['uname'],$c['short_name'])]);}
  }
  [$t,$p,$b]=fund_totals($fid);$R['foot']=$d?["Total: ₹".money($t),"Paid: ₹".money($p),"Balance: ₹".money($b)]:["Total contribution: ₹".money($t)];
 }elseif($r===3){ // Member-wise
