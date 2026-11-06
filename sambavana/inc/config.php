@@ -1,6 +1,6 @@
 <?php
 // Shared setup for every page: session, database, helpers, page header/footer. Pages: require __DIR__.'/inc/config.php';
-const V='8'; // bump to make phones reload css/js/manifest
+const V='9'; // bump to make phones reload css/js/manifest
 session_set_cookie_params(['httponly'=>true,'samesite'=>'Lax','secure'=>(!empty($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=='off')]);
 session_start();
 require __DIR__.'/db_config.php';
@@ -44,6 +44,26 @@ function flash($m,$t='success'){$_SESSION['flash']=[$m,$t];}
 // First 2 letters; \X keeps Malayalam vowel signs with their letter (കൃ, സു)
 function sn($name,$short){if($short)return $short;preg_match_all('/\X/u',trim((string)$name),$m);return mb_strtoupper(implode('',array_slice($m[0],0,2)));}
 function wa($text,$to=null){$n=preg_replace('/\D/','',(string)$to);if(strlen($n)===10)$n='91'.$n;return 'https://wa.me/'.$n.'?text='.rawurlencode($text);}
+// Long lists (reports, pending): a wa.me link cuts the text (Malayalam is ~9 chars per letter in a link).
+// Share button = phone share sheet with the FULL text; also Copy, and "send in parts" links that each fit.
+const WA_LINK_MAX=24000;
+function wa_parts($text){
+ $lines=explode("\n",rtrim($text));$head=array_shift($lines);$parts=[];$cur=[];
+ foreach($lines as $l){$try=$head."\n".implode("\n",array_merge($cur,[$l]));
+  if($cur&&strlen(rawurlencode($try))>WA_LINK_MAX-200){$parts[]=$cur;$cur=[];}$cur[]=$l;}
+ if($cur)$parts[]=$cur;$n=count($parts);
+ return array_map(fn($c,$i)=>$head.($n>1?' ('.($i+1)."/$n)":'')."\n".implode("\n",$c),$parts,array_keys($parts));
+}
+function wa_share($text,$label='Share on WhatsApp'){
+ static $k=0;$id='wat'.(++$k);$parts=wa_parts($text);$one=count($parts)===1;
+ $h='<textarea id="'.$id.'" hidden>'.e($text).'</textarea><div class="d-flex flex-wrap gap-1 noprint">'
+  .'<button type="button" class="btn btn-success btn-sm" data-share="'.$id.'"'.($one?' data-wa="'.e(wa($text)).'"':'').'><i class="bi bi-whatsapp"></i> '.e($label).'</button>'
+  .'<button type="button" class="btn btn-outline-secondary btn-sm" data-copy="'.$id.'"><i class="bi bi-clipboard"></i> Copy</button></div>';
+ if(!$one){$h.='<div class="small text-muted mt-1 noprint">Long list — or send in parts: ';
+  foreach($parts as $i=>$pt)$h.='<a class="btn btn-outline-success btn-sm py-0 me-1 mb-1" target="_blank" href="'.e(wa($pt)).'">Part '.($i+1).'</a>';
+  $h.='</div>';}
+ return $h;
+}
 
 function me(){
  global $pdo;static $u=false;
