@@ -36,19 +36,14 @@ window.addEventListener('pageshow',function(){document.body.classList.remove('go
   f.querySelectorAll('button,[type=submit]').forEach(function(x){x.disabled=false;if(x.dataset.t){x.innerHTML=x.dataset.t;delete x.dataset.t;}});});});
 window.addEventListener('offline',function(){toast('📶 You are offline / ഓഫ്‌ലൈൻ');});
 
-// WhatsApp Share: send the FULL text in one tap.
-// Android: straight into the WhatsApp app (Android "send text" intent, no link, so nothing is cut).
-// iPhone: share screen. Computer: WhatsApp link. No WhatsApp on Android: back here, then share screen.
-var noWA=location.hash==='#nowa';
-if(noWA){history.replaceState(null,'',location.pathname+location.search);setTimeout(function(){toast('WhatsApp not found — tap again and choose an app');},300);}
+// Copy buttons (Copy 1, Copy 2 ...): copy that part only; the button turns into a tick so you know it is done
+function copyText(t){if(navigator.clipboard&&window.isSecureContext)return navigator.clipboard.writeText(t);
+ var a=document.createElement('textarea');a.value=t;a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();return Promise.resolve();}
 document.addEventListener('click',function(e){
- var b=e.target.closest('[data-share]');if(!b)return;e.preventDefault();
- var t=document.getElementById(b.dataset.share).value,ua=navigator.userAgent;
- if(/android/i.test(ua)&&!noWA){
-  location.href='intent:#Intent;action=android.intent.action.SEND;type=text/plain;package=com.whatsapp;S.android.intent.extra.TEXT='+encodeURIComponent(t)+';S.browser_fallback_url='+encodeURIComponent(location.href.split('#')[0]+'#nowa')+';end';
-  return;}
- if(navigator.share&&/android|iphone|ipad/i.test(ua)){navigator.share({text:t}).catch(function(){});return;}
- window.open(b.dataset.wa,'_blank');
+ var b=e.target.closest('[data-copy]');if(!b)return;e.preventDefault();
+ copyText(document.getElementById(b.dataset.copy).value).then(function(){
+  var n=b.textContent.trim();b.classList.remove('btn-outline-secondary');b.classList.add('btn-secondary');
+  b.innerHTML='<i class="bi bi-check2" aria-hidden="true"></i> '+n;toast(n+' copied — open WhatsApp and paste / പേസ്റ്റ് ചെയ്യുക');});
 });
 
 // Accessibility: tie each visible label to the field right after it (screen readers read the label)

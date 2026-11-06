@@ -51,7 +51,7 @@ a.card:active,.btn:active,.tile:active{transform:scale(.97)}
 /* touch: icon-only round buttons at least 44px */
 .btn-group-sm>.btn{min-height:40px;display:inline-flex;align-items:center}
 .form-switch .form-check-input{width:2.8em;height:1.5em;margin-top:.1em;cursor:pointer}
-.form-switch .form-check-label{padding-left:.4em;min-height:32px;display:inline-flex;align-items:center}
+.form-switch .form-check-label{padding-left:.4em;line-height:1.9}
 .btn-close,.modal-header .btn-close{width:20px;height:20px;padding:12px;box-sizing:content-box}
 .btn.rounded-circle{width:44px;height:44px;padding:0;display:inline-flex;align-items:center;justify-content:center}
 .btn-primary{--bs-btn-bg:var(--p);--bs-btn-border-color:var(--p);--bs-btn-hover-bg:var(--pd);--bs-btn-hover-border-color:var(--pd);--bs-btn-active-bg:var(--pd);--bs-btn-active-border-color:var(--pd);--bs-btn-disabled-bg:var(--p);--bs-btn-disabled-border-color:var(--p)}

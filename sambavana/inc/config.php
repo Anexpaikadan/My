@@ -1,6 +1,6 @@
 <?php
 // Shared setup for every page: session, database, helpers, page header/footer. Pages: require __DIR__.'/inc/config.php';
-const V='16'; // bump to make phones reload css/js/manifest
+const V='18'; // bump to make phones reload css/js/manifest
 session_set_cookie_params(['httponly'=>true,'samesite'=>'Lax','secure'=>(!empty($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=='off')]);
 session_start();
 require __DIR__.'/db_config.php';
@@ -44,11 +44,24 @@ function flash($m,$t='success'){$_SESSION['flash']=[$m,$t];}
 // First 2 letters; \X keeps Malayalam vowel signs with their letter (കൃ, സു)
 function sn($name,$short){if($short)return $short;preg_match_all('/\X/u',trim((string)$name),$m);return mb_strtoupper(implode('',array_slice($m[0],0,2)));}
 function wa($text,$to=null){$n=preg_replace('/\D/','',(string)$to);if(strlen($n)===10)$n='91'.$n;return 'https://wa.me/'.$n.'?text='.rawurlencode($text);}
-// Long lists (reports, pending): a wa.me link gets cut (Malayalam is ~9 chars per letter in a link),
-// so the button hands the FULL text to the phone's share screen (pick WhatsApp). Short text / no share screen: wa.me link.
+// Share a list: WhatsApp button (link, as before) + Copy 1, Copy 2 ... buttons, 60 rows each.
+// Rows are the lines that start with a number ("12 | ..." or "#12 ..."); lines above them repeat in every part,
+// lines below (totals) go with the last part.
+const COPY_ROWS=60;
+function copy_parts($text){
+ $L=explode("\n",rtrim($text));$rows=[];$head=[];$foot=[];
+ foreach($L as $l){if(preg_match('/^#?\d+ /',$l))$rows[]=$l;elseif($rows)$foot[]=$l;else $head[]=$l;}
+ if(count($rows)<=COPY_ROWS)return [$text];
+ $ch=array_chunk($rows,COPY_ROWS);$n=count($ch);$out=[];
+ foreach($ch as $i=>$c){$h=$head;$h[0].=' ('.($i+1)."/$n)";$out[]=implode("\n",array_merge($h,$c,$i===$n-1?$foot:[]));}
+ return $out;
+}
 function wa_share($text,$label='WhatsApp Share'){
- static $k=0;$id='wat'.(++$k);
- return '<textarea id="'.$id.'" hidden>'.e($text).'</textarea><button type="button" class="btn btn-success btn-sm" data-share="'.$id.'" data-wa="'.e(wa($text)).'"><i class="bi bi-whatsapp"></i> '.e($label).'</button>';
+ static $k=0;$parts=copy_parts($text);$n=count($parts);
+ $h='<a class="btn btn-success btn-sm" target="_blank" href="'.e(wa($text)).'"><i class="bi bi-whatsapp" aria-hidden="true"></i> '.e($label).'</a>';
+ foreach($parts as $i=>$pt){$id='cp'.(++$k);
+  $h.='<textarea id="'.$id.'" hidden>'.e($pt).'</textarea><button type="button" class="btn btn-outline-secondary btn-sm" data-copy="'.$id.'"><i class="bi bi-clipboard" aria-hidden="true"></i> Copy'.($n>1?' '.($i+1):'').'</button>';}
+ return $h;
 }
 
 function me(){
