@@ -1,6 +1,6 @@
 <?php require __DIR__.'/inc/config.php';
 [$f,$role]=fund_access($_GET['id']??0);$u=me();$fid=$f['id'];nav($f,$role,'entry');
-if($f['status']==='closed'){head('Entry');echo '<div class="alert alert-secondary">🔒 This fund is closed. Creator can reopen it in Settings.</div>';foot();exit;}
+if($f['status']==='closed'){head('Entry');echo '<div class="alert alert-secondary"><i class="bi bi-lock-fill" aria-hidden="true"></i> This fund is closed. Creator can reopen it in Settings.</div>';foot();exit;}
 $items=fund_items($fid);
 $err='';$v=['name'=>'','mobile'=>'','amount'=>'','pay'=>'','item'=>(string)(int)($_GET['item']??0),'qty'=>'1'];
 if($_SERVER['REQUEST_METHOD']==='POST'){csrf_check();
@@ -41,8 +41,8 @@ head('Entry');?>
 #qty{max-width:90px;text-align:center;font-weight:700}
 </style>
 <div class="d-flex justify-content-between align-items-center mb-2"><h5 class="m-0">Entries / എൻട്രികൾ</h5>
-<button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#em">＋ New entry</button></div>
-<?php if($role==='creator'):?><div class="d-flex gap-2 mb-2 noprint"><a class="btn btn-sm btn-outline-primary" href="items.php?id=<?=$fid?>">🛍 Products<?=$items?' ('.count($items).')':''?></a></div><?php endif;?>
+<button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#em"><i class="bi bi-plus-lg" aria-hidden="true"></i> New entry</button></div>
+<?php if($role==='creator'):?><div class="d-flex gap-2 mb-2 noprint"><a class="btn btn-sm btn-outline-primary" href="items.php?id=<?=$fid?>"><i class="bi bi-bag" aria-hidden="true"></i> Products<?=$items?' ('.count($items).')':''?></a></div><?php endif;?>
 <p class="small text-muted">Recent / അവസാനത്തെ എൻട്രികൾ</p>
 <?php foreach($rows as $x):$bal=$x['amount']-$x['paid'];?>
 <a href="contribution.php?id=<?=$x['id']?>" class="card p-2 mb-1 text-decoration-none text-dark"><div class="d-flex justify-content-between"><span><b>#<?=$x['serial_no']?></b> <?=nm($x['name'],$bal)?></span><span><?=bal_badge($bal)?></span></div>
@@ -66,7 +66,7 @@ head('Entry');?>
 <?php foreach($items as $it):?><input type="radio" class="btn-check" name="item" id="it<?=$it['id']?>" value="<?=$it['id']?>" <?=(int)$v['item']===(int)$it['id']?'checked':''?> data-p="<?=e($it['price'])?>"><label class="btn btn-sm btn-outline-primary" for="it<?=$it['id']?>"><?=e($it['name'])?><br><small>₹<?=money($it['price'])?></small></label>
 <?php endforeach;?></div>
 <div id="qbox" class="mb-2 d-none"><label class="small text-muted">Number / എണ്ണം</label>
-<div class="input-group"><button type="button" class="btn btn-outline-primary" id="qm">−</button><input id="qty" class="form-control" type="number" min="1" max="9999" step="1" name="qty" value="<?=e($v['qty'])?>" inputmode="numeric"><button type="button" class="btn btn-outline-primary" id="qp">＋</button></div></div>
+<div class="input-group"><button type="button" class="btn btn-outline-primary" id="qm" aria-label="One less"><i class="bi bi-dash-lg" aria-hidden="true"></i></button><input id="qty" class="form-control" type="number" min="1" max="9999" step="1" name="qty" value="<?=e($v['qty'])?>" inputmode="numeric"><button type="button" class="btn btn-outline-primary" id="qp" aria-label="One more"><i class="bi bi-plus-lg" aria-hidden="true"></i></button></div></div>
 <?php endif;?>
 <label class="small text-muted">Contribution amount ₹ / സംഭാവന</label>
 <input id="amt" class="form-control bigamt mb-1" type="number" step="0.01" min="1" name="amount" value="<?=e($v['amount'])?>" inputmode="decimal" placeholder="0" required>
@@ -86,7 +86,7 @@ window.addEventListener('load',function(){
  var a=document.getElementById('amt'),p=document.getElementById('pay'),pv=document.getElementById('pv');
  function upd(){var x=parseFloat(a.value)||0,y=parseFloat(p.value)||0,b=x-y;
   if(y>x){pv.className='small text-danger';pv.textContent='⚠ Payment is more than the contribution';}
-  else if(x>0){pv.className='small fw-bold '+(b>0?'text-danger':'text-success');pv.textContent=b>0?'Balance ₹'+b.toLocaleString('en-US',{maximumFractionDigits:2}):'Fully paid ✅';}
+  else if(x>0){pv.className='small fw-bold '+(b>0?'text-danger':'text-success');pv.textContent=b>0?'Balance ₹'+b.toLocaleString('en-US',{maximumFractionDigits:2}):'Fully paid';}
   else pv.textContent='';}
  a.oninput=p.oninput=upd;
  // product (e.g. Payasam ₹500): amount = price × qty

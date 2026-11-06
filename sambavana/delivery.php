@@ -25,19 +25,19 @@ head('Product given');?>
 .dv .btn{flex:none;padding:10px 14px}
 </style>
 <div class="seg mb-2 noprint">
-<a class="<?=$tab==='no'?'on':''?>" href="delivery.php?id=<?=$fid?>&t=no"><b><?=$cnt['no']?></b>⏳ വാങ്ങിയില്ല</a>
-<a class="<?=$tab==='taken'?'on':''?>" href="delivery.php?id=<?=$fid?>&t=taken"><b><?=$cnt['taken']?></b>✔ വാങ്ങി</a>
+<a class="<?=$tab==='no'?'on':''?>" href="delivery.php?id=<?=$fid?>&t=no"><b><?=$cnt['no']?></b><i class="bi bi-hourglass-split" aria-hidden="true"></i> വാങ്ങിയില്ല</a>
+<a class="<?=$tab==='taken'?'on':''?>" href="delivery.php?id=<?=$fid?>&t=taken"><b><?=$cnt['taken']?></b><i class="bi bi-check2-circle" aria-hidden="true"></i> വാങ്ങി</a>
 </div>
 <p class="small text-muted mb-2 px-1">Qty — വാങ്ങിയില്ല <b><?=$qty['no']?></b> · വാങ്ങി <b><?=$qty['taken']?></b></p>
-<?php if($rows):?><input id="dq" class="form-control mb-2" type="search" placeholder="🔍 Search name or No. / തിരയുക" autocomplete="off"><?php endif;?>
+<?php if($rows):?><input id="dq" class="form-control mb-2" type="search" placeholder="Search name or No. / തിരയുക" aria-label="Search" autocomplete="off"><?php endif;?>
 <?php foreach($rows as $r):$bal=$r['amount']-$r['paid'];?>
 <div class="dv" data-s="<?=e(mb_strtolower($r['name']).' '.$r['serial_no'].' '.$r['mobile'])?>">
 <a class="flex-grow-1 min-w-0 text-decoration-none text-dark" href="contribution.php?id=<?=$r['id']?>"><b>#<?=$r['serial_no']?></b> <?=nm($r['name'],$bal)?><br>
 <span class="itm"><?=e(item_label($r))?></span> <?=bal_badge($bal)?><?php if($r['delivered_at']):?><br><small class="text-muted"><?=date('d M, g:i a',strtotime($r['delivered_at']))?></small><?php endif;?></a>
 <form method="post" class="noprint"><?=csrf_field()?><input type="hidden" name="id" value="<?=$fid?>"><input type="hidden" name="cid" value="<?=$r['id']?>"><input type="hidden" name="t" value="<?=$tab?>">
-<?php if($tab==='no'):?><button name="v" value="taken" class="btn btn-primary">✔ വാങ്ങി</button><?php else:?><button name="v" value="" class="btn btn-outline-secondary btn-sm">↩ Undo</button><?php endif;?>
+<?php if($tab==='no'):?><button name="v" value="taken" class="btn btn-primary"><i class="bi bi-check2-circle" aria-hidden="true"></i> വാങ്ങി</button><?php else:?><button name="v" value="" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Undo</button><?php endif;?>
 </form></div>
-<?php endforeach;if(!$rows)echo '<p class="text-muted text-center my-4">'.($tab==='no'?'Everyone has taken it 🎉':'Nothing here yet.').'</p>';?>
+<?php endforeach;if(!$rows)echo '<p class="text-muted text-center my-4">'.($tab==='no'?'Everyone has taken it':'Nothing here yet.').'</p>';?>
 <p id="none" class="text-muted text-center d-none">No match.</p>
 <script>
 var dq=document.getElementById('dq');if(dq)dq.oninput=function(){var v=dq.value.trim().toLowerCase(),n=0;document.querySelectorAll('.dv').forEach(function(el){var ok=!v||el.dataset.s.indexOf(v)>-1;el.style.display=ok?'':'none';if(ok)n++;});document.getElementById('none').classList.toggle('d-none',n>0);};

@@ -11,9 +11,12 @@ head('Sign up');?>
 <div class="text-center mb-3"><img src="assets/img/logo.png" style="max-width:220px;width:70%" alt=""></div>
 <div class="card p-3"><h5>Sign up / രജിസ്റ്റർ</h5>
 <form method="post"><?=csrf_field()?>
-<input class="form-control mb-2" name="name" placeholder="Name / പേര്" required>
-<input class="form-control mb-2" name="mobile" placeholder="Mobile (10 digits)" inputmode="numeric" maxlength="10" required>
-<input class="form-control mb-2" type="password" name="password" placeholder="Password (min 6)" required>
+<label class="small">Name / പേര്</label>
+<input class="form-control mb-2" name="name" autocomplete="name" required>
+<label class="small">Mobile (10 digits) / മൊബൈൽ</label>
+<input class="form-control mb-2" name="mobile" inputmode="numeric" maxlength="10" autocomplete="tel" required>
+<label class="small">Password (min 6) / പാസ്‌വേഡ്</label>
+<input class="form-control mb-3" type="password" name="password" autocomplete="new-password" required>
 <button class="btn btn-primary w-100">Sign up</button></form>
 <a class="d-block mt-3 text-center" href="index.php">Back to login</a></div>
 <?php foot();

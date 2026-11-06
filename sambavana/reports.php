@@ -67,10 +67,10 @@ $tabs=[1=>'Fund',2=>'Contributions',3=>'Members',4=>'Member cash',5=>'Handover']
 <?php if($r===4):?><form class="mb-2"><input type="hidden" name="id" value="<?=$fid?>"><input type="hidden" name="r" value="4">
 <select class="form-select" name="m" onchange="this.form.submit()"><?php foreach($mem as $m):?><option value="<?=$m['id']?>" <?=$m['id']==$msel?'selected':''?>><?=e($m['name'])?></option><?php endforeach;?></select></form><?php endif;?>
 <?php if($r===2):?><div class="btn-group btn-group-sm mb-2"><a class="btn btn-<?=$d?'primary':'outline-primary'?>" href="reports.php?id=<?=$fid?>&r=2&d=1&ds=<?=$ds?1:0?>">With paid &amp; balance</a><a class="btn btn-<?=!$d?'primary':'outline-primary'?>" href="reports.php?id=<?=$fid?>&r=2&d=0&ds=<?=$ds?1:0?>">Contribution only</a></div><?php endif;?>
-<?php if($r!==1):?><a class="form-check form-switch d-block mb-2 text-decoration-none text-dark" href="reports.php?<?=e(http_build_query(['id'=>$fid,'r'=>$r,'d'=>$d?1:0,'m'=>$msel,'ds'=>$ds?0:1]))?>"><input class="form-check-input" type="checkbox" <?=$ds?'checked':''?> tabindex="-1" style="pointer-events:none"> <span class="form-check-label">Add fund description / വിവരണം ചേർക്കുക</span></a><?php endif;?>
+<?php if($r!==1):?><a class="form-check form-switch d-block mb-2 text-decoration-none text-dark" href="reports.php?<?=e(http_build_query(['id'=>$fid,'r'=>$r,'d'=>$d?1:0,'m'=>$msel,'ds'=>$ds?0:1]))?>"><input class="form-check-input" type="checkbox" <?=$ds?'checked':''?> tabindex="-1" aria-hidden="true" style="pointer-events:none"> <span class="form-check-label">Add fund description / വിവരണം ചേർക്കുക</span></a><?php endif;?>
 <div class="mb-3 d-flex flex-wrap gap-1"><?=wa_share($txt)?>
-<button class="btn btn-outline-danger btn-sm" onclick="window.print()">📄 PDF</button>
-<a class="btn btn-outline-success btn-sm" href="reports.php?<?=e(http_build_query(['id'=>$fid,'r'=>$r,'d'=>$d?1:0,'m'=>$msel,'ds'=>$ds?1:0,'xls'=>1]))?>" download>📊 Excel</a></div></div>
+<button class="btn btn-outline-danger btn-sm" onclick="window.print()"><i class="bi bi-filetype-pdf" aria-hidden="true"></i> PDF</button>
+<a class="btn btn-outline-success btn-sm" href="reports.php?<?=e(http_build_query(['id'=>$fid,'r'=>$r,'d'=>$d?1:0,'m'=>$msel,'ds'=>$ds?1:0,'xls'=>1]))?>" download><i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Excel</a></div></div>
 <div class="card p-3"><h5><?=e($R['title'])?></h5>
 <?php foreach($R['lines'] as $l)echo '<div class="small">'.nl2br(e($l)).'</div>';?>
 <?php if($R['rows']):?><div class="table-responsive mt-2"><table class="table table-sm table-bordered mb-1"><thead class="table-light"><tr><?php foreach($R['head'] as $h)echo '<th>'.e($h).'</th>';?></tr></thead><tbody>

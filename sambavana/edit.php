@@ -32,6 +32,6 @@ head('Edit entry');?>
 <label class="small text-muted">Contribution ₹ (paid so far ₹<?=money($paid)?>)</label><input class="form-control mb-3" type="number" step="0.01" min="<?=max(1,$paid)?>" name="amount" value="<?=e($c['amount'])?>" required>
 <button class="btn btn-primary w-100">Save changes</button></form></div>
 <?php if($paid==0):?><form method="post" onsubmit="return confirm('Cancel this entry?')"><?=csrf_field()?><input type="hidden" name="id" value="<?=$c['id']?>"><input type="hidden" name="do" value="cancel">
-<button class="btn btn-outline-danger w-100">🗑 Cancel this entry</button></form>
+<button class="btn btn-outline-danger w-100"><i class="bi bi-trash3" aria-hidden="true"></i> Cancel this entry</button></form>
 <?php else:?><p class="small text-muted">Entries with payments cannot be cancelled; correct the name or amount instead.</p><?php endif;?>
 <?php foot();

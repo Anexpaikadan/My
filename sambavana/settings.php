@@ -29,13 +29,14 @@ if($f['show_target']&&$f['target_amount']>0)$share.="\nTarget: ₹".money($f['ta
 </form><small class="text-muted mt-2">The whole fund screen uses this colour.</small></div>
 <div class="card p-3 mb-3"><b class="mb-2"><i class="bi bi-sliders"></i> Options / ക്രമീകരണം</b>
 <form method="post"><?=csrf_field()?><input type="hidden" name="id" value="<?=$fid?>"><input type="hidden" name="do" value="settings">
-<label class="small text-muted">🎯 Target amount ₹ (leave 0 for none)</label>
+<label class="small text-muted"><i class="bi bi-bullseye" aria-hidden="true"></i> Target amount ₹ (leave 0 for none)</label>
 <input class="form-control mb-2" type="number" step="0.01" min="0" name="target" value="<?=e($f['target_amount']?(float)$f['target_amount']:0)?>">
 <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" name="show_target" id="s1" <?=$f['show_target']?'checked':''?>><label class="form-check-label" for="s1">Show target progress (creator only)</label></div>
 <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" name="reminders" id="s2" <?=$f['reminders']?'checked':''?>><label class="form-check-label" for="s2">Balance reminders (Pending button for all)</label></div>
 <button class="btn btn-primary w-100">Save</button></form></div>
 <div class="card p-3 mb-3"><b class="mb-2"><i class="bi bi-pencil-square"></i> Fund details</b>
 <form method="post"><?=csrf_field()?><input type="hidden" name="id" value="<?=$fid?>"><input type="hidden" name="do" value="details">
+<label class="small">Fund title / പേര്</label>
 <input class="form-control mb-2" name="title" value="<?=e($f['title'])?>" maxlength="200" required>
 <textarea class="form-control mb-2" name="description" rows="3" placeholder="Description / വിവരണം"><?=e($f['description'])?></textarea>
 <textarea class="form-control mb-2" name="creator_details" rows="2" placeholder="Creator details (name, phone, place)"><?=e($f['creator_details'])?></textarea>
@@ -46,5 +47,5 @@ if($f['show_target']&&$f['target_amount']>0)$share.="\nTarget: ₹".money($f['ta
 <a class="btn btn-outline-primary" href="import.php?id=<?=$fid?>"><i class="bi bi-file-earmark-excel"></i> Import entries from Excel</a>
 <a class="btn btn-outline-primary" href="collectors.php?id=<?=$fid?>"><i class="bi bi-people"></i> Collectors</a></div>
 <form method="post" onsubmit="return confirm('<?=$f['status']==='open'?'Close fund? Entries will be locked.':'Reopen fund?'?>')"><?=csrf_field()?><input type="hidden" name="id" value="<?=$fid?>">
-<button name="do" value="<?=$f['status']==='open'?'close':'reopen'?>" class="btn btn-outline-<?=$f['status']==='open'?'danger':'success'?> w-100"><?=$f['status']==='open'?'🔒 Close fund':'🔓 Reopen fund'?></button></form>
+<button name="do" value="<?=$f['status']==='open'?'close':'reopen'?>" class="btn btn-outline-<?=$f['status']==='open'?'danger':'success'?> w-100"><?=$f['status']==='open'?'<i class="bi bi-lock" aria-hidden="true"></i> Close fund':'<i class="bi bi-unlock" aria-hidden="true"></i> Reopen fund'?></button></form>
 <?php foot();

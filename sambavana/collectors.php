@@ -29,10 +29,14 @@ head('Collectors');?>
 <div class="alert alert-info">Share now — password cannot be shown again.<br><b><?=e($new[1])?></b> / <b><?=e($new[2])?></b><br>
 <a class="btn btn-sm btn-success mt-2" target="_blank" href="<?=e(wa($m))?>">Share on WhatsApp</a></div><?php endif;?>
 <div class="card p-3 mb-3"><form method="post"><?=csrf_field()?>
-<input class="form-control mb-2" name="name" placeholder="Collector name" required>
-<input class="form-control mb-2" name="short" placeholder="Short name (e.g. JP)" maxlength="10" required>
-<input class="form-control mb-2" name="username" placeholder="Username" required>
-<input class="form-control mb-2" name="password" placeholder="Password" required>
+<label class="small">Collector name</label>
+<input class="form-control mb-2" name="name" required>
+<label class="small">Short name (e.g. JP)</label>
+<input class="form-control mb-2" name="short" maxlength="10" required>
+<label class="small">Login username</label>
+<input class="form-control mb-2" name="username" required>
+<label class="small">Password</label>
+<input class="form-control mb-2" name="password" required>
 <button class="btn btn-primary w-100">Add Collector</button></form></div>
 <?php foreach($cols as $c):$act=$c['status']==='approved';?><div class="card p-2 mb-2"><div class="d-flex justify-content-between"><span><b><?=e($c['name'])?></b> <small class="text-muted">(<?=e(sn($c['name'],$c['short_name']))?>) · <?=e($c['username'])?></small></span><span class="badge bg-<?=$act?'success':'dark'?>"><?=$act?'active':'blocked'?></span></div>
 <form method="post" class="d-flex gap-1 mt-2 flex-wrap"><?=csrf_field()?><input type="hidden" name="uid" value="<?=$c['id']?>">

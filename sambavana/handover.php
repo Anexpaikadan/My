@@ -28,18 +28,21 @@ head('Transfer');?>
 <?php if($role==='collector'):$cash=$cashOf($u['id']);$pn=$pendOf($u['id']);?>
 <div class="card p-3 mb-3"><div>Cash on hand: <b>₹<?=money($cash)?></b></div><div class="small text-muted">Pending approval: ₹<?=money($pn)?></div>
 <form method="post" class="mt-2"><?=csrf_field()?><input type="hidden" name="do" value="request">
-<input class="form-control mb-2" type="number" step="0.01" min="1" name="amount" placeholder="Amount to transfer to creator ₹" required>
+<label class="small">Amount to transfer to creator ₹</label>
+<input class="form-control mb-2" type="number" step="0.01" min="1" name="amount" inputmode="decimal" required>
 <button class="btn btn-primary w-100">Send for creator approval</button></form></div>
 <?php else:?>
 <?php foreach($hist as $r)if($r['status']==='pending'):?>
 <div class="card p-2 mb-2 border border-warning"><div><b><?=e($r['name'])?></b> → Creator · <b>₹<?=money($r['amount'])?></b></div><small class="text-muted"><?=e($r['created_at'])?></small>
 <form method="post" class="d-flex gap-1 mt-1"><?=csrf_field()?><input type="hidden" name="hid" value="<?=$r['id']?>">
-<button name="do" value="approve" class="btn btn-sm btn-success">✔ Approve</button><button name="do" value="reject" class="btn btn-sm btn-outline-danger">✖ Reject</button></form></div>
+<button name="do" value="approve" class="btn btn-sm btn-success"><i class="bi bi-check-lg" aria-hidden="true"></i> Approve</button><button name="do" value="reject" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-lg" aria-hidden="true"></i> Reject</button></form></div>
 <?php endif;?>
 <?php foreach($cols as $m):?><div class="card p-2 mb-1 small"><b><?=e($m['name'])?></b> (<?=e($m['short'])?>) · Received ₹<?=money($m['received'])?> · Transferred ₹<?=money($m['handed'])?> · <b>On hand ₹<?=money($m['cash'])?></b></div><?php endforeach;?>
 <?php if($cols):?><div class="card p-3 my-3"><b class="small mb-2">Record a transfer directly</b><form method="post"><?=csrf_field()?><input type="hidden" name="do" value="direct">
+<label class="small">Collector</label>
 <select class="form-select mb-2" name="collector"><?php foreach($cols as $m):?><option value="<?=$m['id']?>"><?=e($m['name'])?> (on hand ₹<?=money($m['cash'])?>)</option><?php endforeach;?></select>
-<input class="form-control mb-2" type="number" step="0.01" min="1" name="amount" placeholder="Amount ₹" required>
+<label class="small">Amount ₹</label>
+<input class="form-control mb-2" type="number" step="0.01" min="1" name="amount" inputmode="decimal" required>
 <button class="btn btn-primary w-100">Record</button></form></div><?php else:echo '<p class="text-muted">Add collectors first.</p>';endif;?>
 <?php endif;?>
 <h6 class="mt-3">History</h6>

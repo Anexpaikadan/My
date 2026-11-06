@@ -1,6 +1,6 @@
 <?php
 // Shared setup for every page: session, database, helpers, page header/footer. Pages: require __DIR__.'/inc/config.php';
-const V='10'; // bump to make phones reload css/js/manifest
+const V='14'; // bump to make phones reload css/js/manifest
 session_set_cookie_params(['httponly'=>true,'samesite'=>'Lax','secure'=>(!empty($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=='off')]);
 session_start();
 require __DIR__.'/db_config.php';
@@ -17,7 +17,7 @@ if(($_SESSION['schema']??0)<SCHEMA){
   if(!$has('funds','color')){
    $pdo->exec('ALTER TABLE funds ADD color VARCHAR(7) NULL');
    // existing funds: each creator's funds get red, green, blue, ... in order
-   $n=[];$cols=['#d32f2f','#2e7d32','#1565c0','#6a1b9a','#ef6c00','#00838f','#ad1457','#3513d6'];$up=$pdo->prepare('UPDATE funds SET color=? WHERE id=?');
+   $n=[];$cols=['#d32f2f','#2e7d32','#1565c0','#6a1b9a','#bf5000','#00727d','#ad1457','#3513d6'];$up=$pdo->prepare('UPDATE funds SET color=? WHERE id=?');
    foreach($pdo->query('SELECT id,creator_id FROM funds ORDER BY creator_id,id') as $r){$i=$n[$r['creator_id']]=($n[$r['creator_id']]??-1)+1;$up->execute([$cols[$i%8],$r['id']]);}
   }
   $_SESSION['schema']=SCHEMA;unset($_SESSION['schema_err']);
@@ -90,8 +90,8 @@ function item_label($c){return !empty($c['item_name'])?$c['item_name'].' × '.(i
 // Contributor name colour: red while balance is due, dark green when fully paid
 function nm($name,$bal){return '<span class="'.($bal>0?'nm-due':'nm-paid').'">'.e($name).'</span>';}
 // Product entries: has the contributor taken (വാങ്ങി) the product? (any value in `delivery` = taken)
-function dl_badge($c){if(empty($c['item_id']))return '';return !empty($c['delivery'])?'<span class="dl dl-taken">✔ വാങ്ങി</span>':'<span class="dl dl-no">⏳ വാങ്ങിയില്ല</span>';}
-function bal_badge($b){return $b<=0?'<span class="ok">✔ Paid</span>':'<span class="bal">Bal ₹'.money($b).'</span>';}
+function dl_badge($c){if(empty($c['item_id']))return '';return !empty($c['delivery'])?'<span class="dl dl-taken"><i class="bi bi-check2-circle" aria-hidden="true"></i> വാങ്ങി</span>':'<span class="dl dl-no"><i class="bi bi-hourglass-split" aria-hidden="true"></i> വാങ്ങിയില്ല</span>';}
+function bal_badge($b){return $b<=0?'<span class="ok"><i class="bi bi-check2-circle" aria-hidden="true"></i> Paid</span>':'<span class="bal">Bal ₹'.money($b).'</span>';}
 const ITEM_JOIN=' LEFT JOIN fund_items fi ON fi.id=c.item_id ';
 
 // ---- Excel (.xlsx) and CSV, without extra libraries ----
@@ -202,13 +202,15 @@ function del_sheet($action,$do){
 $GLOBALS['NAV']=null;
 // ---- Colours: every fund has its own theme colour; the whole screen follows it inside a fund ----
 const APP_COLOR='#3513d6';
-const FUND_COLORS=['#d32f2f'=>'Red','#2e7d32'=>'Green','#1565c0'=>'Blue','#6a1b9a'=>'Purple','#ef6c00'=>'Orange','#00838f'=>'Teal','#ad1457'=>'Pink','#3513d6'=>'Indigo'];
+// all darker than 4.5:1 against white text (WCAG AA)
+const FUND_COLORS=['#d32f2f'=>'Red','#2e7d32'=>'Green','#1565c0'=>'Blue','#6a1b9a'=>'Purple','#bf5000'=>'Orange','#00727d'=>'Teal','#ad1457'=>'Pink','#3513d6'=>'Indigo'];
+const OLD_COLORS=['#ef6c00'=>'#bf5000','#00838f'=>'#00727d'];
 // mix a colour toward black (p<0) or white (p>0)
 function mix($hex,$p){[$r,$g,$b]=sscanf($hex,'#%02x%02x%02x');$t=$p<0?0:255;$p=abs($p);return sprintf('#%02x%02x%02x',round($r+($t-$r)*$p),round($g+($t-$g)*$p),round($b+($t-$b)*$p));}
-function theme_vars($c){[$r,$g,$b]=sscanf($c,'#%02x%02x%02x');return "--p:$c;--pd:".mix($c,-.22).";--p2:".mix($c,.25).";--pl:".mix($c,.88).";--pl2:".mix($c,.95).";--prgb:$r,$g,$b";}
-function fund_color($f){$c=strtolower((string)($f['color']??''));if(isset(FUND_COLORS[$c]))return $c;$k=array_keys(FUND_COLORS);return $k[(int)$f['id']%count($k)];}
+function theme_vars($c){[$r,$g,$b]=sscanf($c,'#%02x%02x%02x');return "--p:$c;--pd:".mix($c,-.22).";--p2:".mix($c,-.12).";--pl:".mix($c,.88).";--pl2:".mix($c,.95).";--prgb:$r,$g,$b";}
+function fund_color($f){$c=strtolower((string)($f['color']??''));$c=OLD_COLORS[$c]??$c;if(isset(FUND_COLORS[$c]))return $c;$k=array_keys(FUND_COLORS);return $k[(int)$f['id']%count($k)];}
 // New fund: the first colour this user is not using yet (first fund red, second green, ...)
-function next_color($uid){global $pdo;$s=$pdo->prepare('SELECT color FROM funds WHERE creator_id=?');$s->execute([$uid]);$used=array_map('strtolower',array_filter($s->fetchAll(PDO::FETCH_COLUMN)));
+function next_color($uid){global $pdo;$s=$pdo->prepare('SELECT color FROM funds WHERE creator_id=?');$s->execute([$uid]);$used=array_map(fn($c)=>OLD_COLORS[strtolower($c)]??strtolower($c),array_filter($s->fetchAll(PDO::FETCH_COLUMN)));
  foreach(array_keys(FUND_COLORS) as $c)if(!in_array($c,$used,true))return $c;$k=array_keys(FUND_COLORS);return $k[count($used)%count($k)];}
 function nav($f,$role,$active){
  global $pdo;$id=$f['id'];$GLOBALS['THEME']=fund_color($f);
@@ -216,9 +218,9 @@ function nav($f,$role,$active){
  if(($_COOKIE['lastfund']??'')!=(string)$id&&!headers_sent())setcookie('lastfund',(string)$id,['expires'=>time()+31536000,'path'=>'/','samesite'=>'Lax','httponly'=>true]);
  $items=[['home','bi-house-door','Home',"fund.php?id=$id"],['entry','bi-plus-square','Entry',"entry.php?id=$id"]];
  if($f['status']==='open')$items[]=['pay','bi-cash-coin','Pay',"pay.php?id=$id"];
- if($role==='creator'){$items[]=['reports','bi-bar-chart-line','Reports',"reports.php?id=$id"];$items[]=['transfer','bi-arrow-left-right','Transfer',"handover.php?id=$id"];}
- else{$items[]=['reports','bi-share','Share',"reports.php?id=$id"];$items[]=['transfer','bi-arrow-left-right','Transfer',"handover.php?id=$id"];}
- if(!empty($f['reminders']))$items[]=['remind','bi-bell','Pending',"remind.php?id=$id"];
+ $items[]=$role==='creator'?['reports','bi-bar-chart-line','Reports',"reports.php?id=$id"]:['reports','bi-share','Share',"reports.php?id=$id"];
+ // at most 5 tabs: Pending when reminders are on, else Transfer (both are also buttons on the fund screen)
+ $items[]=!empty($f['reminders'])?['remind','bi-bell','Pending',"remind.php?id=$id"]:['transfer','bi-arrow-left-right','Transfer',"handover.php?id=$id"];
  // back arrow: fund home -> all funds (creator only); every other fund page -> fund home
  $GLOBALS['BACK']=basename($_SERVER['SCRIPT_NAME'])==='fund.php'?($role==='creator'?'dashboard.php':null):"fund.php?id=$id";
  $b=0;
@@ -245,10 +247,10 @@ function head($title){
  // app bar: back arrow + page title on inner pages, logo on the main screens
  $back=$GLOBALS['BACK'];
  if($back===false)$back=in_array(basename($_SERVER['SCRIPT_NAME']),['dashboard.php','admin.php','admin_funds.php','account.php','index.php'],true)?null:($u?($u['role']==='admin'?'admin.php':'dashboard.php'):'index.php');
- if($back)echo '<a class="ib" href="'.e($back).'" aria-label="Back"><i class="bi bi-arrow-left"></i></a><div class="ttl">'.e($title).'</div>';
+ if($back)echo '<a class="ib" href="'.e($back).'" aria-label="Back"><i class="bi bi-arrow-left" aria-hidden="true"></i></a><div class="ttl">'.e($title).'</div>';
  else echo '<a class="d-flex align-items-center gap-2 text-decoration-none flex-grow-1" href="dashboard.php"><img src="assets/img/logo.png" height="32" alt=""><b style="color:var(--p);font-size:16px">സംഭാവന</b></a>';
- echo '<button id="inst" type="button" class="btn btn-sm btn-primary d-none">📲 Install</button>';
- if($u)echo '<a class="av" href="account.php" title="'.e($u['name']).'">'.e(sn($u['name'],null)).'</a>';
+ echo '<button id="inst" type="button" class="btn btn-sm btn-primary d-none"><i class="bi bi-download" aria-hidden="true"></i> Install</button>';
+ if($u)echo '<a class="av" href="account.php" title="'.e($u['name']).'" aria-label="My account: '.e($u['name']).'">'.e(sn($u['name'],null)).'</a>';
  echo '</div></header><div class="container py-3 page" style="max-width:820px">';
  if($fl)echo '<div class="alert alert-'.$fl[1].' noprint">'.e($fl[0]).'</div>';
  // Malayalam turns into ????? when the tables are latin1 (shared hosting default). Checked once per login.
@@ -261,7 +263,7 @@ function head($title){
 function foot(){
  echo '</div>';
  if($n=$GLOBALS['NAV']){echo '<nav class="bnav noprint">';
-  foreach($n[0] as $i){echo '<a class="'.($i[0]===$n[1]?'on':'').'" href="'.$i[3].'"><span><i class="bi '.$i[1].'"></i></span>'.$i[2].($i[0]==='transfer'&&$n[2]?'<b class="bdg">'.$n[2].'</b>':'').'</a>';}
+  foreach($n[0] as $i){echo '<a class="'.($i[0]===$n[1]?'on':'').'" href="'.$i[3].'"'.($i[0]===$n[1]?' aria-current="page"':'').'><span><i class="bi '.$i[1].'" aria-hidden="true"></i></span>'.$i[2].($i[0]==='transfer'&&$n[2]?'<b class="bdg">'.$n[2].'</b>':'').'</a>';}
   echo '</nav>';}
  echo '<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script><script src="assets/js/app.js?v='.V.'"></script></body></html>';
 }

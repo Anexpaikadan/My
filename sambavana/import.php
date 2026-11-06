@@ -9,7 +9,7 @@ if(isset($_GET['template'])){
  $rows[]=['Mary Joseph','9847000000',1000,500,'',''];
  xlsx_send('Import template - '.$f['title'],$rows);
 }
-if($f['status']==='closed'){head('Import');echo '<div class="alert alert-secondary">🔒 This fund is closed. Reopen it in Settings to import entries.</div>';foot();exit;}
+if($f['status']==='closed'){head('Import');echo '<div class="alert alert-secondary"><i class="bi bi-lock-fill" aria-hidden="true"></i> This fund is closed. Reopen it in Settings to import entries.</div>';foot();exit;}
 $num=fn($v)=>trim(str_replace([',','₹','Rs.','Rs',' '],'',(string)$v));
 // Which column is which: header names in English or Malayalam; no header row = default order
 function import_cols($row){
@@ -76,7 +76,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){csrf_check();$do=$_POST['do']??'';
  redirect("import.php?id=$fid");
 }
 head('Import from Excel');?>
-<h5 class="mt-2">📥 Import from Excel / എക്സൽ വഴി ചേർക്കുക</h5>
+<h5 class="mt-2"><i class="bi bi-file-earmark-arrow-up" aria-hidden="true"></i> Import from Excel / എക്സൽ വഴി ചേർക്കുക</h5>
 <?php if(!$prev):?>
 <div class="card p-3 mb-3"><ol class="small mb-2 ps-3">
 <li>Download the template, fill one contributor per row. / ടെംപ്ലേറ്റ് ഡൗൺലോഡ് ചെയ്ത് ഓരോ വരിയിലും ഒരാളെ ചേർക്കുക.</li>
@@ -85,21 +85,21 @@ head('Import from Excel');?>
 <a class="btn btn-outline-success mb-3" href="import.php?id=<?=$fid?>&template=1" download>⬇ Download Excel template</a>
 <form method="post" enctype="multipart/form-data"><?=csrf_field()?><input type="hidden" name="id" value="<?=$fid?>"><input type="hidden" name="do" value="upload">
 <label class="small fw-bold">Step 1: choose the Excel file / ഫയൽ തിരഞ്ഞെടുക്കുക</label>
-<input id="xf" class="form-control mb-2" type="file" name="file" accept=".xlsx,.csv" required>
+<input id="xf" class="form-control mb-2" aria-label="Excel file" type="file" name="file" accept=".xlsx,.csv" required>
 <button id="xb" class="btn btn-primary w-100">⬆ Upload &amp; check</button></form></div>
-<script>document.getElementById('xf').onchange=function(){if(this.files.length){var b=document.getElementById('xb');b.textContent='⏳ Checking…';b.disabled=true;this.form.submit();}};</script>
+<script>document.getElementById('xf').onchange=function(){if(this.files.length){var b=document.getElementById('xb');b.textContent='Checking…';b.disabled=true;this.form.submit();}};</script>
 <?php if($items):?><p class="small text-muted">Products in this fund: <?php foreach($items as $it)echo '<span class="itm">'.e($it['name']).' ₹'.money($it['price']).'</span> ';?></p><?php endif;?>
 <?php else:$ok=array_filter($prev['rows'],fn($r)=>!$r['err']);$bad=count($prev['rows'])-count($ok);$sum=array_sum(array_column($ok,'amount'));$paid=array_sum(array_column($ok,'paid'));?>
-<div class="alert alert-warning py-2 small mb-2"><b>Step 2: not saved yet.</b> Check the list below, then press <b>✔ Import</b>.<br>ഇതുവരെ സേവ് ആയിട്ടില്ല — ലിസ്റ്റ് നോക്കി <b>Import</b> അമർത്തുക.</div>
+<div class="alert alert-warning py-2 small mb-2"><b>Step 2: not saved yet.</b> Check the list below, then press <b>Import</b>.<br>ഇതുവരെ സേവ് ആയിട്ടില്ല — ലിസ്റ്റ് നോക്കി <b>Import</b> അമർത്തുക.</div>
 <div class="card p-3 mb-2"><div class="small text-muted"><?=e($prev['file'])?></div>
 <div><b class="text-success"><?=count($ok)?> ready</b><?php if($bad):?> · <b class="text-danger"><?=$bad?> with errors (skipped)</b><?php endif;?></div>
 <div class="small">Total ₹<?=money($sum)?> · Paid ₹<?=money($paid)?> · Balance ₹<?=money($sum-$paid)?></div>
 <div class="d-flex gap-2 mt-2">
-<?php if($ok):?><div class="flex-grow-1"><form method="post" onsubmit="this.querySelector('button').disabled=true"><?=csrf_field()?><input type="hidden" name="id" value="<?=$fid?>"><input type="hidden" name="do" value="confirm"><button class="btn btn-primary btn-lg w-100">✔ Import <?=count($ok)?> entries / ചേർക്കുക</button></form></div><?php endif;?>
+<?php if($ok):?><div class="flex-grow-1"><form method="post" onsubmit="this.querySelector('button').disabled=true"><?=csrf_field()?><input type="hidden" name="id" value="<?=$fid?>"><input type="hidden" name="do" value="confirm"><button class="btn btn-primary btn-lg w-100"><i class="bi bi-check2-circle" aria-hidden="true"></i> Import <?=count($ok)?> entries / ചേർക്കുക</button></form></div><?php endif;?>
 <form method="post"><?=csrf_field()?><input type="hidden" name="id" value="<?=$fid?>"><button name="do" value="clear" class="btn btn-outline-secondary">Cancel</button></form></div></div>
 <div class="table-responsive"><table class="table table-sm table-bordered small bg-white"><thead class="table-light"><tr><th>Row</th><th>Name</th><th>Mobile</th><th>Item</th><th class="text-end">Amount</th><th class="text-end">Paid</th><th>Check</th></tr></thead><tbody>
-<?php foreach($prev['rows'] as $r):?><tr class="<?=$r['err']?'table-danger':($r['warn']?'table-warning':'')?>"><td><?=$r['line']?></td><td><?=e($r['name'])?></td><td><?=e($r['mobile'])?></td><td><?=$r['item']!==''?e($r['item'].' × '.$r['qty']):''?></td><td class="text-end"><?=money($r['amount'])?></td><td class="text-end"><?=money($r['paid'])?></td><td><?=$r['err']?'✖ '.e($r['err']):($r['warn']?'⚠ '.e($r['warn']):'✔')?></td></tr><?php endforeach;?>
+<?php foreach($prev['rows'] as $r):?><tr class="<?=$r['err']?'table-danger':($r['warn']?'table-warning':'')?>"><td><?=$r['line']?></td><td><?=e($r['name'])?></td><td><?=e($r['mobile'])?></td><td><?=$r['item']!==''?e($r['item'].' × '.$r['qty']):''?></td><td class="text-end"><?=money($r['amount'])?></td><td class="text-end"><?=money($r['paid'])?></td><td><?=$r['err']?'<i class="bi bi-x-circle" style="color:#c62828" aria-hidden="true"></i> '.e($r['err']):($r['warn']?'<i class="bi bi-exclamation-triangle" style="color:#a35b00" aria-hidden="true"></i> '.e($r['warn']):'<i class="bi bi-check2" style="color:#1e7b3c" aria-hidden="true"></i>')?></td></tr><?php endforeach;?>
 </tbody></table></div>
-<?php if($ok):?><div class="position-sticky noprint py-2" style="bottom:70px;z-index:40"><form method="post" onsubmit="this.querySelector('button').disabled=true"><?=csrf_field()?><input type="hidden" name="id" value="<?=$fid?>"><input type="hidden" name="do" value="confirm"><button class="btn btn-primary btn-lg w-100">✔ Import <?=count($ok)?> entries / ചേർക്കുക</button></form></div><?php endif;?>
+<?php if($ok):?><div class="position-sticky noprint py-2" style="bottom:70px;z-index:40"><form method="post" onsubmit="this.querySelector('button').disabled=true"><?=csrf_field()?><input type="hidden" name="id" value="<?=$fid?>"><input type="hidden" name="do" value="confirm"><button class="btn btn-primary btn-lg w-100"><i class="bi bi-check2-circle" aria-hidden="true"></i> Import <?=count($ok)?> entries / ചേർക്കുക</button></form></div><?php endif;?>
 <?php endif;
 foot();

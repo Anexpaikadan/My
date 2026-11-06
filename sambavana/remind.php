@@ -6,12 +6,12 @@ $s=$pdo->prepare('SELECT c.*,MAX(fi.name) item_name,COALESCE(SUM(p.amount),0) pa
 $s->execute([$fid]);$rows=$s->fetchAll();$tot=0;$list="*{$f['title']}* – Pending balances\n\n";
 foreach($rows as $r){$b=$r['amount']-$r['paid'];$tot+=$b;$list.="#{$r['serial_no']} {$r['name']} – ₹".money($b)."\n";}
 $list.="\nTotal pending: ₹".money($tot);?>
-<h5>🔔 Pending balances / ബാക്കി</h5>
+<h5><i class="bi bi-bell" aria-hidden="true"></i> Pending balances / ബാക്കി</h5>
 <?php if($rows):?><div class="d-flex justify-content-between align-items-center mb-2"><b class="text-danger">₹<?=money($tot)?> (<?=count($rows)?>)</b>
 <?=wa_share($list,'Share full list')?></div>
 <?php foreach($rows as $r):$b=$r['amount']-$r['paid'];
 $m="Hello {$r['name']}, a gentle reminder for *{$f['title']}*.\n".($r['item_name']?"Item: ".item_label($r)."\n":'')."Contribution: ₹".money($r['amount'])."\nPaid: ₹".money($r['paid'])."\nBalance: ₹".money($b)."\nKindly pay the balance. Thank you 🙏";?>
 <div class="card p-2 mb-1 d-flex flex-row justify-content-between align-items-center"><span><b>#<?=$r['serial_no']?></b> <?=nm($r['name'],$b)?><br><small class="text-muted"><?php if($r['item_name']):?><span class="itm"><?=e(item_label($r))?></span> <?php endif;?>Total ₹<?=money($r['amount'])?> · Paid ₹<?=money($r['paid'])?> · <?=$r['mobile']?e($r['mobile']):'no mobile'?></small></span>
 <span class="text-end"><b class="text-danger">₹<?=money($b)?></b><br><a class="btn btn-sm btn-success mt-1" target="_blank" href="<?=e(wa($m,$r['mobile']))?>">Remind</a></span></div>
-<?php endforeach;else:echo '<p class="text-muted">No pending balances 🎉</p>';endif;
+<?php endforeach;else:echo '<p class="text-muted">No pending balances</p>';endif;
 foot();

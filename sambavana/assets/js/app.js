@@ -43,3 +43,9 @@ document.addEventListener('click',function(e){
  if(navigator.share&&/android|iphone|ipad/i.test(navigator.userAgent)){navigator.share({text:t}).catch(function(){});return;}
  window.open(b.dataset.wa,'_blank');
 });
+
+// Accessibility: tie each visible label to the field right after it (screen readers read the label)
+document.querySelectorAll('label').forEach(function(l,i){if(l.htmlFor||l.querySelector('input,select,textarea'))return;
+ var f=l.nextElementSibling;if(f&&!/^(INPUT|SELECT|TEXTAREA)$/.test(f.tagName))f=f.querySelector('input:not([type=hidden]),select,textarea');
+ if(f&&/^(INPUT|SELECT|TEXTAREA)$/.test(f.tagName)){if(!f.id)f.id='fld'+i;l.htmlFor=f.id;}});
+document.querySelectorAll('input:not([type=hidden]),select,textarea').forEach(function(f){if(!(f.labels&&f.labels.length)&&!f.getAttribute('aria-label')&&f.placeholder)f.setAttribute('aria-label',f.placeholder);});

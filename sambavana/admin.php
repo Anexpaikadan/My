@@ -31,12 +31,12 @@ nav_main('users');head('Admin');?>
 <a class="btn btn-sm btn-success" target="_blank" href="<?=e(wa($m,$rl[1]))?>">Send on WhatsApp</a></div><?php endif;?>
 <?php foreach($rows as $r):?>
 <div class="card p-2 mb-2"><div class="d-flex justify-content-between"><div><b><?=e($r['name'])?></b><br><small><?=e($r['username'])?> · <?=e($r['created_at'])?> · <?=$r['nf']?> fund<?=$r['nf']==1?'':'s'?></small></div>
-<span class="text-end"><span class="badge bg-<?=['pending'=>'warning','approved'=>'success','blocked'=>'dark','rejected'=>'danger'][$r['status']]?>"><?=e($r['status'])?></span><?=$r['reset_requested']?'<br><span class="badge bg-info text-dark mt-1">🔑 reset requested</span>':''?></span></div>
+<span class="text-end"><span class="badge bg-<?=['pending'=>'warning','approved'=>'success','blocked'=>'dark','rejected'=>'danger'][$r['status']]?>"><?=e($r['status'])?></span><?=$r['reset_requested']?'<br><span class="badge bg-info text-dark mt-1"><i class="bi bi-key" aria-hidden="true"></i> reset requested</span>':''?></span></div>
 <form method="post" class="mt-2 d-flex gap-1 flex-wrap"><?=csrf_field()?><input type="hidden" name="id" value="<?=$r['id']?>">
 <?php if($r['status']!=='approved'):?><button name="do" value="approve" class="btn btn-sm btn-success">Approve</button><?php endif;?>
 <?php if($r['status']==='pending'):?><button name="do" value="reject" class="btn btn-sm btn-danger">Reject</button><?php endif;?>
 <?php if($r['status']==='approved'):?><button name="do" value="block" class="btn btn-sm btn-dark">Block</button><?php endif;?>
-<?php if($r['status']!=='rejected'):?><button name="do" value="link" class="btn btn-sm btn-outline-primary">🔑 Reset link</button><?php endif;?>
+<?php if($r['status']!=='rejected'):?><button name="do" value="link" class="btn btn-sm btn-outline-primary"><i class="bi bi-key" aria-hidden="true"></i> Reset link</button><?php endif;?>
 <button type="button" class="btn btn-sm btn-outline-danger ms-auto" data-del="<?=$r['id']?>" data-what="<?=e('User: '.$r['name'].' ('.$r['username'].')'.($r['nf']?' — and '.$r['nf'].' fund(s) with all entries and payments':'').'. This cannot be undone.')?>"><i class="bi bi-trash3"></i> Delete</button>
 </form></div>
 <?php endforeach; if(!$rows)echo '<p class="text-muted">No users yet.</p>';

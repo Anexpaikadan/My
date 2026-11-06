@@ -18,7 +18,7 @@ $s=$pdo->prepare('SELECT c.id,c.serial_no,c.name,c.mobile,c.amount,c.qty,MAX(fi.
 $s->execute([$fid]);$rows=$s->fetchAll();
 $sel=(int)($_GET['c']??0);
 head('Add payment');
-if($f['status']!=='open'){echo '<div class="alert alert-secondary">🔒 This fund is closed. Payments are locked.</div>';foot();exit;}?>
+if($f['status']!=='open'){echo '<div class="alert alert-secondary"><i class="bi bi-lock-fill" aria-hidden="true"></i> This fund is closed. Payments are locked.</div>';foot();exit;}?>
 <style>
 .pick{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border-radius:14px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,.07);cursor:pointer;border:2px solid transparent}
 .pick:active{transform:scale(.98)}
@@ -32,9 +32,9 @@ if($f['status']!=='open'){echo '<div class="alert alert-secondary">🔒 This fun
 .calc.bad{background:#fdecee;color:#b02a37}
 </style>
 <div class="position-sticky pt-1 pb-2" style="top:59px;z-index:20;background:var(--bg)">
-<input id="sq" class="form-control form-control-lg" type="search" placeholder="🔍 Search name, No. or mobile / തിരയുക" autocomplete="off" enterkeyhint="search">
+<input id="sq" class="form-control form-control-lg" type="search" placeholder="Search name, No. or mobile / തിരയുക" aria-label="Search contributors" autocomplete="off" enterkeyhint="search">
 <div class="d-flex justify-content-between align-items-center mt-1 small"><span class="text-muted"><span id="cnt"><?=count($rows)?></span> <?=$all?'contributors':'with balance'?></span>
-<a href="pay.php?id=<?=$fid?>&all=<?=$all?0:1?>"><?=$all?'Only with balance':'Show all'?></a></div></div>
+<a class="btn btn-sm btn-link px-1" href="pay.php?id=<?=$fid?>&all=<?=$all?0:1?>"><?=$all?'Only with balance':'Show all'?></a></div></div>
 <div id="list"><?php foreach($rows as $r):$b=$r['amount']-$r['paid'];?>
 <div class="pick" data-id="<?=$r['id']?>" data-s="<?=e(mb_strtolower($r['name']).' #'.$r['serial_no'].' '.$r['serial_no'].' '.$r['mobile'])?>" data-n="<?=e('#'.$r['serial_no'].' '.$r['name'])?>" data-i="<?=e(item_label($r))?>" data-t="<?=(float)$r['amount']?>" data-p="<?=(float)$r['paid']?>">
 <span class="no">#<?=$r['serial_no']?></span><span class="flex-grow-1 min-w-0"><b><?=nm($r['name'],$b)?></b><br><small class="text-muted"><?=$r['item_name']?'<span class="itm">'.e(item_label($r)).'</span> ':''?>₹<?=money($r['amount'])?> · Paid ₹<?=money($r['paid'])?></small></span><?=bal_badge($b)?></div>
@@ -61,7 +61,7 @@ window.addEventListener('load',function(){
  function calc(){var c=document.getElementById('calc'),x=parseFloat(a.value)||0;if(!cur||x<=0){c.classList.add('d-none');return;}
   var bal=cur.t-cur.p,np=cur.p+x;c.classList.remove('d-none');
   if(x>bal+0.001){c.className='calc bad';c.textContent='⚠ More than balance '+fmt(bal);}
-  else{c.className='calc';c.textContent='Paid '+fmt(cur.p)+' + '+fmt(x)+' = '+fmt(np)+' · '+(bal-x>0.001?'Balance after '+fmt(bal-x):'Fully paid ✅');}}
+  else{c.className='calc';c.textContent='Paid '+fmt(cur.p)+' + '+fmt(x)+' = '+fmt(np)+' · '+(bal-x>0.001?'Balance after '+fmt(bal-x):'Fully paid');}}
  function open(el){document.querySelectorAll('.pick.on').forEach(function(x){x.classList.remove('on');});el.classList.add('on');
   cur={t:parseFloat(el.dataset.t),p:parseFloat(el.dataset.p)};document.getElementById('cid').value=el.dataset.id;
   document.getElementById('pn').textContent=el.dataset.n;var pi=document.getElementById('pi');pi.textContent=el.dataset.i;pi.style.display=el.dataset.i?'':'none';

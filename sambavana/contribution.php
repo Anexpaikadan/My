@@ -53,8 +53,8 @@ head('#'.$c['serial_no'].' '.$c['name']);?>
 <?php if($c['item_id']):$d=$c['delivery'];?>
 <div class="card p-3 mb-3 noprint"><div class="d-flex justify-content-between align-items-center mb-2"><b><i class="bi bi-box-seam"></i> Product / ഉൽപ്പന്നം</b><?=dl_badge($c)?></div>
 <form method="post"><?=csrf_field()?><input type="hidden" name="id" value="<?=$cid?>"><input type="hidden" name="do" value="deliver">
-<?php if(!$d):?><button name="v" value="taken" class="btn btn-primary btn-lg w-100">✔ വാങ്ങി / Taken</button>
-<?php else:?><div class="d-flex align-items-center gap-2"><span class="flex-grow-1 small text-muted">Taken on <?=date('d M Y, g:i a',strtotime($c['delivered_at']))?></span><button name="v" value="" class="btn btn-sm btn-outline-secondary">↩ Undo</button></div><?php endif;?>
+<?php if(!$d):?><button name="v" value="taken" class="btn btn-primary btn-lg w-100"><i class="bi bi-check2-circle" aria-hidden="true"></i> വാങ്ങി / Taken</button>
+<?php else:?><div class="d-flex align-items-center gap-2"><span class="flex-grow-1 small text-muted">Taken on <?=date('d M Y, g:i a',strtotime($c['delivered_at']))?></span><button name="v" value="" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Undo</button></div><?php endif;?>
 </form></div>
 <?php endif;?>
 <div class="d-grid gap-2 mb-3 noprint">

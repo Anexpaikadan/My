@@ -11,8 +11,10 @@ head('Login');?>
 <div class="text-center mb-3"><img src="assets/img/logo.png" style="max-width:220px;width:70%" alt=""></div>
 <div class="card p-3"><h5>Login / ലോഗിൻ</h5>
 <form method="post"><?=csrf_field()?>
-<input class="form-control mb-2" name="username" placeholder="Mobile / Username" required>
-<input class="form-control mb-2" type="password" name="password" placeholder="Password / പാസ്‌വേഡ്" required>
+<label class="small">Mobile / Username</label>
+<input class="form-control form-control-lg mb-2" name="username" placeholder="10-digit mobile" autocomplete="username" required>
+<label class="small">Password / പാസ്‌വേഡ്</label>
+<input class="form-control form-control-lg mb-3" type="password" name="password" autocomplete="current-password" required>
 <button class="btn btn-primary w-100">Login</button></form>
 <a class="d-block mt-3 text-center small" href="forgot.php">Forgot password? / പാസ്‌വേഡ് മറന്നോ?</a>
 <a class="d-block mt-2 text-center" href="signup.php">New user? Sign up / രജിസ്റ്റർ ചെയ്യുക</a></div>

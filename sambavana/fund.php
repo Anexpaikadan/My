@@ -37,21 +37,21 @@ head($f['title']);?>
 .tiles{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
 .tile{grid-column:span 2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:96px;padding:10px 4px;border-radius:18px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.07);color:#222;text-decoration:none;text-align:center;font-size:13px;font-weight:600;line-height:1.25}
 .tile i{font-size:26px;color:var(--p);width:46px;height:46px;border-radius:14px;background:var(--pl);display:flex;align-items:center;justify-content:center}
-.tile small{font-weight:400;color:#777;font-size:11px}
+.tile small{font-weight:400;color:#5f6670;font-size:12px}
 .tile.main{grid-column:span 3;min-height:108px;background:var(--p);color:#fff;font-size:15px}
 .tile.main.pay{background:#fff;color:var(--pd);box-shadow:inset 0 0 0 2px var(--p)}
 .tile.main.pay i{background:var(--pl);color:var(--p)}.tile.main.pay small{color:var(--pd)}
 .tile.main i{background:#ffffff26;color:#fff}.tile.main small{color:#ffffffcc;font-size:12px}
 #search{scroll-margin-top:70px}
 </style>
-<?php if($pend):?><a href="handover.php?id=<?=$fid?>" class="alert alert-warning d-block py-2 text-decoration-none">💵 <?=$pend?> transfer request(s) waiting for your approval</a><?php endif;?>
-<?php if(!$open):?><div class="alert alert-secondary py-2">🔒 Fund closed — entries locked. Transfers and reports still work.</div><?php endif;?>
+<?php if($pend):?><a href="handover.php?id=<?=$fid?>" class="alert alert-warning d-block py-2 text-decoration-none"><i class="bi bi-cash-coin" aria-hidden="true"></i> <?=$pend?> transfer request(s) waiting for your approval</a><?php endif;?>
+<?php if(!$open):?><div class="alert alert-secondary py-2"><i class="bi bi-lock-fill" aria-hidden="true"></i> Fund closed — entries locked. Transfers and reports still work.</div><?php endif;?>
 <?php $pa=$t>0?(int)min(100,round($p/$t*100)):0;?><div class="hero mb-3">
 <small>Total contribution / ആകെ സംഭാവന</small><div class="big">₹<?=money($t)?></div>
 <div class="progress mt-2"><div class="progress-bar" style="width:<?=$pa?>%"></div></div>
 <div class="row2"><div><small>Paid / ലഭിച്ചത്</small><b>₹<?=money($p)?></b></div><div><small>Balance / ബാക്കി</small><b>₹<?=money($b)?></b></div></div></div>
 <?php if($role==='creator'&&$f['show_target']&&$f['target_amount']>0):$pc=(int)min(100,round($p/$f['target_amount']*100));?>
-<div class="card p-2 mb-3"><div class="d-flex justify-content-between small"><span>🎯 Target ₹<?=money($f['target_amount'])?></span><b><?=$pc?>%</b></div>
+<div class="card p-2 mb-3"><div class="d-flex justify-content-between small"><span><i class="bi bi-bullseye" aria-hidden="true"></i> Target ₹<?=money($f['target_amount'])?></span><b><?=$pc?>%</b></div>
 <div class="progress" style="height:10px"><div class="progress-bar bg-success" style="width:<?=$pc?>%"></div></div>
 <div class="small text-muted mt-1">To go ₹<?=money(max(0,$f['target_amount']-$p))?></div></div>
 <?php endif;?>
@@ -59,9 +59,9 @@ head($f['title']);?>
 <?php foreach($opt as $o):?><a class="tile <?=$o[4]!=='js'?$o[4]:''?>" href="<?=$o[3]?>"<?=$o[4]==='js'?' data-search':''?>><i class="bi <?=$o[0]?>"></i><span><?=$o[1]?><br><small><?=$o[2]?></small></span></a><?php endforeach;?>
 </div>
 <div id="search" class="card p-2 mb-2"><form class="noprint"><input type="hidden" name="id" value="<?=$fid?>">
-<div class="d-flex gap-1"><input id="sq" class="form-control form-control-lg flex-grow-1" style="min-width:0" name="q" value="<?=e($q)?>" type="search" placeholder="🔍 Search / തിരയുക" enterkeyhint="search">
+<div class="d-flex gap-1"><input id="sq" class="form-control form-control-lg flex-grow-1" style="min-width:0" name="q" value="<?=e($q)?>" type="search" placeholder="Search / തിരയുക" aria-label="Search contributors" enterkeyhint="search">
 <button class="btn btn-primary px-3" aria-label="Search"><i class="bi bi-search"></i></button></div>
-<?php if($items):?><div class="d-flex gap-1 mt-1"><select class="form-select" name="item" onchange="this.form.submit()"><option value="0">All</option><?php foreach($items as $x):?><option value="<?=$x['id']?>" <?=$it==$x['id']?'selected':''?>><?=e($x['name'])?></option><?php endforeach;?></select><select class="form-select" name="dv" onchange="this.form.submit()"><option value="">വാങ്ങി?</option><?php foreach(['no'=>'⏳ വാങ്ങിയില്ല','taken'=>'✔ വാങ്ങി'] as $k=>$v):?><option value="<?=$k?>" <?=$dv===$k?'selected':''?>><?=$v?></option><?php endforeach;?></select></div><?php endif;?></form>
+<?php if($items):?><div class="d-flex gap-1 mt-1"><select class="form-select" name="item" aria-label="Product" onchange="this.form.submit()"><option value="0">All</option><?php foreach($items as $x):?><option value="<?=$x['id']?>" <?=$it==$x['id']?'selected':''?>><?=e($x['name'])?></option><?php endforeach;?></select><select class="form-select" name="dv" aria-label="Product taken" onchange="this.form.submit()"><option value="">വാങ്ങി?</option><?php foreach(['no'=>'വാങ്ങിയില്ല','taken'=>'വാങ്ങി'] as $k=>$v):?><option value="<?=$k?>" <?=$dv===$k?'selected':''?>><?=$v?></option><?php endforeach;?></select></div><?php endif;?></form>
 <small class="text-muted px-1 pt-1"><?=count($rows)?> contributor<?=count($rows)==1?'':'s'?><?=$q!==''||$it||$dv?' found · <a href="fund.php?id='.$fid.'#search">show all</a>':''?> · tap a name to open it and add payment</small></div>
 <?php foreach($rows as $r):$bal=$r['amount']-$r['paid'];?>
 <a href="contribution.php?id=<?=$r['id']?>" class="card p-2 mb-1 text-decoration-none text-dark">

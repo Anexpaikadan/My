@@ -24,7 +24,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){csrf_check();
  redirect('account.php');
 }
 nav_main('account');head('My account');?>
-<h5 class="mt-2">👤 My account / എന്റെ അക്കൗണ്ട്</h5>
+<h5 class="mt-2"><i class="bi bi-person-circle" aria-hidden="true"></i> My account / എന്റെ അക്കൗണ്ട്</h5>
 <div class="card p-3"><form method="post" autocomplete="off"><?=csrf_field()?>
 <label class="small text-muted">Name / പേര്</label>
 <input class="form-control mb-2" name="name" value="<?=e($u['name'])?>" maxlength="100" required>
@@ -41,8 +41,11 @@ nav_main('account');head('My account');?>
 <div class="card mb-3"><?php foreach($fs as $x):?><a class="d-flex justify-content-between align-items-center p-2 px-3 border-bottom text-decoration-none text-dark" href="fund.php?id=<?=$x['id']?>"><span><span class="d-inline-block rounded-circle me-2 align-middle" style="width:12px;height:12px;background:<?=fund_color($x)?>"></span><?=e($x['title'])?> <?=$x['status']==='closed'?'<span class="badge bg-secondary">closed</span>':''?></span><i class="bi bi-chevron-right text-muted"></i></a><?php endforeach;if(!$fs)echo '<p class="text-muted p-3 mb-0">No funds yet.</p>';?></div>
 <div id="new" class="card p-3" style="scroll-margin-top:70px"><b class="mb-2"><i class="bi bi-plus-circle"></i> Create new fund / പുതിയ ഫണ്ട്</b>
 <form method="post"><?=csrf_field()?><input type="hidden" name="do" value="newfund">
-<input id="nft" class="form-control form-control-lg mb-2" name="title" placeholder="Fund title / ഫണ്ടിന്റെ പേര്" maxlength="200" required>
+<label class="small">Fund title / ഫണ്ടിന്റെ പേര്</label>
+<input id="nft" class="form-control form-control-lg mb-2" name="title" placeholder="e.g. പായസം ചലഞ്ച്" maxlength="200" required>
+<label class="small">Type / തരം</label>
 <select class="form-select mb-2" name="type"><option value="charity">Charity / ചാരിറ്റി</option><option value="festival">Festival / ഉത്സവം</option><option value="other">Other</option></select>
+<label class="small">Start date / തുടങ്ങുന്ന തീയതി</label>
 <input class="form-control mb-2" type="date" name="start_date" value="<?=date('Y-m-d')?>">
 <textarea class="form-control mb-2" name="description" rows="3" placeholder="Description / വിവരണം"></textarea>
 <textarea class="form-control mb-2" name="creator_details" rows="2" placeholder="Creator details (name, phone, place)"></textarea>

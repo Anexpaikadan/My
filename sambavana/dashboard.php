@@ -27,7 +27,7 @@ nav_main('home');head('Home');?>
 .fund .progress{height:7px;background:#ffffff40}.fund .progress-bar{background:#fff}
 .chip{font-size:.75rem;border-radius:20px;padding:1px 9px;background:#ffffff2e;color:#fff;font-weight:600}
 .acts{display:flex;border-top:1px solid #eef0f3}
-.acts a{flex:1;text-align:center;padding:8px 2px;font-size:11px;color:#555;text-decoration:none}
+.acts a{flex:1;text-align:center;padding:10px 2px;font-size:12px;color:#4b5059;min-height:56px;text-decoration:none}
 .acts a i{display:block;font-size:19px;color:var(--p)}
 .acts a:active{background:var(--pl2)}
 .rec{display:flex;align-items:center;gap:10px;padding:10px 12px;color:#222;text-decoration:none;border-bottom:1px solid #eef0f3}
@@ -35,7 +35,7 @@ nav_main('home');head('Home');?>
 .rec .dot{width:36px;height:36px;border-radius:12px;background:var(--pl);color:var(--p);display:flex;align-items:center;justify-content:center;font-weight:700;flex:none;font-size:13px}
 </style>
 <div class="hero mb-3">
-<div class="k"><?=$hi?>, <?=e($u['name'])?> 👋</div>
+<div class="k"><?=$hi?>, <?=e($u['name'])?></div>
 <div class="k mt-2">Collected / ലഭിച്ചത്</div>
 <div class="big">₹<?=money($P)?></div>
 <div class="progress my-2"><div class="progress-bar" style="width:<?=$pc($P,$T)?>%"></div></div>
@@ -51,7 +51,7 @@ nav_main('home');head('Home');?>
 <div class="card fund mb-3" style="<?=theme_vars(fund_color($f))?>">
 <a class="top" href="fund.php?id=<?=$id?>">
 <div class="d-flex justify-content-between align-items-start gap-2"><b style="font-size:1.1rem"><?=e($f['title'])?></b><i class="bi bi-chevron-right"></i></div>
-<div class="d-flex gap-1 my-1 align-items-center"><span class="chip"><?=$f['status']==='closed'?'🔒 Closed':'● Open'?></span><small class="ms-auto"><?=$f['n']?> entries</small></div>
+<div class="d-flex gap-1 my-1 align-items-center"><span class="chip"><?=$f['status']==='closed'?'<i class="bi bi-lock-fill" aria-hidden="true"></i> Closed':'<i class="bi bi-circle-fill" style="font-size:.55em;vertical-align:middle" aria-hidden="true"></i> Open'?></span><small class="ms-auto"><?=$f['n']?> entries</small></div>
 <div class="progress my-2"><div class="progress-bar" style="width:<?=$pc($f['p'],$f['t'])?>%"></div></div>
 <div class="row g-0 text-center small"><div class="col-4"><small class="d-block">Total</small><b>₹<?=money($f['t'])?></b></div><div class="col-4"><small class="d-block">Paid</small><b>₹<?=money($f['p'])?></b></div><div class="col-4"><small class="d-block">Balance</small><b>₹<?=money($f['b'])?></b></div></div>
 </a>
@@ -61,8 +61,8 @@ nav_main('home');head('Home');?>
 <a href="remind.php?id=<?=$id?>"><i class="bi bi-bell"></i>Pending<?=$f['pend']?' ('.$f['pend'].')':''?></a>
 </div></div>
 <?php endforeach;if(!$funds):?>
-<div class="card p-4 text-center mb-3"><div style="font-size:42px">🪙</div><b>No funds yet</b><p class="small text-muted mb-2">Create your first fund, e.g. പായസം ചലഞ്ച്</p>
-<a class="btn btn-primary rounded-pill" href="account.php#new">＋ Create fund</a></div>
+<div class="card p-4 text-center mb-3"><div style="font-size:42px;color:var(--p)"><i class="bi bi-collection" aria-hidden="true"></i></div><b>No funds yet</b><p class="small text-muted mb-2">Create your first fund, e.g. പായസം ചലഞ്ച്</p>
+<a class="btn btn-primary rounded-pill" href="account.php#new"><i class="bi bi-plus-lg" aria-hidden="true"></i> Create fund</a></div>
 <?php endif;?>
 <?php if($recent):?><h6 class="fw-bold mb-2">Recent entries / പുതിയവ</h6>
 <div class="card mb-3"><?php foreach($recent as $x):?><a class="rec" href="contribution.php?id=<?=$x['id']?>"><span class="dot">#<?=$x['serial_no']?></span>
