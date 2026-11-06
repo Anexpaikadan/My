@@ -18,7 +18,7 @@ if($r===1){ // Fund report
   foreach($s as $c)$R['rows'][]=[(int)$c['serial_no'],$c['name'],(string)$c['mobile'],(float)$c['amount'],(float)$c['paid'],(string)$c['item_name'],$c['qty']?(int)$c['qty']:'',(float)($c['amount']-$c['paid']),sn($c['uname'],$c['short_name']),date('d-m-Y',strtotime($c['created_at'])),$c['item_id']?($c['delivery']?'Taken':'Not taken'):''];
  }else{
   $R['head']=array_merge(['Sl','Name'],$hasItems?['Item']:[],$d?['Amount','Status','By']:['Amount','By']);
-  foreach($s as $c){$b=$c['amount']-$c['paid'];$R['cls'][count($R['rows'])]=$b>0?'nm-due':'nm-paid';$R['rows'][]=array_merge([$c['serial_no'],$c['name']],$hasItems?[item_label($c)]:[],[money($c['amount'])],$d?[$b<=0?'Paid':'Bal '.money($b)]:[],[sn($c['uname'],$c['short_name'])]);}
+  foreach($s as $c){$b=$c['amount']-$c['paid'];$R['lvl'][count($R['rows'])]=pay_level($c['amount'],$b);$R['cls'][count($R['rows'])]='nm-'.pay_level($c['amount'],$b);$R['rows'][]=array_merge([$c['serial_no'],$c['name']],$hasItems?[item_label($c)]:[],[money($c['amount'])],$d?[$b<=0?'Paid':'Bal '.money($b).' · '.paid_pct($c['amount'],$b).'%']:[],[sn($c['uname'],$c['short_name'])]);}
  }
  [$t,$p,$b]=fund_totals($fid);$R['foot']=$d?["Total: ₹".money($t),"Paid: ₹".money($p),"Balance: ₹".money($b)]:["Total contribution: ₹".money($t)];
 }elseif($r===3){ // Member-wise
@@ -57,8 +57,9 @@ if($xls){ // Excel download of the report on screen; "1,234.00" becomes a number
 if($ds&&$r!==1){$top=[];if(trim((string)$f['description'])!=='')$top[]=trim($f['description']);$top[]='Creator: '.$cr['name'].($f['creator_details']?' · '.trim($f['creator_details']):'');$R['lines']=array_merge($top,$R['lines']);}
 // WhatsApp text
 $txt="*{$R['title']}*\n";foreach($R['lines'] as $l)$txt.="$l\n";
+if(!empty($R['lvl']))$txt.=PAY_LEGEND."\n";
 if($R['rows'])$txt.="\n".implode(' | ',$R['head'])."\n";
-foreach($R['rows'] as $row)$txt.=implode(' | ',$row)."\n";
+foreach($R['rows'] as $i=>$row){if(isset($R['lvl'][$i]))$row[1]=PAY_DOT[$R['lvl'][$i]].' '.$row[1];$txt.=implode(' | ',$row)."\n";}
 if($R['foot'])$txt.="\n".implode("\n",$R['foot']);
 head('Report');
 $tabs=[1=>'Fund',2=>'Contributions',3=>'Members',4=>'Member cash',5=>'Handover']+($hasItems||$r===6?[6=>'Products']:[]);?>

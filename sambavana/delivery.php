@@ -32,7 +32,7 @@ head('Product given');?>
 <?php if($rows):?><input id="dq" class="form-control mb-2" type="search" placeholder="Search name or No. / തിരയുക" aria-label="Search" autocomplete="off"><?php endif;?>
 <?php foreach($rows as $r):$bal=$r['amount']-$r['paid'];?>
 <div class="dv" data-s="<?=e(mb_strtolower($r['name']).' '.$r['serial_no'].' '.$r['mobile'])?>">
-<a class="flex-grow-1 min-w-0 text-decoration-none text-dark" href="contribution.php?id=<?=$r['id']?>"><b>#<?=$r['serial_no']?></b> <?=nm($r['name'],$bal)?><br>
+<a class="flex-grow-1 min-w-0 text-decoration-none text-dark" href="contribution.php?id=<?=$r['id']?>"><b>#<?=$r['serial_no']?></b> <?=nm($r['name'],$bal,$r['amount'])?><br>
 <span class="itm"><?=e(item_label($r))?></span> <?=bal_badge($bal)?><?php if($r['delivered_at']):?><br><small class="text-muted"><?=date('d M, g:i a',strtotime($r['delivered_at']))?></small><?php endif;?></a>
 <form method="post" class="noprint"><?=csrf_field()?><input type="hidden" name="id" value="<?=$fid?>"><input type="hidden" name="cid" value="<?=$r['id']?>"><input type="hidden" name="t" value="<?=$tab?>">
 <?php if($tab==='no'):?><button name="v" value="taken" class="btn btn-primary"><i class="bi bi-check2-circle" aria-hidden="true"></i> വാങ്ങി</button><?php else:?><button name="v" value="" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Undo</button><?php endif;?>

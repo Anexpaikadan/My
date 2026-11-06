@@ -37,7 +37,7 @@ if($f['status']!=='open'){echo '<div class="alert alert-secondary"><i class="bi 
 <a class="btn btn-sm btn-link px-1" href="pay.php?id=<?=$fid?>&all=<?=$all?0:1?>"><?=$all?'Only with balance':'Show all'?></a></div></div>
 <div id="list"><?php foreach($rows as $r):$b=$r['amount']-$r['paid'];?>
 <div class="pick" data-id="<?=$r['id']?>" data-s="<?=e(mb_strtolower($r['name']).' #'.$r['serial_no'].' '.$r['serial_no'].' '.$r['mobile'])?>" data-n="<?=e('#'.$r['serial_no'].' '.$r['name'])?>" data-i="<?=e(item_label($r))?>" data-t="<?=(float)$r['amount']?>" data-p="<?=(float)$r['paid']?>">
-<span class="no">#<?=$r['serial_no']?></span><span class="flex-grow-1 min-w-0"><b><?=nm($r['name'],$b)?></b><br><small class="text-muted"><?=$r['item_name']?'<span class="itm">'.e(item_label($r)).'</span> ':''?>₹<?=money($r['amount'])?> · Paid ₹<?=money($r['paid'])?></small></span><?=bal_badge($b)?></div>
+<span class="no">#<?=$r['serial_no']?></span><span class="flex-grow-1 min-w-0"><b><?=nm($r['name'],$b,$r['amount'])?></b><br><small class="text-muted"><?=$r['item_name']?'<span class="itm">'.e(item_label($r)).'</span> ':''?>₹<?=money($r['amount'])?> · Paid ₹<?=money($r['paid'])?></small></span><?=bal_badge($b)?></div>
 <?php endforeach;?></div>
 <p id="none" class="text-muted text-center <?=$rows?'d-none':''?>">No contributor found.</p>
 

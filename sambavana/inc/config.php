@@ -1,6 +1,6 @@
 <?php
 // Shared setup for every page: session, database, helpers, page header/footer. Pages: require __DIR__.'/inc/config.php';
-const V='14'; // bump to make phones reload css/js/manifest
+const V='15'; // bump to make phones reload css/js/manifest
 session_set_cookie_params(['httponly'=>true,'samesite'=>'Lax','secure'=>(!empty($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=='off')]);
 session_start();
 require __DIR__.'/db_config.php';
@@ -88,7 +88,13 @@ function item_of($fid,$iid){
 // "Payasam × 2" for a contribution row that has item_name/qty, else ''
 function item_label($c){return !empty($c['item_name'])?$c['item_name'].' × '.(int)$c['qty']:'';}
 // Contributor name colour: red while balance is due, dark green when fully paid
-function nm($name,$bal){return '<span class="'.($bal>0?'nm-due':'nm-paid').'">'.e($name).'</span>';}
+// How much is paid: 🟢 full · 🟡 50%+ · 🟠 below 50% · 🔴 nothing (names in the app use the same colours)
+const PAY_DOT=['paid'=>'🟢','half'=>'🟡','some'=>'🟠','none'=>'🔴'];
+const PAY_LEGEND='🟢 Paid · 🟡 50%+ paid · 🟠 below 50% · 🔴 Not paid';
+function paid_pct($amt,$bal){return $amt>0?(int)floor(min(100,max(0,($amt-$bal)/$amt*100))):100;}
+function pay_level($amt,$bal){if($bal<=0)return 'paid';$p=paid_pct($amt,$bal);return $p>=50?'half':($p>0?'some':'none');}
+// Contributor name coloured by payment: green paid, yellow 50%+, orange some, red nothing
+function nm($name,$bal,$amt=null){$l=$amt===null?($bal>0?'none':'paid'):pay_level($amt,$bal);return '<span class="nm-'.$l.'">'.e($name).'</span>';}
 // Product entries: has the contributor taken (വാങ്ങി) the product? (any value in `delivery` = taken)
 function dl_badge($c){if(empty($c['item_id']))return '';return !empty($c['delivery'])?'<span class="dl dl-taken"><i class="bi bi-check2-circle" aria-hidden="true"></i> വാങ്ങി</span>':'<span class="dl dl-no"><i class="bi bi-hourglass-split" aria-hidden="true"></i> വാങ്ങിയില്ല</span>';}
 function bal_badge($b){return $b<=0?'<span class="ok"><i class="bi bi-check2-circle" aria-hidden="true"></i> Paid</span>':'<span class="bal">Bal ₹'.money($b).'</span>';}

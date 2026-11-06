@@ -66,6 +66,6 @@ nav_main('home');head('Home');?>
 <?php endif;?>
 <?php if($recent):?><h6 class="fw-bold mb-2">Recent entries / പുതിയവ</h6>
 <div class="card mb-3"><?php foreach($recent as $x):?><a class="rec" href="contribution.php?id=<?=$x['id']?>"><span class="dot">#<?=$x['serial_no']?></span>
-<span class="flex-grow-1 text-truncate"><b><?=nm($x['name'],$x['amount']-$x['paid'])?></b><br><small class="text-muted"><?=e($x['title'])?> · <?=date('d M, g:i a',strtotime($x['created_at']))?></small></span><b>₹<?=money($x['amount'])?></b></a><?php endforeach;?></div>
+<span class="flex-grow-1 text-truncate"><b><?=nm($x['name'],$x['amount']-$x['paid'],$x['amount'])?></b><br><small class="text-muted"><?=e($x['title'])?> · <?=date('d M, g:i a',strtotime($x['created_at']))?></small></span><b>₹<?=money($x['amount'])?></b></a><?php endforeach;?></div>
 <?php endif;?>
 <?php foot();

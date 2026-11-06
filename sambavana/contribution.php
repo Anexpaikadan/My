@@ -44,7 +44,7 @@ head('#'.$c['serial_no'].' '.$c['name']);?>
 .tl .pt:before{content:"";position:absolute;left:-19px;top:16px;width:12px;height:12px;border-radius:50%;background:var(--p);border:2px solid #fff;box-shadow:0 0 0 2px rgba(var(--prgb),.3)}
 </style>
 <div class="ph mb-3">
-<div class="d-flex justify-content-between align-items-start gap-2"><div><span class="text-muted small">No. <?=$c['serial_no']?><?=$c['mobile']?' · '.e($c['mobile']):''?></span><h5 class="m-0"><?=nm($c['name'],$bal)?></h5>
+<div class="d-flex justify-content-between align-items-start gap-2"><div><span class="text-muted small">No. <?=$c['serial_no']?><?=$c['mobile']?' · '.e($c['mobile']):''?></span><h5 class="m-0"><?=nm($c['name'],$bal,$c['amount'])?></h5>
 <?php if($c['item_name']):?><span class="itm"><?=e(item_label($c))?></span> <small class="text-muted">₹<?=money($c['amount']/$c['qty'])?> each</small><?php endif;?></div>
 <?=bal_badge($bal)?></div>
 <div class="progress mt-3" style="height:8px"><div class="progress-bar bg-success" style="width:<?=$pc?>%"></div></div>

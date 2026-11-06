@@ -9,8 +9,10 @@ label.small,.form-label{color:#4b5059;font-weight:600}
 .form-check-input:checked{background-color:var(--p);border-color:var(--p)}
 .bal{background:#fdecee;color:#b02a37;border-radius:8px;padding:0 7px;font-weight:600;white-space:nowrap}
 .ok{background:#e6f6ea;color:#1e7b3c;border-radius:8px;padding:0 7px;font-weight:600;white-space:nowrap}
-.nm-due{color:#c62828!important;font-weight:600}
 .nm-paid{color:#1b6b1b!important;font-weight:600}
+.nm-half{color:#8a6d00!important;font-weight:600}
+.nm-some{color:#b54708!important;font-weight:600}
+.nm-none,.nm-due{color:#c62828!important;font-weight:600}
 .itm{background:var(--pl);color:var(--pd);border-radius:8px;padding:0 7px;font-size:.85em;white-space:nowrap}
 .dl{border-radius:8px;padding:0 7px;font-size:.85em;white-space:nowrap;font-weight:600}
 .dl-no{background:#fff4e0;color:#a35b00}.dl-taken{background:#e6f6ea;color:#1e7b3c}
