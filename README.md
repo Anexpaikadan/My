@@ -3,6 +3,7 @@
 | Folder / file | What it is |
 |---|---|
 | [`daybill/`](daybill/) | **Daybill Print** – print shop app (PHP + MySQL) |
+| [`DayBillERP/`](DayBillERP/) | **DayBill ERP v7.21.3** – billing, POS, inventory, accounts and HR (Python + SQL Server, Windows) |
 | `sales-pos.html` | Sales POS page |
 
 ## Daybill Print
@@ -34,3 +35,8 @@ staff see the order, check it and print it on the shop printer.
 - HTTPS is always required. Installable as an app (PWA).
 
 Setup, hosting and printer details: [`daybill/README.md`](daybill/README.md).
+
+## DayBill ERP
+
+Desktop ERP for shops in Saudi Arabia, the UAE and India: VAT / GST, ZATCA Phase 1 & 2, Arabic & English,
+Microsoft SQL Server. Install, database and build details: [`DayBillERP/README.md`](DayBillERP/README.md).

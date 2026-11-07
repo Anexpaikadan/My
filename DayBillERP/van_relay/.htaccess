@@ -1,0 +1,37 @@
+# ============================================================
+# DayBill Van Relay 5.23.2 — .htaccess
+# Works over https AND http on Hostinger (with or without the CDN).
+#  * NO "force https" rule here: behind Hostinger's CDN / proxy PHP sees
+#    http, so such a rule sends every visitor round in a loop.
+#  * "RewriteEngine On" with no rules: the main site's rules (WordPress,
+#    Force HTTPS in public_html/.htaccess) can no longer reach this folder.
+#  * Answers are never cached (LiteSpeed cache, CDN, browser).
+# ============================================================
+Options -Indexes
+DirectoryIndex index.html van_api.php
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+</IfModule>
+
+<IfModule LiteSpeed>
+  CacheLookup off
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+  Header always set Pragma "no-cache"
+  Header always set X-Robots-Tag "noindex, nofollow"
+</IfModule>
+
+# Private: settings (shop key + DB password), database files, backups, zips
+<FilesMatch "^(relay_config\.php|relay_config\.sample\.php|van_db\.php|db\.php|.*\.(sqlite|sql|zip|bak|log))$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+RedirectMatch 403 ^/?(.*/)?data/

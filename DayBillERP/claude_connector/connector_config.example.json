@@ -1,0 +1,8 @@
+{
+  "_help": "Optional. Rename to connector_config.json to override DayBill's own DB settings for the Claude connector only. Leave a value empty to keep DayBill's.",
+  "server": "",
+  "database": "",
+  "auth_type": "sql",
+  "username": "daybill_claude",
+  "password": "Change_This_Password_123!"
+}
