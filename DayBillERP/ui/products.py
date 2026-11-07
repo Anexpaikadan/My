@@ -132,6 +132,7 @@ class ProductsView:
                 side="left", fill="y", padx=6, pady=4)
 
         tool(inner, "＋  New", self._open_add_form, primary=True)
+        tool(inner, "⚡  Quick Entry", self._open_quick_entry)     # v8.3 line-by-line
         tool(inner, "✏  Edit", self._open_edit_form)
         tool(inner, "💲  Bulk Rate", self._bulk_rate_edit)
         tool(inner, "🏷  Make Offer", self._make_offer)
@@ -666,6 +667,24 @@ class ProductsView:
         ProductForm(self.frame, product_id=None,
                     categories=self._categories, vat_cats=self._vat_cats,
                     on_save=self._load_products)
+
+    def _open_quick_entry(self):
+        """v8.3: ⚡ Quick Product Entry — many products, one line each."""
+        from modules import permissions as _pm
+        if not _pm.allowed("products", "add"):
+            return False
+        try:
+            from ui.main_window import navigate, APP
+            if APP is not None:
+                navigate("quick_products")
+                return
+        except Exception:
+            pass
+        top = tk.Toplevel(self.frame)
+        top.title("Quick Product Entry")
+        top.geometry("1200x720")
+        from ui.quick_products import QuickProductsView
+        QuickProductsView(top)
 
     def _open_edit_form(self):
         pid = self._get_selected_id()

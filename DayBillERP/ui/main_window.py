@@ -253,6 +253,7 @@ class MainWindow:
             "payments": "master",
             # Inventory / Master
             "products": "master", "inventory": "master",
+            "quick_products": "master",
             "barcode_designer": "master",
             "plu": "master",
             # Accounts
@@ -278,6 +279,7 @@ class MainWindow:
         "dashboard": ("dashboard", "view"), "setup": ("dashboard", "view"),
         "pos": ("pos", "view"),
         "products": ("products", "view"), "customers": ("customers", "view"),
+        "quick_products": ("products", "add"),      # v8.3 ⚡ Quick Product Entry
         "suppliers": ("suppliers", "view"),
         "sales": ("sales", "view"), "sales_return": ("sales_return", "view"),
         "purchases": ("purchase", "view"), "purchase_return": ("purchase_return", "view"),
@@ -713,6 +715,7 @@ class MainWindow:
         m_inv = tk.Menu(menubar, tearoff=0)
         m_inv_m = tk.Menu(m_inv, tearoff=0)
         additem(m_inv_m, "Products", "products", "F8")
+        additem(m_inv_m, "⚡ Quick Product Entry", "quick_products")
         # v7.10: every slot opens a real list (Masters page)
         for lbl, mod in (("Product Groups", "products"), ("Product Category", "products"),
                          ("Brands", "ms:brands"), ("Price Category", "price_lists"),
@@ -1400,6 +1403,7 @@ class MainWindow:
             ]),
             ("Inventory", [
                 ("products",   "📦", "nav.products"),
+                ("quick_products", "⚡", "Quick Product Entry"),
                 ("masters",    "🗂", "Masters"),
                 ("inventory",  "🗃", "nav.inventory"),
                 ("price_lists", "💲", "Price Lists"),
@@ -2995,6 +2999,7 @@ class MainWindow:
             "customers":  t("nav.customers"),
             "suppliers":  t("nav.suppliers"),
             "products":   t("nav.products"),
+            "quick_products": "Quick Product Entry",
             "sales":      t("nav.sales"),
             "purchases":  t("nav.purchases"),
             "payments":   t("nav.payments"),
@@ -3094,6 +3099,10 @@ class MainWindow:
             elif module_key == "products":
                 from ui.products import ProductsView
                 ProductsView(self.content)
+
+            elif module_key == "quick_products":       # v8.3 fast line-by-line entry
+                from ui.quick_products import QuickProductsView
+                QuickProductsView(self.content)
 
             elif module_key == "sales":
                 from ui.invoices import SalesInvoiceView

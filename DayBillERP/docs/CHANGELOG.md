@@ -2,6 +2,35 @@
 
 Newest first. The short guide is in the main README.md.
 
+## ⚡ v8.3.0 — Quick Product Entry (many products, one line each)
+
+A new, fast way to add products — **Inventory ▸ Masters ▸ ⚡ Quick Product
+Entry**, the side menu (Inventory ▸ ⚡ Quick Product Entry), or the
+**⚡ Quick Entry** button on the Products page. The full Product window
+(＋ New) is unchanged.
+
+- **The top line is the new product**: Code (automatic, next free code) ·
+  **Product Name** · **Unit** · **Category** · **Purchase Price** ·
+  **Sales Price**.
+- **Enter goes to the next box.** On Unit and Category, typing the start is
+  enough (`bo` → Box); a category that does not exist yet is added.
+- **Enter on Sales Price** asks *"Save this product?"* — **Yes is the
+  default**, so Enter again saves. The product appears at the top of the
+  list (green), and the cursor is back on Product Name for the next line.
+  Unit and Category stay as they were, for a row of similar products.
+- It warns (still lets you save) when the sales price is below the purchase
+  price or the same name already exists. The margin % shows while you type.
+- **The list**: *All products* (newest first) or *New only* — a blank list
+  that fills line by line with what you add here. Search box above it.
+- **Change a product**: Enter or double-click a row → it loads into the top
+  line (button says *Update*); Enter through to Sales Price → Yes → updated
+  (name, unit, category, purchase and sales price; the base unit too).
+- Esc clears the line, Ctrl+S saves, ↓ from Product Name goes to the list.
+- New products are saved exactly like the Excel import: next code, system
+  barcode, base unit, VAT 15 % (standard), stock tracking on, listed in sales
+  and purchase, price history. Rights: *Products ▸ Add* to add, *Edit* to
+  change.
+
 ## 🎨 v8.2.0 — DayBill 8 design in every window
 
 The Figma file ([DayBill ERP — Redesign v8](https://www.figma.com/design/bnHMQhG6oq5TAqa0ddEkYn) ▸ Screens)
