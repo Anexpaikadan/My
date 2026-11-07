@@ -86,7 +86,7 @@ class QuickSettings:
                 v = tk.BooleanVar(master=w, value=value(key, dflt))
                 self.vars[key] = v
                 tk.Checkbutton(box, text=label, variable=v, font=("Segoe UI", 9), bg="white",
-                               activebackground="#EFF6FF", anchor="w", cursor="hand2",
+                               activebackground="#EDF2FF", anchor="w", cursor="hand2",
                                highlightthickness=0, padx=2, pady=3).pack(fill="x", anchor="w")
             if col == 0:
                 row = tk.Frame(box, bg="white")

@@ -208,7 +208,7 @@ class DocForm:
 
         form = tk.Frame(self.win, bg=C["card_bg"], highlightbackground=C["border"],
                         highlightthickness=1)
-        form.pack(fill="x")
+        form.pack(fill="x", padx=12, pady=(10, 0))   # v8.0 card
         self.form_body = form
         g = tk.Frame(form, bg=C["card_bg"]); g.pack(fill="x", padx=12, pady=(4, 5))
 
@@ -250,7 +250,8 @@ class DocForm:
                                            pady=2, ipady=1)
         g.columnconfigure(5, weight=1)
 
-        items = tk.Frame(self.win, bg=C["content_bg"])      # packed last (v6.9)
+        items = tk.Frame(self.win, bg=C["card_bg"], highlightthickness=1,
+                         highlightbackground=C["border"])      # packed last (v6.9); v8.0 card
         from ui.invoice_grid import InvoiceGrid
         self.grid = InvoiceGrid(items, C, self._products, self._units,
                                 on_change=self._on_change,
@@ -307,7 +308,7 @@ class DocForm:
         self.tv = total_strip(tot, [("Items", "count", None), ("Qty", "qty", None),
                                     ("Taxable", "taxable", None), ("VAT", "vat", C["info"])],
                               ("TOTAL (SAR)", "total"), C)
-        items.pack(side="top", fill="both", expand=True)
+        items.pack(side="top", fill="both", expand=True, padx=12, pady=10)
         self._on_change()
         try:
             self.grid.focus_first_product()

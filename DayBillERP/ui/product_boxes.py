@@ -38,14 +38,14 @@ class UnitProfitBox(tk.Toplevel):
         C = theme
         self.C = C
         self.overrideredirect(True)             # frameless / minimal
-        self.configure(bg=C.get("border", "#E3E0F4"))
+        self.configure(bg=C.get("border", "#E3E8EF"))
         self.attributes("-topmost", True)
 
         card = tk.Frame(self, bg=C.get("card_bg", "white"))
         card.pack(fill="both", expand=True, padx=1, pady=1)
 
         # slim header: product name + purchase price of the base unit
-        head = tk.Frame(card, bg=C.get("primary", "#3A1FD6"))
+        head = tk.Frame(card, bg=C.get("primary", "#2952E3"))
         head.pack(fill="x")
         tk.Label(head, text=product.get("product_name_en", ""),
                  font=("Segoe UI", 10, "bold"), bg=head["bg"], fg="white"
@@ -263,7 +263,7 @@ class _HistoryStrip(tk.Toplevel):
         tk.Label(head, textvariable=self.title_v, font=("Segoe UI", 9, "bold"),
                  bg=head["bg"], fg=C.get("primary", "#2952E3")).pack(side="left")
         x = tk.Label(head, text="✕", font=("Segoe UI", 9), bg=head["bg"],
-                     fg=C.get("text_secondary", "#6B7280"), cursor="hand2")
+                     fg=C.get("text_secondary", "#5B6475"), cursor="hand2")
         x.pack(side="right")
         x.bind("<Button-1>", lambda e: ProductHistoryBox.close_all())
         body = tk.Frame(card, bg=head["bg"])
@@ -273,7 +273,7 @@ class _HistoryStrip(tk.Toplevel):
             f = tk.Frame(body, bg=head["bg"])
             f.pack(side="left", fill="both", expand=True, padx=(0, 10))
             tk.Label(f, text=title, font=("Segoe UI", 8, "bold"), bg=head["bg"],
-                     fg=C.get("text_secondary", "#6B7280")).pack(anchor="w")
+                     fg=C.get("text_secondary", "#5B6475")).pack(anchor="w")
             lab = tk.Label(f, text="", font=("Consolas", 9), bg=head["bg"],
                            fg=C.get("text_primary", "#0F172A"), justify="left", anchor="w")
             lab.pack(anchor="w")

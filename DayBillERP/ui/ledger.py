@@ -117,10 +117,10 @@ class LedgerView:
                   padx=14, pady=5, cursor="hand2",
                   command=self._load).pack(side="left")
         tk.Button(f, text="🖨  Print", font=("Segoe UI", 9, "bold"),
-                  bg="#16A085", fg="white", relief="flat", padx=14, pady=5,
+                  bg="#12A15E", fg="white", relief="flat", padx=14, pady=5,
                   cursor="hand2", command=self._export_pdf).pack(side="right")
         tk.Button(f, text="📥  Excel", font=("Segoe UI", 9, "bold"),
-                  bg="#2E86AB", fg="white", relief="flat", padx=14, pady=5,
+                  bg="#2952E3", fg="white", relief="flat", padx=14, pady=5,
                   cursor="hand2",
                   command=self._export_excel).pack(side="right", padx=(0, 8))
 

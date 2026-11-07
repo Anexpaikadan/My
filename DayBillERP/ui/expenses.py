@@ -436,7 +436,7 @@ class ExpenseForm:
         tk.Entry(body, textvariable=self.desc_var, font=("Segoe UI", 10)).pack(fill="x", ipady=2)
 
         btns = tk.Frame(self.win, bg=C["card_bg"]); btns.pack(fill="x", padx=18, pady=12)
-        tk.Button(btns, text="Cancel", font=("Segoe UI", 10), bg="#EEF1F6",
+        tk.Button(btns, text="Cancel", font=("Segoe UI", 10), bg="#F4F6FA",
                   relief="flat", padx=14, pady=6, cursor="hand2",
                   command=self.win.destroy).pack(side="left", expand=True, fill="x", padx=(0, 4))
         tk.Button(btns, text="✓  Save  [F9]", font=("Segoe UI", 10, "bold"),

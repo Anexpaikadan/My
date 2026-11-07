@@ -108,7 +108,7 @@ class NewCompanyWizard:
         chipbar.pack(side="right", padx=14)
         for i, s in enumerate(STEPS):
             lb = tk.Label(chipbar, text="%d  %s" % (i + 1, s), font=("Segoe UI", 9, "bold"),
-                          bg=C["primary"], fg="#D9D4FF", padx=10, pady=4)
+                          bg=C["primary"], fg="#DCE6FF", padx=10, pady=4)
             lb.pack(side="left", padx=2)
             self.chips.append(lb)
         self.body = tk.Frame(self.win, bg=C["content_bg"])
@@ -405,7 +405,7 @@ class NewCompanyWizard:
                 pg.pack_forget()
         for i, ch in enumerate(self.chips):
             ch.configure(bg="white" if i == self.step else self.C["primary"],
-                         fg=self.C["primary"] if i == self.step else "#D9D4FF")
+                         fg=self.C["primary"] if i == self.step else "#DCE6FF")
         self.back_btn.configure(state="normal" if self.step > 0 and not self._busy else "disabled")
         last = self.step == len(STEPS) - 1
         self.next_btn.configure(text="✓  Create company" if last else "Next  →")

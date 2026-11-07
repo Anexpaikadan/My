@@ -103,7 +103,7 @@ class _CalendarPopup(tk.Toplevel):
         tk.Button(hdr, text="›", relief="flat", bg="white", cursor="hand2",
                   command=lambda: self._move(1)).pack(side="right")
         for i, d in enumerate(("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")):
-            tk.Label(self.body, text=d, bg="white", fg="#6B7280",
+            tk.Label(self.body, text=d, bg="white", fg="#5B6475",
                      font=("Segoe UI", 8)).grid(row=1, column=i, padx=1)
         for r, week in enumerate(calendar.monthcalendar(self.y, self.m), 2):
             for c, day in enumerate(week):

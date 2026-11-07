@@ -27,8 +27,9 @@ class RoundedButton(tk.Canvas):
         super().__init__(parent, width=width, height=height, bg=bgparent,
                          highlightthickness=0, bd=0, cursor="hand2")
         self.command = command
+        bg, fg, outline = self._role(text, bg, fg, outline)
         self.bg = bg
-        self.hover_bg = hover_bg or self._darken(bg)
+        self.hover_bg = hover_bg or self._darken(bg, 0.05 if bg.upper() == "#FFFFFF" else 0.12)
         self.fg = fg
         self.radius = radius
         self.w = width
@@ -41,6 +42,25 @@ class RoundedButton(tk.Canvas):
         self.bind("<Enter>", self._hover_on)
         self.bind("<Leave>", self._hover_off)
         self.bind("<Button-1>", self._click)
+
+    @staticmethod
+    def _role(text, bg, fg, outline):
+        """v8.0 DayBill 8 (Figma: Button): the plain "Save" pill is the one
+        filled primary button, red stays Danger, the rest (Save & New,
+        Save & Print, Cancel …) are white with a light border."""
+        try:
+            from config import settings as cfg
+            C = cfg.theme()
+        except Exception:
+            C = {}
+        t = str(text or "").strip().lower()
+        b = str(bg or "").upper()
+        if b in {"#DC2626", "#E5484D", "#B91C1C", str(C.get("danger", "")).upper()}:
+            return C.get("danger", "#E5484D"), "white", outline
+        if t.startswith("save") and not any(x in t for x in ("&", "new", "print", "draft")):
+            return C.get("primary", "#2952E3"), "white", outline
+        return (C.get("card_bg", "#FFFFFF"), C.get("text_primary", "#0F172A"),
+                C.get("field_border", "#D0D7E2"))
 
     @staticmethod
     def _darken(hexcolor, amt=0.12):
@@ -92,7 +112,7 @@ class RoundedButton(tk.Canvas):
 
 # ── On/off toggle switch (canvas-based, bound to a BooleanVar) ─
 class ToggleSwitch(tk.Canvas):
-    def __init__(self, parent, variable, on_color="#27AE60",
+    def __init__(self, parent, variable, on_color="#12A15E",
                  off_color="#C9CDD4", command=None, width=42, height=22):
         bgparent = parent["bg"] if isinstance(parent, (tk.Frame, tk.Canvas)) \
             else "#FFFFFF"
@@ -344,8 +364,8 @@ class PageNav:
         if i >= 0:
             self.show(self.pages[i]["key"])
 def show_toast(win, message, kind="success", ms=2200):
-    colors = {"success": ("#27AE60", "white"), "error": ("#E74C3C", "white"),
-             "info": ("#2E86AB", "white")}
+    colors = {"success": ("#12A15E", "white"), "error": ("#E5484D", "white"),
+             "info": ("#2952E3", "white")}
     bg, fg = colors.get(kind, colors["info"])
     try:
         t = tk.Toplevel(win)
@@ -416,8 +436,8 @@ def _invalid_style_for(widget):
     style = ttk.Style()
     try:
         style.configure(name, fieldbackground="#FDEDEC",
-                        bordercolor="#E74C3C", lightcolor="#E74C3C",
-                        darkcolor="#E74C3C")
+                        bordercolor="#E5484D", lightcolor="#E5484D",
+                        darkcolor="#E5484D")
         style.map(name, fieldbackground=[("readonly", "#FDEDEC")])
     except Exception:
         pass
@@ -430,8 +450,8 @@ def mark_invalid(widget):
             widget._normal_style = widget.cget("style") or ""
             widget.configure(style=_invalid_style_for(widget))
         else:
-            widget.configure(highlightthickness=2, highlightbackground="#E74C3C",
-                             highlightcolor="#E74C3C")
+            widget.configure(highlightthickness=2, highlightbackground="#E5484D",
+                             highlightcolor="#E5484D")
     except Exception:
         pass
 

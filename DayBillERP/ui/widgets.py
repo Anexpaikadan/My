@@ -91,7 +91,7 @@ def status_badge(parent, status: str) -> tk.Label:
         "paid":       (C["success"], "#F0FDF4", "✅ Paid"),
         "unpaid":     (C["danger"],  "#FEF2F2", "⏳ Unpaid"),
         "partial":    (C["warning"], "#FFFBEB", "◑ Partial"),
-        "reported":   (C["info"],    "#EFF6FF", "📤 Reported"),
+        "reported":   (C["info"],    "#EDF2FF", "📤 Reported"),
         "cleared":    (C["success"], "#F0FDF4", "✅ Cleared"),
         "rejected":   (C["danger"],  "#FEF2F2", "❌ Rejected"),
         "pending":    (C["warning"], "#FFFBEB", "⏳ Pending"),

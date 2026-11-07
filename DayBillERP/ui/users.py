@@ -121,7 +121,7 @@ class UsersView:
             pass
         style.configure("Usr.Treeview", rowheight=32, font=("Segoe UI", 10))
         style.configure("Usr.Treeview.Heading", font=("Segoe UI", 10, "bold"),
-                        background=C.get("heading_bg", C["content_bg"]), foreground="#374151")
+                        background=C.get("heading_bg", C["content_bg"]), foreground="#334155")
         self.tree = ttk.Treeview(wrap, columns=cols, show="headings",
                                  style="Usr.Treeview", selectmode="browse")
         for c in cols:

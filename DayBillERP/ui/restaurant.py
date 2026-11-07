@@ -25,13 +25,13 @@ from config import settings as cfg
 from modules import restaurant as R
 
 STATE_LOOK = {   # state: (background, border, text)
-    "free": ("#E8F8EF", "#27AE60", "#145A32"),
-    "occupied": ("#FDEBD0", "#E67E22", "#784212"),
+    "free": ("#E8F8EF", "#12A15E", "#145A32"),
+    "occupied": ("#FDEBD0", "#F79009", "#784212"),
     "billed": ("#D6EAF8", "#2E86C1", "#1B4F72"),
     "off": ("#F2F3F4", "#BFC9CA", "#909497"),
 }
 STATE_NAME = {"free": "Free", "occupied": "Occupied", "billed": "Bill printed"}
-KOT_LOOK = {"new": "#C0392B", "preparing": "#D68910", "ready": "#1E8449", "served": "#7F8C8D"}
+KOT_LOOK = {"new": "#E5484D", "preparing": "#D68910", "ready": "#1E8449", "served": "#5B6475"}
 KOT_NEXT = {"new": "▶  Start cooking", "preparing": "✓  Ready", "ready": "🍽  Served"}
 
 _LIVE = weakref.WeakSet()
@@ -379,7 +379,7 @@ class Flow:
 
     def message(self, text):
         self.clear()
-        tk.Label(self.inner, text=text, font=("Segoe UI", 12), bg=self.bg, fg="#7F8C8D",
+        tk.Label(self.inner, text=text, font=("Segoe UI", 12), bg=self.bg, fg="#5B6475",
                  justify="center").pack(pady=60, padx=20)
 
 
@@ -415,7 +415,7 @@ def table_tile(parent, r, on_click, on_menu=None, free_only=False, big=True):
         mins = int(r.get("minutes") or 0)
         tk.Label(t, text="⏱ %s" % _mins(mins) + ("   BILL PRINTED" if state == "billed" else ""),
                  font=("Segoe UI", 9, "bold" if state == "billed" or mins >= 90 else "normal"),
-                 bg=bg, fg="#C0392B" if mins >= 90 and state != "billed" else fg).pack(
+                 bg=bg, fg="#E5484D" if mins >= 90 and state != "billed" else fg).pack(
                      anchor="w", padx=8, pady=(0, 6))
     if not (free_only and state != "free"):
         _bind_all(t, "<Button-1>", lambda e, rr=r: on_click(rr))
@@ -956,7 +956,7 @@ class KotView:
 
     def _tile(self, parent, k):
         st = k.get("status") or "new"
-        head = KOT_LOOK.get(st, "#7F8C8D")
+        head = KOT_LOOK.get(st, "#5B6475")
         t = tk.Frame(parent, bg="white", highlightbackground=head, highlightthickness=3)
         h = tk.Frame(t, bg=head)
         h.pack(fill="x")
@@ -973,14 +973,14 @@ class KotView:
         tk.Label(t, text=sub, font=("Segoe UI", 9), bg="white", fg="#566573", anchor="w").pack(fill="x", padx=8)
         if k.get("kot_note"):
             tk.Label(t, text=k["kot_note"], font=("Segoe UI", 11, "bold"), bg="white",
-                     fg="#C0392B", anchor="w").pack(fill="x", padx=8)
+                     fg="#E5484D", anchor="w").pack(fill="x", padx=8)
         ttk.Separator(t).pack(fill="x", padx=6, pady=4)
         for ln in k.get("lines") or []:
             q = _f(ln.get("quantity"))
             name = "%s × %s" % (R._qty(q), ln.get("product_name") or "")
             if q < 0:
                 tk.Label(t, text="CANCEL  " + name, font=("Segoe UI", 13, "bold overstrike"), bg="white",
-                         fg="#C0392B", anchor="w", wraplength=270, justify="left").pack(fill="x", padx=8)
+                         fg="#E5484D", anchor="w", wraplength=270, justify="left").pack(fill="x", padx=8)
             else:
                 tk.Label(t, text=name, font=("Segoe UI", 13, "bold"), bg="white", fg="#17202A",
                          anchor="w", wraplength=270, justify="left").pack(fill="x", padx=8)
@@ -997,7 +997,7 @@ class KotView:
                           side="left", fill="x", expand=True, ipady=4)
         else:
             tk.Label(foot, text="Served", font=("Segoe UI", 10, "bold"), bg="white",
-                     fg="#7F8C8D").pack(side="left")
+                     fg="#5B6475").pack(side="left")
         tk.Button(foot, text="🖨", font=("Segoe UI Emoji", 12), bg="#EAEDED", relief="flat", cursor="hand2",
                   command=lambda kid=k["kot_id"]: self.reprint(kid)).pack(side="right", padx=(6, 0), ipady=2)
         return t

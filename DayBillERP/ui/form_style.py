@@ -32,14 +32,14 @@ def _C():
         return cfg.theme()
     except Exception:
         return {"primary": "#2952E3", "danger": "#DC2626", "border": "#E3E8EF",
-                "text_secondary": "#6B7280", "content_bg": "#F4F6FA", "success": "#16A34A"}
+                "text_secondary": "#5B6475", "content_bg": "#F4F6FA", "success": "#16A34A"}
 
 
 def edge(C=None):
     """Box border when not typing in it: clearly visible, not heavy."""
     C = C or _C()
     try:
-        return cfg.mix(C.get("border", "#E3E8EF"), C.get("text_secondary", "#6B7280"), 0.30)
+        return cfg.mix(C.get("border", "#E3E8EF"), C.get("text_secondary", "#5B6475"), 0.30)
     except Exception:
         return "#B8BEC8"
 

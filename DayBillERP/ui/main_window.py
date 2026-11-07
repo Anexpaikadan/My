@@ -474,7 +474,7 @@ class MainWindow:
             from modules import session_info
             self._who_lbl = tk.Label(self.taskbar, text=session_info.text(),
                                      font=("Segoe UI", 8), bg=C["card_bg"],
-                                     fg=C.get("text_secondary", "#6B7280"))
+                                     fg=C.get("text_secondary", "#5B6475"))
             self._who_lbl.pack(side="right", padx=(6, 12))
         except Exception:
             pass
@@ -1483,7 +1483,7 @@ class MainWindow:
                       fg="white", anchor=anchor, cursor="hand2")
         l1.pack(fill="x")
         l2 = tk.Label(txt, text=_ver.subtitle(), font=("Segoe UI", 8), bg=SB,
-                      fg=C.get("sidebar_muted", "#9AA3C7"), anchor=anchor,
+                      fg=C.get("sidebar_muted", "#8B95A9"), anchor=anchor,
                       justify="right" if rtl else "left", wraplength=px(170), cursor="hand2")
         l2.pack(fill="x")
         for w in (brand, ic, txt, l1, l2):
@@ -1508,10 +1508,10 @@ class MainWindow:
                       fg="white", anchor=anchor, cursor="hand2")
         f1.pack(fill="x")
         f2 = tk.Label(ft, text=_ver.TAGLINE, font=("Segoe UI", 8), bg=SB,
-                      fg=C.get("sidebar_muted", "#9AA3C7"), anchor=anchor, cursor="hand2")
+                      fg=C.get("sidebar_muted", "#8B95A9"), anchor=anchor, cursor="hand2")
         f2.pack(fill="x")
         f3 = tk.Label(ft, text="Version " + _ver.VERSION, font=("Segoe UI", 8), bg=SB,
-                      fg=C.get("sidebar_muted", "#9AA3C7"), anchor=anchor, cursor="hand2")
+                      fg=C.get("sidebar_muted", "#8B95A9"), anchor=anchor, cursor="hand2")
         f3.pack(fill="x")
         self._version_lbl = f3
         for w in (foot, fic, ft, f1, f2, f3):
@@ -1702,7 +1702,7 @@ class MainWindow:
             icon, label = self._fav_info(k)
             self._nav_button("fav:" + k, icon, label)
         self.nav_frame = saved
-        tk.Frame(parent, bg=C.get("sidebar_hover", "#2A3352"), height=1).pack(
+        tk.Frame(parent, bg=C.get("sidebar_hover", "#162036"), height=1).pack(
             fill="x", padx=px(14), pady=(px(4), px(2)))
 
     def _run_favourite(self, key):
@@ -1829,7 +1829,7 @@ class MainWindow:
         # bottom first (stays visible), then the favourites fill the rest
         bottom = tk.Frame(sb, bg=SB)
         bottom.pack(side="bottom", fill="x", pady=(0, px(6)))
-        tk.Frame(bottom, bg=C.get("sidebar_hover", "#2A3352"), height=1).pack(fill="x", padx=px(10),
+        tk.Frame(bottom, bg=C.get("sidebar_hover", "#162036"), height=1).pack(fill="x", padx=px(10),
                                                                              pady=(0, px(4)))
         item(bottom, "🔒", "Lock", "Lock the screen (Ctrl+Shift+L)", lambda w: self._lock_screen())
         item(bottom, "⏻", t("nav.logout"), None, lambda w: self._logout(), danger=True)
@@ -1838,7 +1838,7 @@ class MainWindow:
         item(top, "📂", "Menu", "All pages", lambda w: self._rail_all(w))
         item(top, "🔍", "Search", "Search the menu", lambda w: (
             self._toggle_sidebar(), self.root.after(80, lambda: self._nav_entry.focus_set())))
-        tk.Frame(top, bg=C.get("sidebar_hover", "#2A3352"), height=1).pack(fill="x", padx=px(10),
+        tk.Frame(top, bg=C.get("sidebar_hover", "#162036"), height=1).pack(fill="x", padx=px(10),
                                                                           pady=px(3))
         favs = [k for k in self._favourites() if self._fav_info(k) and self._fav_allowed(k)]
         room = max(3, int((self.root.winfo_screenheight() - px(330)) / px(44)))
@@ -2038,7 +2038,7 @@ class MainWindow:
                        highlightbackground=C.get("sidebar_hover", "#162036"),
                        highlightcolor=C["primary"])
         box.pack(fill="x", padx=px(12), pady=(0, px(10)))
-        tk.Label(box, text="🔍", bg=FIELD, fg=C.get("sidebar_muted", "#9AA3C7"),
+        tk.Label(box, text="🔍", bg=FIELD, fg=C.get("sidebar_muted", "#8B95A9"),
                  font=("Segoe UI Emoji", 9)).pack(side=near, padx=(px(9), px(3)))
         self._nav_q = tk.StringVar()
         ent = tk.Entry(box, textvariable=self._nav_q, relief="flat", bd=0,
@@ -2046,7 +2046,7 @@ class MainWindow:
                        insertbackground="white", font=("Segoe UI", 10),
                        justify="right" if rtl else "left")
         ent.pack(side=near, fill="x", expand=True, ipady=px(6))
-        clr = tk.Label(box, text="✕", bg=FIELD, fg=C.get("sidebar_muted", "#9AA3C7"),
+        clr = tk.Label(box, text="✕", bg=FIELD, fg=C.get("sidebar_muted", "#8B95A9"),
                        font=("Segoe UI", 9), cursor="hand2", padx=px(8))
         self._nav_entry, self._nav_clear_btn, self._nav_box = ent, clr, box
         self._nav_hint = "ابحث في القائمة…" if rtl else "Search menu…"
@@ -2076,7 +2076,7 @@ class MainWindow:
         if show and not self._nav_q.get():
             self._nav_ph = True
             ent.insert(0, self._nav_hint)
-            ent.config(fg=C.get("sidebar_muted", "#9AA3C7"))
+            ent.config(fg=C.get("sidebar_muted", "#8B95A9"))
         elif not show and getattr(self, "_nav_ph", False):
             self._nav_ph = False
             ent.delete(0, "end")
@@ -2139,7 +2139,7 @@ class MainWindow:
             res.pack(fill="x")
         if not self._nav_clear_btn.winfo_manager():
             self._nav_clear_btn.pack(side="left" if rtl else "right")
-        muted = C.get("sidebar_muted", "#9AA3C7")
+        muted = C.get("sidebar_muted", "#8B95A9")
         tk.Label(res, text=("%d found" % len(self._nav_hits)) if self._nav_hits
                  else "Nothing found — try another word",
                  font=("Segoe UI", 8, "bold"), bg=SB, fg=muted,
@@ -2227,13 +2227,13 @@ class MainWindow:
         f = tk.Frame(self.nav_frame, bg=SB, cursor="hand2")
         f.pack(fill="x", pady=(px(3), 0), padx=px(10))
         arrow = tk.Label(f, text="◂" if rtl else "▸", font=("Segoe UI", 9, "bold"), bg=SB,
-                         fg=C.get("sidebar_muted", "#9AA3C7"), width=2, cursor="hand2")
+                         fg=C.get("sidebar_muted", "#8B95A9"), width=2, cursor="hand2")
         arrow.pack(side="right" if rtl else "left", padx=(px(6), 0), pady=px(6))
         lbl = tk.Label(f, text=name.upper(), font=("Segoe UI", 8, "bold"), bg=SB,
-                       fg=C.get("sidebar_muted", "#9AA3C7"),
+                       fg=C.get("sidebar_muted", "#8B95A9"),
                        anchor="e" if rtl else "w", cursor="hand2")
         lbl.pack(side="right" if rtl else "left", fill="x", expand=True, pady=px(6))
-        hover = C.get("sidebar_hover", "#2A3352")
+        hover = C.get("sidebar_hover", "#162036")
 
         def enter(e=None):
             for w in (f, arrow, lbl):

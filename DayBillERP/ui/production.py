@@ -135,7 +135,7 @@ class ProductionView:
                                   ("lab", "Labour + overhead", 115, "e"), ("total", "Total cost", 100, "e"),
                                   ("each", "Cost of 1", 85, "e"), ("status", "Status", 85, "center"),
                                   ("notes", "Notes", 160, "w")], height=16)
-        self.tree.tag_configure("draft", foreground=C.get("text_secondary", "#6B7280"))
+        self.tree.tag_configure("draft", foreground=C.get("text_secondary", "#5B6475"))
         self.tree.tag_configure("cancelled", foreground=C.get("danger", "#DC2626"))
         self.tree.bind("<Double-1>", lambda e: self._open())
         self.tree.bind("<Return>", lambda e: self._open())
@@ -409,7 +409,7 @@ class ProductionForm:
                                 ("each", "Cost each", 80, "e"), ("cost", "Line cost", 85, "e")],
                            height=10)
         self.tree.tag_configure("short", foreground=C.get("danger", "#DC2626"))
-        self.tree.tag_configure("service", foreground=C.get("text_secondary", "#6B7280"))
+        self.tree.tag_configure("service", foreground=C.get("text_secondary", "#5B6475"))
         self.tree.bind("<Double-1>", self._edit_used)
         self.tree.bind("<F2>", self._edit_used)
         self.tree.bind("<Delete>", lambda e: self._remove())
@@ -519,7 +519,7 @@ class ProductionForm:
         self.add_unit_cb.configure(state="disabled" if ro else "readonly")
         self.badge_v.set((STATUS_LABEL.get(self.status, self.status) +
                           ("  ·  VIEW ONLY" if ro and saved else "")).upper())
-        colors = {"draft": "#6B7280", "confirmed": self.C.get("success", "#16A34A"),
+        colors = {"draft": "#5B6475", "confirmed": self.C.get("success", "#16A34A"),
                   "cancelled": self.C.get("danger", "#DC2626")}
         self.badge.configure(fg=colors.get(self.status, self.C["primary"]))
 

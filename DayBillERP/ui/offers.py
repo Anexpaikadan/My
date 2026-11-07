@@ -226,7 +226,7 @@ class OffersView:
                       highlightbackground=C["border"], highlightthickness=1,
                       command=cmd).pack(side="left", padx=(0, 6))
         tk.Button(f, text="🎨  Poster prompt (ChatGPT / Gemini)", font=("Segoe UI", 9, "bold"),
-                  bg="#7C3AED", fg="white", relief="flat", padx=12, pady=4, cursor="hand2",
+                  bg="#7A5AF8", fg="white", relief="flat", padx=12, pady=4, cursor="hand2",
                   command=self._poster).pack(side="right")
         self.msg = tk.StringVar()
         tk.Label(f, textvariable=self.msg, font=("Segoe UI", 9), bg=C["card_bg"],
@@ -413,7 +413,7 @@ class OfferEditor(tk.Toplevel):
         tk.Button(ff, text="Cancel", font=("Segoe UI", 10), bg=C["card_bg"], relief="flat",
                   padx=12, pady=6, cursor="hand2", highlightbackground=C["border"],
                   highlightthickness=1, command=self.destroy).pack(side="right", padx=8)
-        tk.Button(ff, text="🎨  Poster prompt", font=("Segoe UI", 10, "bold"), bg="#7C3AED",
+        tk.Button(ff, text="🎨  Poster prompt", font=("Segoe UI", 10, "bold"), bg="#7A5AF8",
                   fg="white", relief="flat", padx=12, pady=6, cursor="hand2",
                   command=self._poster).pack(side="right")
 
@@ -461,7 +461,7 @@ class OfferEditor(tk.Toplevel):
         for txt, fn in (("Today", lambda: self._span(0)), ("3 days", lambda: self._span(2)),
                         ("1 week", lambda: self._span(6)), ("Weekend", self._weekend),
                         ("This month", self._month), ("No end", self._no_end)):
-            tk.Button(r1, text=txt, font=("Segoe UI", 8), bg="#EEF2FF", fg=C["primary"],
+            tk.Button(r1, text=txt, font=("Segoe UI", 8), bg="#EDF2FF", fg=C["primary"],
                       relief="flat", padx=8, pady=2, cursor="hand2",
                       command=fn).pack(side="left", padx=(0, 4))
         r2 = tk.Frame(w, bg=C["card_bg"]); r2.pack(fill="x", pady=(6, 0))
@@ -544,7 +544,7 @@ class OfferEditor(tk.Toplevel):
         self.deal.set(key)
         for k, b in self.deal_btns.items():
             on = k == key
-            b.configure(bg=C["primary"] if on else "#EEF1F6", fg="white" if on else C["text_primary"])
+            b.configure(bg=C["primary"] if on else "#F4F6FA", fg="white" if on else C["text_primary"])
         for w in self.deal_opts.winfo_children():
             w.destroy()
         f = self.deal_opts
@@ -1110,7 +1110,7 @@ class PosterPromptDialog(tk.Toplevel):
         tk.Button(btns, text="💬  Open ChatGPT", font=("Segoe UI", 10, "bold"), bg="#10A37F",
                   fg="white", relief="flat", padx=12, pady=6, cursor="hand2",
                   command=self._chatgpt).pack(side="right")
-        tk.Button(btns, text="📋  Copy prompt", font=("Segoe UI", 10, "bold"), bg="#7C3AED",
+        tk.Button(btns, text="📋  Copy prompt", font=("Segoe UI", 10, "bold"), bg="#7A5AF8",
                   fg="white", relief="flat", padx=14, pady=6, cursor="hand2",
                   command=self._copy).pack(side="right", padx=6)
         # v7.2: a printable poster made right here (no internet)

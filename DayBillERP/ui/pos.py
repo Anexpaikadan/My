@@ -4044,7 +4044,7 @@ class ProductDetailsDialog(tk.Toplevel):
         foot = tk.Frame(card, bg="white"); foot.pack(fill="x", padx=10, pady=(0, 8))
         tk.Label(foot, text="Ctrl / Esc / tap = close",
                  font=("Segoe UI", 8), bg="white",
-                 fg="#95A5A6").pack(side="left")
+                 fg="#8B95A9").pack(side="left")
         tk.Button(foot, text="Close", font=("Segoe UI", 11, "bold"),
                   bg="#2952E3", fg="white", relief="flat", padx=22, pady=8,
                   cursor="hand2", command=self.destroy).pack(side="right")
@@ -4392,7 +4392,7 @@ class PayDialog(tk.Toplevel):
             xr = tk.Frame(left, bg="white"); xr.pack(fill="x", pady=(0, 8))
             for i, key in enumerate(self.extras):
                 cap = _td.label(key) if _td else key
-                clr = "#7C3AED" if key in ("tabby", "tamara") else "#0E7490"
+                clr = "#7A5AF8" if key in ("tabby", "tamara") else "#0E7490"
                 f = tk.Frame(xr, bg="white", highlightthickness=3, highlightbackground="#E3E8EF",
                              cursor="hand2")
                 f.grid(row=i // 3, column=i % 3, sticky="ew", padx=(0, 4), pady=(0, 4))
@@ -4704,7 +4704,7 @@ class POSSettingsDialog(tk.Toplevel):
         tk.Button(btns, text="More Settings…", font=("Segoe UI", 10), bg="#475569",
                   fg="white", relief="flat", padx=14, pady=8, cursor="hand2",
                   command=self._open_full).pack(side="left")
-        tk.Button(btns, text="Cancel", font=("Segoe UI", 10), bg="#95A5A6",
+        tk.Button(btns, text="Cancel", font=("Segoe UI", 10), bg="#8B95A9",
                   fg="white", relief="flat", padx=16, pady=8, cursor="hand2",
                   command=self.destroy).pack(side="right", padx=(8, 0))
         tk.Button(btns, text="✓ Save", font=("Segoe UI", 11, "bold"), bg="#12A15E",
@@ -4793,7 +4793,7 @@ class QuickCustomerDialog(tk.Toplevel):
             e.pack(fill="x", padx=16, ipady=5)
             if hint:
                 tk.Label(card, text=hint, font=("Segoe UI", 8), bg="white",
-                         fg="#95A5A6").pack(anchor="w", padx=16)
+                         fg="#8B95A9").pack(anchor="w", padx=16)
             return e
 
         name_e = field("Name (English) *", "name_en")
@@ -4807,7 +4807,7 @@ class QuickCustomerDialog(tk.Toplevel):
                  bg="white", fg="#E5484D").pack(anchor="w", padx=16, pady=(6, 4))
 
         btns = tk.Frame(self, bg="#0B1220"); btns.pack(fill="x", padx=14, pady=(0, 14))
-        tk.Button(btns, text="Cancel", font=("Segoe UI", 10), bg="#95A5A6",
+        tk.Button(btns, text="Cancel", font=("Segoe UI", 10), bg="#8B95A9",
                   fg="white", relief="flat", padx=16, pady=8, cursor="hand2",
                   command=self.destroy).pack(side="right", padx=(8, 0))
         tk.Button(btns, text="✓ Save & Select", font=("Segoe UI", 11, "bold"),

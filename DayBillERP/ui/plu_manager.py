@@ -279,7 +279,7 @@ class PLUManagerView:
             pass
         style.configure("PLU.Treeview", rowheight=28, font=("Segoe UI", 10))
         style.configure("PLU.Treeview.Heading", font=("Segoe UI", 10, "bold"),
-                        background=C.get("heading_bg", C["content_bg"]), foreground="#374151")
+                        background=C.get("heading_bg", C["content_bg"]), foreground="#334155")
         vsb = ttk.Scrollbar(card, orient="vertical"); vsb.pack(side="right", fill="y")
         self.tree = ttk.Treeview(card, columns=cols, show="headings",
                                  style="PLU.Treeview", yscrollcommand=vsb.set)

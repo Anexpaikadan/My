@@ -219,7 +219,7 @@ class CustomersView:
         self.tree.pack(fill="both", expand=True)
 
         # Row color tags
-        self.tree.tag_configure("b2b",    background="#EFF6FF")
+        self.tree.tag_configure("b2b",    background="#EDF2FF")
         self.tree.tag_configure("b2c",    background="#F0FDF4")
         self.tree.tag_configure("inactive", foreground="#9CA3AF")
         self.tree.tag_configure("even",   background="#FAFAFA")
@@ -882,9 +882,9 @@ class CustomerForm:
                           bg=C["primary"], width=100).pack(side="right", padx=(8, 0))
             if not self.customer_id:
                 RoundedButton(pills, "Save & New", command=lambda: self._save(mode="new"),
-                              bg="#2E86AB", width=110).pack(side="right", padx=(8, 0))
+                              bg="#2952E3", width=110).pack(side="right", padx=(8, 0))
         RoundedButton(pills, "Cancel  Esc" if not self.view_only else "Close  Esc",
-                      command=self.win.destroy, bg="#95A5A6",
+                      command=self.win.destroy, bg="#8B95A9",
                       width=132).pack(side="right", padx=(8, 0))
 
     # ── Type Toggle ───────────────────────────────────────────

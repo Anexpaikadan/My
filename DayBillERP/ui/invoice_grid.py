@@ -220,7 +220,7 @@ class InvoiceGrid(tk.Frame):
         style.configure("InvFooter.Treeview", rowheight=28,
                         font=("Segoe UI", 10, "bold italic"),     # v7.20 Polosys totals line
                         background="#FFF6F4", fieldbackground="#FFF6F4",
-                        foreground="#C0392B")
+                        foreground="#E5484D")
         for key, title, w, anchor in COLUMNS:
             # widths are copied from the item grid (never stretched on its own —
             # with many columns shown it would squeeze Product and slide the totals)
@@ -2187,7 +2187,7 @@ class InvoiceGrid(tk.Frame):
         tip.attributes("-topmost", True)
         C = self.C
         lbl = tk.Label(tip, text=txt, font=("Segoe UI", 9, "bold"),
-                       bg=C.get("primary", "#3A1FD6"), fg="white",
+                       bg=C.get("primary", "#2952E3"), fg="white",
                        padx=4, pady=3)
         lbl.pack()
         rx = self.tree.winfo_rootx() + x

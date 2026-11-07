@@ -344,7 +344,7 @@ class StatementDialog:
             pass
         style.configure("Stmt.Treeview", rowheight=26, font=("Segoe UI", 10))
         style.configure("Stmt.Treeview.Heading", font=("Segoe UI", 10, "bold"),
-                        background=C.get("heading_bg", C["content_bg"]), foreground="#374151")
+                        background=C.get("heading_bg", C["content_bg"]), foreground="#334155")
         vsb = ttk.Scrollbar(card, orient="vertical"); vsb.pack(side="right", fill="y")
         self.tree = ttk.Treeview(card, columns=cols, show="headings",
                                  style="Stmt.Treeview", yscrollcommand=vsb.set)
@@ -364,9 +364,9 @@ class StatementDialog:
         except Exception:
             pass
         self.tree.tag_configure("open", font=("Segoe UI", 10, "italic"),
-                                foreground="#6B7280")
+                                foreground="#5B6475")
         self.tree.tag_configure("close", font=("Segoe UI", 10, "bold"),
-                                background="#EEF2FF")
+                                background="#EDF2FF")
 
         # summary + aging strip
         self.summary = tk.Frame(self.win, bg=C["content_bg"])

@@ -470,7 +470,7 @@ def attach_pos(pos):
     btn = None
     strip = getattr(getattr(pos, "minus_btn", None), "master", None)
     if strip is not None:
-        btn = tk.Button(strip, text="🧵 Sizes", font=("Segoe UI", 11, "bold"), bg="#16A085",
+        btn = tk.Button(strip, text="🧵 Sizes", font=("Segoe UI", 11, "bold"), bg="#12A15E",
                         fg="white", relief="flat", padx=10, cursor="hand2", command=open_grid)
         btn.pack(side="left", padx=4)
     pos.win.bind("<Control-g>", open_grid)
@@ -1129,7 +1129,7 @@ class VariantStockView:
         cols += [("s%d" % i, s or "—", 64, "e") for i, s in enumerate(d["sizes"])]
         cols += [("total", "Total", 80, "e"), ("value", "Value", 110, "e")]
         self.tree = self.K.tree(self.tree_wrap, cols, height=14)
-        self.tree.tag_configure("total", font=("Segoe UI", 10, "bold"), background="#F3F4F6")
+        self.tree.tag_configure("total", font=("Segoe UI", 10, "bold"), background="#F4F6FA")
         self.tree.tag_configure("neg", foreground=self.C["danger"])
         for i, (hdr, vals, tag) in enumerate(self.rows(with_header=False)):
             self.tree.insert("", "end", iid=str(i), values=vals, tags=(tag,) if tag else ())

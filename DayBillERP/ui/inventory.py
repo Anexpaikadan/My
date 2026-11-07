@@ -788,7 +788,7 @@ class StockCountDialog:
                 s = v.get().strip()
                 self._counts[pid] = s
                 if s == "":
-                    d.set("—"); lbl.configure(fg="#6B7280"); return
+                    d.set("—"); lbl.configure(fg="#5B6475"); return
                 try:
                     diffv = float(s) - base
                     d.set(f"{diffv:+,.2f}")

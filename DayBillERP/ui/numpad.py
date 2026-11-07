@@ -15,7 +15,7 @@ import tkinter as tk
 _DEF = {
     "card_bg": "#FFFFFF", "primary": "#2952E3", "primary_dark": "#1F43C7",
     "accent": "#16A34A", "danger": "#DC2626", "text_primary": "#0F172A",
-    "text_secondary": "#6B7280", "border": "#E3E8EF",
+    "text_secondary": "#5B6475", "border": "#E3E8EF",
 }
 
 
@@ -117,7 +117,7 @@ class NumberPadPopup(tk.Toplevel):
         NumberPad(self, self.var, on_enter=self._ok, on_unit=on_unit,
                   theme=C).pack(padx=8, pady=(0, 6))
         row = tk.Frame(self, bg=C["card_bg"]); row.pack(fill="x", padx=8, pady=(0, 8))
-        tk.Button(row, text="Cancel", font=("Segoe UI", 10), bg="#EEF1F6",
+        tk.Button(row, text="Cancel", font=("Segoe UI", 10), bg="#F4F6FA",
                   relief="flat", cursor="hand2", command=self.destroy).pack(
                       side="left", expand=True, fill="x", padx=2)
         tk.Button(row, text="OK", font=("Segoe UI", 10, "bold"), bg=C["accent"],
@@ -204,7 +204,7 @@ class CashTenderDialog(tk.Toplevel):
                   theme=C).pack(padx=16, pady=(0, 8))
 
         btns = tk.Frame(self, bg=C["card_bg"]); btns.pack(fill="x", padx=16, pady=(0, 14))
-        tk.Button(btns, text="Cancel", font=("Segoe UI", 11), bg="#EEF1F6",
+        tk.Button(btns, text="Cancel", font=("Segoe UI", 11), bg="#F4F6FA",
                   relief="flat", cursor="hand2", command=self.destroy).pack(
                       side="left", expand=True, fill="x", padx=3, ipady=4)
         tk.Button(btns, text="Confirm", font=("Segoe UI", 11, "bold"),

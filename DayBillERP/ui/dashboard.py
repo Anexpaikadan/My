@@ -79,7 +79,7 @@ class DashboardView:
 
         kpis = self._get_kpi_data()
         tiles = [C.get("tile_blue", C["primary"]), C.get("tile_green", C["success"]),
-                 C.get("tile_orange", "#F97316"), C.get("tile_purple", "#7C3AED")]
+                 C.get("tile_orange", "#F97316"), C.get("tile_purple", "#7A5AF8")]
         for i, kpi in enumerate(kpis):
             kpi_frame.columnconfigure(i, weight=1, uniform="kpi")
             kpi["color"] = tiles[i % 4]
@@ -203,7 +203,7 @@ class DashboardView:
             except Exception:
                 total = 0.0
             weeks.append((start.strftime("%d/%m"), total))
-        self._draw_bars(cv, weeks, C, bar_color=C.get("primary", "#3A1FD6"))
+        self._draw_bars(cv, weeks, C, bar_color=C.get("primary", "#2952E3"))
 
     def _aging_chart(self, parent, C):
         """Receivables aging buckets across all customers."""

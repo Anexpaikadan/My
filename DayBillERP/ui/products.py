@@ -355,7 +355,7 @@ class ProductsView:
         self.tree.pack(fill="both", expand=True)
 
         # Tags
-        self.tree.tag_configure("product",  background="#EFF6FF")
+        self.tree.tag_configure("product",  background="#EDF2FF")
         self.tree.tag_configure("service",  background="#F0FDF4")
         self.tree.tag_configure("lowstock", background="#FEF9C3")
         self.tree.tag_configure("inactive", foreground="#9CA3AF")
@@ -1624,7 +1624,7 @@ class ProductForm:
                             relief="solid", bd=1)
             bc_e.pack(side="left", fill="x", expand=True)
             if self._bc_locked():         # system barcode: shown, never typed
-                bc_e.configure(state="readonly", readonlybackground="#EFEDF8",
+                bc_e.configure(state="readonly", readonlybackground="#EDF2FF",
                                fg=C["text_primary"])
             bc_e.bind("<FocusOut>",
                       lambda e=None, v=bc_v, w=bc_e: self._check_barcode_dup(v, w))
@@ -1697,7 +1697,7 @@ class ProductForm:
                   bg=C["primary"], fg="white", relief="flat", padx=16, pady=7,
                   cursor="hand2", command=self._save_units).pack(side="left")
         tk.Button(btns, text="➕  Add Unit", font=("Segoe UI", 10, "bold"),
-                  bg="#27AE60", fg="white", relief="flat", padx=14, pady=7,
+                  bg="#12A15E", fg="white", relief="flat", padx=14, pady=7,
                   cursor="hand2",
                   command=self._add_new_unit_prompt).pack(side="left", padx=8)
         tk.Button(btns, text="🖨  Print Barcodes", font=("Segoe UI", 10),
@@ -1705,7 +1705,7 @@ class ProductForm:
                   cursor="hand2", highlightbackground=C["border"], highlightthickness=1,
                   command=self._print_units_labels).pack(side="left", padx=8)
         tk.Button(btns, text="🗑  Remove All Units", font=("Segoe UI", 10),
-                  bg="#E74C3C", fg="white", relief="flat", padx=14, pady=7,
+                  bg="#E5484D", fg="white", relief="flat", padx=14, pady=7,
                   cursor="hand2",
                   command=self._remove_all_units).pack(side="left", padx=(0, 8))
         tk.Label(f, text="Tip: Unit 1 is the base unit (factor 1). Box/Carton use the "
@@ -1819,7 +1819,7 @@ class ProductForm:
             r["s_star"].configure(text="★S" if is_s else "☆S",
                                   fg="#F1C40F" if is_s else self.C["text_secondary"])
             r["p_star"].configure(text="★P" if is_p else "☆P",
-                                  fg="#16A085" if is_p else self.C["text_secondary"])
+                                  fg="#12A15E" if is_p else self.C["text_secondary"])
 
     def _typed_barcodes(self):
         """Barcodes already entered on this form (not yet saved)."""
@@ -2368,7 +2368,7 @@ class ProductForm:
                                    font=("Segoe UI", 10, "bold"), bg="white",
                                    fg=C["text_primary"], relief="solid", bd=1,
                                    width=max(8, min(self._code_max or 12, 16) + 1),
-                                   disabledbackground="#EFEDF8",
+                                   disabledbackground="#EDF2FF",
                                    disabledforeground=C["text_primary"])
         self.code_entry._fixed_width = True
         self.code_entry.pack(side="left", ipady=4)
@@ -2600,7 +2600,7 @@ class ProductForm:
                 self.fields["barcode"], self.barcode_entry), add="+")
             _sv, _scell = lbl_entry(bc_row, "System barcode", "system_barcode", col=1)
             self.sysbc_entry = [w for w in _scell.winfo_children() if isinstance(w, tk.Entry)][-1]
-            self.sysbc_entry.configure(state="readonly", readonlybackground="#EFEDF8",
+            self.sysbc_entry.configure(state="readonly", readonlybackground="#EDF2FF",
                                        font=("Segoe UI", 10, "bold"), takefocus=0)
             if self.product_id is None:
                 try:      # the number this product will get (fixed on Save) — never
@@ -2612,7 +2612,7 @@ class ProductForm:
         elif self._bc_locked():
             _bv, _bcell = lbl_entry(bc_row, "Barcode  (auto · system)", "barcode")
             self.barcode_entry = [w for w in _bcell.winfo_children() if isinstance(w, tk.Entry)][-1]
-            self.barcode_entry.configure(state="readonly", readonlybackground="#EFEDF8",
+            self.barcode_entry.configure(state="readonly", readonlybackground="#EDF2FF",
                                          font=("Segoe UI", 10, "bold"))
             if self.product_id is None:
                 try:      # the code this product will get (fixed on Save)
@@ -3300,11 +3300,11 @@ class ProductForm:
                      bg=C["primary"], width=100).pack(side="right", padx=(8, 0))
         RoundedButton(pills, "Save & Print  F5",
                      command=lambda: self._save(mode="print"),
-                     bg="#16A085", width=150).pack(side="right", padx=(8, 0))
+                     bg="#12A15E", width=150).pack(side="right", padx=(8, 0))
         RoundedButton(pills, "Save & New", command=lambda: self._save(mode="new"),
-                     bg="#2E86AB", width=110).pack(side="right", padx=(8, 0))
+                     bg="#2952E3", width=110).pack(side="right", padx=(8, 0))
         RoundedButton(pills, "Cancel  Esc", command=self._close,
-                     bg="#95A5A6", width=132).pack(side="right", padx=(8, 0))
+                     bg="#8B95A9", width=132).pack(side="right", padx=(8, 0))
 
     def _add_tooltip(self, widget, text):
         """Small hover tooltip — no external deps, auto-positions below
@@ -3936,12 +3936,12 @@ class ProductForm:
         cards = tk.Frame(f, bg=C["content_bg"]); cards.pack(fill="x", padx=14, pady=(8, 0))
         def _qty(v):
             return f"{v:,.3f}".rstrip("0").rstrip(".") if v != int(v) else f"{int(v):,}"
-        stats = [("On Hand (base units)", _qty(q), "#2E86AB"),
-                 ("Average Cost", f"{avg:,.2f}", "#8E44AD"),
-                 ("Last Purchase Cost", f"{last:,.2f}", "#E67E22"),
-                 ("Purchase Price", f"{pp:,.2f}", "#16A085"),
-                 ("Stock Value (qty × avg)", f"{q * avg:,.2f}", "#2C3E50"),
-                 ("Sale Price", f"{sp:,.2f}", "#27AE60")]
+        stats = [("On Hand (base units)", _qty(q), "#2952E3"),
+                 ("Average Cost", f"{avg:,.2f}", "#7A5AF8"),
+                 ("Last Purchase Cost", f"{last:,.2f}", "#F79009"),
+                 ("Purchase Price", f"{pp:,.2f}", "#12A15E"),
+                 ("Stock Value (qty × avg)", f"{q * avg:,.2f}", "#0F172A"),
+                 ("Sale Price", f"{sp:,.2f}", "#12A15E")]
         for i, (lab, val, col) in enumerate(stats):
             cell = tk.Frame(cards, bg="white", highlightbackground=C["border"],
                             highlightthickness=1)
@@ -3955,7 +3955,7 @@ class ProductForm:
         if rl and q <= rl:
             tk.Label(f, text="⚠  At or below reorder level (%g)." % rl,
                      font=("Segoe UI", 10, "bold"), bg=C["content_bg"],
-                     fg="#C0392B").pack(anchor="w", padx=20, pady=(4, 0))
+                     fg="#E5484D").pack(anchor="w", padx=20, pady=(4, 0))
         # two tables side by side: each unit | every movement (no scrolling page)
         panes = tk.Frame(f, bg=C["content_bg"]); panes.pack(fill="both", expand=True, pady=(4, 6))
         lpane = tk.Frame(panes, bg=C["content_bg"])
@@ -4859,7 +4859,7 @@ class BulkRateDialog:
             tk.Label(row, text=f"{cost:,.2f}", font=("Segoe UI", 9), bg="white",
                      width=10, anchor="w").pack(side="left", padx=4)
             tk.Label(row, text=f"{old:,.2f}", font=("Segoe UI", 9), bg="white",
-                     fg="#6B7280", width=10, anchor="w").pack(side="left", padx=4)
+                     fg="#5B6475", width=10, anchor="w").pack(side="left", padx=4)
             newv = tk.StringVar(value=f"{old:.2f}")
             e = tk.Entry(row, textvariable=newv, font=("Segoe UI", 9), width=12,
                          relief="solid", bd=1, justify="right")

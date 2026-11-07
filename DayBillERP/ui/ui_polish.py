@@ -135,7 +135,24 @@ def _polish_widget(w, C):
         _polish_tree(w, C)
     elif cls == "Label":
         _polish_label(w)
+    elif cls == "Labelframe":
+        _polish_group(w, C)
     w._polished = True
+
+
+# ── v8.0 group boxes (tk.LabelFrame) look like the Figma cards ──
+def _polish_group(w, C):
+    """Thin light border instead of the 3-D groove, CAPS-style grey title."""
+    try:
+        if str(w.cget("relief")) in ("groove", "ridge", "sunken", "raised", "solid"):
+            w.config(relief="flat", bd=0, highlightthickness=1,
+                     highlightbackground=C.get("border", "#E3E8EF"),
+                     highlightcolor=C.get("border", "#E3E8EF"))
+        if _is_hex(str(w.cget("fg"))) or str(w.cget("fg")) in ("black", "SystemButtonText"):
+            w.config(fg=C.get("text_secondary", "#5B6475"))
+        w.config(font=("Segoe UI", 9, "bold"))
+    except Exception:
+        pass
 
 
 # ── ERP keyboard flow: Enter = next field (Excel-style) ────────
@@ -469,7 +486,35 @@ def _as_hex(w, colour):
         return colour
 
 
+# v8.0 DayBill 8 (Figma: Report / List templates): tool actions are white
+# Secondary buttons; only the page's main action stays filled
+_SECONDARY_WORDS = {"excel", "pdf", "print", "export", "import", "refresh", "filter",
+                    "columns", "csv", "email", "whatsapp", "preview", "reload", "clear",
+                    "close", "back", "copy", "share", "help", "more"}
+
+
+def _secondary_action(w, C):
+    try:
+        if getattr(w, "_keep_colour", False) or str(C.get("card_bg", "")).upper() != "#FFFFFF":
+            return
+        txt = str(w.cget("text") or "")
+        words = [x for x in "".join(ch if ch.isalnum() or ch == " " else " " for ch in txt).lower().split()
+                 if not (x.startswith("f") and x[1:].isdigit()) and x not in ("ctrl", "shift", "alt")]
+        if not words or words[0] not in _SECONDARY_WORDS or len(words) > 3:
+            return
+        bg, fg = _as_hex(w, w.cget("bg")), _as_hex(w, w.cget("fg"))
+        if not (_is_hex(bg) and _is_hex(fg)) or _rel_lum(fg) < 0.6 or _rel_lum(bg) > 0.6:
+            return                                   # only filled buttons with white text
+        w.config(bg=C.get("card_bg", "#FFFFFF"), fg=C.get("text_primary", "#0F172A"),
+                 activebackground=C.get("heading_bg", "#F7F9FC"),
+                 activeforeground=C.get("text_primary", "#0F172A"),
+                 highlightthickness=1, highlightbackground=C.get("field_border", "#D0D7E2"))
+    except Exception:
+        pass
+
+
 def _polish_button(w, C):
+    _secondary_action(w, C)
     try:
         bg, fg = _as_hex(w, w.cget("bg")), _as_hex(w, w.cget("fg"))
         nb = readable_bg(bg, fg, C)
@@ -553,7 +598,9 @@ _RESTRIPE_MS = 900
 
 def _polish_tree(tree, C):
     card = C.get("card_bg", "#FFFFFF")
-    stripe = _shade(card, -7)
+    # v8.0: Figma table rows — the stripe is the light heading grey
+    stripe = C.get("heading_bg") if str(card).upper() == "#FFFFFF" else _shade(card, -7)
+    stripe = stripe or _shade(card, -7)
     try:
         tree.tag_configure(_STRIPE_TAG, background=stripe)
     except Exception:

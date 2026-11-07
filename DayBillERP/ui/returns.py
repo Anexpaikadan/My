@@ -134,17 +134,18 @@ class ReturnForm:
 
         self.form_body = tk.Frame(self.win, bg=C["card_bg"],
                                   highlightbackground=C["border"], highlightthickness=1)
-        self.form_body.pack(side="top", fill="x")
-        self.items_area = tk.Frame(self.win, bg=C["content_bg"])    # packed last (v6.9)
+        self.form_body.pack(side="top", fill="x", padx=12, pady=(10, 0))   # v8.0 card
+        self.items_area = tk.Frame(self.win, bg=C["card_bg"], highlightthickness=1,
+                                   highlightbackground=C["border"])    # packed last (v6.9); v8.0 card
 
         self._build_header(C)
         self._build_grid(C)
         self._build_footer(C)
         self.bottom_bar = tk.Frame(self.win, bg=C["card_bg"],
                                    highlightbackground=C["border"], highlightthickness=1)
-        self.bottom_bar.pack(side="bottom", fill="x")
+        self.bottom_bar.pack(side="bottom", fill="x", padx=12, pady=(0, 10))
         self._build_totals(C)
-        self.items_area.pack(side="top", fill="both", expand=True)
+        self.items_area.pack(side="top", fill="both", expand=True, padx=12, pady=10)
 
     def _center(self, w, h):
         self.win.update_idletasks()

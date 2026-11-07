@@ -227,7 +227,7 @@ class SetupWizard:
                  bg=C["primary"], fg="white").pack(side="left", padx=16, pady=12)
         self.step_var = tk.StringVar()
         tk.Label(head, textvariable=self.step_var, font=("Segoe UI", 9),
-                 bg=C["primary"], fg="#D9D4FF").pack(side="right", padx=16)
+                 bg=C["primary"], fg="#DCE6FF").pack(side="right", padx=16)
 
         self.body = tk.Frame(self.win, bg=C["card_bg"])
         self.body.pack(fill="both", expand=True, padx=20, pady=16)
@@ -251,7 +251,7 @@ class SetupWizard:
                                   pady=7, cursor="hand2", command=self._next)
         self.next_btn.pack(side="right")
         self.back_btn = tk.Button(nav, text="← Back", font=("Segoe UI", 10),
-                                  bg="#EEF1F6", relief="flat", padx=16, pady=7,
+                                  bg="#F4F6FA", relief="flat", padx=16, pady=7,
                                   cursor="hand2", command=self._back)
         self.back_btn.pack(side="right", padx=(0, 8))
 

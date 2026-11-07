@@ -47,3 +47,17 @@ Shell sizes: side menu 236 px, top bar 52 px, taskbar 34 px.
 |---|---|
 | Sales Invoice | `InvoiceForm._build_window`, `_build_form_header`, `_build_totals_bar`, `_build_footer` (`ui/invoices.py`); header blocks in `ui/doc_header.py`; grid in `ui/invoice_grid.py` |
 | POS | `POSWindow._build` (`ui/pos.py`); colours from `_pos_palette()`; buttons `_pbtn`, fields `_pfield` |
+
+## Window templates (v8.2) — every window follows one of these
+
+| Figma template | Used for | Where the look comes from |
+|---|---|---|
+| Master form — Product | Product, Customer, Supplier, Masters, Users, Settings pages | white header (`ui_polish._restyle_header`), `RoundedButton` roles (`ui/fluent_widgets.py`), fields (`ui_polish._polish_field`), group boxes (`_polish_group`) |
+| Sales Invoice / Purchase | every bill: sales, purchase, returns, quotations, orders, debit notes | card layout in each form's `_build_window`; buttons via `ui_kit.key_style` roles |
+| Entry — Receipt Voucher | payments, receipts, journals, expenses, stock entries | theme colours + `key_style` roles + table style |
+| Report — Sales Register | Report Center, financial / VAT / stock / HR reports | `Treeview` style (`ui_kit.apply_modern_theme`), white tool buttons (`ui_polish._secondary_action`) |
+| List — Customers | every list page | same as Report |
+
+**Button roles** (`ui_kit._key_role`, `RoundedButton._role`, `ui_polish._secondary_action`):
+main action → Primary (blue); delete → Danger (red); everything else → Secondary (white, 1 px border).
+A button that must keep its own colour can set `widget._keep_colour = True`.

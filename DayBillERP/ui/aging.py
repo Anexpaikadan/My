@@ -85,10 +85,10 @@ class AgingView:
         tk.Button(bar, text="🔄 Refresh", font=("Segoe UI", 9, "bold"), bg=C["primary"],
                   fg="white", relief="flat", padx=12, pady=6, cursor="hand2",
                   command=self._load).pack(side="left")
-        tk.Button(bar, text="🖨  Print", font=("Segoe UI", 9, "bold"), bg="#16A085",
+        tk.Button(bar, text="🖨  Print", font=("Segoe UI", 9, "bold"), bg="#12A15E",
                   fg="white", relief="flat", padx=12, pady=6, cursor="hand2",
                   command=self._export_pdf).pack(side="right")
-        tk.Button(bar, text="📥  Excel", font=("Segoe UI", 9, "bold"), bg="#2E86AB",
+        tk.Button(bar, text="📥  Excel", font=("Segoe UI", 9, "bold"), bg="#2952E3",
                   fg="white", relief="flat", padx=12, pady=6, cursor="hand2",
                   command=self._export_excel).pack(side="right", padx=(0, 8))
         tk.Button(bar, text="📄 Open bills", font=("Segoe UI", 9, "bold"),

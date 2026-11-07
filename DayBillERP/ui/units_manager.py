@@ -156,7 +156,7 @@ class UnitsManagerDialog:
                        bg="white", relief="solid", bd=1)
         bce.pack(side="left", fill="x", expand=True, ipady=5)
         if locked:        # made by DayBill on save — shown, never typed
-            bce.configure(state="readonly", readonlybackground="#EFEDF8")
+            bce.configure(state="readonly", readonlybackground="#EDF2FF")
         else:
             tk.Button(bc_row, text="⚡", font=("Segoe UI", 10), bg=C["primary_light"],
                       fg=C["primary"], relief="flat", padx=6, cursor="hand2",

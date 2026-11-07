@@ -214,7 +214,7 @@ class UsersPanel:
         style = ttk.Style()
         style.configure("URU.Treeview", rowheight=30, font=("Segoe UI", 10))
         style.configure("URU.Treeview.Heading", font=("Segoe UI", 10, "bold"),
-                        background=C.get("heading_bg", C["content_bg"]), foreground="#374151")
+                        background=C.get("heading_bg", C["content_bg"]), foreground="#334155")
         vsb = ttk.Scrollbar(card, orient="vertical")
         vsb.pack(side="right", fill="y")
         self.tree = ttk.Treeview(card, columns=cols, show="headings",
@@ -456,7 +456,7 @@ class UserForm:
                  pady=(6, 0))
         self.id_var = tk.StringVar(value=str(user_id) if user_id else "(auto)")
         tk.Entry(body, textvariable=self.id_var, font=("Segoe UI", 10),
-                 bg="#EFEDF8", relief="solid", bd=1, state="readonly").grid(
+                 bg="#EDF2FF", relief="solid", bd=1, state="readonly").grid(
             row=r + 1, column=0, sticky="ew", ipady=4, padx=(0, 10))
 
         entry("Full Name *", "full_name_en", r, col=1)

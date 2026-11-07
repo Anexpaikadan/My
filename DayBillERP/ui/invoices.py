@@ -876,7 +876,7 @@ class InvoiceForm:
         live clock."""
         # v6.9: the status sits in the footer line (no extra strip)
         sb = getattr(self, "_footer_info", None)
-        sbg = C["card_bg"] if sb is not None else "#EEF1F6"
+        sbg = C["card_bg"] if sb is not None else "#F4F6FA"
         if sb is None:
             sb = tk.Frame(self.win, bg=sbg, height=22)
             sb.pack(side="bottom", fill="x")
@@ -1194,7 +1194,7 @@ class InvoiceForm:
                 value=bool(cfg.get("voice_search_enabled", False)))
             self.voice_speak_btn = tk.Button(
                 items_hdr, text="🎤 Speak", font=("Segoe UI", 8, "bold"),
-                bg="#16A085", fg="white", relief="flat", padx=8, pady=2,
+                bg="#12A15E", fg="white", relief="flat", padx=8, pady=2,
                 cursor="hand2", command=self._voice_search)
             self.voice_toggle_btn = tk.Button(
                 items_hdr, font=("Segoe UI", 8), relief="flat", padx=8,
@@ -1575,7 +1575,7 @@ class InvoiceForm:
         on = bool(self._voice_on.get())
         self.voice_toggle_btn.configure(
             text="🎤 Voice: ON" if on else "🎙 Voice: OFF",
-            bg="#27AE60" if on else "#95A5A6", fg="white")
+            bg="#12A15E" if on else "#8B95A9", fg="white")
         if on:
             self.voice_speak_btn.pack(side="right", padx=(0, 6),
                                       before=self.voice_toggle_btn)
@@ -1608,7 +1608,7 @@ class InvoiceForm:
             return                                  # one listen at a time
         self._voice_busy = True
         lang = "ar-SA" if cfg.get("language", "en") == "ar" else "en-US"
-        self.voice_speak_btn.configure(text="👂 Listening…", bg="#E67E22")
+        self.voice_speak_btn.configure(text="👂 Listening…", bg="#F79009")
         self.save_status.set("🎤 Listening — speak the product now "
                              "(e.g. '3 pepsi')…")
 
@@ -1640,7 +1640,7 @@ class InvoiceForm:
     def _voice_result(self, text, err):
         self._voice_busy = False
         try:
-            self.voice_speak_btn.configure(text="🎤 Speak", bg="#16A085")
+            self.voice_speak_btn.configure(text="🎤 Speak", bg="#12A15E")
         except Exception:
             pass
         if err:

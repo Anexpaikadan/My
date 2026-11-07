@@ -86,7 +86,7 @@ class ReceiveDialog:
         self.tv.configure(yscrollcommand=vs.set)
         vs.pack(side="right", fill="y"); self.tv.pack(fill="both", expand=True)
         for tag, col in (("ok", C["success"]), ("short", C["warning"]), ("missing", C["danger"]),
-                         ("over", C["primary"]), ("extra", "#7C3AED")):
+                         ("over", C["primary"]), ("extra", "#7A5AF8")):
             self.tv.tag_configure(tag, foreground=col)
         self.tv.bind("<Double-1>", self._edit)
         self.sum = tk.StringVar()
@@ -128,7 +128,7 @@ class ReceiveDialog:
         if not hit["on_order"]:
             txt = "★ NOT ON THE ORDER: " + txt
         self.last.set(txt)
-        self.last_lbl.configure(fg=self.C["primary"] if hit["on_order"] else "#7C3AED")
+        self.last_lbl.configure(fg=self.C["primary"] if hit["on_order"] else "#7A5AF8")
         self.refresh()
         return hit
 

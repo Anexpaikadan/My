@@ -390,7 +390,7 @@ class MultiVoucherForm:
             self.line_tree.heading(c, text=t)
             self.line_tree.column(c, width=w, anchor=a, stretch=c in ("acct", "narr"))
         self.line_tree.pack(fill="both", expand=True)
-        self.line_tree.tag_configure("bank", foreground=C.get("primary", "#1E40AF"))
+        self.line_tree.tag_configure("bank", foreground=C.get("primary", "#1F43C7"))
         try:
             from ui.grid_lines import excel_grid
             excel_grid(self.line_tree)

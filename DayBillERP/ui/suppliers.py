@@ -313,9 +313,9 @@ class SupplierForm:
                       bg=C["primary"], width=100).pack(side="right", padx=(8, 0))
         if not is_edit:
             RoundedButton(pills, "Save & New", command=lambda: self._save(mode="new"),
-                          bg="#2E86AB", width=110).pack(side="right", padx=(8, 0))
+                          bg="#2952E3", width=110).pack(side="right", padx=(8, 0))
         RoundedButton(pills, "Cancel  Esc", command=self.win.destroy,
-                      bg="#95A5A6", width=132).pack(side="right", padx=(8, 0))
+                      bg="#8B95A9", width=132).pack(side="right", padx=(8, 0))
 
         outer = tk.Frame(self.win, bg=C["content_bg"])
         outer.pack(fill="both", expand=True, padx=10, pady=(8, 0))

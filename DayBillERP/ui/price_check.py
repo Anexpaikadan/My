@@ -53,7 +53,7 @@ class PriceCheckWindow:
         tk.Label(self.win, textvariable=self.name, font=("Segoe UI", 16, "bold"), bg="white",
                  fg="#0F172A", wraplength=580).pack(pady=(8, 0))
         tk.Label(self.win, textvariable=self.name_ar, font=("Segoe UI", 13), bg="white",
-                 fg="#374151").pack()
+                 fg="#334155").pack()
         tk.Label(self.win, textvariable=self.price, font=("Segoe UI", 34, "bold"), bg="white",
                  fg=C["primary"]).pack(pady=(4, 0))
         tk.Label(self.win, textvariable=self.unit, font=("Segoe UI", 11), bg="white",
@@ -61,7 +61,7 @@ class PriceCheckWindow:
         tk.Label(self.win, textvariable=self.offer, font=("Segoe UI", 13, "bold"), bg="white",
                  fg="#DC2626").pack(pady=(4, 0))
         tk.Label(self.win, textvariable=self.info, font=("Segoe UI", 9), bg="white",
-                 fg="#6B7280").pack(pady=(2, 6))
+                 fg="#5B6475").pack(pady=(2, 6))
         wrap = tk.Frame(self.win, bg="white"); wrap.pack(fill="both", expand=True, padx=16, pady=(0, 12))
         self.tree = ttk.Treeview(wrap, columns=("unit", "price", "barcode"), show="headings", height=4)
         for k, t, w, a in (("unit", "Unit", 160, "w"), ("price", "Price (VAT)", 120, "e"),

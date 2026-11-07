@@ -168,12 +168,12 @@ class MDIChild(tk.Frame):
         self._cap_btns = []
 
         def tbtn(txt, cmd, hover, hover_fg):
-            b = tk.Label(bar, text=txt, bg=bar_bg, fg="#374151",
+            b = tk.Label(bar, text=txt, bg=bar_bg, fg="#334155",
                          font=gf, width=5, cursor="hand2")
             b.pack(side="right", fill="y")
             b.bind("<Button-1>", lambda e: cmd())
             b.bind("<Enter>", lambda e: b.config(bg=hover, fg=hover_fg))
-            b.bind("<Leave>", lambda e: b.config(bg=self._bar_bg, fg="#374151"))
+            b.bind("<Leave>", lambda e: b.config(bg=self._bar_bg, fg="#334155"))
             self._cap_btns.append(b)
             return b
         self._bar_bg = bar_bg

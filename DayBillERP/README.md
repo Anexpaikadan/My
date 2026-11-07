@@ -1,7 +1,40 @@
-# DayBill ERP  v8.1.0
+# DayBill ERP  v8.2.0
 
 Billing, POS, inventory, accounts and HR for shops in 🇸🇦 Saudi Arabia, 🇦🇪 the UAE and 🇮🇳 India.
 **VAT / GST by country · ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
+
+## 🎨 v8.2.0 — DayBill 8 design in every window
+
+The Figma file ([DayBill ERP — Redesign v8](https://www.figma.com/design/bnHMQhG6oq5TAqa0ddEkYn) ▸ Screens)
+now has a template for each kind of window — **Master form** (Product),
+**Report** (Sales Register), **Entry** (Receipt Voucher) and **List**
+(Customers) — next to Dashboard, Sales Invoice, POS and Login. Every window
+in the app follows them:
+
+- **Old colours gone everywhere**: the purple brand, the flat teal / green /
+  orange buttons and the old greys left in 42 more screens now use the
+  DayBill 8 colours (155 places). Print designs (barcode labels, report
+  designer, print settings) keep their own colours.
+- **One main button per window**: action buttons follow the Figma roles —
+  the main action (Save, Save & Confirm) is the blue button, Delete is red,
+  everything else (Save Draft, Save & New, Save & Print, Print, Cancel …) is
+  white with a border. Master forms (Product, Customer, Supplier) and all
+  transaction windows (Purchase, Returns, Quotations / Orders, vouchers …).
+- **Report and list tools**: Excel, PDF, Print, Export, Import, Refresh,
+  Filter, Columns … are white buttons everywhere; the page's own Run / Show /
+  New button stays blue.
+- **Purchase, Sales / Purchase Return, Quotation, Sales / Purchase Order**:
+  the header fields, the item grid and the totals sit in white cards on the
+  grey page, like the Sales Invoice.
+- **Group boxes** (Tk LabelFrames) have a thin light border and grey bold
+  titles instead of the 3-D groove.
+- **Tables** everywhere: alternate rows in the light heading grey (#F7F9FC).
+- **Buttons** are a little taller (Figma button height) and bold.
+- Window title bands of every pop-up and form are white with dark text (as
+  before, now with the new colours).
+
+Checked: all 73 list / report pages and 33 entry forms open without errors
+(test run with no database).
 
 ## 🎨 v8.1.0 — Sales Invoice and POS in the DayBill 8 design
 

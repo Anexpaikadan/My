@@ -21,13 +21,13 @@ from config import settings as cfg
 
 def apply_modern_theme(root):
     C = cfg.theme()
-    primary = C.get("primary", "#3A1FD6")
-    accent = C.get("accent", "#7ED957")
+    primary = C.get("primary", "#2952E3")
+    accent = C.get("accent", "#12B76A")
     card = C.get("card_bg", "#FFFFFF")
     content = C.get("content_bg", "#F6F5FD")
-    text = C.get("text_primary", "#1A1438")
-    muted = C.get("text_secondary", "#6B7280")
-    border = C.get("border", "#E3E0F4")
+    text = C.get("text_primary", "#0F172A")
+    muted = C.get("text_secondary", "#5B6475")
+    border = C.get("border", "#E3E8EF")
     field_bg = "#FFFFFF"
     field_focus = primary
     fborder = C.get("field_border", border)
@@ -249,9 +249,9 @@ def _shade(hex_color, delta):
 def modern_entry(parent, textvariable=None, bg="#FFFFFF", **kw):
     C = cfg.theme()
     return tk.Entry(parent, textvariable=textvariable, font=("Segoe UI", 11),
-                    bg=bg, fg=C.get("text_primary", "#1A1438"), relief="solid",
+                    bg=bg, fg=C.get("text_primary", "#0F172A"), relief="solid",
                     bd=1, highlightthickness=1, highlightcolor=C.get("primary"),
-                    highlightbackground=C.get("border", "#E3E0F4"), **kw)
+                    highlightbackground=C.get("border", "#E3E8EF"), **kw)
 
 
 def field(parent, label, textvariable=None, **kw):
@@ -259,7 +259,7 @@ def field(parent, label, textvariable=None, **kw):
     C = cfg.theme()
     wrap = tk.Frame(parent, bg=parent["bg"])
     tk.Label(wrap, text=label, font=("Segoe UI", 9), bg=parent["bg"],
-             fg=C.get("text_secondary", "#6B7280")).pack(anchor="w", pady=(0, 3))
+             fg=C.get("text_secondary", "#5B6475")).pack(anchor="w", pady=(0, 3))
     e = modern_entry(wrap, textvariable, **kw)
     e.pack(fill="x", ipady=5)
     wrap.entry = e
@@ -267,15 +267,42 @@ def field(parent, label, textvariable=None, **kw):
 
 
 # ── Windows 11 action buttons (colour tile, shortcut on top) ──────
+def _key_role(color, label=""):
+    """v8.0 DayBill 8 (Figma: Button): one filled main action per window.
+    green / primary = the main action (filled primary), red = Danger,
+    a draft / every other colour = Secondary (white with a border)."""
+    C = cfg.theme()
+    c = str(color or "").upper()
+    lab = str(label or "").lower()
+    danger = {str(C.get(k, "")).upper() for k in ("danger",)} | {"#DC2626", "#E5484D", "#B91C1C"}
+    main = {str(C.get(k, "")).upper() for k in ("success", "tile_green", "accent", "accent_dark",
+                                                  "primary", "primary_dark")} | \
+        {"#16A34A", "#12A15E", "#12B76A", "#15803D"}
+    if c in danger:
+        return "danger"
+    if c in main and "draft" not in lab:
+        return "primary"
+    return "secondary"
+
+
 def key_style(color, key="", label="", bold=True):
-    """Options for a coloured two-line action button:
+    """Options for an action button:
             F9
             Save Draft
-    Works for tk.Button / tk.Menubutton (and print_menu.print_button)."""
+    Works for tk.Button / tk.Menubutton (and print_menu.print_button).
+    v8.0: the colour only picks the role (_key_role) — Primary, Danger or a
+    white Secondary button — so every window looks like the Figma design."""
+    C = cfg.theme()
+    role = _key_role(color, label)
+    if role == "secondary":
+        st = ghost_key_style(key, label)
+        st["font"] = ("Segoe UI", 9, "bold" if bold else "normal")
+        return st
+    bg = C.get("primary", "#2952E3") if role == "primary" else C.get("danger", "#E5484D")
     return dict(text=f"{key}\n{label}" if key else label,
                 font=("Segoe UI", 9, "bold" if bold else "normal"),
-                bg=color, fg="white", activebackground=_shade(color, -22),
-                activeforeground="white", relief="flat", bd=0, padx=16, pady=4,
+                bg=bg, fg="white", activebackground=_shade(bg, -22),
+                activeforeground="white", relief="flat", bd=0, padx=16, pady=6,
                 justify="left", anchor="w", cursor="hand2", highlightthickness=0)
 
 
@@ -289,8 +316,8 @@ def ghost_key_style(key="", label=""):
     C = cfg.theme()
     return dict(text=f"{key}\n{label}" if key else label, font=("Segoe UI", 9),
                 bg=C.get("card_bg", "#FFFFFF"), fg=C.get("text_primary", "#0F172A"),
-                activebackground=C.get("content_bg", "#F4F6FA"), relief="flat", bd=0,
-                padx=16, pady=4, justify="left", anchor="w", cursor="hand2",
+                activebackground=C.get("heading_bg", "#F7F9FC"), relief="flat", bd=0,
+                padx=16, pady=6, justify="left", anchor="w", cursor="hand2",
                 highlightthickness=1, highlightbackground=C.get("field_border", "#D0D7E2"))
 
 
@@ -310,13 +337,13 @@ def slim_key_style(color, key="", label="", bold=True):
     """v6.9: one-line action button ('F9  Save Draft') — half the height
     of key_style's two-line button; same colours."""
     st = key_style(color, "", ("%s  %s" % (key, label)).strip() if key else label, bold)
-    st.update(pady=3, padx=12, justify="center", anchor="center")
+    st.update(pady=6, padx=14, justify="center", anchor="center")   # v8.0: Figma button height
     return st
 
 
 def slim_ghost_key_style(key="", label=""):
     st = ghost_key_style("", ("%s  %s" % (key, label)).strip() if key else label)
-    st.update(pady=3, padx=12, justify="center", anchor="center")
+    st.update(pady=6, padx=14, justify="center", anchor="center", font=("Segoe UI", 9, "bold"))
     return st
 
 
@@ -339,7 +366,7 @@ def total_strip(parent, cells, total, C=None):
              fg="white").pack(side="left")
     for i, (label, key, colour) in enumerate(cells):
         tk.Label(row, text=label, font=("Segoe UI", 8), bg=C["card_bg"],
-                 fg=C.get("text_secondary", "#6B7280")).pack(side="left", padx=(0 if i == 0 else 16, 4))
+                 fg=C.get("text_secondary", "#5B6475")).pack(side="left", padx=(0 if i == 0 else 16, 4))
         out[key] = tk.StringVar(value="0.00")
         tk.Label(row, textvariable=out[key], font=("Segoe UI", 11, "bold"), bg=C["card_bg"],
                  fg=colour or C.get("text_primary", "#0F172A")).pack(side="left")

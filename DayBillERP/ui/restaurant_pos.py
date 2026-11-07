@@ -30,7 +30,7 @@ from config.database import db
 from modules import restaurant as R
 
 BG, FG, MUTED = "#2A1E3F", "#FFFFFF", "#C9B8E8"
-ON, OFF = "#E67E22", "#4A3A63"
+ON, OFF = "#F79009", "#4A3A63"
 
 
 def _f(v):
@@ -94,9 +94,9 @@ class RestaurantBar:
                           command=cmd)
             b.pack(side="left", padx=2, pady=4, ipady=3)
             return b
-        btn("🍽 Tables  F12", "#5B4B8A", self.tables)
-        btn("📝 Note  F11", "#5B4B8A", lambda: self.note())
-        self.svc_btn = btn("Service", "#5B4B8A", self.toggle_service)
+        btn("🍽 Tables  F12", "#5B6475", self.tables)
+        btn("📝 Note  F11", "#5B6475", lambda: self.note())
+        self.svc_btn = btn("Service", "#5B6475", self.toggle_service)
         self.kot_btn = btn("🍳 Send to Kitchen  F4", "#D35400", self.send_kot)
         btn("🧾 Print Bill  F5", "#7D3C98", self.print_bill)
         try:
@@ -246,7 +246,7 @@ class RestaurantBar:
             pct = R.service_pct()
             if pct > 0 and t == "Dine-in":
                 self.svc_btn.configure(text=("Service %g%% ✓" % pct) if self.service_on
-                                       else "Service off", bg="#1E8449" if self.service_on else "#5B4B8A")
+                                       else "Service off", bg="#1E8449" if self.service_on else "#5B6475")
                 if not self.svc_btn.winfo_ismapped():
                     self.svc_btn.pack(side="left", padx=2, pady=4, ipady=3, before=self.kot_btn)
             elif self.svc_btn.winfo_ismapped():

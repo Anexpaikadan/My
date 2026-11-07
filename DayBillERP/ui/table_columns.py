@@ -1174,11 +1174,11 @@ class ColumnsDialog:
             win.transient(t.winfo_toplevel())
         except Exception:
             pass
-        head = tk.Frame(win, bg="#1E3A8A")
+        head = tk.Frame(win, bg="#1F43C7")
         head.pack(fill="x")
-        tk.Label(head, text="▦  Grid design", font=("Segoe UI", 12, "bold"), bg="#1E3A8A",
+        tk.Label(head, text="▦  Grid design", font=("Segoe UI", 12, "bold"), bg="#1F43C7",
                  fg="white").pack(side="left", padx=14, pady=8)
-        tk.Label(head, text="this table · saved on this PC", font=("Segoe UI", 9), bg="#1E3A8A",
+        tk.Label(head, text="this table · saved on this PC", font=("Segoe UI", 9), bg="#1F43C7",
                  fg="#BFDBFE").pack(side="right", padx=14)
 
         # ── the table: font · row height · colours
@@ -1252,19 +1252,19 @@ class ColumnsDialog:
             for w_ in (self.canvas, self.body):
                 w_.bind("<MouseWheel>", self._wheel, add="+")
         self.canvas.pack(side="left", fill="both", expand=True)
-        bar = tk.Frame(win, bg="#F3F4F6")
+        bar = tk.Frame(win, bg="#F4F6FA")
         bar.pack(fill="x", pady=(10, 0))
 
         def btn(text, cmd, primary=False):
             b = tk.Button(bar, text=text, command=cmd, font=("Segoe UI", 9, "bold" if primary else "normal"),
                           bg="#2952E3" if primary else "white", fg="white" if primary else "#1F2937",
-                          activebackground="#1F43C7" if primary else "#E5E7EB", relief="flat",
+                          activebackground="#1F43C7" if primary else "#E3E8EF", relief="flat",
                           bd=0, padx=12, pady=5, cursor="hand2",
-                          highlightthickness=1, highlightbackground="#D1D5DB")
+                          highlightthickness=1, highlightbackground="#D0D7E2")
             return b
         btn("Fit widths to text", self.fit).pack(side="left", padx=(10, 4), pady=8)
         btn("Reset to default", self.reset).pack(side="left", padx=4, pady=8)
-        tk.Label(bar, text="Align: Left · Centre · Right", font=("Segoe UI", 8), bg="#F3F4F6",
+        tk.Label(bar, text="Align: Left · Centre · Right", font=("Segoe UI", 8), bg="#F4F6FA",
                  fg="#64748B").pack(side="left", padx=8)
         btn("✔  Apply", self.ok, True).pack(side="right", padx=(4, 10), pady=8)
         btn("Cancel", self.cancel).pack(side="right", padx=4, pady=8)
@@ -1359,7 +1359,7 @@ class ColumnsDialog:
             + ["Bold", "Colour", "Size", "", ""]
         for ci, h in enumerate(heads):
             tk.Label(self.body, text=h, font=("Segoe UI", 9, "bold"), bg="#F1F5F9",
-                     fg="#374151", padx=4).grid(row=0, column=ci, sticky="we", padx=1, pady=(0, 2))
+                     fg="#334155", padx=4).grid(row=0, column=ci, sticky="we", padx=1, pady=(0, 2))
         opt = _optional(self.t)
         try:
             from ui.ink import tip
@@ -1367,7 +1367,7 @@ class ColumnsDialog:
             tip = None
         for i, (c, v, w, title, al) in enumerate(self.rows):
             r = i + 1
-            bg = "#EFF6FF" if c == self.sel else ("white" if i % 2 == 0 else "#F8FAFC")
+            bg = "#EDF2FF" if c == self.sel else ("white" if i % 2 == 0 else "#F8FAFC")
             col = 0
             cb = tk.Checkbutton(self.body, variable=v, bg=bg, activebackground=bg,
                                 highlightthickness=0, cursor="hand2")
@@ -1541,9 +1541,9 @@ def _corner(t):
         st = ttk.Style(t)
         style = str(t.cget("style") or "") or "Treeview"
         bg = (st.lookup(style + ".Heading", "background") or
-              st.lookup("Treeview.Heading", "background") or "#E5E7EB")
+              st.lookup("Treeview.Heading", "background") or "#E3E8EF")
     except Exception:
-        bg = "#E5E7EB"
+        bg = "#E3E8EF"
     b = tk.Label(t, text=" ☰ ", font=("Segoe UI", 9, "bold"), bg=bg, fg="#2952E3",
                  cursor="hand2", bd=0, padx=1, pady=0)
     b.bind("<Button-1>", lambda e: menu(t, e.x_root, e.y_root))

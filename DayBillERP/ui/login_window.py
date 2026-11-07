@@ -1058,15 +1058,15 @@ class DbSettingsDialog:
         tools = tk.Frame(self.dialog, bg=C["content_bg"])
         tools.pack(pady=(0, 10))
         tk.Button(tools, text="♻  Restore Database (.bak)…",
-                  font=("Segoe UI", 9, "bold"), bg=_button_bg("#8E44AD"), fg="white",
+                  font=("Segoe UI", 9, "bold"), bg=_button_bg("#7A5AF8"), fg="white",
                   relief="flat", padx=12, pady=6, cursor="hand2",
                   command=self._restore_db).pack(side="left", padx=5)
         tk.Button(tools, text="🆕  Create New Company…",
-                  font=("Segoe UI", 9, "bold"), bg=_button_bg("#27AE60"), fg="white",
+                  font=("Segoe UI", 9, "bold"), bg=_button_bg("#12A15E"), fg="white",
                   relief="flat", padx=12, pady=6, cursor="hand2",
                   command=self._create_db).pack(side="left", padx=5)
         tk.Button(tools, text="💾  Backup Now",
-                  font=("Segoe UI", 9, "bold"), bg=_button_bg("#2E86AB"), fg="white",
+                  font=("Segoe UI", 9, "bold"), bg=_button_bg("#2952E3"), fg="white",
                   relief="flat", padx=12, pady=6, cursor="hand2",
                   command=self._backup_now).pack(side="left", padx=5)
 

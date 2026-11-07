@@ -59,10 +59,10 @@ class AuditLogView:
         tk.Button(f, text="🔍 Filter", font=("Segoe UI", 9, "bold"),
                   bg=C["primary"], fg="white", relief="flat", padx=12, pady=5,
                   cursor="hand2", command=self._load).pack(side="left")
-        tk.Button(f, text="🖨  Print", font=("Segoe UI", 9, "bold"), bg="#16A085",
+        tk.Button(f, text="🖨  Print", font=("Segoe UI", 9, "bold"), bg="#12A15E",
                   fg="white", relief="flat", padx=12, pady=5, cursor="hand2",
                   command=self._export_pdf).pack(side="left", padx=(10, 0))
-        tk.Button(f, text="📥  Excel", font=("Segoe UI", 9, "bold"), bg="#2E86AB",
+        tk.Button(f, text="📥  Excel", font=("Segoe UI", 9, "bold"), bg="#2952E3",
                   fg="white", relief="flat", padx=12, pady=5, cursor="hand2",
                   command=self._export_excel).pack(side="left", padx=(8, 0))
         self.count_var = tk.StringVar()

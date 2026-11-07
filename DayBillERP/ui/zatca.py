@@ -256,7 +256,7 @@ class ZatcaView:
         C = self.C
         for k, (f, t, ds) in self.env_btns.items():
             on = k == key
-            bg = "#EEF2FF" if on else "#F8FAFC"
+            bg = "#EDF2FF" if on else "#F8FAFC"
             f.config(highlightbackground=C["primary"] if on else C["border"], bg=bg)
             t.config(bg=bg, fg=C["primary"] if on else C["text_primary"])
             ds.config(bg=bg)
@@ -615,7 +615,7 @@ class ZatcaView:
         vs = ttk.Scrollbar(wrap, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=vs.set)
         vs.pack(side="right", fill="y"); self.tree.pack(fill="both", expand=True)
-        for tag, bg in (("rejected", "#FEF2F2"), ("fix", "#FFFBEB"), ("waiting", "#EFF6FF")):
+        for tag, bg in (("rejected", "#FEF2F2"), ("fix", "#FFFBEB"), ("waiting", "#EDF2FF")):
             self.tree.tag_configure(tag, background=bg)
         self.tree.bind("<Double-1>", lambda ev: self._view_xml())
         self.tree.bind("<<TreeviewSelect>>", lambda ev: self._show_fix())

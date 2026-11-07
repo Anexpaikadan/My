@@ -670,7 +670,7 @@ class SettingsView:
 
     def _nav_item(self, s, selected, flt=""):
         C = self.C
-        sel_bg = C.get("primary_light", "#EFF6FF")
+        sel_bg = C.get("primary_light", "#EDF2FF")
         row = tk.Frame(self.nav, bg=sel_bg if selected else C["card_bg"], cursor="hand2",
                        takefocus=1, highlightthickness=1,
                        highlightbackground=sel_bg if selected else C["card_bg"],
@@ -850,7 +850,7 @@ class SettingsView:
         head = tk.Frame(self.detail, bg=C["card_bg"])
         head.pack(fill="x", padx=24, pady=(18, 6))
         chip = tk.Label(head, text=sec["icon"], font=("Segoe UI", 16), width=2,
-                        bg=C.get("primary_light", "#EFF6FF"), fg=C["primary"], padx=6, pady=2)
+                        bg=C.get("primary_light", "#EDF2FF"), fg=C["primary"], padx=6, pady=2)
         chip.pack(side="left", anchor="n")
         tt = tk.Frame(head, bg=C["card_bg"])
         tt.pack(side="left", fill="x", expand=True, padx=(12, 0))
