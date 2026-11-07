@@ -3,6 +3,7 @@
 | Folder / file | What it is |
 |---|---|
 | [`daybill/`](daybill/) | **Daybill Print** – print shop app (PHP + MySQL) |
+| [`DayBillERP/`](DayBillERP/) | **DayBill ERP v8** – Windows billing / POS / inventory / accounts (Python + SQL Server). New "DayBill 8" design; Figma: [DayBill ERP — Redesign v8](https://www.figma.com/design/bnHMQhG6oq5TAqa0ddEkYn) |
 | `sales-pos.html` | Sales POS page |
 
 ## Daybill Print

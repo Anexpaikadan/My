@@ -1,0 +1,31 @@
+# ============================================================
+# DayBill ERP - Python requirements  (v6.0: versions pinned to the
+# releases DayBill is tested with; the upper bound keeps a future
+# major version from breaking a shop's PC)
+# Install everything with:
+#     py -m pip install -r requirements.txt
+# (or just double-run:  py install_requirements.py)
+# ============================================================
+
+# ---- Required (app will not start / core features break) ----
+pyodbc>=5.3,<6                # MS SQL Server connection
+pillow>=12.0,<13              # logo + image handling
+openpyxl>=3.1.5,<4            # Excel export / import
+reportlab>=5.0,<6             # PDF invoices, reports, barcode labels
+qrcode>=8.2,<9                # ZATCA QR code + QR barcodes
+python-barcode>=0.16,<0.17    # barcode label generation (Code128 / EAN-13)
+bcrypt>=5.0,<6                # password hashing (required since v6.0)
+
+# ---- ZATCA Phase 2 (e-invoicing) ----
+cryptography>=41.0.7,<47      # invoice signing
+lxml>=6.0,<7                  # XML generation
+requests>=2.32,<3             # ZATCA API calls
+certifi>=2024.8.30            # secure (HTTPS) connection to ZATCA
+
+# ---- Optional (Windows printing + Arabic + voice) ----
+pywin32>=306 ; platform_system == "Windows"   # direct printer access
+pypdfium2>=4.30,<6            # prints PDF invoices straight to the printer (no PDF reader needed)
+arabic-reshaper>=3.0,<4       # Arabic text shaping in PDFs
+python-bidi>=0.6,<0.7         # Arabic right-to-left layout
+SpeechRecognition>=3.10,<4    # voice product search
+# pyaudio                     # needed for voice mic input; can be hard to install on Windows
