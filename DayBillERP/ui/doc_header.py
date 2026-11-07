@@ -34,16 +34,17 @@ class Block:
         self.frame = tk.Frame(header.frame, bg=C["card_bg"], highlightthickness=1,
                               highlightbackground=C.get("border", "#E3E8EF"))
         col = len(header.blocks)
-        self.frame.grid(row=0, column=col, sticky="nsew", padx=(0, 6), pady=0)
+        self.frame.grid(row=0, column=col, sticky="nsew", padx=(0, 8), pady=0)
         header.frame.columnconfigure(col, weight=weight, minsize=minwidth)
         cap = tk.Frame(self.frame, bg=C["card_bg"])
-        cap.pack(fill="x", padx=8, pady=(4, 0))
+        cap.pack(fill="x", padx=10, pady=(6, 0))
+        # v8.0: muted CAPS block titles (Figma: Label/Caps)
         tk.Label(cap, text=title.upper(), font=("Segoe UI", 8, "bold"), bg=C["card_bg"],
-                 fg=readable(C["primary"], C["card_bg"])).pack(side="left")
+                 fg=readable(C["text_secondary"], C["card_bg"])).pack(side="left")
         tk.Frame(cap, bg=C.get("border", "#E3E8EF"), height=1).pack(side="left", fill="x",
                                                                   expand=True, padx=(6, 0), pady=(2, 0))
         self.body = tk.Frame(self.frame, bg=C["card_bg"])
-        self.body.pack(fill="both", expand=True, padx=8, pady=(2, 6))
+        self.body.pack(fill="both", expand=True, padx=10, pady=(4, 8))
         self.body.columnconfigure(1, weight=1)
         self.n = 0
         self.labels = {}
@@ -174,7 +175,7 @@ class DocHeader:
     def __init__(self, parent, C, pady=(4, 4)):
         self.C = C
         self.frame = tk.Frame(parent, bg=C["content_bg"] if "content_bg" in C else C["card_bg"])
-        self.frame.pack(fill="x", padx=8, pady=pady)
+        self.frame.pack(fill="x", padx=10, pady=pady)
         self.frame.rowconfigure(0, weight=1)
         self.blocks = []
 

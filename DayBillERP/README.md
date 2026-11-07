@@ -1,7 +1,40 @@
-# DayBill ERP  v8.0.0
+# DayBill ERP  v8.1.0
 
 Billing, POS, inventory, accounts and HR for shops in 🇸🇦 Saudi Arabia, 🇦🇪 the UAE and 🇮🇳 India.
 **VAT / GST by country · ZATCA Phase 1 & 2 · Arabic & English · Microsoft SQL Server · Windows**
+
+## 🎨 v8.1.0 — Sales Invoice and POS in the DayBill 8 design
+
+Matches the Sales Invoice and POS screens in Figma
+([DayBill ERP — Redesign v8](https://www.figma.com/design/bnHMQhG6oq5TAqa0ddEkYn) ▸ Screens).
+
+**Sales Invoice**
+- White window header: icon, title, a short hint line and the bill number as a
+  blue pill (was a solid blue band). Compact mode leaves it as it is.
+- The header fields, item grid and totals sit in white cards on the grey page.
+- Toolbar: quiet bordered buttons; **Save** is the one blue button; Delete
+  and Close are red.
+- Fields are flat white boxes with a light border and a blue ring on focus.
+- Header block titles (BILL · CUSTOMER · …) in grey CAPS, more spacing — also
+  on Purchase and Returns (shared header).
+- Item grid: 32 px rows, grey headings.
+- Bottom buttons: Teller, Hold, Save Draft, Print ▾ and Cancel are white with
+  a border; **Save & Confirm** is the blue button. Same keys as before.
+
+**POS**
+- Light screen instead of the dark teal one: white top bar and customer strip,
+  grey page, white bill card.
+- Barcode / search / customer fields are bordered white boxes; Bill No sits in
+  a light-blue panel.
+- Category tabs are pills (the open one blue); quick-product tiles are light
+  green / amber / red by stock, with dark text.
+- Bill table: grey headings, light-blue selected row, thin lines.
+- TOTAL in a navy box; totals in a white panel.
+- Keypad and action keys are white with a border; Qty / Rate light blue when
+  active; Cash green, Card blue, Enter navy; SAVE green, Save+Print blue,
+  Shift purple, Delete Bill light red. Same keys and shortcuts as before.
+- Pop-ups (product details, unit / price, payment, held sales) use the same
+  navy and blue colours.
 
 ## 🎨 v8.0.0 — DayBill 8: new look for the whole app
 

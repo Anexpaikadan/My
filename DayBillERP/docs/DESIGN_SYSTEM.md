@@ -40,3 +40,10 @@ they stay readable on white.
 | Table head / rows | `Treeview` rowheight 32, heading on `heading_bg`, muted bold text |
 
 Shell sizes: side menu 236 px, top bar 52 px, taskbar 34 px.
+
+## Screens (v8.1)
+
+| Figma screen | Code |
+|---|---|
+| Sales Invoice | `InvoiceForm._build_window`, `_build_form_header`, `_build_totals_bar`, `_build_footer` (`ui/invoices.py`); header blocks in `ui/doc_header.py`; grid in `ui/invoice_grid.py` |
+| POS | `POSWindow._build` (`ui/pos.py`); colours from `_pos_palette()`; buttons `_pbtn`, fields `_pfield` |

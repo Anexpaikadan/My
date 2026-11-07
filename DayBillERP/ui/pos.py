@@ -52,9 +52,30 @@ def _pos_locked(col):
     return cfg.flag("pos_lock_%s" % col, False)
 
 
-# v7.6 picture menu colours (light card grid, 4.5:1 text)
-PIC_BG, PIC_CHIP, PIC_ON = "#F1F5F9", "#E2E8F0", "#1F43C7"
-PIC_INK, PIC_MUTED, PIC_EDGE, PIC_PRICE = "#0F172A", "#475569", "#CBD5E1", "#15803D"
+def _pos_palette(C=None):
+    """v8.0 DayBill 8 POS colours, from the app theme (Figma: Redesign v8)."""
+    C = C or cfg.theme()
+    primary = C.get("primary", "#2952E3")
+    return {
+        "page": C.get("content_bg", "#F4F6FA"), "card": C.get("card_bg", "#FFFFFF"),
+        "heading": C.get("heading_bg", "#F7F9FC"), "line": C.get("border", "#E3E8EF"),
+        "field_line": C.get("field_border", "#D0D7E2"),
+        "ink": C.get("text_primary", "#0F172A"), "ink2": C.get("text_secondary", "#5B6475"),
+        "muted": C.get("text_secondary", "#5B6475"),
+        "primary": primary, "primary_soft": C.get("primary_light", "#EDF2FF"),
+        "success": C.get("success", "#12A15E"), "success_soft": "#E7F8EF",
+        "danger": C.get("danger", "#E5484D"), "danger_soft": "#FDECEC",
+        "warning": C.get("tile_orange", "#F79009"), "warning_ink": "#B54708",
+        "purple": C.get("tile_purple", "#7A5AF8"),
+        "navy": C.get("sidebar_bg", "#0B1220"), "navy_text": C.get("sidebar_text", "#E6EAF2"),
+        "navy_muted": C.get("sidebar_muted", "#8B95A9"),
+    }
+
+
+# v7.6 picture menu colours (light card grid, 4.5:1 text) — v8.0 DayBill 8
+_PP = _pos_palette()
+PIC_BG, PIC_CHIP, PIC_ON = _PP["page"], _PP["line"], _PP["primary"]
+PIC_INK, PIC_MUTED, PIC_EDGE, PIC_PRICE = _PP["ink"], _PP["muted"], _PP["line"], _PP["primary"]
 PIC_TILE = (140, 164)                       # one picture tile (w, h) before it stretches
 
 
@@ -82,7 +103,7 @@ class POSWindow:
                 self.win.title(f"DayBill POS — {_bn} · {_cn}")
         except Exception:
             pass
-        self.win.configure(bg="#0F2027")
+        self.win.configure(bg=_pos_palette()["page"])
         # Settings ▸ POS: fullscreen on open (default on)
         # not full screen: a window that always fits this screen
         _sw, _sh = self.win.winfo_screenwidth(), self.win.winfo_screenheight()
@@ -227,8 +248,8 @@ class POSWindow:
     # white cart with column lines, quick-product tiles, a right column with
     # totals / PAID-BALANCE-CHANGE / keypad / Cash + Card / big Save, and a
     # bottom bar with big Hold + Retrieve, Clear, Last bill print.
-    NAVY, STRIP, BG, LINE = "#0B1F3A", "#132B4D", "#EEF1F6", "#D5DCE6"
-    BLUE, MUTED, INK = "#1F43C7", "#475569", "#0F172A"
+    NAVY, STRIP, BG, LINE = "#0B1220", "#162036", "#F4F6FA", "#E3E8EF"
+    BLUE, MUTED, INK = "#2952E3", "#475569", "#0F172A"
     # (key, heading, width, anchor)
     POS_COLS = [("no", "#", 44, "center"), ("code", "Barcode", 90, "w"),
                 ("name", "Item", 260, "w"), ("name_ar", "الاسم العربي", 180, "e"),
@@ -407,33 +428,69 @@ class POSWindow:
                          bd=0, cursor="hand2", activebackground=bg, activeforeground=fg,
                          command=cmd, **kw)
 
+    def _pbtn(self, parent, text, kind, cmd, font=("Segoe UI", 11, "bold"), **kw):
+        """v8.0 POS button in the DayBill 8 style (Figma: Button).
+        kind: primary · success · danger · purple · navy (filled, white text)
+              secondary (white, border) · soft (light blue) · danger_soft"""
+        P = self._P
+        filled = {"primary": P["primary"], "success": P["success"], "danger": P["danger"],
+                  "purple": P["purple"], "navy": P["navy"], "warning": P["warning"]}
+        if kind in filled:
+            bg, fg, edge = filled[kind], "white", 0
+        elif kind == "soft":
+            bg, fg, edge = P["primary_soft"], P["primary"], 0
+        elif kind == "danger_soft":
+            bg, fg, edge = P["danger_soft"], P["danger"], 0
+        else:                                   # secondary
+            bg, fg, edge = P["card"], kw.pop("fg", P["ink"]), 1
+        kw.setdefault("padx", 12)
+        return tk.Button(parent, text=text, font=font, bg=bg, fg=fg, relief="flat", bd=0,
+                         cursor="hand2", activebackground=cfg.mix(bg, "#000000", 0.08),
+                         activeforeground=fg, highlightthickness=edge,
+                         highlightbackground=P["field_line"], highlightcolor=P["primary"],
+                         command=cmd, **kw)
+
+    def _pfield(self, parent, var, font, width, **kw):
+        """v8.0 bordered white field (Figma: Input)."""
+        P = self._P
+        return tk.Entry(parent, textvariable=var, font=font, width=width, bg=P["card"],
+                        fg=P["ink"], insertbackground=P["primary"], relief="flat", bd=0,
+                        highlightthickness=kw.pop("edge", 1),
+                        highlightbackground=P["field_line"], highlightcolor=P["primary"], **kw)
+
+    def _caps(self, parent, text, bg=None, fg=None):
+        P = self._P
+        return tk.Label(parent, text=text.upper(), font=("Segoe UI", 8, "bold"),
+                        bg=bg or P["card"], fg=fg or P["muted"])
+
     def _build(self, C):
-        HEAD = "#1B3A4B"
-        ACCENT = "#2E86AB"
+        # v8.0 "DayBill 8" POS (Figma: DayBill ERP — Redesign v8 ▸ POS):
+        # light page, white top bar and cards, navy TOTAL box, one button style
+        P = self._P = _pos_palette(C)
+        PAGE, CARD = P["page"], P["card"]
+        self.win.configure(bg=PAGE)
 
-        top = tk.Frame(self.win, bg=HEAD, height=88)
+        top = tk.Frame(self.win, bg=CARD, height=84)
         top.pack(fill="x"); top.pack_propagate(False)
-        tk.Label(top, text="POS", font=("Segoe UI", 13, "bold"),
-                 bg=HEAD, fg="white", justify="left").pack(side="left", padx=(10, 2))
+        tk.Frame(top, bg=P["line"], height=1).pack(side="bottom", fill="x")
+        brand = tk.Frame(top, bg=CARD); brand.pack(side="left", padx=(14, 6))
+        tk.Label(brand, text="D", font=("Segoe UI", 13, "bold"), bg=P["primary"], fg="white",
+                 width=2, pady=2).pack(side="left")
+        tk.Label(brand, text="POS", font=("Segoe UI", 13, "bold"),
+                 bg=CARD, fg=P["ink"], justify="left").pack(side="left", padx=(8, 2))
 
-        bcbox = tk.Frame(top, bg=HEAD); bcbox.pack(side="left", padx=8)
-        tk.Label(bcbox, text="Barcode", font=("Segoe UI", 9, "bold"),
-                 bg=HEAD, fg="#9FC3D6").pack(anchor="w")
+        bcbox = tk.Frame(top, bg=CARD); bcbox.pack(side="left", padx=8)
+        self._caps(bcbox, "Barcode").pack(anchor="w", pady=(0, 3))
         self.barcode_var = tk.StringVar()
-        self.barcode_entry = tk.Entry(bcbox, textvariable=self.barcode_var,
-                                      font=("Segoe UI", 16), width=11, bg="#EAF4FA",
-                                      relief="flat", bd=0)
-        self.barcode_entry.pack(ipady=10)
+        self.barcode_entry = self._pfield(bcbox, self.barcode_var, ("Segoe UI", 16), 11, edge=2)
+        self.barcode_entry.pack(ipady=8)
         self.barcode_entry.bind("<Return>", self._on_barcode_enter)
 
-        srchbox = tk.Frame(top, bg=HEAD); srchbox.pack(side="left", padx=8)
-        tk.Label(srchbox, text="Search Product (e.g. 'pe co 250')",
-                 font=("Segoe UI", 9, "bold"), bg=HEAD, fg="#9FC3D6").pack(anchor="w")
+        srchbox = tk.Frame(top, bg=CARD); srchbox.pack(side="left", padx=8)
+        self._caps(srchbox, "Search product  (e.g. 'pe co 250')").pack(anchor="w", pady=(0, 3))
         self.search_var = tk.StringVar()
-        self.search_entry = tk.Entry(srchbox, textvariable=self.search_var,
-                                     font=("Segoe UI", 14, "bold"), width=14,
-                                     bg="#FFFDEA", relief="flat", bd=0)
-        self.search_entry.pack(fill="x", ipady=6)
+        self.search_entry = self._pfield(srchbox, self.search_var, ("Segoe UI", 14, "bold"), 14)
+        self.search_entry.pack(fill="x", ipady=8)
         self.search_entry.bind("<Return>", self._on_search_enter)
         # live results while typing (this is what makes Search actually
         # load matches — before, nothing appeared until Enter)
@@ -447,59 +504,43 @@ class POSWindow:
         self._search_matches = []
 
         # ── Bill # browser: ▲ ▼ walk saved bills into this window ──
-        # Highlighted panel so it's impossible to miss, with big
-        # touch-size buttons (▲ newer · ▼ previous · 🖨 print loaded).
-        billbox = tk.Frame(top, bg="#14512E", padx=8, pady=4,
-                           highlightbackground="#2ECC71", highlightthickness=2)
-        billbox.pack(side="left", padx=10, pady=6)
-        tk.Label(billbox, text="BILL No", font=("Segoe UI", 9, "bold"),
-                 bg="#14512E", fg="#7FD1B9").pack(anchor="w")
-        brow = tk.Frame(billbox, bg="#14512E"); brow.pack()
+        SOFT = P["primary_soft"]
+        billbox = tk.Frame(top, bg=SOFT, padx=10, pady=5)
+        billbox.pack(side="left", padx=10, pady=8)
+        self._caps(billbox, "Bill No", bg=SOFT, fg=P["primary"]).pack(anchor="w")
+        brow = tk.Frame(billbox, bg=SOFT); brow.pack()
         self.bill_var = tk.StringVar(value="NEW")
-        tk.Entry(brow, textvariable=self.bill_var, font=("Segoe UI", 17, "bold"),
-                 width=7, justify="center", bg="#0B3B1F", fg="#2ECC71",
-                 relief="flat", bd=0, state="readonly",
-                 readonlybackground="#0B3B1F").pack(side="left", ipady=8)
-        for txt, cmd, bg in [("▲", lambda: self._nav_bill(+1), "#2E86AB"),
-                             ("▼", lambda: self._nav_bill(-1), "#2E86AB"),
-                             ("🖨", self._print_loaded, "#16A085")]:
-            b = tk.Button(brow, text=txt,
-                          font=("Segoe UI Emoji" if txt == "🖨" else "Segoe UI",
-                                14, "bold"),
-                          width=2, bg=bg, fg="white", relief="flat",
-                          cursor="hand2", activebackground="#1B6E8F",
-                          command=cmd)
-            b.pack(side="left", padx=(4, 0), ipady=6)
+        tk.Entry(brow, textvariable=self.bill_var, font=("Segoe UI", 16, "bold"),
+                 width=7, justify="center", fg=P["primary"], relief="flat", bd=0,
+                 state="readonly", readonlybackground=CARD,
+                 highlightthickness=1, highlightbackground=P["field_line"]).pack(side="left", ipady=6)
+        for txt, cmd, kind in [("▲", lambda: self._nav_bill(+1), "secondary"),
+                               ("▼", lambda: self._nav_bill(-1), "secondary"),
+                               ("🖨", self._print_loaded, "primary")]:
+            b = self._pbtn(brow, txt, kind, cmd,
+                           font=("Segoe UI Emoji" if txt == "🖨" else "Segoe UI", 13, "bold"),
+                           width=2, padx=0)
+            b.pack(side="left", padx=(4, 0), ipady=4)
         self._loaded_invoice_id = None
         self._loaded_split = None
 
         # ── Customer: search by NAME / PHONE / VAT — default Cash ──
-        # slim strip under the top bar (keeps the top bar free for a BIG search)
-        STRIP = "#16313F"
-        cust = tk.Frame(self.win, bg=STRIP)
+        cust = tk.Frame(self.win, bg=CARD)
         cust.pack(fill="x", after=top)
+        tk.Frame(self.win, bg=P["line"], height=1).pack(fill="x", after=cust)
         self._cust_strip = cust
-        tk.Label(cust, text="Customer  (name / phone / VAT #)",
-                 font=("Segoe UI", 9, "bold"), bg=STRIP, fg="#9FC3D6").pack(
-                     side="left", padx=(12, 6))
-        crow = tk.Frame(cust, bg=STRIP); crow.pack(side="left", pady=4)
+        self._caps(cust, "Customer  (name / phone / VAT #)").pack(side="left", padx=(14, 6))
+        crow = tk.Frame(cust, bg=CARD); crow.pack(side="left", pady=6)
         self.cust_search_var = tk.StringVar()
-        self.cust_entry = tk.Entry(crow, textvariable=self.cust_search_var,
-                                   font=("Segoe UI", 13), width=22,
-                                   bg="#EAF4FA", relief="flat", bd=0)
+        self.cust_entry = self._pfield(crow, self.cust_search_var, ("Segoe UI", 12), 22)
         self.cust_entry.pack(side="left", ipady=4)
-        tk.Button(crow, text="✕", font=("Segoe UI", 11, "bold"), width=3,
-                  bg="#95A5A6", fg="white", relief="flat", cursor="hand2",
-                  command=self._reset_customer).pack(side="left", padx=(4, 0),
-                                                     ipady=5)
-        tk.Button(crow, text="＋", font=("Segoe UI", 11, "bold"), width=3,
-                  bg="#27AE60", fg="white", relief="flat", cursor="hand2",
-                  activebackground="#1E8449",
-                  command=self._add_customer_quick).pack(side="left", padx=(4, 0),
-                                                         ipady=5)
+        self._pbtn(crow, "✕", "secondary", self._reset_customer,
+                   font=("Segoe UI", 10, "bold"), width=3, padx=0).pack(side="left", padx=(4, 0), ipady=3)
+        self._pbtn(crow, "＋", "soft", self._add_customer_quick,
+                   font=("Segoe UI", 10, "bold"), width=3, padx=0).pack(side="left", padx=(4, 0), ipady=3)
         self.cust_label_var = tk.StringVar(value="Cash Account")
         tk.Label(cust, textvariable=self.cust_label_var, font=("Segoe UI", 10, "bold"),
-                 bg=STRIP, fg="#2ECC71").pack(side="left", padx=10)
+                 bg=CARD, fg=P["success"]).pack(side="left", padx=10)
         # v7.8: a customer who is not in Customers — the name and tax number
         # typed here are printed on the bill
         try:
@@ -509,14 +550,12 @@ class POSWindow:
             _tax_lbl = "VAT No."
         self.walkin_name_var, self.walkin_vat_var = tk.StringVar(), tk.StringVar()
         for _txt, _var, _w in (("Name", self.walkin_name_var, 16), (_tax_lbl, self.walkin_vat_var, 15)):
-            tk.Label(cust, text=_txt, font=("Segoe UI", 9, "bold"), bg=STRIP, fg="#9FC3D6").pack(
-                side="left", padx=(8, 4))
-            tk.Entry(cust, textvariable=_var, font=("Segoe UI", 11), width=_w, bg="#EAF4FA",
-                     relief="flat", bd=0).pack(side="left", ipady=3)
+            self._caps(cust, _txt).pack(side="left", padx=(10, 4))
+            self._pfield(cust, _var, ("Segoe UI", 11), _w).pack(side="left", ipady=3)
         # the customer's balance / last bill and this counter's last bill
         self.party_info_var = tk.StringVar(value="")
         tk.Label(cust, textvariable=self.party_info_var, font=("Segoe UI", 9, "bold"),
-                 bg=STRIP, fg="#F1C40F").pack(side="right", padx=(6, 12))
+                 bg=CARD, fg=P["warning_ink"]).pack(side="right", padx=(6, 14))
         self.cust_entry.bind("<KeyRelease>", self._on_cust_type)
         self.cust_entry.bind("<Down>", lambda e: self._cust_dd_move(1))
         self.cust_entry.bind("<Up>", lambda e: self._cust_dd_move(-1))
@@ -529,59 +568,55 @@ class POSWindow:
         # legacy alias some code may still touch
         self.mobile_var = tk.StringVar()
 
-        rightbox = tk.Frame(top, bg=HEAD)
-        rb = tk.Frame(rightbox, bg=HEAD); rb.pack(pady=(6, 2))
+        rightbox = tk.Frame(top, bg=CARD)
+        rb = tk.Frame(rightbox, bg=CARD); rb.pack(pady=(8, 2))
         # v7.7: — minimize the POS to the taskbar (the shop PC can do other work)
-        tk.Button(rb, text="—", font=("Segoe UI", 13, "bold"), width=3,
-                  bg="#34495E", fg="white", relief="flat",
-                  cursor="hand2", activebackground="#2C3E50",
-                  command=self._minimize).pack(side="left", padx=(0, 4), ipady=4)
-        tk.Button(rb, text="⚙", font=("Segoe UI", 13, "bold"), width=3,
-                  bg="#34495E", fg="white", relief="flat",
-                  cursor="hand2", activebackground="#2C3E50",
-                  command=self._open_pos_settings).pack(side="left", ipady=4)
-        tk.Button(rb, text="✕", font=("Segoe UI", 13, "bold"), width=3,
-                  bg="#C0392B", fg="white", relief="flat",
-                  cursor="hand2", activebackground="#96281B",
-                  command=self._close_pos).pack(side="left", padx=(4, 0), ipady=4)
+        self._pbtn(rb, "—", "secondary", self._minimize, font=("Segoe UI", 12, "bold"),
+                   width=3, padx=0).pack(side="left", padx=(0, 4), ipady=3)
+        self._pbtn(rb, "⚙", "secondary", self._open_pos_settings, font=("Segoe UI", 12, "bold"),
+                   width=3, padx=0).pack(side="left", ipady=3)
+        self._pbtn(rb, "✕", "danger_soft", self._close_pos, font=("Segoe UI", 12, "bold"),
+                   width=3, padx=0).pack(side="left", padx=(4, 0), ipady=3)
         self.clock_var = tk.StringVar()
         tk.Label(rightbox, textvariable=self.clock_var, font=("Segoe UI", 9),
-                 bg=HEAD, fg="#9FC3D6").pack()
+                 bg=CARD, fg=P["muted"]).pack()
         self._tick()
         # top bar: Close/Settings, Bill No and Customer keep their size on
         # the right; the product Search takes ALL the space that is left
         for w in (srchbox, billbox):
             w.pack_forget()
-        rightbox.pack(side="right", padx=(4, 8))
-        billbox.pack(side="right", padx=(6, 4), pady=6)
+        rightbox.pack(side="right", padx=(4, 12))
+        billbox.pack(side="right", padx=(6, 4), pady=8)
         srchbox.pack(side="left", fill="x", expand=True, padx=8)
 
-        sb = tk.Frame(self.win, bg="#0A1519"); sb.pack(fill="x", side="bottom")
+        sb = tk.Frame(self.win, bg=CARD); sb.pack(fill="x", side="bottom")
+        tk.Frame(self.win, bg=P["line"], height=1).pack(fill="x", side="bottom")
         self.status_var = tk.StringVar(value="Ready - scan or type a product, then Enter.")
         tk.Label(sb, textvariable=self.status_var, font=("Segoe UI", 9),
-                 bg="#0A1519", fg="#7FD1B9", anchor="w").pack(side="left", fill="x", expand=True)
+                 bg=CARD, fg=P["ink2"], anchor="w").pack(side="left", fill="x", expand=True,
+                                                          padx=(12, 0), pady=4)
         try:
             from modules import session_info
             _who = session_info.text()
         except Exception:
             _who = ""
-        tk.Label(sb, text=_who, font=("Segoe UI", 8), bg="#0A1519",
-                 fg="#7F9AAB").pack(side="right", padx=(4, 8))
+        tk.Label(sb, text=_who, font=("Segoe UI", 8), bg=CARD,
+                 fg=P["muted"]).pack(side="right", padx=(4, 12))
         self.day_var = tk.StringVar(value="")
         tk.Label(sb, textvariable=self.day_var, font=("Segoe UI", 8, "bold"),
-                 bg="#0A1519", fg="#F1C40F").pack(side="right", padx=8)
-        body = tk.Frame(self.win, bg="#0F2027")
-        body.pack(fill="both", expand=True, padx=8, pady=8)
+                 bg=CARD, fg=P["warning_ink"]).pack(side="right", padx=8)
+        body = tk.Frame(self.win, bg=PAGE)
+        body.pack(fill="both", expand=True, padx=12, pady=12)
 
-        left = tk.Frame(body, bg="white")
-        left.pack(side="left", fill="both", expand=True, padx=(0, 8))
+        left = tk.Frame(body, bg=CARD, highlightthickness=1, highlightbackground=P["line"])
+        left.pack(side="left", fill="both", expand=True, padx=(0, 12))
 
         # v7.6: restaurant / tailor shops get the PICTURE MENU — big product
         # pictures on the left, the bill on the right; other shops keep the
         # favourites strip over the bill
         self._picture = self._picture_layout()
         if self._picture:
-            cart = tk.Frame(left, bg="white", width=int(self.win.winfo_screenwidth() * 0.29))
+            cart = tk.Frame(left, bg=CARD, width=int(self.win.winfo_screenwidth() * 0.29))
             self._menu_frame = tk.Frame(left, bg=PIC_BG)
             totals_parent = cart_parent = cart      # bill + totals in one column on the right
             strip_parent = left                     # the +/− strip runs under both
@@ -604,9 +639,15 @@ class POSWindow:
                         rowheight=int((56 if cfg.flag("pos_touchscreen", False) else 44) * _f),
                         font=("Segoe UI", _u(int(round((13 if cfg.flag("pos_touchscreen", False)
                                                         else 12) * _f)))),
-                        fieldbackground="white")
-        style.configure("POS.Treeview.Heading", font=("Segoe UI", _u(int(round(11 * _f))), "bold"),
-                        background=ACCENT, foreground="white")
+                        background=CARD, foreground=P["ink"], fieldbackground=CARD,
+                        bordercolor=P["line"], lightcolor=CARD, darkcolor=P["line"])
+        style.configure("POS.Treeview.Heading", font=("Segoe UI", _u(int(round(10 * _f))), "bold"),
+                        background=P["heading"], foreground=P["muted"], relief="flat",
+                        padding=(8, 8), bordercolor=P["line"], lightcolor=P["heading"],
+                        darkcolor=P["line"])
+        style.map("POS.Treeview.Heading", background=[("active", P["line"])])
+        style.map("POS.Treeview", background=[("selected", P["primary_soft"])],
+                  foreground=[("selected", P["ink"])])
 
         cols = [k for k, *_ in self.POS_COLS]
         self.tree = ttk.Treeview(cart_parent, columns=cols, show="headings",
@@ -620,11 +661,12 @@ class POSWindow:
         self.tree["displaycolumns"] = self._visible_cols()
         try:                                   # Excel-style cell lines
             from ui.grid_lines import excel_grid
-            excel_grid(self.tree, select_bg="#FFE8CC", color="#D5DCE6")
+            excel_grid(self.tree, select_bg=P["primary_soft"], select_fg=P["ink"],
+                       color=P["line"], header_line=P["field_line"])
         except Exception:
             pass
-        self.tree.tag_configure("ret", foreground="#C0392B", background="#FDEDEC")
-        self.tree.tag_configure("offer", foreground="#0E7C3A", background="#EAFBF0")
+        self.tree.tag_configure("ret", foreground=P["danger"], background=P["danger_soft"])
+        self.tree.tag_configure("offer", foreground=P["success"], background=P["success_soft"])
         self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
         self.tree.bind("<Button-1>", self._on_tree_click, add="+")
         self.tree.bind("<Delete>", lambda e: (self._remove_selected(), "break")[1])
@@ -639,39 +681,35 @@ class POSWindow:
 
         # totals at the very bottom, the +/- strip above them, the bill grid
         # takes the space that is left (nothing is cut off on a 768 screen)
-        totals = tk.Frame(totals_parent, bg="#1B3A4B"); totals.pack(fill="x", side="bottom")
-        strip = tk.Frame(strip_parent, bg="#ECF0F1", height=52)
+        totals = tk.Frame(totals_parent, bg=CARD); totals.pack(fill="x", side="bottom")
+        tk.Frame(totals_parent, bg=P["line"], height=1).pack(fill="x", side="bottom")
+        strip = tk.Frame(strip_parent, bg=P["heading"], height=52)
         strip.pack(fill="x", side="bottom")
         strip.pack_propagate(False)
+        tk.Frame(strip_parent, bg=P["line"], height=1).pack(fill="x", side="bottom")
         if self._picture:
             cart.pack(side="right", fill="y"); cart.pack_propagate(False)
             self._menu_frame.pack(side="left", fill="both", expand=True)
             self._build_picture_menu(self._menu_frame)
         self.tree.pack(fill="both", expand=True, side="top")
-        tk.Button(strip, text="+", font=("Segoe UI", 17, "bold"), width=5,
-                  bg="#27AE60", fg="white", relief="flat", cursor="hand2",
-                  command=lambda: self._bump(1)).pack(side="left", padx=4, pady=4)
-        tk.Button(strip, text="-", font=("Segoe UI", 17, "bold"), width=5,
-                  bg="#E67E22", fg="white", relief="flat", cursor="hand2",
-                  command=lambda: self._bump(-1)).pack(side="left", padx=4, pady=4)
-        self.minus_btn = tk.Button(strip, text="↩ Return (−)", font=("Segoe UI", 11, "bold"),
-                                   bg="#8E44AD", fg="white", relief="flat", padx=10,
-                                   cursor="hand2", activebackground="#6C3483",
-                                   activeforeground="white", command=self._toggle_minus)
-        self.minus_btn.pack(side="left", padx=4)
+        self._pbtn(strip, "+", "secondary", lambda: self._bump(1), font=("Segoe UI", 16, "bold"),
+                   width=4, padx=0, fg=P["success"]).pack(side="left", padx=(8, 4), pady=7)
+        self._pbtn(strip, "−", "secondary", lambda: self._bump(-1), font=("Segoe UI", 16, "bold"),
+                   width=4, padx=0, fg=P["warning_ink"]).pack(side="left", padx=4, pady=7)
+        self.minus_btn = self._pbtn(strip, "↩ Return (−)", "secondary", self._toggle_minus,
+                                    font=("Segoe UI", 10, "bold"), fg=P["purple"])
+        self.minus_btn.pack(side="left", padx=4, pady=7)
         self._minus = False
-        tk.Button(strip, text="Remove Line", font=("Segoe UI", 12, "bold"), bg="#E74C3C",
-                  fg="white", relief="flat", padx=10, cursor="hand2",
-                  command=self._remove_selected).pack(side="left", padx=4)
-        tk.Button(strip, text="Edit Line", font=("Segoe UI", 11, "bold"), bg="#34495E",
-                  fg="white", relief="flat", padx=10, cursor="hand2",
-                  command=lambda: self._edit_cart_line()).pack(side="left", padx=4)
-        tk.Button(strip, text="▤ Columns", font=("Segoe UI", 9, "bold"), bg="white",
-                  fg="#2C3E50", relief="flat", padx=8, cursor="hand2",
-                  command=self._open_columns).pack(side="right", padx=6)
+        self._pbtn(strip, "Remove Line", "danger_soft", self._remove_selected,
+                   font=("Segoe UI", 10, "bold")).pack(side="left", padx=4, pady=7)
+        self._pbtn(strip, "Edit Line", "secondary", lambda: self._edit_cart_line(),
+                   font=("Segoe UI", 10, "bold")).pack(side="left", padx=4, pady=7)
+        tk.Button(strip, text="▤ Columns", font=("Segoe UI", 9, "bold"), bg=P["heading"],
+                  fg=P["primary"], relief="flat", bd=0, padx=8, cursor="hand2",
+                  activebackground=P["line"], command=self._open_columns).pack(side="right", padx=8)
         self.lines_var = tk.StringVar(value="0 lines · 0 qty")
-        tk.Label(strip, textvariable=self.lines_var, font=("Segoe UI", 9), bg="#ECF0F1",
-                 fg="#7F8C8D").pack(side="right", padx=6)
+        tk.Label(strip, textvariable=self.lines_var, font=("Segoe UI", 9), bg=P["heading"],
+                 fg=P["muted"]).pack(side="right", padx=6)
 
         self.tqty_var = tk.StringVar(value="0")
         self.gross_var = tk.StringVar(value="0.00")
@@ -681,17 +719,17 @@ class POSWindow:
         self.paid_var = tk.StringVar(value="0.00")
         self.balance_var = tk.StringVar(value="0.00")
         self.change_var = tk.StringVar(value="0.00")
-        TB = "#1B3A4B"
+        TB = CARD
         g = tk.Frame(totals, bg=TB)
         if self._picture:                      # narrow bill column: totals above the big TOTAL
-            g.pack(side="top", fill="x", padx=(12, 6), pady=(6, 0))
+            g.pack(side="top", fill="x", padx=(16, 8), pady=(10, 0))
         else:
-            g.pack(side="left", fill="y", padx=(12, 6), pady=6)
+            g.pack(side="left", fill="y", padx=(16, 8), pady=10)
 
         def cell(r, c, lbl, var):
-            tk.Label(g, text=lbl, font=("Segoe UI", 9), bg=TB, fg="#9FC3D6").grid(
-                row=r, column=c * 2, sticky="w", padx=(0 if c == 0 else 18, 6))
-            l = tk.Label(g, textvariable=var, font=("Segoe UI", 10, "bold"), bg=TB, fg="white",
+            tk.Label(g, text=lbl, font=("Segoe UI", 9), bg=TB, fg=P["muted"]).grid(
+                row=r, column=c * 2, sticky="w", padx=(0 if c == 0 else 22, 8), pady=1)
+            l = tk.Label(g, textvariable=var, font=("Segoe UI", 10, "bold"), bg=TB, fg=P["ink"],
                          width=9, anchor="e")
             l.grid(row=r, column=c * 2 + 1, sticky="e")
             return l
@@ -699,11 +737,10 @@ class POSWindow:
         cell(1, 0, "Gross Amount", self.gross_var)
         cell(2, 0, "Discount", self.disc_var)
         cell(3, 0, "Total Tax (VAT)", self.tax_var)
-        tk.Label(g, text="Paid Amount", font=("Segoe UI", 9), bg=TB, fg="#9FC3D6").grid(
-            row=0, column=2, sticky="w", padx=(18, 6))
-        pe = tk.Entry(g, textvariable=self.paid_var, font=("Segoe UI", 11, "bold"),
-                      width=9, justify="right", relief="flat", bg="#EAF4FA")
-        pe.grid(row=0, column=3, sticky="e")
+        tk.Label(g, text="Paid Amount", font=("Segoe UI", 9), bg=TB, fg=P["muted"]).grid(
+            row=0, column=2, sticky="w", padx=(22, 8))
+        pe = self._pfield(g, self.paid_var, ("Segoe UI", 11, "bold"), 9, justify="right")
+        pe.grid(row=0, column=3, sticky="e", ipady=2)
         pe.bind("<FocusIn>", lambda e: self._set_pad("paid", quiet=True))
         self._paid_tile = pe
         self._balance_lbl = cell(1, 1, "Balance Due", self.balance_var)
@@ -713,33 +750,34 @@ class POSWindow:
         self.incl_vat_var = tk.BooleanVar(value=_price_incl())
         tk.Checkbutton(g, text="Sale price includes VAT",
                        variable=self.incl_vat_var, command=self._toggle_incl_vat,
-                       font=("Segoe UI", 9, "bold"), bg=TB, fg="#F1C40F",
+                       font=("Segoe UI", 9, "bold"), bg=TB, fg=P["primary"],
                        selectcolor=TB, activebackground=TB,
-                       activeforeground="#F1C40F", bd=0, highlightthickness=0,
+                       activeforeground=P["primary"], bd=0, highlightthickness=0,
                        cursor="hand2").grid(row=3, column=2, columnspan=2, sticky="w",
-                                            padx=(18, 0))
-        big = tk.Frame(totals, bg="#0B2533")
-        big.pack(side="top" if self._picture else "right", fill="both", expand=True, padx=(6, 8), pady=6)
+                                            padx=(22, 0))
+        NAVY = P["navy"]
+        big = tk.Frame(totals, bg=NAVY)
+        big.pack(side="top" if self._picture else "right", fill="both", expand=True, padx=(8, 12), pady=10)
         self.total_cap_var = tk.StringVar(value="TOTAL (SAR)")
-        tk.Label(big, textvariable=self.total_cap_var, font=("Segoe UI", 12, "bold"),
-                 bg="#0B2533", fg="#9FC3D6").pack(anchor="ne", padx=12, pady=(6, 0))
+        tk.Label(big, textvariable=self.total_cap_var, font=("Segoe UI", 10, "bold"),
+                 bg=NAVY, fg=P["navy_muted"]).pack(anchor="ne", padx=16, pady=(10, 0))
         self.total_lbl = tk.Label(big, textvariable=self.total_var, font=("Segoe UI", 30, "bold"),
-                                  bg="#0B2533", fg="#2ECC71")
-        self.total_lbl.pack(anchor="e", padx=12)
+                                  bg=NAVY, fg=P["navy_text"])
+        self.total_lbl.pack(anchor="e", padx=16, pady=(0, 6))
 
-        right = tk.Frame(body, bg="#0F2027", width=int(440 * self._size_factor()) + 20)
+        right = tk.Frame(body, bg=PAGE, width=int(440 * self._size_factor()) + 20)
         right.pack(side="right", fill="y"); right.pack_propagate(False)
 
-        act = tk.Frame(right, bg="#0F2027"); act.pack(fill="x", pady=(0, 6))
-        self._abtn(act, "Hold\n[F6]", "#2E86AB", self._hold, 0, 0)
-        self.retrieve_lbl = self._abtn(act, "Retrieve\n[F7]", "#2E86AB", self._retrieve, 0, 1)
-        self._abtn(act, "New\n[F3]", "#16A085", self._new_sale, 0, 2)
-        self._abtn(act, "Last Bill\n🖨", "#34495E", self._print_last_bill, 0, 3)
+        act = tk.Frame(right, bg=PAGE); act.pack(fill="x", pady=(0, 8))
+        self._abtn(act, "Hold\n[F6]", None, self._hold, 0, 0)
+        self.retrieve_lbl = self._abtn(act, "Retrieve\n[F7]", None, self._retrieve, 0, 1)
+        self._abtn(act, "New\n[F3]", None, self._new_sale, 0, 2)
+        self._abtn(act, "Last Bill\n🖨", None, self._print_last_bill, 0, 3)
         _ncol = 4
         try:                                   # v6.9.2: ⭐ loyalty points
             from modules import loyalty as _loy
             if _loy.enabled():
-                self.points_btn = self._abtn(act, "⭐ Points\n[F10]", "#B7950B",
+                self.points_btn = self._abtn(act, "⭐ Points\n[F10]", None,
                                              self._use_points, 0, 4)
                 _ncol = 5
         except Exception:
@@ -747,64 +785,54 @@ class POSWindow:
         for i in range(_ncol):
             act.columnconfigure(i, weight=1, uniform="a")
 
-        pad = tk.Frame(right, bg="#0F2027"); pad.pack(fill="both", expand=True)
+        pad = tk.Frame(right, bg=PAGE); pad.pack(fill="both", expand=True)
 
-        bigcol = tk.Frame(pad, bg="#0F2027"); bigcol.pack(side="left", fill="y", padx=(0, 6))
+        bigcol = tk.Frame(pad, bg=PAGE); bigcol.pack(side="left", fill="y", padx=(0, 8))
         # only Cash and Card — both open the Cash + Card window (mixed payment)
-        for _lbl, _clr, _pm in (("Cash", "#27AE60", "cash"), ("Card", "#2980B9", "card")):
+        for _lbl, _kind, _pm in (("Cash", "success", "cash"), ("Card", "primary", "card")):
             if cfg.payment_enabled(_pm):
-                self._bigbtn(bigcol, _lbl, _clr, lambda p=_pm: self._open_pay(p))
+                self._bigbtn(bigcol, _lbl, _kind, lambda p=_pm: self._open_pay(p))
 
-        grid = tk.Frame(pad, bg="#0F2027"); grid.pack(side="left", fill="both", expand=True)
+        grid = tk.Frame(pad, bg=PAGE); grid.pack(side="left", fill="both", expand=True)
         keys = [("1", 0, 0), ("2", 0, 1), ("3", 0, 2),
                 ("4", 1, 0), ("5", 1, 1), ("6", 1, 2),
                 ("7", 2, 0), ("8", 2, 1), ("9", 2, 2),
                 (".", 3, 0), ("0", 3, 1), ("<", 3, 2)]
         for txt, r, c in keys:
-            tk.Button(grid, text=txt, font=("Segoe UI", 18, "bold"),
-                      bg="#ECF0F1", fg="#2C3E50", relief="flat", cursor="hand2",
-                      command=lambda v=txt: self._pad_press(v)).grid(
-                      row=r, column=c, sticky="nsew", padx=3, pady=3, ipady=10)
+            self._pbtn(grid, txt, "secondary", lambda v=txt: self._pad_press(v),
+                       font=("Segoe UI", 18, "bold")).grid(
+                      row=r, column=c, sticky="nsew", padx=3, pady=3, ipady=8)
         for i in range(3):
             grid.columnconfigure(i, weight=1)
         for i in range(4):
             grid.rowconfigure(i, weight=1)
 
-        sidecol = tk.Frame(pad, bg="#0F2027"); sidecol.pack(side="left", fill="y", padx=(6, 0))
-        self.qty_btn = tk.Button(sidecol, text="Qty", font=("Segoe UI", 13, "bold"),
-                                 bg="#E67E22", fg="white", relief="flat", width=7,
-                                 cursor="hand2", command=lambda: self._set_pad("qty"))
-        self.qty_btn.pack(fill="x", pady=3, ipady=12)
-        self.rate_btn = tk.Button(sidecol, text="Rate", font=("Segoe UI", 13, "bold"),
-                                  bg="#95A5A6", fg="white", relief="flat", width=7,
-                                  cursor="hand2", command=lambda: self._set_pad("rate"))
-        self.rate_btn.pack(fill="x", pady=3, ipady=12)
-        tk.Button(sidecol, text="Clear", font=("Segoe UI", 13, "bold"),
-                  bg="#95A5A6", fg="white", relief="flat", width=7, cursor="hand2",
-                  command=self._pad_clear).pack(fill="x", pady=3, ipady=12)
-        tk.Button(sidecol, text="Enter", font=("Segoe UI", 13, "bold"),
-                  bg="#2980B9", fg="white", relief="flat", width=7, cursor="hand2",
-                  command=self._pad_enter).pack(fill="x", pady=3, ipady=12)
+        sidecol = tk.Frame(pad, bg=PAGE); sidecol.pack(side="left", fill="y", padx=(8, 0))
+        self.qty_btn = self._pbtn(sidecol, "Qty", "primary", lambda: self._set_pad("qty"),
+                                  font=("Segoe UI", 13, "bold"), width=7)
+        self.qty_btn.pack(fill="x", pady=3, ipady=10)
+        self.rate_btn = self._pbtn(sidecol, "Rate", "secondary", lambda: self._set_pad("rate"),
+                                   font=("Segoe UI", 13, "bold"), width=7)
+        self.rate_btn.pack(fill="x", pady=3, ipady=10)
+        self._pbtn(sidecol, "Clear", "secondary", self._pad_clear,
+                   font=("Segoe UI", 13, "bold"), width=7).pack(fill="x", pady=3, ipady=10)
+        self._pbtn(sidecol, "Enter", "navy", self._pad_enter,
+                   font=("Segoe UI", 13, "bold"), width=7).pack(fill="x", pady=3, ipady=10)
 
-        bot = tk.Frame(right, bg="#0F2027"); bot.pack(fill="x", pady=(8, 0))
-        tk.Button(bot, text="SAVE   [F1]", font=("Segoe UI", 22, "bold"),
-                  bg="#27AE60", fg="white", relief="flat", cursor="hand2",
-                  activebackground="#1E8449", activeforeground="white",
-                  command=lambda: self._save_smart()).grid(
-                  row=0, column=0, columnspan=3, sticky="nsew", padx=2, ipady=14)
-        tk.Button(bot, text="Save+Print [F2]", font=("Segoe UI", 11, "bold"),
-                  bg="#2980B9", fg="white", relief="flat", cursor="hand2",
-                  command=lambda: self._save_smart(do_print=True)).grid(
-                  row=1, column=0, sticky="nsew", padx=2, pady=(4, 0), ipady=6)
+        bot = tk.Frame(right, bg=PAGE); bot.pack(fill="x", pady=(10, 0))
+        self._pbtn(bot, "SAVE   [F1]", "success", lambda: self._save_smart(),
+                   font=("Segoe UI", 20, "bold")).grid(
+                  row=0, column=0, columnspan=3, sticky="nsew", padx=3, ipady=12)
+        self._pbtn(bot, "Save+Print [F2]", "primary", lambda: self._save_smart(do_print=True),
+                   font=("Segoe UI", 11, "bold")).grid(
+                  row=1, column=0, sticky="nsew", padx=3, pady=(6, 0), ipady=6)
         # v6.0: cashier shift (opening float → counted cash)
-        self.shift_btn = tk.Button(bot, text="Shift [F9]", font=("Segoe UI", 11, "bold"),
-                                   bg="#7C3AED", fg="white", relief="flat", cursor="hand2",
-                                   command=self._shift)
-        self.shift_btn.grid(row=1, column=1, sticky="nsew", padx=2, pady=(4, 0), ipady=6)
-        tk.Button(bot, text="Delete Bill", font=("Segoe UI", 11, "bold"),
-                  bg="#C0392B", fg="white", relief="flat", cursor="hand2",
-                  command=self._delete_bill).grid(
-                  row=1, column=2, sticky="nsew", padx=2, pady=(4, 0), ipady=6)
+        self.shift_btn = self._pbtn(bot, "Shift [F9]", "purple", self._shift,
+                                    font=("Segoe UI", 11, "bold"))
+        self.shift_btn.grid(row=1, column=1, sticky="nsew", padx=3, pady=(6, 0), ipady=6)
+        self._pbtn(bot, "Delete Bill", "danger_soft", self._delete_bill,
+                   font=("Segoe UI", 11, "bold")).grid(
+                  row=1, column=2, sticky="nsew", padx=3, pady=(6, 0), ipady=6)
         for i in range(3):
             bot.columnconfigure(i, weight=1, uniform="b")
 
@@ -846,15 +874,15 @@ class POSWindow:
                 pass
 
     def _abtn(self, parent, txt, bg, cmd, r, c):
-        b = tk.Button(parent, text=txt, font=("Segoe UI", 13, "bold"), bg=bg,
-                      fg="white", relief="flat", cursor="hand2", command=cmd)
-        b.grid(row=r, column=c, sticky="nsew", padx=3, ipady=12)
+        # v8.0: white bordered action keys (bg kept for older callers)
+        b = self._pbtn(parent, txt, "secondary", cmd, font=("Segoe UI", 11, "bold"), padx=4)
+        b.grid(row=r, column=c, sticky="nsew", padx=3, ipady=8)
         return b
 
     def _bigbtn(self, parent, txt, bg, cmd):
-        tk.Button(parent, text=txt, font=("Segoe UI", 18, "bold"), bg=bg,
-                  fg="white", relief="flat", width=6, cursor="hand2",
-                  command=cmd).pack(fill="both", expand=True, pady=3, ipadx=4)
+        kind = bg if bg in ("success", "primary", "navy", "purple", "danger") else "success"
+        self._pbtn(parent, txt, kind, cmd, font=("Segoe UI", 18, "bold"),
+                   width=6).pack(fill="both", expand=True, pady=3, ipadx=4)
 
     # -- Favorite / quick products touch panel ------------------
     def _stock_color(self, p):
@@ -865,10 +893,10 @@ class POSWindow:
         except Exception:
             s, r = 1, 0
         if s <= 0:
-            return "#E74C3C"
+            return "#E5484D"
         if r > 0 and s <= r:
-            return "#F39C12"
-        return "#27AE60"
+            return "#F79009"
+        return "#12B76A"
 
     def _build_favorites(self, parent):
         if not cfg.flag("pos_show_favorites", True):   # Settings ▸ POS
@@ -876,7 +904,8 @@ class POSWindow:
             return
         small = self.win.winfo_screenheight() < 820
         self.FAV_PER_PAGE = 12 if small else 18
-        wrap = tk.Frame(parent, bg="#ECF0F1", height=140 if small else 192)
+        P = _pos_palette()
+        wrap = tk.Frame(parent, bg=P["page"], height=140 if small else 192)
         wrap.pack(fill="x", side="top")
         wrap.pack_propagate(False)
 
@@ -889,22 +918,25 @@ class POSWindow:
         cats = ["★ Favourites"] + sorted(cats)[:9]
         self._fav_cats = cats
 
-        tabbar = tk.Frame(wrap, bg="#1B3A4B", height=34)
+        tabbar = tk.Frame(wrap, bg=P["card"], height=40)
         tabbar.pack(fill="x"); tabbar.pack_propagate(False)
+        tk.Frame(wrap, bg=P["line"], height=1).pack(fill="x")
         self._fav_tab_btns = {}
-        for c in cats:
+        for c in cats:                          # v8.0: pill tabs (Figma: POS categories)
             b = tk.Button(tabbar, text=c, font=("Segoe UI", 9, "bold"),
-                          bg="#1B3A4B", fg="white", relief="flat", cursor="hand2",
-                          padx=10, command=lambda cc=c: self._show_fav_category(cc))
-            b.pack(side="left", padx=1, pady=3)
+                          bg=P["card"], fg=P["ink"], relief="flat", bd=0, cursor="hand2",
+                          padx=12, pady=3, highlightthickness=1,
+                          highlightbackground=P["line"], activebackground=P["heading"],
+                          command=lambda cc=c: self._show_fav_category(cc))
+            b.pack(side="left", padx=(6, 0), pady=6)
             self._fav_tab_btns[c] = b
 
-        for txt, col in (("Out", "#E74C3C"), ("Low", "#F39C12"), ("In stock", "#27AE60")):
-            tk.Label(tabbar, text=txt, font=("Segoe UI", 7), bg="#1B3A4B",
-                     fg="#9FC3D6").pack(side="right", padx=(2, 8))
-            tk.Label(tabbar, text="  ", bg=col).pack(side="right")
+        for txt, col in (("Out", "#E5484D"), ("Low", "#F79009"), ("In stock", "#12B76A")):
+            tk.Label(tabbar, text=txt, font=("Segoe UI", 7), bg=P["card"],
+                     fg=P["muted"]).pack(side="right", padx=(2, 8))
+            tk.Label(tabbar, text=" ", bg=col, width=1).pack(side="right")
 
-        self.fav_area = tk.Frame(wrap, bg="#ECF0F1")
+        self.fav_area = tk.Frame(wrap, bg=P["page"])
         self.fav_area.pack(fill="both", expand=True)
 
         self._show_fav_category(cats[0])
@@ -938,8 +970,12 @@ class POSWindow:
         return (favs or self.products[:self.FAV_PER_PAGE]), False
 
     def _show_fav_category(self, cat, page=0):
+        P = _pos_palette()
         for c, b in getattr(self, "_fav_tab_btns", {}).items():
-            b.configure(bg="#2E86AB" if c == cat else "#1B3A4B")
+            on = c == cat
+            b.configure(bg=P["primary"] if on else P["card"], fg="white" if on else P["ink"],
+                        activebackground=P["primary"] if on else P["heading"],
+                        highlightthickness=0 if on else 1)
         for w in self.fav_area.winfo_children():
             w.destroy()
         marked = True
@@ -959,10 +995,13 @@ class POSWindow:
             price = float(p.get("unit_price", 0) or 0)
             img = pics.get(p.get("product_id"))
             opts = dict(image=img, compound="top", width=110) if img else dict(width=12)
+            # v8.0: light tile tinted by stock (green / amber / red), dark text
+            sc = self._stock_color(p)
             b = tk.Button(self.fav_area,
                           text=f"{name}\n{price:,.2f}",
                           font=("Segoe UI", 10 if touch else 8, "bold"),
-                          bg=self._stock_color(p), fg="white", relief="flat",
+                          bg=cfg.mix(sc, "#FFFFFF", 0.86), fg=cfg.mix(sc, "#000000", 0.45),
+                          activebackground=cfg.mix(sc, "#FFFFFF", 0.72), relief="flat", bd=0,
                           cursor="hand2",
                           command=lambda pp=p: self._fav_add(pp), **opts)
             b.grid(row=i // 6, column=i % 6, sticky="nsew", padx=3 if touch else 2,
@@ -970,20 +1009,20 @@ class POSWindow:
         for c in range(6):
             self.fav_area.columnconfigure(c, weight=1)
         # paging + hint row
-        foot = tk.Frame(self.fav_area, bg="#ECF0F1")
+        foot = tk.Frame(self.fav_area, bg=P["page"])
         foot.grid(row=4, column=0, columnspan=6, sticky="ew")
         if cat.startswith("★") and not marked:
             tk.Label(foot, text="Showing best sellers — mark your own with ⭐ POS Favourite "
-                     "in Products", font=("Segoe UI", 7), bg="#ECF0F1",
-                     fg="#7F8C8D").pack(side="left", padx=4)
+                     "in Products", font=("Segoe UI", 7), bg=P["page"],
+                     fg=P["muted"]).pack(side="left", padx=4)
         if pages > 1:
-            tk.Button(foot, text="▶", font=("Segoe UI", 8, "bold"), bg="#1B3A4B", fg="white",
+            tk.Button(foot, text="▶", font=("Segoe UI", 8, "bold"), bg=P["primary"], fg="white",
                       relief="flat", cursor="hand2", padx=8,
                       state="normal" if page < pages - 1 else "disabled",
                       command=lambda: self._show_fav_category(cat, page + 1)).pack(side="right")
             tk.Label(foot, text=f"{page + 1}/{pages}", font=("Segoe UI", 8),
-                     bg="#ECF0F1", fg="#1B3A4B").pack(side="right", padx=4)
-            tk.Button(foot, text="◀", font=("Segoe UI", 8, "bold"), bg="#1B3A4B", fg="white",
+                     bg=P["page"], fg=P["ink"]).pack(side="right", padx=4)
+            tk.Button(foot, text="◀", font=("Segoe UI", 8, "bold"), bg=P["primary"], fg="white",
                       relief="flat", cursor="hand2", padx=8,
                       state="normal" if page > 0 else "disabled",
                       command=lambda: self._show_fav_category(cat, page - 1)).pack(side="right")
@@ -1173,7 +1212,7 @@ class POSWindow:
         return ("".join(w[0] for w in parts[:2]) or str(name or "?")[:2]).upper()
 
     def _cat_colour(self, p):
-        palette = ("#B45309", "#0F766E", "#1F43C7", "#9D174D", "#4D7C0F", "#6D28D9", "#B91C1C", "#0E7490")
+        palette = ("#B45309", "#0F766E", "#2952E3", "#9D174D", "#4D7C0F", "#6D28D9", "#B91C1C", "#0E7490")
         c = p.get("category_name", "Other") or "Other"
         order = [x for x in getattr(self, "_pic_cats", []) if not x.startswith("★") and x != "All"]
         i = order.index(c) if c in order else sum(map(ord, c))      # one colour per category
@@ -1373,7 +1412,7 @@ class POSWindow:
             s = shifts.current()
             self._known_shift_id = (s or {}).get("shift_id")
             self.shift_btn.configure(text=("Shift ● [F9]" if s else "Shift [F9]"),
-                                     bg="#7C3AED" if s else "#6B7280")
+                                     bg=_pos_palette()["purple"] if s else "#5B6475")
         except Exception:
             pass
 
@@ -1653,11 +1692,12 @@ class POSWindow:
             st.configure("PosSearch.Treeview", rowheight=36, font=("Segoe UI", _u(13)),
                          background="white", fieldbackground="white")
             st.configure("PosSearch.Treeview.Heading", font=("Segoe UI", _u(10), "bold"),
-                         background="#1B3A4B", foreground="white")
-            st.map("PosSearch.Treeview", background=[("selected", "#2E86AB")],
+                         background=_pos_palette()["heading"], foreground=_pos_palette()["muted"],
+                         relief="flat")
+            st.map("PosSearch.Treeview", background=[("selected", _pos_palette()["primary"])],
                    foreground=[("selected", "white")])
-            fr = tk.Frame(self._search_dd, bg="#1B3A4B", bd=0,
-                          highlightthickness=2, highlightbackground="#2E86AB")
+            fr = tk.Frame(self._search_dd, bg=_pos_palette()["card"], bd=0,
+                          highlightthickness=1, highlightbackground=_pos_palette()["field_line"])
             fr.pack(fill="both", expand=True)
             self._search_lb = ttk.Treeview(fr, columns=cols, show="headings",
                                            style="PosSearch.Treeview", height=8,
@@ -1672,13 +1712,13 @@ class POSWindow:
                 t_, w, anc = heads[c]
                 self._search_lb.heading(c, text=t_, anchor=anc)
                 self._search_lb.column(c, width=w, anchor=anc, stretch=c == "name")
-            self._search_lb.tag_configure("out", foreground="#C0392B")
+            self._search_lb.tag_configure("out", foreground="#E5484D")
             self._search_lb.tag_configure("low", foreground="#D35400")
             self._search_lb.pack(fill="both", expand=True)
             self._search_lb.bind("<ButtonRelease-1>", lambda e: self._pick_dd_index())
             try:
                 from ui.grid_lines import excel_grid
-                excel_grid(self._search_lb, fill_empty=False, select_bg="#2E86AB",
+                excel_grid(self._search_lb, fill_empty=False, select_bg=_pos_palette()["primary"],
                            select_fg="white")
             except Exception:
                 pass
@@ -1885,8 +1925,8 @@ class POSWindow:
             self._cust_dd.overrideredirect(True)
             self._cust_dd.attributes("-topmost", True)
             self._cust_lb = tk.Listbox(self._cust_dd, font=("Segoe UI", 12),
-                                       height=8, bg="white", fg="#1B3A4B",
-                                       selectbackground="#16A085",
+                                       height=8, bg="white", fg=_pos_palette()["ink"],
+                                       selectbackground=_pos_palette()["primary"],
                                        selectforeground="white", width=52,
                                        activestyle="none", relief="solid", bd=1)
             self._cust_lb.pack(fill="both", expand=True)
@@ -2155,8 +2195,10 @@ class POSWindow:
         off the bill (if it is on it) or added as a RETURN (money back)."""
         self._minus = bool(on)
         try:
+            P = _pos_palette()
             self.minus_btn.configure(
-                bg="#C0392B" if on else "#8E44AD",
+                bg=P["danger"] if on else P["card"], fg="white" if on else P["purple"],
+                activebackground=P["danger"] if on else P["heading"],
                 text="↩ RETURN ON — scan item" if on else "↩ Return (−)")
         except Exception:
             pass
@@ -2568,7 +2610,7 @@ class POSWindow:
             refund = total < -0.004
             self.total_cap_var.set("REFUND TO CUSTOMER (SAR)" if refund else
                                    ("TOTAL after return (SAR)" if P["rets"] else "TOTAL (SAR)"))
-            self.total_lbl.configure(fg="#FF7675" if refund else "#2ECC71")
+            self.total_lbl.configure(fg="#F97066" if refund else _pos_palette()["navy_text"])
         except Exception:
             pass
         self._update_change()
@@ -2610,8 +2652,9 @@ class POSWindow:
             self.change_var.set("0.00")
             self.balance_var.set("{:,.2f}".format(-diff))
         try:
-            self._balance_lbl.configure(fg="#FF7675" if diff < -0.005 and paid > 0
-                                        else "white")
+            P = _pos_palette()
+            self._balance_lbl.configure(fg=P["danger"] if diff < -0.005 and paid > 0
+                                        else P["ink"])
         except Exception:
             pass
 
@@ -2644,7 +2687,7 @@ class POSWindow:
         self._pad_buffer = ""
         self._pad_show()
         try:
-            self._paid_tile.configure(bg="#FFF3C4" if target == "paid" else "#EAF4FA")
+            self._paid_tile.configure(bg="#FFFBEA" if target == "paid" else _pos_palette()["card"])
         except Exception:
             pass
         if not quiet:
@@ -2656,10 +2699,13 @@ class POSWindow:
         """Light the active key and show what is typed on it."""
         t, buf = getattr(self, "_pad_target", "qty"), getattr(self, "_pad_buffer", "")
         try:
-            self.qty_btn.configure(bg="#E67E22" if t == "qty" else "#95A5A6",
-                                   text="Qty\n" + buf if (t == "qty" and buf) else "Qty")
-            self.rate_btn.configure(bg="#E67E22" if t == "rate" else "#95A5A6",
-                                    text="Rate\n" + buf if (t == "rate" and buf) else "Rate")
+            P = _pos_palette()
+            for b, key, cap in ((self.qty_btn, "qty", "Qty"), (self.rate_btn, "rate", "Rate")):
+                on = t == key
+                b.configure(bg=P["primary"] if on else P["card"], fg="white" if on else P["ink"],
+                            activebackground=P["primary"] if on else P["heading"],
+                            highlightthickness=0 if on else 1,
+                            text=cap + "\n" + buf if (on and buf) else cap)
         except Exception:
             pass
 
@@ -2783,7 +2829,7 @@ class POSWindow:
         d = tk.Toplevel(self.win); d.title("Retrieve Held Sale")
         d.geometry("340x380"); d.configure(bg="white"); d.grab_set()
         tk.Label(d, text="Held Sales", font=("Segoe UI", 13, "bold"),
-                 bg="#1B3A4B", fg="white", pady=10).pack(fill="x")
+                 bg=_pos_palette()["navy"], fg="white", pady=10).pack(fill="x")
         lb = tk.Listbox(d, font=("Segoe UI", 11))
         lb.pack(fill="both", expand=True, padx=12, pady=10)
         for lbl, items in self._held:
@@ -2809,7 +2855,7 @@ class POSWindow:
             self.barcode_entry.focus_set()
 
         tk.Button(d, text="Retrieve", font=("Segoe UI", 11, "bold"),
-                  bg="#27AE60", fg="white", relief="flat", pady=8,
+                  bg=_pos_palette()["success"], fg="white", relief="flat", pady=8,
                   cursor="hand2", command=do_get).pack(fill="x", padx=12, pady=(0, 12))
 
     # -- New / Delete ------------------------------------------
@@ -3812,7 +3858,7 @@ class POSWindow:
         b = tk.Frame(d, bg="white"); b.pack(pady=14, fill="x", padx=20, side="bottom")
         self._btn(b, "Print receipt", "white", self.INK, _print_all,
                   font=("Segoe UI", 11, "bold"),
-                  highlightbackground="#C7D0DD", highlightthickness=1).pack(
+                  highlightbackground="#D0D7E2", highlightthickness=1).pack(
                       side="left", expand=True, fill="x", ipady=8, padx=(0, 4))
         nb = self._btn(b, "New sale", "#15803D", "white", d.destroy,
                        font=("Segoe UI", 11, "bold"))
@@ -3841,17 +3887,17 @@ class UnitPriceStockDialog(tk.Toplevel):
         self.units = units
         self.on_pick = on_pick
         self.title("Select Unit — %s" % product.get("product_name_en", ""))
-        self.configure(bg="#0F2027")
+        self.configure(bg="#0B1220")
         self.geometry("560x360")
         self.transient(parent)
         self.grab_set()
 
         tk.Label(self, text=product.get("product_name_en", ""),
-                 font=("Segoe UI", 14, "bold"), bg="#0F2027", fg="white"
+                 font=("Segoe UI", 14, "bold"), bg="#0B1220", fg="white"
                  ).pack(anchor="w", padx=16, pady=(14, 2))
         tk.Label(self, text="This product has multiple units. Pick one — "
                             "price is editable for this sale.",
-                 font=("Segoe UI", 9), bg="#0F2027", fg="#9FC3D6"
+                 font=("Segoe UI", 9), bg="#0B1220", fg="#8B95A9"
                  ).pack(anchor="w", padx=16, pady=(0, 10))
 
         wrap = tk.Frame(self, bg="white"); wrap.pack(fill="both", expand=True,
@@ -3881,9 +3927,9 @@ class UnitPriceStockDialog(tk.Toplevel):
             self.tree.selection_set(first); self.tree.focus(first)
 
         # editable price box, synced to the selected row
-        prow = tk.Frame(self, bg="#0F2027"); prow.pack(fill="x", padx=16, pady=(0, 6))
+        prow = tk.Frame(self, bg="#0B1220"); prow.pack(fill="x", padx=16, pady=(0, 6))
         tk.Label(prow, text="Sales Price for this sale:", font=("Segoe UI", 10),
-                 bg="#0F2027", fg="white").pack(side="left")
+                 bg="#0B1220", fg="white").pack(side="left")
         self.price_var = tk.StringVar()
         pe = tk.Entry(prow, textvariable=self.price_var, font=("Segoe UI", 12, "bold"),
                      width=12, justify="right")
@@ -3902,12 +3948,12 @@ class UnitPriceStockDialog(tk.Toplevel):
         self.tree.bind("<Return>", lambda e: self._confirm())
         self.bind("<Escape>", lambda e: self.destroy())
 
-        btns = tk.Frame(self, bg="#0F2027"); btns.pack(fill="x", padx=16, pady=(0, 14))
-        tk.Button(btns, text="Cancel", font=("Segoe UI", 10), bg="#34495E", fg="white",
+        btns = tk.Frame(self, bg="#0B1220"); btns.pack(fill="x", padx=16, pady=(0, 14))
+        tk.Button(btns, text="Cancel", font=("Segoe UI", 10), bg="#475569", fg="white",
                   relief="flat", padx=14, pady=7, cursor="hand2",
                   command=self.destroy).pack(side="right", padx=(8, 0))
         tk.Button(btns, text="✓ Add to Cart", font=("Segoe UI", 10, "bold"),
-                  bg="#27AE60", fg="white", relief="flat", padx=14, pady=7,
+                  bg="#12A15E", fg="white", relief="flat", padx=14, pady=7,
                   cursor="hand2", command=self._confirm).pack(side="right")
 
         self.tree.focus_set()
@@ -3936,25 +3982,25 @@ class ProductDetailsDialog(tk.Toplevel):
     def __init__(self, parent, product, units):
         super().__init__(parent)
         self.overrideredirect(True)          # frameless minimal card
-        self.configure(bg="#1B3A4B")
+        self.configure(bg="#0B1220")
         self.transient(parent)
         self.grab_set()
 
-        card = tk.Frame(self, bg="white", highlightbackground="#2E86AB",
+        card = tk.Frame(self, bg="white", highlightbackground="#2952E3",
                         highlightthickness=2)
         card.pack(fill="both", expand=True)
 
         # header strip: name + code + big default price
-        hdr = tk.Frame(card, bg="#1B3A4B"); hdr.pack(fill="x")
-        nm = tk.Frame(hdr, bg="#1B3A4B"); nm.pack(side="left", padx=12, pady=8)
+        hdr = tk.Frame(card, bg="#0B1220"); hdr.pack(fill="x")
+        nm = tk.Frame(hdr, bg="#0B1220"); nm.pack(side="left", padx=12, pady=8)
         tk.Label(nm, text=product.get("product_name_en", ""),
-                 font=("Segoe UI", 13, "bold"), bg="#1B3A4B",
+                 font=("Segoe UI", 13, "bold"), bg="#0B1220",
                  fg="white").pack(anchor="w")
         stock = product.get("stock_quantity", 0)
         tk.Label(nm, text="Code %s   ·   Stock %g" % (
                      product.get("product_code", ""), float(stock or 0)),
-                 font=("Segoe UI", 9), bg="#1B3A4B",
-                 fg="#9FC3D6").pack(anchor="w")
+                 font=("Segoe UI", 9), bg="#0B1220",
+                 fg="#8B95A9").pack(anchor="w")
         base_cost = float(product.get("purchase_price", 0) or 0)
         rows = units if units else [{"unit_name_en": product.get("unit_of_measure_en", "Unit"),
                                      "conversion_factor": 1, "is_default": 1,
@@ -3964,7 +4010,7 @@ class ProductDetailsDialog(tk.Toplevel):
             float(product.get("unit_price", 0) or 0)
         tk.Label(hdr, text="%s\n%s" % ("{:,.2f}".format(dprice),
                                        dft.get("unit_name_en", "Unit")),
-                 font=("Segoe UI", 15, "bold"), bg="#1B3A4B", fg="#2ECC71",
+                 font=("Segoe UI", 15, "bold"), bg="#0B1220", fg="#32D583",
                  justify="right").pack(side="right", padx=12, pady=6)
 
         # compact unit table — height fits the rows, no dead space
@@ -4000,7 +4046,7 @@ class ProductDetailsDialog(tk.Toplevel):
                  font=("Segoe UI", 8), bg="white",
                  fg="#95A5A6").pack(side="left")
         tk.Button(foot, text="Close", font=("Segoe UI", 11, "bold"),
-                  bg="#2E86AB", fg="white", relief="flat", padx=22, pady=8,
+                  bg="#2952E3", fg="white", relief="flat", padx=22, pady=8,
                   cursor="hand2", command=self.destroy).pack(side="right")
 
         # close on Ctrl again / Esc / any tap on the card (touch)
@@ -4033,7 +4079,7 @@ class CartLineEditDialog(tk.Toplevel):
     the quantity and the price. Each unit shows its own price; stock is
     shown in the chosen unit. A small number pad works on the field you
     last touched."""
-    NAVY, BLUE, INK, MUTED = "#0B1F3A", "#1F43C7", "#0F172A", "#475569"
+    NAVY, BLUE, INK, MUTED = "#0B1220", "#2952E3", "#0F172A", "#475569"
 
     def __init__(self, parent, line, product, on_apply, units=None, calc=None):
         super().__init__(parent)
@@ -4059,7 +4105,7 @@ class CartLineEditDialog(tk.Toplevel):
                  bg=self.NAVY, fg="white", anchor="w").pack(fill="x", padx=16, pady=(10, 0))
         ar = line.get("product_name_ar", "") or ""
         tk.Label(hdr, text=("%s    ·    " % ar if ar else "") + "Code %s" % line.get("product_code", ""),
-                 font=("Segoe UI", 10), bg=self.NAVY, fg="#A9BCD6", anchor="w").pack(
+                 font=("Segoe UI", 10), bg=self.NAVY, fg="#8B95A9", anchor="w").pack(
                      fill="x", padx=16, pady=(0, 10))
 
         body = tk.Frame(self, bg="white"); body.pack(fill="both", expand=True, padx=16, pady=12)
@@ -4104,7 +4150,7 @@ class CartLineEditDialog(tk.Toplevel):
                   relief="flat", cursor="hand2", width=3,
                   command=lambda: self._step(-1)).pack(side="left", ipady=4)
         self.qe = tk.Entry(qf, textvariable=self.qty_var, font=("Segoe UI", 20, "bold"),
-                           width=6, justify="center", relief="solid", bd=1, bg="#EAF4FA",
+                           width=6, justify="center", relief="solid", bd=1, bg="#F7F9FC",
                            state="normal" if self.can_qty else "readonly")
         self.qe.pack(side="left", ipady=6, padx=3)
         tk.Button(qf, text="+", font=("Segoe UI", 16, "bold"), bg="#15803D", fg="white",
@@ -4131,15 +4177,15 @@ class CartLineEditDialog(tk.Toplevel):
         for i, k in enumerate(keys):
             tk.Button(right, text=k, font=("Segoe UI", 16, "bold"), bg="white", fg=self.INK,
                       relief="flat", cursor="hand2", width=4, highlightthickness=1,
-                      highlightbackground="#C7D0DD",
+                      highlightbackground="#D0D7E2",
                       command=lambda kk=k: self._key(kk)).grid(
                           row=i // 3, column=i % 3, padx=2, pady=2, ipady=5)
 
-        foot = tk.Frame(self, bg="#F8FAFC", highlightbackground="#D5DCE6", highlightthickness=1)
+        foot = tk.Frame(self, bg="#F8FAFC", highlightbackground="#E3E8EF", highlightthickness=1)
         foot.pack(fill="x", side="bottom")
         tk.Button(foot, text="Cancel", font=("Segoe UI", 11), bg="white", fg=self.INK,
                   relief="flat", cursor="hand2", highlightthickness=1,
-                  highlightbackground="#C7D0DD", command=self.destroy, padx=16).pack(
+                  highlightbackground="#D0D7E2", command=self.destroy, padx=16).pack(
                       side="left", padx=12, pady=10, ipady=7)
         tk.Button(foot, text="✓ Apply   Enter", font=("Segoe UI", 13, "bold"), bg="#15803D",
                   fg="white", relief="flat", cursor="hand2", activebackground="#166534",
@@ -4166,9 +4212,9 @@ class CartLineEditDialog(tk.Toplevel):
     def _mark_units(self):
         for u, b in self.unit_btns:
             on = (u is self.cur_unit)
-            b.configure(bg=self.BLUE if on else "#F1F5F9", fg="white" if on else self.INK,
-                        activebackground=self.BLUE if on else "#E2E8F0",
-                        highlightbackground=self.BLUE if on else "#C7D0DD")
+            b.configure(bg=self.BLUE if on else "#F4F6FA", fg="white" if on else self.INK,
+                        activebackground=self.BLUE if on else "#E3E8EF",
+                        highlightbackground=self.BLUE if on else "#D0D7E2")
 
     def _pick_unit(self, u):
         self.cur_unit = u
@@ -4270,7 +4316,7 @@ class CartLineEditDialog(tk.Toplevel):
 # rest automatically, change is worked out from cash only.
 # ============================================================
 class PayDialog(tk.Toplevel):
-    NAVY, BLUE, INK, MUTED = "#0B1F3A", "#1F43C7", "#0F172A", "#475569"
+    NAVY, BLUE, INK, MUTED = "#0B1220", "#2952E3", "#0F172A", "#475569"
 
     def __init__(self, parent, total, start="cash", on_done=None, prefill=None,
                  party=False, do_print=False, card_on=True, cash_on=True, extras=None):
@@ -4311,7 +4357,7 @@ class PayDialog(tk.Toplevel):
 
         hdr = tk.Frame(self, bg=self.NAVY); hdr.pack(fill="x")
         tk.Label(hdr, text="TOTAL TO PAY", font=("Segoe UI", 10, "bold"), bg=self.NAVY,
-                 fg="#A9BCD6").pack(side="left", padx=16, pady=10)
+                 fg="#8B95A9").pack(side="left", padx=16, pady=10)
         tk.Label(hdr, text="%s SAR" % "{:,.2f}".format(self.total),
                  font=("Segoe UI", 26, "bold"), bg=self.NAVY, fg="white").pack(
                      side="right", padx=16, pady=6)
@@ -4322,10 +4368,10 @@ class PayDialog(tk.Toplevel):
 
         self.tiles = {}
         for key, cap, clr, on in (("cash", "CASH  نقدي", "#15803D", cash_on),
-                                  ("card", "CARD  بطاقة", "#1F43C7", card_on)):
+                                  ("card", "CARD  بطاقة", "#2952E3", card_on)):
             if not on:
                 continue
-            f = tk.Frame(left, bg="white", highlightthickness=3, highlightbackground="#D5DCE6",
+            f = tk.Frame(left, bg="white", highlightthickness=3, highlightbackground="#E3E8EF",
                          cursor="hand2")
             f.pack(fill="x", pady=(0, 8))
             c1 = tk.Label(f, text=cap, font=("Segoe UI", 9, "bold"), bg="white", fg=clr,
@@ -4347,7 +4393,7 @@ class PayDialog(tk.Toplevel):
             for i, key in enumerate(self.extras):
                 cap = _td.label(key) if _td else key
                 clr = "#7C3AED" if key in ("tabby", "tamara") else "#0E7490"
-                f = tk.Frame(xr, bg="white", highlightthickness=3, highlightbackground="#D5DCE6",
+                f = tk.Frame(xr, bg="white", highlightthickness=3, highlightbackground="#E3E8EF",
                              cursor="hand2")
                 f.grid(row=i // 3, column=i % 3, sticky="ew", padx=(0, 4), pady=(0, 4))
                 xr.grid_columnconfigure(i % 3, weight=1)
@@ -4369,7 +4415,7 @@ class PayDialog(tk.Toplevel):
         quick = [("Exact", None), ("10", 10), ("20", 20), ("50", 50), ("100", 100),
                  ("200", 200), ("500", 500)]
         for i, (txt, amt) in enumerate(quick):
-            tk.Button(qr, text=txt, font=("Segoe UI", 10, "bold"), bg="#E8F0FB", fg="#1E3A8A",
+            tk.Button(qr, text=txt, font=("Segoe UI", 10, "bold"), bg="#EDF2FF", fg="#1F43C7",
                       relief="flat", cursor="hand2", width=5,
                       command=lambda a=amt: self._quick(a)).grid(
                           row=i // 4, column=i % 4, padx=2, pady=2, sticky="ew", ipady=4)
@@ -4387,19 +4433,19 @@ class PayDialog(tk.Toplevel):
         for i, k in enumerate(keys):
             tk.Button(pad, text=k, font=("Segoe UI", 18, "bold"), bg="white", fg=self.INK,
                       relief="flat", cursor="hand2", width=4, highlightthickness=1,
-                      highlightbackground="#C7D0DD",
+                      highlightbackground="#D0D7E2",
                       command=lambda kk=k: self._key(kk)).grid(
                           row=i // 3, column=i % 3, padx=3, pady=3, ipady=8)
-        tk.Button(pad, text="Clear", font=("Segoe UI", 11, "bold"), bg="#F1F5F9", fg="#334155",
+        tk.Button(pad, text="Clear", font=("Segoe UI", 11, "bold"), bg="#F4F6FA", fg="#334155",
                   relief="flat", cursor="hand2", highlightthickness=1,
-                  highlightbackground="#C7D0DD", command=lambda: self._clear()).grid(
+                  highlightbackground="#D0D7E2", command=lambda: self._clear()).grid(
                       row=4, column=0, columnspan=3, sticky="ew", padx=3, pady=3, ipady=4)
 
-        foot = tk.Frame(self, bg="#F8FAFC", highlightbackground="#D5DCE6", highlightthickness=1)
+        foot = tk.Frame(self, bg="#F8FAFC", highlightbackground="#E3E8EF", highlightthickness=1)
         foot.pack(fill="x", side="bottom")
         tk.Button(foot, text="Cancel", font=("Segoe UI", 11), bg="white", fg=self.INK,
                   relief="flat", cursor="hand2", highlightthickness=1,
-                  highlightbackground="#C7D0DD", command=self.destroy, padx=16).pack(
+                  highlightbackground="#D0D7E2", command=self.destroy, padx=16).pack(
                       side="left", padx=12, pady=10, ipady=8)
         self.btn_save = tk.Button(foot, text="Save   Enter", font=("Segoe UI", 14, "bold"),
                                   bg="#15803D", fg="white", relief="flat", cursor="hand2",
@@ -4407,7 +4453,7 @@ class PayDialog(tk.Toplevel):
                                   command=lambda: self._confirm(False), padx=22)
         self.btn_save.pack(side="right", padx=(6, 12), pady=10, ipady=8)
         tk.Button(foot, text="Save + Print", font=("Segoe UI", 11, "bold"), bg=self.BLUE,
-                  fg="white", relief="flat", cursor="hand2", activebackground="#1E40AF",
+                  fg="white", relief="flat", cursor="hand2", activebackground="#1F43C7",
                   activeforeground="white", command=lambda: self._confirm(True),
                   padx=14).pack(side="right", padx=6, pady=10, ipady=8)
 
@@ -4553,7 +4599,7 @@ class PayDialog(tk.Toplevel):
         for key, (f, v, clr) in self.tiles.items():
             txt = self.vals[key]
             v.set(txt if txt else "0.00")
-            f.configure(highlightbackground=clr if key == self.active else "#D5DCE6")
+            f.configure(highlightbackground=clr if key == self.active else "#E3E8EF")
         cash, card, ce, ke, change, rest = self.figures()
         over_card = self._noncash_over()
         if over_card:
@@ -4611,15 +4657,15 @@ class POSSettingsDialog(tk.Toplevel):
         super().__init__(parent)
         self.on_change = on_change
         self.title("POS Settings")
-        self.configure(bg="#1B3A4B")
+        self.configure(bg="#0B1220")
         self.transient(parent)
         self.grab_set()
 
         tk.Label(self, text="⚙  POS Settings", font=("Segoe UI", 15, "bold"),
-                 bg="#1B3A4B", fg="white").pack(anchor="w", padx=18, pady=(14, 2))
+                 bg="#0B1220", fg="white").pack(anchor="w", padx=18, pady=(14, 2))
         tk.Label(self, text="Changes apply to this cash register immediately.",
-                 font=("Segoe UI", 9), bg="#1B3A4B",
-                 fg="#9FC3D6").pack(anchor="w", padx=18, pady=(0, 10))
+                 font=("Segoe UI", 9), bg="#0B1220",
+                 fg="#8B95A9").pack(anchor="w", padx=18, pady=(0, 10))
 
         card = tk.Frame(self, bg="white"); card.pack(fill="both", expand=True,
                                                      padx=14, pady=(0, 10))
@@ -4629,39 +4675,39 @@ class POSSettingsDialog(tk.Toplevel):
                                      else cfg.flag(key, dflt)))
             self.vars[key] = v
             tk.Checkbutton(card, text=label, variable=v, font=("Segoe UI", 11),
-                           bg="white", fg="#1B3A4B", selectcolor="#EAF4FA",
+                           bg="white", fg="#0B1220", selectcolor="#F7F9FC",
                            activebackground="white", anchor="w", bd=0,
                            highlightthickness=0, cursor="hand2").pack(
                            fill="x", padx=16, pady=5)
 
         sz = tk.Frame(card, bg="white"); sz.pack(fill="x", padx=16, pady=(8, 10))
         tk.Label(sz, text="Screen size", font=("Segoe UI", 11, "bold"), bg="white",
-                 fg="#1B3A4B").pack(side="left")
+                 fg="#0B1220").pack(side="left")
         self.size_var = tk.StringVar(value=str(cfg.get("pos_ui_size", "medium") or "medium").lower())
         for val, txt in (("small", "Small"), ("medium", "Medium"), ("large", "Large")):
             tk.Radiobutton(sz, text=txt, value=val, variable=self.size_var,
                            font=("Segoe UI", 11), bg="white", activebackground="white",
-                           selectcolor="#EAF4FA", cursor="hand2").pack(side="left", padx=6)
+                           selectcolor="#F7F9FC", cursor="hand2").pack(side="left", padx=6)
         lay = tk.Frame(card, bg="white"); lay.pack(fill="x", padx=16, pady=(4, 4))
         tk.Label(lay, text="Screen layout", font=("Segoe UI", 11, "bold"), bg="white",
-                 fg="#1B3A4B").pack(side="left")
+                 fg="#0B1220").pack(side="left")
         self.layout_var = tk.StringVar(value=str(cfg.get("pos_layout", "auto") or "auto").lower())
         for val, txt in (("auto", "Auto"), ("classic", "Classic"), ("picture", "Picture menu")):
             tk.Radiobutton(lay, text=txt, value=val, variable=self.layout_var,
                            font=("Segoe UI", 11), bg="white", activebackground="white",
-                           selectcolor="#EAF4FA", cursor="hand2").pack(side="left", padx=6)
+                           selectcolor="#F7F9FC", cursor="hand2").pack(side="left", padx=6)
         tk.Label(card, text="Auto = big product pictures for a restaurant / café or tailor shop.\n"
                             "(size and layout change when POS opens next time)", font=("Segoe UI", 9),
                  bg="white", fg="#5B6472", justify="left").pack(anchor="w", padx=16, pady=(0, 8))
 
-        btns = tk.Frame(self, bg="#1B3A4B"); btns.pack(fill="x", padx=14, pady=(0, 14))
-        tk.Button(btns, text="More Settings…", font=("Segoe UI", 10), bg="#34495E",
+        btns = tk.Frame(self, bg="#0B1220"); btns.pack(fill="x", padx=14, pady=(0, 14))
+        tk.Button(btns, text="More Settings…", font=("Segoe UI", 10), bg="#475569",
                   fg="white", relief="flat", padx=14, pady=8, cursor="hand2",
                   command=self._open_full).pack(side="left")
         tk.Button(btns, text="Cancel", font=("Segoe UI", 10), bg="#95A5A6",
                   fg="white", relief="flat", padx=16, pady=8, cursor="hand2",
                   command=self.destroy).pack(side="right", padx=(8, 0))
-        tk.Button(btns, text="✓ Save", font=("Segoe UI", 11, "bold"), bg="#27AE60",
+        tk.Button(btns, text="✓ Save", font=("Segoe UI", 11, "bold"), bg="#12A15E",
                   fg="white", relief="flat", padx=20, pady=8, cursor="hand2",
                   command=self._save).pack(side="right")
 
@@ -4725,12 +4771,12 @@ class QuickCustomerDialog(tk.Toplevel):
         super().__init__(parent)
         self.on_save = on_save
         self.title("New Customer")
-        self.configure(bg="#1B3A4B")
+        self.configure(bg="#0B1220")
         self.transient(parent)
         self.grab_set()
 
         tk.Label(self, text="＋  New Customer", font=("Segoe UI", 15, "bold"),
-                 bg="#1B3A4B", fg="white").pack(anchor="w", padx=18, pady=(14, 8))
+                 bg="#0B1220", fg="white").pack(anchor="w", padx=18, pady=(14, 8))
 
         card = tk.Frame(self, bg="white"); card.pack(fill="both", expand=True,
                                                      padx=14, pady=(0, 10))
@@ -4738,7 +4784,7 @@ class QuickCustomerDialog(tk.Toplevel):
 
         def field(label, key, hint="", ar=False):
             tk.Label(card, text=label, font=("Segoe UI", 10, "bold"),
-                     bg="white", fg="#1B3A4B").pack(anchor="w", padx=16, pady=(8, 0))
+                     bg="white", fg="#0B1220").pack(anchor="w", padx=16, pady=(8, 0))
             v = tk.StringVar()
             self.vars[key] = v
             e = tk.Entry(card, textvariable=v, font=("Segoe UI", 12),
@@ -4758,14 +4804,14 @@ class QuickCustomerDialog(tk.Toplevel):
 
         self.status = tk.StringVar()
         tk.Label(card, textvariable=self.status, font=("Segoe UI", 9, "bold"),
-                 bg="white", fg="#C0392B").pack(anchor="w", padx=16, pady=(6, 4))
+                 bg="white", fg="#E5484D").pack(anchor="w", padx=16, pady=(6, 4))
 
-        btns = tk.Frame(self, bg="#1B3A4B"); btns.pack(fill="x", padx=14, pady=(0, 14))
+        btns = tk.Frame(self, bg="#0B1220"); btns.pack(fill="x", padx=14, pady=(0, 14))
         tk.Button(btns, text="Cancel", font=("Segoe UI", 10), bg="#95A5A6",
                   fg="white", relief="flat", padx=16, pady=8, cursor="hand2",
                   command=self.destroy).pack(side="right", padx=(8, 0))
         tk.Button(btns, text="✓ Save & Select", font=("Segoe UI", 11, "bold"),
-                  bg="#27AE60", fg="white", relief="flat", padx=18, pady=8,
+                  bg="#12A15E", fg="white", relief="flat", padx=18, pady=8,
                   cursor="hand2", command=self._save).pack(side="right")
 
         self.bind("<Return>", lambda e: self._save())

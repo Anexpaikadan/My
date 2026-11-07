@@ -43,6 +43,15 @@ def _col_ok(table, col):
         return False
 
 
+def _fld():
+    """v8.0 field look (Figma: Input): flat white box, 1 px light border,
+    primary ring when it has the focus."""
+    C = cfg.theme()
+    return dict(relief="flat", bd=0, highlightthickness=1,
+                highlightbackground=C.get("field_border", "#D0D7E2"),
+                highlightcolor=C.get("primary", "#2952E3"))
+
+
 def _state_col():
     """', state_code' when the customers table has it (v7.0)."""
     try:
@@ -784,6 +793,7 @@ class InvoiceForm:
         self.win = tk.Toplevel()
         self.win._doc_window = True     # item grid: may fill the screen
         self.win._form = self           # v6.7: compact header (ui/compact.py)
+        self.win._keep_header = True    # v8.0: keep the white 56 px header (not squashed)
         self.win.title(title)
         w = min(1360, int(self.win.winfo_screenwidth() * 0.90))
         h = min(840, int(self.win.winfo_screenheight() * 0.92))
@@ -813,29 +823,39 @@ class InvoiceForm:
             self.win.bind("<F12>", lambda e: self._save_and_print("pdf"))
         close_guard.bind_escape(self.win)     # Esc = ✕ (asks if lines are unsaved)
 
-        # ── Minimal header band ───────────────────────────────
-        hdr = tk.Frame(self.win, bg=C["primary"], height=40)
+        # ── v8.0 window header (Figma: Sales Invoice ▸ Window header):
+        # white bar, icon chip, title + one line under it, bill-number pill
+        CARD, PAGE = C["card_bg"], C["content_bg"]
+        hdr = tk.Frame(self.win, bg=CARD, height=56)
         hdr.pack(fill="x")
         hdr.pack_propagate(False)
+        tk.Frame(hdr, bg=C["border"], height=1).pack(side="bottom", fill="x")
         icon = "👁" if self.view_only else ("✏️" if self.invoice_id else "🧾")
-        tk.Label(hdr, text=f"{icon}  {title}",
-                 font=("Segoe UI", 12, "bold"),
-                 bg=C["primary"], fg="white").pack(side="left", padx=16)
-        self.inv_num_label = tk.Label(hdr, text="",
-                                       font=("Segoe UI", 11, "bold"),
-                                       bg=C["primary"], fg="#CFC6FF")
+        tk.Label(hdr, text=icon, font=("Segoe UI Emoji", 13), width=2,
+                 bg=C.get("primary_light", PAGE), fg=C["primary"]).pack(side="left", padx=(16, 10), pady=12)
+        tt = tk.Frame(hdr, bg=CARD)
+        tt.pack(side="left")
+        tk.Label(tt, text="Sales Invoice" if title == "New Invoice" else title,
+                 font=("Segoe UI", 13, "bold"), bg=CARD, fg=C["text_primary"],
+                 anchor="w").pack(fill="x")
+        tk.Label(tt, text=("View only" if self.view_only else
+                           "Scan or type a product · Enter: Bar Code → Qty → Rate → next line"),
+                 font=("Segoe UI", 8), bg=CARD, fg=C["text_secondary"], anchor="w").pack(fill="x")
+        self.inv_num_label = tk.Label(hdr, text="NEW", font=("Segoe UI", 10, "bold"), padx=10, pady=3,
+                                      bg=C.get("primary_light", PAGE), fg=C["primary"])
         self.inv_num_label.pack(side="right", padx=16)
 
-        # ── Compact form header (top) ─────────────────────────
-        self.form_body = tk.Frame(self.win, bg=C["card_bg"],
+        # ── Compact form header (top) — a white card on the grey page ──
+        self.form_body = tk.Frame(self.win, bg=CARD,
                                   highlightbackground=C["border"],
                                   highlightthickness=1)
-        self.form_body.pack(side="top", fill="x")
+        self.form_body.pack(side="top", fill="x", padx=12, pady=(10, 0))
 
         # ── Big line-items grid (fills the middle) ────────────
         # v6.9: packed LAST (below) so the header, totals and buttons are
         # always whole and the grid takes exactly the room that is left
-        self.items_area = tk.Frame(self.win, bg=C["content_bg"])
+        self.items_area = tk.Frame(self.win, bg=CARD, highlightbackground=C["border"],
+                                   highlightthickness=1)
 
         self._build_form_header(C)
         self._build_line_items(C)
@@ -845,10 +865,10 @@ class InvoiceForm:
         self.bottom_bar = tk.Frame(self.win, bg=C["card_bg"],
                                    highlightbackground=C["border"],
                                    highlightthickness=1)
-        self.bottom_bar.pack(side="bottom", fill="x")
+        self.bottom_bar.pack(side="bottom", fill="x", padx=12, pady=(0, 10))
         self._build_totals_bar(C)
         self._build_statusbar(C)
-        self.items_area.pack(side="top", fill="both", expand=True)
+        self.items_area.pack(side="top", fill="both", expand=True, padx=12, pady=10)
 
     def _build_statusbar(self, C):
         """Slim Polosys-style status strip at the very bottom:
@@ -927,7 +947,7 @@ class InvoiceForm:
 
         # ── Toolbar (Polosys-style) ───────────────────────────
         tb = tk.Frame(fb, bg=C["card_bg"])
-        tb.pack(fill="x", padx=6, pady=(2, 1))
+        tb.pack(fill="x", padx=10, pady=(8, 6))
         self._tools_bar = tb                 # v6.9: the voice switch sits here too
         tools = [
             ("\U0001f4be Save",        lambda: self._save(confirm=True)),
@@ -947,12 +967,21 @@ class InvoiceForm:
             ("\U0001f4e5 Load Order",  self._load_order),          # v7.5: quotation / sales order
         ]
         self._tool_btns = {}
+        # v8.0: quiet bordered tool chips; Save is the one filled (primary)
+        # button and Delete / Close are in the danger colour
         for txt, cmd in tools:
-            b = tk.Button(tb, text=txt, font=("Segoe UI", 8, "bold"),
-                          bg=C["content_bg"], fg=C["text_primary"], relief="flat",
-                          padx=6, pady=2, cursor="hand2", command=cmd)
-            b.pack(side="left", padx=1)
-            self._tool_btns[txt.split(" ", 1)[-1]] = b
+            name = txt.split(" ", 1)[-1]
+            if name == "Save":
+                opts = dict(bg=C["primary"], fg="white", activebackground=C["primary_dark"],
+                            activeforeground="white", highlightthickness=0)
+            else:
+                opts = dict(bg=C["card_bg"], fg=C["danger"] if name in ("Delete", "Close")
+                            else C["text_primary"], activebackground=C.get("heading_bg", C["content_bg"]),
+                            highlightthickness=1, highlightbackground=C.get("field_border", C["border"]))
+            b = tk.Button(tb, text=txt, font=("Segoe UI", 8, "bold"), relief="flat", bd=0,
+                          padx=8, pady=3, cursor="hand2", command=cmd, **opts)
+            b.pack(side="left", padx=(0, 4))
+            self._tool_btns[name] = b
         tk.Frame(fb, bg=C["border"], height=1).pack(fill="x")
 
         # v7.9: the header as titled blocks (Bill · Customer · Contact ·
@@ -965,7 +994,7 @@ class InvoiceForm:
         def ent(var, width=10, st=None, bold=False):
             return lambda p: tk.Entry(p, textvariable=var, width=width,
                                       font=("Segoe UI", 10, "bold") if bold else F10,
-                                      relief="solid", bd=1, state=st or state)
+                                      **_fld(), state=st or state)
 
         def small(parent, text, cmd, primary=False):
             return tk.Button(parent, text=text, font=("Segoe UI", 8, "bold" if primary else "normal"),
@@ -1004,7 +1033,7 @@ class InvoiceForm:
 
         def find_box(p):
             self.find_entry = tk.Entry(p, textvariable=self.find_var, width=8, font=("Segoe UI", 9),
-                                       relief="solid", bd=1, state="disabled")
+                                       **_fld(), state="disabled")
             self.find_entry.bind("<Return>", lambda e: self._find_invoice())
             return self.find_entry
         b1.row("Find", find_box, extra=lambda p: tk.Checkbutton(
@@ -1065,7 +1094,7 @@ class InvoiceForm:
         b3.row("Address", ent(self.cust_addr_var, 12))
         b3.row("Ref No.", ent(self.hdr_vars["po_number"], 8),
                extra=lambda p: tk.Entry(p, textvariable=self.hdr_vars["due_date"], font=F10,
-                                        relief="solid", bd=1, width=10, state=state))
+                                        **_fld(), width=10, state=state))
         b3.row("M.Inv", ent(self.minv_var, 8))
 
         # ── Details: store · salesman · place of supply · send to
@@ -2191,7 +2220,7 @@ class InvoiceForm:
         the figures on the second, GRAND TOTAL on the right."""
         bar = self.bottom_bar
         inner = tk.Frame(bar, bg=C["card_bg"])
-        inner.pack(fill="x", padx=10, pady=3)
+        inner.pack(fill="x", padx=14, pady=8)
         ro = "disabled" if self.view_only else "normal"
         F8 = ("Segoe UI", 8)
 
@@ -2212,11 +2241,12 @@ class InvoiceForm:
         self.bill_discount_var = tk.StringVar(value="0.00")
 
         # ── GRAND TOTAL (right, both rows high) ──────────────
-        gt = tk.Frame(inner, bg=C["primary"], padx=12, pady=2)
-        gt.pack(side="right", fill="y", padx=(10, 0))
+        # v8.0 (Figma: Summary ▸ NET TOTAL): solid primary card, caps label
+        gt = tk.Frame(inner, bg=C["primary"], padx=18, pady=6)
+        gt.pack(side="right", fill="y", padx=(14, 0))
         tk.Label(gt, text="GRAND TOTAL", font=("Segoe UI", 8, "bold"), bg=C["primary"],
-                 fg="white").pack(anchor="e")
-        tk.Label(gt, textvariable=self.total_var, font=("Segoe UI", 16, "bold"),
+                 fg=C.get("primary_light", "white")).pack(anchor="e")
+        tk.Label(gt, textvariable=self.total_var, font=("Segoe UI", 18, "bold"),
                  bg=C["primary"], fg="white").pack(anchor="e")
 
         left = tk.Frame(inner, bg=C["card_bg"])
@@ -2224,7 +2254,7 @@ class InvoiceForm:
         r1 = tk.Frame(left, bg=C["card_bg"])
         r1.pack(fill="x")
         r2 = tk.Frame(left, bg=C["card_bg"])
-        r2.pack(fill="x", pady=(3, 0))
+        r2.pack(fill="x", pady=(8, 0))
 
         def lbl(parent, text, padl=10, fg=None, bold=False):
             tk.Label(parent, text=text, font=("Segoe UI", 8, "bold") if bold else F8,
@@ -2236,7 +2266,7 @@ class InvoiceForm:
                 var = tk.StringVar(value="0.00")
                 setattr(self, var_name, var)
             e = tk.Entry(r1, textvariable=var, font=("Segoe UI", 10), width=width,
-                         relief="solid", bd=1, justify="right", state=ro)
+                         **_fld(), justify="right", state=ro)
             e.pack(side="left")
             setattr(self, var_name + "_entry", e)
             return e
@@ -2245,7 +2275,7 @@ class InvoiceForm:
         lbl(r1, "Remarks", padl=0)
         self.hdr_vars["notes_en"] = tk.StringVar()
         tk.Entry(r1, textvariable=self.hdr_vars["notes_en"], font=("Segoe UI", 9),
-                 relief="solid", bd=1, width=16).pack(side="left", fill="x", expand=True)
+                 **_fld(), width=16).pack(side="left", fill="x", expand=True)
         # v6.0: Price Category = price list; it follows the customer and
         # re-prices the lines when changed
         self.price_category_var = tk.StringVar(value="Standard")
@@ -2270,7 +2300,7 @@ class InvoiceForm:
                            side="left", padx=(8, 2))
         self.cash_var = tk.StringVar(value="0.00")
         self.cash_var_entry = tk.Entry(r1, textvariable=self.cash_var, font=("Segoe UI", 10),
-                                       width=9, relief="solid", bd=1, justify="right", state=ro)
+                                       width=9, **_fld(), justify="right", state=ro)
         self.cash_var_entry.pack(side="left")
         amt("Round", "round_var", width=6)
         # v6.9.2: ⭐ loyalty points spent on this bill (was an unused Coupon box)
@@ -2659,11 +2689,11 @@ class InvoiceForm:
     def _build_footer(self, C):
         """v6.9: ONE slim line — status on the left, one-line buttons on
         the right (the separate status strip and two-line buttons are gone)."""
-        footer = tk.Frame(self.win, bg=C["card_bg"],
-                          highlightbackground=C["border"], highlightthickness=1)
+        footer = tk.Frame(self.win, bg=C["card_bg"])
         footer.pack(fill="x", side="bottom")
+        tk.Frame(footer, bg=C["border"], height=1).pack(fill="x", side="top")
         inner = tk.Frame(footer, bg=C["card_bg"])
-        inner.pack(fill="x", padx=10, pady=3)
+        inner.pack(fill="x", padx=12, pady=8)
 
         self.save_status = tk.StringVar()
         tk.Label(inner, textvariable=self.save_status,
@@ -2674,21 +2704,26 @@ class InvoiceForm:
 
         from ui.ui_kit import key_style, ghost_key_style
 
+        # v8.0 (Figma: Sales Invoice ▸ Actions): white bordered buttons, one
+        # filled primary "Save & Confirm" at the far right
         def slim(style):
-            style.update(pady=3, padx=12, justify="center", anchor="center")
+            style.update(pady=6, padx=14, justify="center", anchor="center",
+                         font=("Segoe UI", 9, "bold"))
             return style
 
+        def sec(label):
+            return slim(ghost_key_style("", label))
+
         tk.Button(inner, command=lambda: close_guard.request_close(self.win),
-                  **slim(ghost_key_style("", "Esc  " + t("common.cancel")))).pack(side="right", padx=(6, 0))
+                  **sec("Esc  " + t("common.cancel"))).pack(side="right", padx=(8, 0))
 
         if not self.view_only:
             tk.Button(inner, command=lambda: self._save(confirm=True),
-                      **slim(key_style(C.get("tile_green", C["success"]), "",
-                                       "✔  Save & Confirm"))).pack(side="right", padx=(6, 0))
+                      **slim(key_style(C["primary"], "",
+                                       "✔  Save & Confirm"))).pack(side="right", padx=(8, 0))
 
             # 🖨 Print ▾  — Default / Dot-matrix / PDF (saves first)
-            print_btn = tk.Menubutton(inner, **slim(key_style(C.get("tile_purple", C["info"]),
-                                                              "", "F10  Print ▾")))
+            print_btn = tk.Menubutton(inner, **sec("F10  Print ▾"))
             pmenu = tk.Menu(print_btn, tearoff=0, font=("Segoe UI", 10))
             pmenu.add_command(label="🖨  Print  (default layout)      F10",
                               command=lambda: self._save_and_print("default"))
@@ -2702,21 +2737,18 @@ class InvoiceForm:
             pmenu.add_command(label="↺  Print previous invoice",
                               command=self._print_previous)
             print_btn.configure(menu=pmenu)
-            print_btn.pack(side="right", padx=(6, 0))
+            print_btn.pack(side="right", padx=(8, 0))
 
             tk.Button(inner, command=lambda: self._save(confirm=False),
-                      **slim(key_style(C.get("tile_blue", C["primary"]), "",
-                                       "F9  Save Draft"))).pack(side="right")
+                      **sec("F9  Save Draft")).pack(side="right")
 
             # Hold (Pending): save current sale as draft, then start a fresh one
             tk.Button(inner, command=self._hold_sale,
-                      **slim(key_style(C.get("tile_orange", C["warning"]), "",
-                                       "⏸  Hold"))).pack(side="right", padx=(0, 6))
+                      **sec("⏸  Hold")).pack(side="right", padx=(0, 8))
 
             # Teller: cash-tender popup (enter cash given → shows change)
             tk.Button(inner, command=self._open_teller,
-                      **slim(key_style(C.get("slate", "#5B6B82"), "",
-                                       "💵  Teller"))).pack(side="right", padx=(0, 6))
+                      **sec("💵  Teller")).pack(side="right", padx=(0, 8))
 
     # ── Teller (cash tender) ──────────────────────────────────
     def _teller_num(self, v):

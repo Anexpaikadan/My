@@ -176,12 +176,13 @@ class InvoiceGrid(tk.Frame):
             style.theme_use("clam")
         except Exception:
             pass
-        style.configure("Inv.Treeview", rowheight=30, font=("Segoe UI", 10),
+        style.configure("Inv.Treeview", rowheight=32, font=("Segoe UI", 10),
                         fieldbackground="white", background="white")
         from ui.ink import readable as _readable
         _hbg = C.get("heading_bg", C["content_bg"])
-        style.configure("Inv.Treeview.Heading", font=("Segoe UI", 9, "bold"),
-                        background=_hbg, foreground=_readable("#374151", _hbg))  # v7.9.4: dark themes
+        style.configure("Inv.Treeview.Heading", font=("Segoe UI", 9, "bold"), padding=(6, 8),
+                        background=_hbg,                       # v8.0: muted headings
+                        foreground=_readable(C.get("text_secondary", "#5B6475"), _hbg))
 
         wrap = tk.Frame(self, bg=C["card_bg"])
         wrap.pack(fill="both", expand=True)
