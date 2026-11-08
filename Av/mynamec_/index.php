@@ -410,7 +410,7 @@ $money = function($v){ $v = trim((string)$v); if ($v === '') return 'On request'
 <link rel="stylesheet" href="<?= url('assets/vendor/bootstrap/css/bootstrap.min.css') ?>">
 <link rel="stylesheet" href="<?= url('assets/vendor/bootstrap-icons/bootstrap-icons.min.css') ?>">
 <link rel="stylesheet" href="<?= url('assets/vendor/fontawesome/css/all.min.css') ?>">
-<link rel="stylesheet" href="<?= url('assets/css/club.css') ?>?v=3">
+<link rel="stylesheet" href="<?= url('assets/css/club.css') ?>?v=4">
 <style>
 /* login pop-up (logic unchanged; classes renamed so they don't clash with Bootstrap) */
 .overlay{display:none;position:fixed;inset:0;z-index:2000;background:rgba(5,8,25,.7);align-items:flex-end;justify-content:center}
@@ -445,7 +445,7 @@ select.finp option{color:#000}
 .num-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:.55rem;max-width:300px;margin:0 auto}
 .num-keypad button{background:var(--page-dark);border:1px solid rgba(255,255,255,.12);border-radius:1rem;min-height:58px;font-size:1.35rem;font-weight:800;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
 .num-keypad button:active{background:var(--brand)}
-.num-keypad button span{font-size:.55rem;letter-spacing:.1em;color:var(--muted);margin-top:.15rem}
+.num-keypad button span{font-size:.75rem;letter-spacing:.1em;color:var(--muted);margin-top:.15rem}
 .num-keypad .pk-del{color:var(--brand-text)}
 .num-keypad .pk-ok{background:var(--brand);border-color:var(--brand)}
 .pk-dot{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.2)}
@@ -883,7 +883,7 @@ foreach ($sliders as $key => $sl): $slJson[$key] = $sl[1]; ?>
           <div class="pk-dot"></div><div class="pk-dot"></div><div class="pk-dot"></div>
           <div class="pk-dot"></div><div class="pk-dot"></div><div class="pk-dot"></div>
         </div>
-        <div style="text-align:center;font-size:.74rem;color:var(--t3);margin-bottom:.8rem">Choose a 6-digit passkey</div>
+        <div style="text-align:center;font-size:.75rem;color:var(--t3);margin-bottom:.8rem">Choose a 6-digit passkey</div>
         <!-- Keypad for new passkey -->
         <div class="num-keypad" id="createKeypad" role="group" aria-label="New passkey keypad">
           <button type="button" onclick="pkNewTap(\'1\')">1</button>
@@ -952,7 +952,7 @@ foreach ($sliders as $key => $sl): $slJson[$key] = $sl[1]; ?>
     <button type="button" id="pwaInstallBtn" onclick="pwaInstall()" style="display:none;width:100%;min-height:44px;padding:.52rem;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;border-radius:12px;font-weight:800;font-size:.8rem;cursor:pointer;align-items:center;justify-content:center;gap:.4rem">
       📲 Add to Home Screen
     </button>
-    <div id="pwaIosHint" style="display:none;text-align:center;font-size:.7rem;color:#3B4266;padding:.4rem;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0">
+    <div id="pwaIosHint" style="display:none;text-align:center;font-size:.75rem;color:#3B4266;padding:.4rem;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0">
       📲 Tap <strong>Share</strong> then <strong>"Add to Home Screen"</strong> to install
     </div>
   </div>
@@ -1467,8 +1467,8 @@ if(home) window.addEventListener('scroll', function(){ var top = scrollY < 400; 
       <img src="/assets/logo.jpg" alt="" width="60" height="60" style="width:60px;height:60px;border-radius:14px;object-fit:cover;box-shadow:0 3px 10px rgba(0,0,0,.15);flex-shrink:0">
       <div>
         <div style="font-size:1.1rem;font-weight:800;color:#07225c">Aishwarya</div>
-        <div style="font-size:.72rem;color:#64748b">Aishwarya Arts &amp; Sports Club</div>
-        <div style="font-size:.65rem;color:#5d6b80;margin-top:.1rem">mynamecc.online</div>
+        <div style="font-size:.75rem;color:#64748b">Aishwarya Arts &amp; Sports Club</div>
+        <div style="font-size:.75rem;color:#5d6b80;margin-top:.1rem">mynamecc.online</div>
       </div>
     </div>
 
@@ -1482,7 +1482,7 @@ if(home) window.addEventListener('scroll', function(){ var top = scrollY < 400; 
         <div style="width:36px;height:36px;background:#07225c;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">1️⃣</div>
         <div>
           <div style="font-size:.82rem;font-weight:800;color:#07225c">Tap Share ⬆️</div>
-          <div style="font-size:.65rem;color:#64748b">The square with arrow — Safari bottom bar</div>
+          <div style="font-size:.75rem;color:#64748b">The square with arrow — Safari bottom bar</div>
         </div>
         <span style="font-size:1.3rem;margin-left:auto">⬆️</span>
       </div>
@@ -1491,7 +1491,7 @@ if(home) window.addEventListener('scroll', function(){ var top = scrollY < 400; 
         <div style="width:36px;height:36px;background:#1565c0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">2️⃣</div>
         <div>
           <div style="font-size:.82rem;font-weight:800;color:#1565c0">Add to Home Screen</div>
-          <div style="font-size:.65rem;color:#64748b">Scroll down in the menu &amp; tap it</div>
+          <div style="font-size:.75rem;color:#64748b">Scroll down in the menu &amp; tap it</div>
         </div>
         <span style="font-size:1.3rem;margin-left:auto">➕</span>
       </div>
@@ -1500,7 +1500,7 @@ if(home) window.addEventListener('scroll', function(){ var top = scrollY < 400; 
         <div style="width:36px;height:36px;background:#2e7d32;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">3️⃣</div>
         <div>
           <div style="font-size:.82rem;font-weight:800;color:#2e7d32">Tap Add — Installed! 🎉</div>
-          <div style="font-size:.65rem;color:#64748b">App icon saved to home screen</div>
+          <div style="font-size:.75rem;color:#64748b">App icon saved to home screen</div>
         </div>
         <span style="font-size:1.3rem;margin-left:auto">✅</span>
       </div>
@@ -1508,7 +1508,7 @@ if(home) window.addEventListener('scroll', function(){ var top = scrollY < 400; 
       <!-- Animated bounce arrow pointing down to Safari toolbar -->
       <div style="text-align:center;margin-top:.3rem">
         <div style="font-size:2rem;animation:bounce 1s infinite">⬇️</div>
-        <div style="font-size:.72rem;color:#e65100;font-weight:700;background:#fff3e0;display:inline-block;padding:.3rem .8rem;border-radius:20px;border:1px solid #ffe082">
+        <div style="font-size:.75rem;color:#e65100;font-weight:700;background:#fff3e0;display:inline-block;padding:.3rem .8rem;border-radius:20px;border:1px solid #ffe082">
           Tap the Share button in Safari below
         </div>
       </div>
@@ -1520,15 +1520,15 @@ if(home) window.addEventListener('scroll', function(){ var top = scrollY < 400; 
       <div style="font-size:.8rem;font-weight:800;color:#1a1a1a;margin-bottom:.7rem">🤖 Android — How to install:</div>
       <div style="display:flex;align-items:center;gap:.7rem;padding:.6rem .7rem;background:#f8faff;border-radius:12px;margin-bottom:.45rem;border:1px solid #e8ecf4">
         <div style="width:32px;height:32px;background:#07225c;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">⋮</div>
-        <div><div style="font-size:.78rem;font-weight:700;color:#1a1a1a">Tap ⋮ menu in Chrome</div><div style="font-size:.65rem;color:#64748b">Top right corner of browser</div></div>
+        <div><div style="font-size:.78rem;font-weight:700;color:#1a1a1a">Tap ⋮ menu in Chrome</div><div style="font-size:.75rem;color:#64748b">Top right corner of browser</div></div>
       </div>
       <div style="display:flex;align-items:center;gap:.7rem;padding:.6rem .7rem;background:#f8faff;border-radius:12px;margin-bottom:.45rem;border:1px solid #e8ecf4">
         <div style="width:32px;height:32px;background:#1565c0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">📲</div>
-        <div><div style="font-size:.78rem;font-weight:700;color:#1a1a1a">Tap "Add to Home screen"</div><div style="font-size:.65rem;color:#64748b">Or "Install app" if shown</div></div>
+        <div><div style="font-size:.78rem;font-weight:700;color:#1a1a1a">Tap "Add to Home screen"</div><div style="font-size:.75rem;color:#64748b">Or "Install app" if shown</div></div>
       </div>
       <div style="display:flex;align-items:center;gap:.7rem;padding:.6rem .7rem;background:#e8f5e9;border-radius:12px;margin-bottom:.8rem;border:1px solid #c8e6c9">
         <div style="width:32px;height:32px;background:#2e7d32;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">✅</div>
-        <div><div style="font-size:.78rem;font-weight:700;color:#1a1a1a">Tap "Add" — Done!</div><div style="font-size:.65rem;color:#64748b">App appears on home screen</div></div>
+        <div><div style="font-size:.78rem;font-weight:700;color:#1a1a1a">Tap "Add" — Done!</div><div style="font-size:.75rem;color:#64748b">App appears on home screen</div></div>
       </div>
     </div>
 

@@ -29,10 +29,10 @@ require_once __DIR__.'/../includes/header.php';
     <div class="member-name"><?=h($m['name'])?></div>
     <div class="member-pos"><?=h($m['profession']??$m['skill'])?></div>
     <span class="role-badge role-<?=h($m['role'])?>"><?=h(roleLabel($m['role']))?></span>
-    <?php if($m['blood_group']):?><div style="font-size:.7rem;color:#B71C1C;font-weight:700;margin-top:.25rem">🩸 <?=h($m['blood_group'])?></div><?php endif;?>
+    <?php if($m['blood_group']):?><div style="font-size:.75rem;color:#B71C1C;font-weight:700;margin-top:.25rem">🩸 <?=h($m['blood_group'])?></div><?php endif;?>
     <div style="margin-top:.7rem;display:flex;gap:.35rem;justify-content:center">
       <a href="<?=url('modules/profile.php')?>?id=<?=$m['id']?>" class="btn btn-outline-blue btn-sm">👤</a>
-      <a href="https://wa.me/<?=$wn?>" target="_blank" class="btn-wa" style="font-size:.73rem;padding:.3rem .65rem">💬</a>
+      <a href="https://wa.me/<?=$wn?>" target="_blank" class="btn-wa" style="font-size:.75rem;padding:.3rem .65rem">💬</a>
     </div>
   </div>
   <?php endforeach;?>

@@ -175,7 +175,7 @@ require_once __DIR__ . '/../includes/header.php';
   padding:.5rem .8rem;text-align:center;flex:1}
 .bh-hstat-n{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.2rem;
   color:#fff;line-height:1}
-.bh-hstat-l{font-size:.55rem;color:rgba(255,255,255,.6);
+.bh-hstat-l{font-size:.75rem;color:rgba(255,255,255,.6);
   text-transform:uppercase;letter-spacing:.09em;font-weight:700}
 
 /* Floating blood group card */
@@ -197,7 +197,7 @@ require_once __DIR__ . '/../includes/header.php';
 .bh-bg-group{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.12rem;
   color:#b71c1c;line-height:1}
 .bh-bg-btn.on .bh-bg-group{color:#fff}
-.bh-bg-count{font-size:.6rem;color:#5d6b80;font-weight:700;margin-top:.15rem}
+.bh-bg-count{font-size:.75rem;color:#5d6b80;font-weight:700;margin-top:.15rem}
 .bh-bg-btn.on .bh-bg-count{color:rgba(255,255,255,.7)}
 .bh-avail-dot{width:7px;height:7px;border-radius:50%;background:#4caf50;
   display:inline-block;margin-right:.2rem}
@@ -236,16 +236,16 @@ require_once __DIR__ . '/../includes/header.php';
 .bh-dname{font-weight:800;font-size:.9rem;color:#0B1033;
   margin-bottom:.3rem;line-height:1.25}
 .bh-dmeta{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap}
-.bh-role-badge{font-size:.58rem;font-weight:800;color:#fff;
+.bh-role-badge{font-size:.75rem;font-weight:800;color:#fff;
   background:#0A14E0;border-radius:20px;padding:.1rem .5rem;
   white-space:nowrap}
 .bh-status{display:inline-flex;align-items:center;gap:.22rem;
-  font-size:.63rem;font-weight:700;border-radius:20px;
+  font-size:.75rem;font-weight:700;border-radius:20px;
   padding:.1rem .5rem;border:1px solid}
 .bh-status.avail{color:#1b5e20;background:#e8f5e9;border-color:#a5d6a7}
 .bh-status.unavail{color:#b71c1c;background:#ffebee;border-color:#ef9a9a}
 .bh-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
-.bh-date{font-size:.6rem;color:#5d6b80}
+.bh-date{font-size:.75rem;color:#5d6b80}
 
 /* WA Emergency button */
 .bh-wa-btn{flex-shrink:0;display:flex;flex-direction:column;
@@ -256,8 +256,8 @@ require_once __DIR__ . '/../includes/header.php';
   min-width:54px;transition:all .2s}
 .bh-wa-btn:active{transform:scale(.93)}
 .bh-wa-btn i{font-size:1.15rem}
-.bh-wa-btn span{font-size:.58rem;font-weight:800;letter-spacing:.02em}
-.bh-private{font-size:.7rem;color:#bcc4cf;padding:.4rem}
+.bh-wa-btn span{font-size:.75rem;font-weight:800;letter-spacing:.02em}
+.bh-private{font-size:.75rem;color:#bcc4cf;padding:.4rem}
 
 /* Secretary broadcast panel */
 .bh-broadcast{background:linear-gradient(135deg,#e8f5e9,#f1f8e9);
@@ -267,7 +267,7 @@ require_once __DIR__ . '/../includes/header.php';
   letter-spacing:.01em;color:#1b5e20;margin-bottom:.7rem}
 .bh-wa-chip{display:inline-flex;align-items:center;gap:.3rem;
   background:#25d366;color:#fff;border-radius:20px;
-  padding:.35rem .85rem;font-size:.74rem;font-weight:700;
+  padding:.35rem .85rem;font-size:.75rem;font-weight:700;
   text-decoration:none;margin:.2rem;
   box-shadow:0 2px 8px rgba(37,211,102,.3)}
 
@@ -293,7 +293,7 @@ require_once __DIR__ . '/../includes/header.php';
   border-radius:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.88rem;
   color:#0B1033;outline:none;transition:border-color .2s;background:#f8fafc}
 .bh-inp:focus{border-color:#b71c1c;background:#fff}
-.bh-lbl{font-size:.68rem;font-weight:700;text-transform:uppercase;
+.bh-lbl{font-size:.75rem;font-weight:700;text-transform:uppercase;
   letter-spacing:.08em;color:#64748b;display:block;margin-bottom:.28rem}
 .bh-submit{width:100%;padding:.85rem;background:linear-gradient(135deg,#b71c1c,#c62828);
   color:#fff;border:none;border-radius:14px;
@@ -304,7 +304,7 @@ require_once __DIR__ . '/../includes/header.php';
 .bh-submit:active{transform:scale(.97)}
 
 /* Section label */
-.bh-sec-lbl{font-size:.68rem;font-weight:800;text-transform:uppercase;
+.bh-sec-lbl{font-size:.75rem;font-weight:800;text-transform:uppercase;
   letter-spacing:.12em;color:#5d6b80;margin:.9rem 1rem .5rem;
   display:flex;align-items:center;gap:.5rem}
 .bh-sec-lbl::after{content:'';flex:1;height:1.5px;
@@ -348,7 +348,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 <!-- ── Blood Group Filter ── -->
 <div class="bh-bg-card">
-  <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:#b71c1c;margin-bottom:.75rem;display:flex;align-items:center;gap:.4rem">
+  <div style="font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:#b71c1c;margin-bottom:.75rem;display:flex;align-items:center;gap:.4rem">
     <span style="width:8px;height:8px;border-radius:50%;background:#b71c1c;animation:pulse 1.8s infinite"></span>
     Select Blood Group
   </div>
@@ -381,7 +381,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div><?= h($msg['m']) ?></div>
     <?php if(!empty($waNotifyLinks)): ?>
     <div style="margin-top:.75rem">
-      <div style="font-size:.7rem;font-weight:700;color:#166534;margin-bottom:.5rem">📲 TAP TO NOTIFY DONORS:</div>
+      <div style="font-size:.75rem;font-weight:700;color:#166534;margin-bottom:.5rem">📲 TAP TO NOTIFY DONORS:</div>
       <div style="display:flex;flex-wrap:wrap;gap:.35rem">
         <?php foreach($waNotifyLinks as $wl): ?>
         <a href="<?= h($wl['link']) ?>" target="_blank" class="bh-wa-chip">
@@ -389,7 +389,7 @@ require_once __DIR__ . '/../includes/header.php';
         </a>
         <?php endforeach; ?>
       </div>
-      <div style="font-size:.7rem;color:#4caf50;margin-top:.5rem">💡 Tap name → WhatsApp opens → press Send</div>
+      <div style="font-size:.75rem;color:#4caf50;margin-top:.5rem">💡 Tap name → WhatsApp opens → press Send</div>
     </div>
     <?php endif; ?>
   </div>
@@ -417,7 +417,7 @@ require_once __DIR__ . '/../includes/header.php';
 <!-- ── Donor count ── -->
 <?php if($bg): ?>
 <div class="bh-sec-lbl">🩸 <?= h($bg) ?> Donors (<?= count($donors) ?>)
-  <a href="<?= url('modules/blood.php') ?>" style="font-size:.68rem;color:#b71c1c;font-weight:700;text-decoration:none;margin-left:.3rem">× Clear</a>
+  <a href="<?= url('modules/blood.php') ?>" style="font-size:.75rem;color:#b71c1c;font-weight:700;text-decoration:none;margin-left:.3rem">× Clear</a>
 </div>
 <?php else: ?>
 <div class="bh-sec-lbl">All Donors (<?= count($donors) ?>)</div>

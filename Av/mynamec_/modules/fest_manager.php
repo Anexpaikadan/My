@@ -237,7 +237,7 @@ require_once __DIR__.'/../includes/header.php';
 .fm-wrap{max-width:580px;margin:0 auto;padding-bottom:4rem}
 .fm-hero{background:linear-gradient(135deg,#0B1033,#0A14E0,#1A23C9);padding:1.6rem 1rem 1.2rem;text-align:center}
 .fm-hero h1{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.44rem;color:#fff;letter-spacing:.01em;margin-bottom:.2rem}
-.fm-hero p{font-size:.72rem;color:rgba(255,255,255,.6)}
+.fm-hero p{font-size:.75rem;color:rgba(255,255,255,.6)}
 .fest-card{background:#fff;margin:.6rem .8rem;border-radius:16px;overflow:hidden;box-shadow:0 3px 16px rgba(11,16,51,.1);border:1.5px solid rgba(11,16,51,.1);cursor:pointer;transition:all .15s}
 .fest-card:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(11,16,51,.15)}
 .fest-poster{width:100%;height:160px;object-fit:cover;display:block}
@@ -245,12 +245,12 @@ require_once __DIR__.'/../includes/header.php';
 .fest-info{padding:.75rem 1rem}
 .fest-title{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:#0B1033;margin-bottom:.2rem}
 .fest-meta{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.4rem}
-.fest-badge{font-size:.62rem;font-weight:700;padding:.18rem .55rem;border-radius:20px;letter-spacing:.06em}
+.fest-badge{font-size:.75rem;font-weight:700;padding:.18rem .55rem;border-radius:20px;letter-spacing:.06em}
 .badge-active{background:#ECEEFF;color:#1A23C9}
 .badge-open{background:#e8f5e9;color:#2e7d32}
 .badge-closed{background:#ffebee;color:#b71c1c}
 .fest-actions{display:flex;gap:.4rem;padding:0 1rem .75rem}
-.fb{padding:.42rem .85rem;border:none;border-radius:8px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif}
+.fb{padding:.42rem .85rem;border:none;border-radius:8px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif}
 .fb-enter{background:linear-gradient(135deg,#0B1033,#0A14E0);color:#fff;flex:1}
 .fb-share{background:#25d366;color:#fff}
 .fb-edit{background:#fff3e0;color:#e65100;border:1px solid #ffe0b2}
@@ -259,9 +259,9 @@ require_once __DIR__.'/../includes/header.php';
 .ec{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.08);border:1.5px solid #E3E7F5;position:relative;cursor:pointer}
 .ec img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
 .ec-info{padding:.4rem .5rem .5rem}
-.ec-name{font-size:.7rem;font-weight:800;color:#0B1033}
+.ec-name{font-size:.75rem;font-weight:800;color:#0B1033}
 .ec-likes{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.8rem;color:#e53935}
-.like-btn{padding:.28rem .6rem;border:none;border-radius:7px;font-size:.68rem;font-weight:800;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif}
+.like-btn{padding:.28rem .6rem;border:none;border-radius:7px;font-size:.75rem;font-weight:800;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif}
 .like-can{background:linear-gradient(135deg,#e53935,#b71c1c);color:#fff}
 .like-done{background:#fce4ec;color:#c62828}
 .like-no{background:#f5f5f5;color:#666666}
@@ -327,7 +327,7 @@ require_once __DIR__.'/../includes/header.php';
       <?php endif; ?>
     </div>
     <?php if($f['description']): ?>
-    <p style="font-size:.72rem;color:#64748b;margin:.2rem 0"><?= h(mb_substr($f['description'],0,80)) ?>...</p>
+    <p style="font-size:.75rem;color:#64748b;margin:.2rem 0"><?= h(mb_substr($f['description'],0,80)) ?>...</p>
     <?php endif; ?>
   </div>
   <div class="fest-actions" onclick="event.stopPropagation()">

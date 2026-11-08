@@ -432,8 +432,8 @@ require_once __DIR__.'/../includes/header.php';
 .mk-hero-icon{font-size:1.7rem;line-height:1;flex-shrink:0}
 .mk-hero-txt{flex:1;min-width:0}
 .mk-hero h1{font-family:'Playfair Display',serif;font-size:1.15rem;color:#fff;margin:0;font-weight:700;line-height:1.1}
-.mk-hero p{font-size:.6rem;color:rgba(255,255,255,.7);margin:0;letter-spacing:.05em}
-.mk-hero-link{flex-shrink:0;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);color:#fff;text-decoration:none;font-size:.68rem;font-weight:800;padding:.35rem .7rem;border-radius:18px;white-space:nowrap}
+.mk-hero p{font-size:.75rem;color:rgba(255,255,255,.7);margin:0;letter-spacing:.05em}
+.mk-hero-link{flex-shrink:0;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);color:#fff;text-decoration:none;font-size:.75rem;font-weight:800;padding:.35rem .7rem;border-radius:18px;white-space:nowrap}
 .mk-tagline{display:none}
 /* Top bar */
 .mk-topbar{background:#fff;padding:.55rem .8rem;display:flex;gap:.45rem;align-items:center;box-shadow:0 1px 6px rgba(0,0,0,.06);position:sticky;top:0;z-index:100}
@@ -443,7 +443,7 @@ require_once __DIR__.'/../includes/header.php';
 /* Categories scroll */
 .mk-cats{display:flex;gap:.45rem;overflow-x:auto;padding:.6rem .7rem;background:#fff;border-bottom:1px solid #f0f0f0;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .mk-cats::-webkit-scrollbar{display:none}
-.mk-cat{position:relative;flex-shrink:0;padding:.44rem .85rem;border-radius:20px;font-size:.72rem;font-weight:700;cursor:pointer;border:1.5px solid #eceff3;color:#566;background:#f5f7fa;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;text-decoration:none;display:flex;align-items:center;gap:.25rem;transition:transform .18s cubic-bezier(.34,1.56,.64,1),background .2s,color .2s,box-shadow .2s,border-color .2s;animation:catIn .4s both;will-change:transform}
+.mk-cat{position:relative;flex-shrink:0;padding:.44rem .85rem;border-radius:20px;font-size:.75rem;font-weight:700;cursor:pointer;border:1.5px solid #eceff3;color:#566;background:#f5f7fa;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;text-decoration:none;display:flex;align-items:center;gap:.25rem;transition:transform .18s cubic-bezier(.34,1.56,.64,1),background .2s,color .2s,box-shadow .2s,border-color .2s;animation:catIn .4s both;will-change:transform}
 .mk-cat:active{transform:scale(.91)}
 .mk-cat:hover{border-color:#cfe3d0;background:#eef6ef;color:var(--mk1)}
 .mk-cat.active{background:linear-gradient(135deg,var(--mk1),var(--mk3));color:#fff;border-color:transparent;box-shadow:0 5px 14px rgba(27,94,32,.32);transform:translateY(-1px)}
@@ -453,17 +453,17 @@ require_once __DIR__.'/../includes/header.php';
 .mk-subbar{display:flex;gap:.4rem;overflow-x:auto;padding:.15rem .7rem .55rem;background:#fff;border-bottom:1px solid #f0f0f0;scrollbar-width:none;animation:subIn .35s both}
 .mk-subbar::-webkit-scrollbar{display:none}
 @keyframes subIn{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:none}}
-.mk-subchip{flex-shrink:0;padding:.32rem .72rem;border-radius:14px;font-size:.66rem;font-weight:700;border:1.5px solid #e3eee4;background:#fff;color:#5a7a5c;cursor:pointer;text-decoration:none;white-space:nowrap;transition:transform .15s,background .2s,color .2s,box-shadow .2s}
+.mk-subchip{flex-shrink:0;padding:.32rem .72rem;border-radius:14px;font-size:.75rem;font-weight:700;border:1.5px solid #e3eee4;background:#fff;color:#5a7a5c;cursor:pointer;text-decoration:none;white-space:nowrap;transition:transform .15s,background .2s,color .2s,box-shadow .2s}
 .mk-subchip:active{transform:scale(.92)}
 .mk-subchip.on{background:var(--mk2);color:#fff;border-color:transparent;box-shadow:0 3px 9px rgba(46,125,50,.3)}
 /* Subcategory chips (post form) */
 .sub-chips{display:flex;flex-wrap:wrap;gap:.4rem}
-.sub-chip{padding:.44rem .82rem;border-radius:12px;font-size:.74rem;font-weight:700;border:1.5px solid #e0e0e0;background:#fff;color:#555;cursor:pointer;transition:transform .15s cubic-bezier(.34,1.56,.64,1),background .2s,color .2s,border-color .2s,box-shadow .2s;font-family:'Plus Jakarta Sans',sans-serif;animation:catIn .3s both}
+.sub-chip{padding:.44rem .82rem;border-radius:12px;font-size:.75rem;font-weight:700;border:1.5px solid #e0e0e0;background:#fff;color:#555;cursor:pointer;transition:transform .15s cubic-bezier(.34,1.56,.64,1),background .2s,color .2s,border-color .2s,box-shadow .2s;font-family:'Plus Jakarta Sans',sans-serif;animation:catIn .3s both}
 .sub-chip:active{transform:scale(.9)}
 .sub-chip.on{background:linear-gradient(135deg,var(--mk1),var(--mk2));color:#fff;border-color:transparent;box-shadow:0 4px 12px rgba(27,94,32,.3);transform:translateY(-1px)}
 /* Sort bar */
 .mk-sortbar{display:flex;gap:.3rem;padding:.4rem .7rem;background:#fff;border-bottom:1px solid #f0f0f0;overflow-x:auto;scrollbar-width:none;align-items:center}
-.mk-sort{flex-shrink:0;padding:.26rem .6rem;border-radius:12px;font-size:.65rem;font-weight:700;cursor:pointer;border:none;color:#666666;background:transparent;font-family:'Plus Jakarta Sans',sans-serif;text-decoration:none}
+.mk-sort{flex-shrink:0;padding:.26rem .6rem;border-radius:12px;font-size:.75rem;font-weight:700;cursor:pointer;border:none;color:#666666;background:transparent;font-family:'Plus Jakarta Sans',sans-serif;text-decoration:none}
 .mk-sort.active{background:var(--mk2);color:#fff}
 /* Cards grid */
 .mk-grid{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;padding:.6rem .55rem}
@@ -471,23 +471,23 @@ require_once __DIR__.'/../includes/header.php';
 .mk-card:active{transform:scale(.98)}
 .mk-card-img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:#f5f5f5}
 .mk-card-img-placeholder{width:100%;aspect-ratio:1;background:linear-gradient(135deg,#e8f5e9,#f1f8e9);display:flex;align-items:center;justify-content:center;font-size:2.5rem}
-.mk-badge{position:absolute;top:6px;left:6px;padding:.15rem .45rem;border-radius:20px;font-size:.55rem;font-weight:800;letter-spacing:.04em}
+.mk-badge{position:absolute;top:6px;left:6px;padding:.15rem .45rem;border-radius:20px;font-size:.75rem;font-weight:800;letter-spacing:.04em}
 .badge-active{background:#e8f5e9;color:#2e7d32}
 .badge-sold{background:#ffebee;color:#b71c1c}
 .mk-card-sold .mk-card-img,.mk-card-sold .mk-card-img-placeholder{opacity:.55;filter:grayscale(.4)}
 .mk-card-sold .mk-card-price{text-decoration:line-through;opacity:.6}
 .badge-inactive{background:#f5f5f5;color:#666666}
 .badge-pending{background:#fff3e0;color:#e65100}
-.badge-featured{position:absolute;top:6px;right:6px;background:var(--mkgold);color:#000;padding:.15rem .4rem;border-radius:20px;font-size:.55rem;font-weight:800}
+.badge-featured{position:absolute;top:6px;right:6px;background:var(--mkgold);color:#000;padding:.15rem .4rem;border-radius:20px;font-size:.75rem;font-weight:800}
 .mk-fav-btn{position:absolute;bottom:calc(50% + 4px);right:6px;background:rgba(255,255,255,.92);border:none;border-radius:50%;width:26px;height:26px;font-size:.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.15)}
 .mk-card-body{padding:.45rem .5rem .55rem}
 .mk-card-title{font-size:.75rem;font-weight:800;color:#1a1a1a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:.15rem}
 .mk-card-price{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.8rem;color:var(--mk1);line-height:1;margin-bottom:.1rem}
-.mk-card-price-free{font-size:.7rem;color:#2E7D32;font-weight:700}
-.mk-card-meta{font-size:.58rem;color:#5d6b80;display:flex;align-items:center;gap:.3rem;flex-wrap:wrap}
+.mk-card-price-free{font-size:.75rem;color:#2E7D32;font-weight:700}
+.mk-card-meta{font-size:.75rem;color:#5d6b80;display:flex;align-items:center;gap:.3rem;flex-wrap:wrap}
 .mk-card-seller{display:flex;align-items:center;gap:.3rem;margin-top:.3rem;padding-top:.3rem;border-top:1px solid #f5f5f5}
 .mk-card-seller img{width:18px;height:18px;border-radius:50%;object-fit:cover}
-.mk-card-seller-name{font-size:.6rem;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mk-card-seller-name{font-size:.75rem;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Item detail */
 .mk-detail{max-width:600px;margin:0 auto}
 .mk-slider{position:relative;background:#000;overflow:hidden}
@@ -511,11 +511,11 @@ require_once __DIR__.'/../includes/header.php';
 .btn-insta{background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff;border:none;border-radius:12px;padding:.55rem;font-size:.82rem;font-weight:700;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:.4rem;text-decoration:none}
 .btn-share{background:#f1f8e9;color:var(--mk1);border:1.5px solid rgba(27,94,32,.2);border-radius:12px;padding:.55rem;font-size:.82rem;font-weight:700;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:.4rem}
 .btn-fav-d{background:#fff;border:1.5px solid #e0e0e0;border-radius:12px;padding:.48rem;font-size:.82rem;font-weight:700;cursor:pointer;flex:1;display:flex;align-items:center;justify-content:center;gap:.3rem}
-.btn-report{background:#fff;border:1px solid #ffcdd2;border-radius:12px;padding:.38rem;font-size:.72rem;color:#e53935;cursor:pointer;flex:1;display:flex;align-items:center;justify-content:center;gap:.3rem}
+.btn-report{background:#fff;border:1px solid #ffcdd2;border-radius:12px;padding:.38rem;font-size:.75rem;color:#e53935;cursor:pointer;flex:1;display:flex;align-items:center;justify-content:center;gap:.3rem}
 /* Form */
 .mk-form{padding:.8rem}
 .fg{margin-bottom:.75rem}
-.lbl{display:block;font-size:.72rem;font-weight:700;color:#555;margin-bottom:.3rem}
+.lbl{display:block;font-size:.75rem;font-weight:700;color:#555;margin-bottom:.3rem}
 .inp{width:100%;padding:.52rem .7rem;border:1.5px solid #e0e0e0;border-radius:10px;font-size:.82rem;font-family:'Plus Jakarta Sans',sans-serif;outline:none;background:#fff}
 .inp:focus{border-color:var(--mk3)}
 select.inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .7rem center;padding-right:2rem}
@@ -523,7 +523,7 @@ textarea.inp{resize:vertical;min-height:90px}
 .img-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.5rem}
 .img-slot{aspect-ratio:1;border:2px dashed #ddd;border-radius:10px;overflow:hidden;position:relative;background:#fafafa;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.5rem;color:#666666}
 .img-slot img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
-.img-slot .del-img{position:absolute;top:3px;right:3px;background:rgba(183,28,28,.85);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:5}
+.img-slot .del-img{position:absolute;top:3px;right:3px;background:rgba(183,28,28,.85);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:5}
 /* My items */
 .mk-myitem{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:1.5px solid #f0f0f0;margin-bottom:.6rem;display:flex;gap:.5rem;overflow:hidden}
 .mk-myitem-img{width:80px;height:80px;object-fit:cover;flex-shrink:0}
@@ -531,16 +531,16 @@ textarea.inp{resize:vertical;min-height:90px}
 .mk-myitem-body{flex:1;padding:.5rem .5rem .5rem 0;min-width:0}
 .mk-myitem-title{font-size:.8rem;font-weight:800;color:#1a1a1a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:.2rem}
 .mk-myitem-actions{display:flex;gap:.3rem;margin-top:.35rem;flex-wrap:wrap}
-.mk-myitem-btn{padding:.22rem .5rem;border-radius:7px;font-size:.62rem;font-weight:700;cursor:pointer;border:1px solid #ddd;background:#fff;color:#555;font-family:'Plus Jakarta Sans',sans-serif}
+.mk-myitem-btn{padding:.22rem .5rem;border-radius:7px;font-size:.75rem;font-weight:700;cursor:pointer;border:1px solid #ddd;background:#fff;color:#555;font-family:'Plus Jakarta Sans',sans-serif}
 /* Status badges */
-.sb{padding:.18rem .55rem;border-radius:20px;font-size:.6rem;font-weight:800;display:inline-block}
+.sb{padding:.18rem .55rem;border-radius:20px;font-size:.75rem;font-weight:800;display:inline-block}
 .sb-active{background:#e8f5e9;color:#2e7d32}
 .sb-sold{background:#ffebee;color:#b71c1c}
 .sb-inactive{background:#f5f5f5;color:#666666}
 .sb-pending{background:#fff3e0;color:#e65100}
 /* Nav */
 .mk-nav{display:flex;background:#fff;border-bottom:2px solid var(--mk3)}
-.mk-nav-btn{flex:1;padding:.55rem .3rem;text-align:center;font-size:.65rem;font-weight:700;color:#666666;cursor:pointer;border:none;background:transparent;font-family:'Plus Jakarta Sans',sans-serif;border-bottom:2px solid transparent;margin-bottom:-2px}
+.mk-nav-btn{flex:1;padding:.55rem .3rem;text-align:center;font-size:.75rem;font-weight:700;color:#666666;cursor:pointer;border:none;background:transparent;font-family:'Plus Jakarta Sans',sans-serif;border-bottom:2px solid transparent;margin-bottom:-2px}
 .mk-nav-btn.active{color:var(--mk1);border-bottom-color:var(--mk1)}
 /* Top sub-nav (under header) */
 .mk-topnav{display:flex;background:#fff;border-bottom:1px solid #eef0f2;box-shadow:0 2px 6px rgba(0,0,0,.05)}
@@ -633,7 +633,7 @@ if ($page==='item' && $item): ?>
     ?>
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;margin-bottom:.4rem">
       <span class="mk-badge <?php echo $sc[0]; ?>" style="position:static;display:inline-block"><?php echo $sc[1]; ?></span>
-      <?php if($item['featured']): ?><span style="background:var(--mkgold);color:#000;padding:.15rem .45rem;border-radius:20px;font-size:.55rem;font-weight:800">⭐ Featured</span><?php endif; ?>
+      <?php if($item['featured']): ?><span style="background:var(--mkgold);color:#000;padding:.15rem .45rem;border-radius:20px;font-size:.75rem;font-weight:800">⭐ Featured</span><?php endif; ?>
     </div>
     <div class="mk-detail-title"><?php echo h($item['title']); ?></div>
     <?php if($item['price']): ?>
@@ -659,10 +659,10 @@ if ($page==='item' && $item): ?>
     <a href="<?php echo h($mapUrl); ?>" target="_blank" rel="noopener" class="mk-info-row" style="text-decoration:none;color:#1A23C9">
       <span class="mk-info-icon">📍</span>
       <span style="flex:1"><?php echo h($locLabel); ?></span>
-      <span style="font-size:.72rem;color:#1A23C9;font-weight:800">🗺️ Map ›</span>
+      <span style="font-size:.75rem;color:#1A23C9;font-weight:800">🗺️ Map ›</span>
     </a>
     <?php endif; ?>
-    <div class="mk-info-row"><span class="mk-info-icon"><?php echo $CATS[$item['category']][0]??'🛍️'; ?></span><?php echo $CATS[$item['category']][1]??'Others'; ?><?php if(!empty($item['subcategory'])): ?> <span style="margin-left:.45rem;background:#e8f5e9;color:var(--mk1);padding:.12rem .5rem;border-radius:10px;font-size:.62rem;font-weight:800">🔖 <?php echo h($item['subcategory']); ?></span><?php endif; ?></div>
+    <div class="mk-info-row"><span class="mk-info-icon"><?php echo $CATS[$item['category']][0]??'🛍️'; ?></span><?php echo $CATS[$item['category']][1]??'Others'; ?><?php if(!empty($item['subcategory'])): ?> <span style="margin-left:.45rem;background:#e8f5e9;color:var(--mk1);padding:.12rem .5rem;border-radius:10px;font-size:.75rem;font-weight:800">🔖 <?php echo h($item['subcategory']); ?></span><?php endif; ?></div>
     <div class="mk-info-row"><span class="mk-info-icon">👁️</span><?php echo (int)$item['views']; ?> views · <?php echo (int)$item['shares']; ?> shares · <?php echo date('d M Y',strtotime($item['created_at'])); ?></div>
 
     <!-- Seller -->
@@ -671,7 +671,7 @@ if ($page==='item' && $item): ?>
       <?php if($sph): ?><img src="<?php echo h($sph); ?>" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid rgba(27,94,32,.2)"><?php else: ?><div style="width:42px;height:42px;border-radius:50%;background:rgba(27,94,32,.15);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">👤</div><?php endif; ?>
       <div style="flex:1;min-width:0">
         <div style="font-size:.82rem;font-weight:800;color:var(--mk1)"><?php echo h($item['seller_name']); ?></div>
-        <div style="font-size:.62rem;color:#5d6b80">Seller</div>
+        <div style="font-size:.75rem;color:#5d6b80">Seller</div>
       </div>
     </div>
   </div>
@@ -705,13 +705,13 @@ if ($page==='item' && $item): ?>
 
     <?php if($isAdmin): ?>
     <div style="background:#f8fafc;border-radius:10px;padding:.6rem;border:1px solid #e2e8f0">
-      <div style="font-size:.7rem;font-weight:700;color:#64748b;margin-bottom:.4rem">🛡️ Admin Actions</div>
+      <div style="font-size:.75rem;font-weight:700;color:#64748b;margin-bottom:.4rem">🛡️ Admin Actions</div>
       <div style="display:flex;gap:.35rem;flex-wrap:wrap">
         <?php if($item['status']==='pending'): ?>
-        <button onclick="adm('admin_approve',<?php echo $itemId; ?>,this)" style="background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;border-radius:8px;padding:.3rem .6rem;font-size:.7rem;font-weight:700;cursor:pointer">✅ Approve</button>
+        <button onclick="adm('admin_approve',<?php echo $itemId; ?>,this)" style="background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;border-radius:8px;padding:.3rem .6rem;font-size:.75rem;font-weight:700;cursor:pointer">✅ Approve</button>
         <?php endif; ?>
-        <button onclick="adm('admin_feature',<?php echo $itemId; ?>,this)" style="background:#fffde7;color:#f57f17;border:1px solid #fff176;border-radius:8px;padding:.3rem .6rem;font-size:.7rem;font-weight:700;cursor:pointer"><?php echo $item['featured']?'★ Unfeature':'⭐ Feature'; ?></button>
-        <button onclick="adm('admin_reject',<?php echo $itemId; ?>,this)" style="background:#ffebee;color:#b71c1c;border:1px solid #ffcdd2;border-radius:8px;padding:.3rem .6rem;font-size:.7rem;font-weight:700;cursor:pointer">🚫 Reject</button>
+        <button onclick="adm('admin_feature',<?php echo $itemId; ?>,this)" style="background:#fffde7;color:#f57f17;border:1px solid #fff176;border-radius:8px;padding:.3rem .6rem;font-size:.75rem;font-weight:700;cursor:pointer"><?php echo $item['featured']?'★ Unfeature':'⭐ Feature'; ?></button>
+        <button onclick="adm('admin_reject',<?php echo $itemId; ?>,this)" style="background:#ffebee;color:#b71c1c;border:1px solid #ffcdd2;border-radius:8px;padding:.3rem .6rem;font-size:.75rem;font-weight:700;cursor:pointer">🚫 Reject</button>
       </div>
     </div>
     <?php endif; ?>
@@ -807,10 +807,10 @@ elseif ($page==='new' || $page==='edit'):
     <input type="hidden" name="lat" id="locLat" value="<?php echo h($fi['lat']??''); ?>">
     <input type="hidden" name="lng" id="locLng" value="<?php echo h($fi['lng']??''); ?>">
     <div style="display:flex;gap:.4rem;margin-top:.45rem">
-      <button type="button" onclick="useMyLocation(this)" style="flex:1;padding:.5rem;background:#e8f5e9;color:var(--mk1);border:1.5px solid #c8e6c9;border-radius:10px;font-size:.74rem;font-weight:800;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">📡 Use My Location</button>
-      <button type="button" onclick="pickOnMap()" style="flex:1;padding:.5rem;background:#ECEEFF;color:#1A23C9;border:1.5px solid #D6DAFF;border-radius:10px;font-size:.74rem;font-weight:800;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">🗺️ Pick on Map</button>
+      <button type="button" onclick="useMyLocation(this)" style="flex:1;padding:.5rem;background:#e8f5e9;color:var(--mk1);border:1.5px solid #c8e6c9;border-radius:10px;font-size:.75rem;font-weight:800;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">📡 Use My Location</button>
+      <button type="button" onclick="pickOnMap()" style="flex:1;padding:.5rem;background:#ECEEFF;color:#1A23C9;border:1.5px solid #D6DAFF;border-radius:10px;font-size:.75rem;font-weight:800;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">🗺️ Pick on Map</button>
     </div>
-    <div id="locStatus" style="font-size:.64rem;color:#5d6b80;margin-top:.35rem"><?php echo (isset($fi['lat'])&&$fi['lat']!==null&&$fi['lat']!=='')?'📍 GPS pin saved — buyers can open it in Google Maps.':'Tap “Use My Location” to attach a Google Maps pin.'; ?></div>
+    <div id="locStatus" style="font-size:.75rem;color:#5d6b80;margin-top:.35rem"><?php echo (isset($fi['lat'])&&$fi['lat']!==null&&$fi['lat']!=='')?'📍 GPS pin saved — buyers can open it in Google Maps.':'Tap “Use My Location” to attach a Google Maps pin.'; ?></div>
   </div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
@@ -847,7 +847,7 @@ elseif ($page==='new' || $page==='edit'):
       </div>
       <?php endfor; ?>
     </div>
-    <div style="font-size:.62rem;color:#5d6b80;margin-top:.3rem"><?php echo $slots; ?> slot<?php echo $slots>1?'s':''; ?> available · JPG/PNG/WebP · Max 8MB each</div>
+    <div style="font-size:.75rem;color:#5d6b80;margin-top:.3rem"><?php echo $slots; ?> slot<?php echo $slots>1?'s':''; ?> available · JPG/PNG/WebP · Max 8MB each</div>
     <?php endif; ?>
   </div>
 
@@ -892,9 +892,9 @@ foreach($myItems as $mi) { $grps[$mi['status']??'inactive'][] = $mi; }
 <div style="background:linear-gradient(135deg,var(--mk1),var(--mk2));padding:.65rem .9rem;display:flex;align-items:center;justify-content:space-between">
   <span style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.8rem;letter-spacing:.01em;color:#fff">MY ITEMS</span>
   <?php if($hasActiveSub): ?>
-  <a href="<?php echo $SELF.'?new'; ?>" style="background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:20px;padding:.3rem .75rem;font-size:.72rem;font-weight:800;text-decoration:none">＋ New Post</a>
+  <a href="<?php echo $SELF.'?new'; ?>" style="background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:20px;padding:.3rem .75rem;font-size:.75rem;font-weight:800;text-decoration:none">＋ New Post</a>
   <?php else: ?>
-  <a href="<?php echo $SELF.'?sub_wall=1'; ?>" style="background:rgba(183,28,28,.6);color:#fff;border:none;border-radius:20px;padding:.3rem .75rem;font-size:.72rem;font-weight:800;text-decoration:none">🔒 Subscribe to Post</a>
+  <a href="<?php echo $SELF.'?sub_wall=1'; ?>" style="background:rgba(183,28,28,.6);color:#fff;border:none;border-radius:20px;padding:.3rem .75rem;font-size:.75rem;font-weight:800;text-decoration:none">🔒 Subscribe to Post</a>
   <?php endif; ?>
 </div>
 <div style="padding:.7rem .7rem .3rem">
@@ -909,7 +909,7 @@ foreach($myItems as $mi) { $grps[$mi['status']??'inactive'][] = $mi; }
   foreach($grpLabels as $gk=>$gl):
     if(empty($grps[$gk])) continue;
 ?>
-<div style="font-size:.72rem;font-weight:800;color:var(--mk1);margin:.6rem 0 .35rem;letter-spacing:.04em"><?php echo $gl; ?> (<?php echo count($grps[$gk]); ?>)</div>
+<div style="font-size:.75rem;font-weight:800;color:var(--mk1);margin:.6rem 0 .35rem;letter-spacing:.04em"><?php echo $gl; ?> (<?php echo count($grps[$gk]); ?>)</div>
 <?php foreach($grps[$gk] as $mi):
   $catEm=$CATS[$mi['category']][0]??'🛍️';
   $miImg=$mi['thumb']?$SITE.'/assets/uploads/market/'.$mi['thumb']:null;
@@ -924,9 +924,9 @@ foreach($myItems as $mi) { $grps[$mi['status']??'inactive'][] = $mi; }
     <div class="mk-myitem-title"><?php echo h($mi['title']); ?></div>
     <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.15rem">
       <span class="sb sb-<?php echo $mi['status']; ?>"><?php echo ucfirst($mi['status']); ?></span>
-      <?php if($mi['price']): ?><span style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.72rem;color:var(--mk1)">₹<?php echo h($mi['price']); ?></span><?php endif; ?>
+      <?php if($mi['price']): ?><span style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:.75rem;color:var(--mk1)">₹<?php echo h($mi['price']); ?></span><?php endif; ?>
     </div>
-    <div style="font-size:.58rem;color:#5d6b80">👁 <?php echo (int)$mi['views']; ?> views · <?php echo date('d M',strtotime($mi['created_at'])); ?></div>
+    <div style="font-size:.75rem;color:#5d6b80">👁 <?php echo (int)$mi['views']; ?> views · <?php echo date('d M',strtotime($mi['created_at'])); ?></div>
     <div class="mk-myitem-actions">
       <a href="<?php echo $SELF.'?p=item&id='.(int)$mi['id']; ?>" class="mk-myitem-btn">👁 View</a>
       <a href="<?php echo $SELF.'?edit='.(int)$mi['id']; ?>" class="mk-myitem-btn" style="color:#1A23C9;border-color:#D6DAFF">✏️ Edit</a>
@@ -967,40 +967,40 @@ try { $allAdmItems=db()->query("SELECT m.*,u.name seller_name,(SELECT image_path
   <?php foreach(['total'=>['📦','Total'],'active'=>['✅','Active'],'pending'=>['⏳','Pending'],'sellers'=>['👤','Sellers']] as $sk=>$sv): ?>
   <div style="padding:.55rem .3rem;text-align:center;border-right:1px solid #f0f0f0">
     <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.04rem;color:var(--mk1)"><?php echo $allStats[$sk]??0; ?></div>
-    <div style="font-size:.55rem;color:#5d6b80"><?php echo $sv[1]; ?></div>
+    <div style="font-size:.75rem;color:#5d6b80"><?php echo $sv[1]; ?></div>
   </div>
   <?php endforeach; ?>
 </div>
 <div style="padding:.7rem .7rem .3rem">
 <?php if(!empty($pendingItems)): ?>
-<div style="font-size:.72rem;font-weight:800;color:#e65100;margin-bottom:.4rem">⏳ PENDING APPROVAL (<?php echo count($pendingItems); ?>)</div>
+<div style="font-size:.75rem;font-weight:800;color:#e65100;margin-bottom:.4rem">⏳ PENDING APPROVAL (<?php echo count($pendingItems); ?>)</div>
 <?php foreach($pendingItems as $pi): ?>
 <div class="adm-card">
   <?php if($pi['thumb']): ?><img src="<?php echo h($SITE.'/assets/uploads/market/'.$pi['thumb']); ?>" style="width:56px;height:56px;border-radius:8px;object-fit:cover;flex-shrink:0"><?php else: ?><div style="width:56px;height:56px;border-radius:8px;background:var(--mkbg);display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0"><?php echo $CATS[$pi['category']][0]??'🛍️'; ?></div><?php endif; ?>
   <div style="flex:1;min-width:0">
     <div style="font-size:.8rem;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><?php echo h($pi['title']); ?></div>
-    <div style="font-size:.65rem;color:#5d6b80"><?php echo h($pi['seller_name']); ?> · <?php echo $CATS[$pi['category']][1]??'Others'; ?></div>
+    <div style="font-size:.75rem;color:#5d6b80"><?php echo h($pi['seller_name']); ?> · <?php echo $CATS[$pi['category']][1]??'Others'; ?></div>
     <div style="display:flex;gap:.3rem;margin-top:.35rem">
-      <button onclick="adm('admin_approve',<?php echo (int)$pi['id']; ?>,this)" style="background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;border-radius:7px;padding:.25rem .55rem;font-size:.65rem;font-weight:700;cursor:pointer">✅ Approve</button>
-      <a href="<?php echo $SELF.'?p=item&id='.(int)$pi['id']; ?>" style="background:#ECEEFF;color:#1A23C9;border:1px solid #D6DAFF;border-radius:7px;padding:.25rem .55rem;font-size:.65rem;font-weight:700;text-decoration:none">👁 View</a>
-      <button onclick="adm('admin_reject',<?php echo (int)$pi['id']; ?>,this)" style="background:#ffebee;color:#b71c1c;border:1px solid #ffcdd2;border-radius:7px;padding:.25rem .55rem;font-size:.65rem;font-weight:700;cursor:pointer">🚫 Reject</button>
+      <button onclick="adm('admin_approve',<?php echo (int)$pi['id']; ?>,this)" style="background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;border-radius:7px;padding:.25rem .55rem;font-size:.75rem;font-weight:700;cursor:pointer">✅ Approve</button>
+      <a href="<?php echo $SELF.'?p=item&id='.(int)$pi['id']; ?>" style="background:#ECEEFF;color:#1A23C9;border:1px solid #D6DAFF;border-radius:7px;padding:.25rem .55rem;font-size:.75rem;font-weight:700;text-decoration:none">👁 View</a>
+      <button onclick="adm('admin_reject',<?php echo (int)$pi['id']; ?>,this)" style="background:#ffebee;color:#b71c1c;border:1px solid #ffcdd2;border-radius:7px;padding:.25rem .55rem;font-size:.75rem;font-weight:700;cursor:pointer">🚫 Reject</button>
     </div>
   </div>
 </div>
 <?php endforeach; endif; ?>
 
-<div style="font-size:.72rem;font-weight:800;color:#555;margin:.7rem 0 .4rem">ALL POSTS</div>
+<div style="font-size:.75rem;font-weight:800;color:#555;margin:.7rem 0 .4rem">ALL POSTS</div>
 <?php foreach($allAdmItems as $ai): ?>
 <div class="adm-card">
   <?php if($ai['thumb']): ?><img src="<?php echo h($SITE.'/assets/uploads/market/'.$ai['thumb']); ?>" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0"><?php else: ?><div style="width:44px;height:44px;border-radius:8px;background:var(--mkbg);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0"><?php echo $CATS[$ai['category']][0]??'🛍️'; ?></div><?php endif; ?>
   <div style="flex:1;min-width:0">
     <div style="font-size:.75rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><?php echo h($ai['title']); ?></div>
-    <div style="font-size:.6rem;color:#5d6b80"><?php echo h($ai['seller_name']); ?> · <span class="sb sb-<?php echo $ai['status']; ?>"><?php echo ucfirst($ai['status']); ?></span></div>
+    <div style="font-size:.75rem;color:#5d6b80"><?php echo h($ai['seller_name']); ?> · <span class="sb sb-<?php echo $ai['status']; ?>"><?php echo ucfirst($ai['status']); ?></span></div>
   </div>
   <div style="display:flex;gap:.25rem;flex-shrink:0">
-    <a href="<?php echo $SELF.'?p=item&id='.(int)$ai['id']; ?>" style="background:#f5f5f5;border:none;border-radius:7px;padding:.28rem .5rem;font-size:.65rem;color:#555;text-decoration:none">👁</a>
-    <button onclick="adm('admin_feature',<?php echo (int)$ai['id']; ?>,this)" style="background:#fffde7;border:none;border-radius:7px;padding:.28rem .5rem;font-size:.65rem;cursor:pointer" title="Feature"><?php echo $ai['featured']?'★':'☆'; ?></button>
-    <button onclick="mkDel(<?php echo (int)$ai['id']; ?>)" style="background:#ffebee;border:none;border-radius:7px;padding:.28rem .5rem;font-size:.65rem;color:#b71c1c;cursor:pointer">🗑️</button>
+    <a href="<?php echo $SELF.'?p=item&id='.(int)$ai['id']; ?>" style="background:#f5f5f5;border:none;border-radius:7px;padding:.28rem .5rem;font-size:.75rem;color:#555;text-decoration:none">👁</a>
+    <button onclick="adm('admin_feature',<?php echo (int)$ai['id']; ?>,this)" style="background:#fffde7;border:none;border-radius:7px;padding:.28rem .5rem;font-size:.75rem;cursor:pointer" title="Feature"><?php echo $ai['featured']?'★':'☆'; ?></button>
+    <button onclick="mkDel(<?php echo (int)$ai['id']; ?>)" style="background:#ffebee;border:none;border-radius:7px;padding:.28rem .5rem;font-size:.75rem;color:#b71c1c;cursor:pointer">🗑️</button>
   </div>
 </div>
 <?php endforeach; ?>
@@ -1037,7 +1037,7 @@ else: ?>
 <?php endif; ?>
 
 <div class="mk-sortbar">
-  <span style="font-size:.68rem;color:#666;flex-shrink:0">Sort:</span>
+  <span style="font-size:.75rem;color:#666;flex-shrink:0">Sort:</span>
   <?php foreach(['latest'=>'🆕 Latest','popular'=>'🔥 Popular','price_asc'=>'💰 Low','price_desc'=>'💸 High'] as $sk=>$sl): ?>
   <a href="<?php echo $SELF.'?sort='.$sk.($filterCat?'&cat='.$filterCat:'').($search?'&q='.urlencode($search):''); ?>" class="mk-sort<?php echo $sort===$sk?' active':''; ?>"><?php echo $sl; ?></a>
   <?php endforeach; ?>
@@ -1066,7 +1066,7 @@ else: ?>
     <button class="mk-fav-btn" onclick="event.stopPropagation();mkFav(<?php echo (int)$ci['id']; ?>,this)"><?php echo $isFaved?'❤️':'🤍'; ?></button>
     <div class="mk-card-body">
       <div class="mk-card-title"><?php echo h($ci['title']); ?></div>
-      <?php if(!empty($ci['subcategory'])): ?><div style="display:inline-block;background:#eef6ef;color:var(--mk1);font-size:.55rem;font-weight:800;padding:.1rem .42rem;border-radius:8px;margin-bottom:.18rem">🔖 <?php echo h($ci['subcategory']); ?></div><?php endif; ?>
+      <?php if(!empty($ci['subcategory'])): ?><div style="display:inline-block;background:#eef6ef;color:var(--mk1);font-size:.75rem;font-weight:800;padding:.1rem .42rem;border-radius:8px;margin-bottom:.18rem">🔖 <?php echo h($ci['subcategory']); ?></div><?php endif; ?>
       <?php if($ci['price']): ?><div class="mk-card-price">₹<?php echo h($ci['price']); ?></div><?php else: ?><div class="mk-card-price-free">Free / On Request</div><?php endif; ?>
       <div class="mk-card-meta">
         <span><?php echo $CATS[$ci['category']][0]??''; ?></span>

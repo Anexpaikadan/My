@@ -472,7 +472,7 @@ require_once __DIR__.'/../includes/header.php';
 .fd-bar{background:linear-gradient(135deg,#1a237e,#1A23C9 70%);padding:.6rem .9rem;display:flex;align-items:center;gap:.6rem;border-bottom:2px solid #ffc107;position:sticky;top:0;z-index:500}
 .fd-back{width:34px;height:34px;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;border:none;text-decoration:none;flex-shrink:0;font-size:.85rem}
 .fd-bar h1{flex:1;font-size:1rem;font-weight:900;color:#fff;margin:0;line-height:1.1}
-.fd-bar p{font-size:.62rem;color:rgba(255,255,255,.7);margin:0}
+.fd-bar p{font-size:.75rem;color:rgba(255,255,255,.7);margin:0}
 .fd-search-btn{width:34px;height:34px;background:rgba(255,255,255,.15);border-radius:50%;border:none;color:#fff;cursor:pointer;font-size:.85rem;flex-shrink:0}
 .fd-searchbar{display:none;align-items:center;gap:.5rem;background:#fff;padding:.5rem .8rem;border-bottom:1px solid #eceff4;position:sticky;top:52px;z-index:490}
 .fd-searchbar.on{display:flex}
@@ -512,8 +512,8 @@ require_once __DIR__.'/../includes/header.php';
 .fd-ph{display:flex;align-items:center;gap:.6rem;padding:.8rem .9rem .5rem}
 .fd-ph .fd-meta{flex:1;min-width:0}
 .fd-ph .fd-name{font-size:.92rem;font-weight:800;color:#1a237e;line-height:1.1}
-.fd-ph .fd-sub{font-size:.68rem;color:#546e7a}
-.fd-badge{font-size:.55rem;font-weight:800;color:#1A23C9;background:#ECEEFF;padding:.1rem .4rem;border-radius:6px;text-transform:uppercase;letter-spacing:.04em;margin-left:.3rem}
+.fd-ph .fd-sub{font-size:.75rem;color:#546e7a}
+.fd-badge{font-size:.75rem;font-weight:800;color:#1A23C9;background:#ECEEFF;padding:.1rem .4rem;border-radius:6px;text-transform:uppercase;letter-spacing:.04em;margin-left:.3rem}
 .fd-menu{background:none;border:none;color:#546e7a;font-size:1.2rem;cursor:pointer;padding:.2rem .5rem;flex-shrink:0}
 .fd-menu-wrap{position:relative;flex-shrink:0}
 .fd-menu-drop{display:none;position:absolute;top:100%;right:0;background:#fff;border-radius:10px;box-shadow:0 6px 22px rgba(0,0,0,.16);border:1px solid #eceff4;min-width:150px;z-index:50;overflow:hidden}
@@ -522,7 +522,7 @@ require_once __DIR__.'/../includes/header.php';
 .fd-menu-drop button:active{background:#f0f2fa}
 .fd-pinned{border:1.5px solid #ffd54f;box-shadow:0 2px 14px rgba(255,193,7,.18)}
 .fd-pin-strip{padding:.4rem .9rem 0}
-.fd-pin-badge{font-size:.62rem;font-weight:800;color:#e65100;background:#fff8e1;padding:.18rem .5rem;border-radius:8px;letter-spacing:.03em}
+.fd-pin-badge{font-size:.75rem;font-weight:800;color:#e65100;background:#fff8e1;padding:.18rem .5rem;border-radius:8px;letter-spacing:.03em}
 .fd-body{padding:0 .9rem .6rem;font-size:.92rem;color:#37474f;line-height:1.5;white-space:pre-wrap;word-break:break-word}
 .fd-media img{width:100%;display:block;max-height:520px;object-fit:cover}
 .fd-video{position:relative;width:100%;background:#000;cursor:pointer}
@@ -550,7 +550,7 @@ require_once __DIR__.'/../includes/header.php';
 .fd-brand-name{color:#fff;font-weight:800;font-size:.9rem;text-shadow:0 1px 4px rgba(0,0,0,.4)}
 .fd-ig .play,.fd-fb .play{position:static;display:flex}
 .fd-ig .play span,.fd-fb .play span{width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.25);border:2px solid rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;margin-top:.2rem}
-.fd-stat{display:flex;align-items:center;justify-content:space-between;padding:.4rem .95rem;font-size:.72rem;color:#546e7a}
+.fd-stat{display:flex;align-items:center;justify-content:space-between;padding:.4rem .95rem;font-size:.75rem;color:#546e7a}
 .fd-actions{display:flex;border-top:1px solid #f0f2fa;border-bottom:1px solid #f0f2fa}
 .fd-a{flex:1;display:flex;align-items:center;justify-content:center;gap:.4rem;padding:.6rem;border:none;background:none;cursor:pointer;font-family:inherit;font-size:.82rem;font-weight:800;color:#546e7a;transition:background .12s}
 .fd-a:active{background:#f5f6fa}
@@ -559,10 +559,10 @@ require_once __DIR__.'/../includes/header.php';
 .fd-comments.on{display:block}
 .fd-c{display:flex;gap:.5rem;margin-bottom:.5rem}
 .fd-c .fd-c-bub{background:#f0f2fa;border-radius:14px;padding:.4rem .7rem;flex:1;min-width:0}
-.fd-c .fd-c-name{font-size:.74rem;font-weight:800;color:#1a237e}
+.fd-c .fd-c-name{font-size:.75rem;font-weight:800;color:#1a237e}
 .fd-c .fd-c-body{font-size:.82rem;color:#37474f;word-break:break-word}
-.fd-c .fd-c-meta{font-size:.6rem;color:#546e7a;margin-top:.1rem;display:flex;gap:.6rem;align-items:center}
-.fd-c-del{background:none;border:none;color:#ef9a9a;font-size:.6rem;cursor:pointer;font-weight:800}
+.fd-c .fd-c-meta{font-size:.75rem;color:#546e7a;margin-top:.1rem;display:flex;gap:.6rem;align-items:center}
+.fd-c-del{background:none;border:none;color:#ef9a9a;font-size:.75rem;cursor:pointer;font-weight:800}
 .fd-c-form{display:flex;gap:.5rem;align-items:center;padding:.4rem 0 .6rem}
 .fd-c-form input{flex:1;border:1.5px solid #e3e7ff;border-radius:18px;padding:.5rem .85rem;font-family:inherit;font-size:.85rem;outline:none}
 .fd-c-form button{background:#1A23C9;color:#fff;border:none;border-radius:50%;width:34px;height:34px;cursor:pointer;flex-shrink:0;font-size:.85rem}
@@ -570,7 +570,7 @@ require_once __DIR__.'/../includes/header.php';
 .fd-guest-ic{font-size:1.8rem;display:block;margin-bottom:.3rem}
 .fd-guest-txt{font-size:.85rem;color:#546e7a;font-weight:700;margin-bottom:.7rem}
 .fd-guest-btn{display:inline-block;background:linear-gradient(135deg,#0A14E0,#1A23C9);color:#fff;text-decoration:none;padding:.6rem 1.4rem;border-radius:11px;font-weight:800;font-size:.85rem}
-.fd-av-sm{width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#ECEEFF;display:flex;align-items:center;justify-content:center;font-weight:900;color:#1A23C9;font-size:.7rem}
+.fd-av-sm{width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#ECEEFF;display:flex;align-items:center;justify-content:center;font-weight:900;color:#1A23C9;font-size:.75rem}
 
 .fd-empty{text-align:center;padding:3rem 1rem;color:#546e7a}
 .fd-empty .ei{font-size:2.6rem;display:block;margin-bottom:.6rem;opacity:.6}

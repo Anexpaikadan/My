@@ -349,7 +349,7 @@ require_once __DIR__ . '/../includes/header.php';
   .scard-title{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.8rem;letter-spacing:.01em;color:#0A14E0;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
   .scard-title::after{content:'';flex:1;height:1.5px;background:linear-gradient(90deg,#0A14E0,transparent)}
   .srow{margin-bottom:.85rem}
-  .slbl{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#475569;display:block;margin-bottom:.35rem}
+  .slbl{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#475569;display:block;margin-bottom:.35rem}
   .sinp{width:100%;padding:.65rem .9rem;border:1.5px solid #e2e8f0;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.88rem;color:#1e293b;background:#f8fafc;outline:none;transition:border-color .18s}
   .sinp:focus{border-color:#0A14E0;background:#fff}
   textarea.sinp{resize:vertical;min-height:70px}
@@ -364,23 +364,23 @@ require_once __DIR__ . '/../includes/header.php';
   .color-row{display:grid;grid-template-columns:repeat(5,1fr);gap:.4rem}
   .color-swatch{width:100%;aspect-ratio:1;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all .18s}
   .color-swatch.sel{border-color:#0A14E0;transform:scale(1.12)}
-  .hint-txt{font-size:.72rem;color:#5d6b80;margin-top:.3rem}
+  .hint-txt{font-size:.75rem;color:#5d6b80;margin-top:.3rem}
   /* ── Roles tab styles ── */
   .ra-section{background:#fff;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:.5rem;overflow:hidden}
   .ra-head{display:flex;align-items:center;gap:.5rem;padding:.65rem .8rem;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;background:#fff}
   .ra-head h4{font-size:.82rem;font-weight:800;color:#1a1a1a;margin:0;flex:1}
-  .ra-head .ra-count{font-size:.6rem;font-weight:700;background:#fee2e2;color:#b71c1c;padding:.12rem .45rem;border-radius:20px}
-  .ra-head .ra-arr{font-size:.65rem;color:#5d6b80;flex-shrink:0;transition:transform .2s}
+  .ra-head .ra-count{font-size:.75rem;font-weight:700;background:#fee2e2;color:#b71c1c;padding:.12rem .45rem;border-radius:20px}
+  .ra-head .ra-arr{font-size:.75rem;color:#5d6b80;flex-shrink:0;transition:transform .2s}
   .ra-body{display:none;padding:.1rem .8rem .8rem}
   .ra-body.open{display:block}
   .ra-search{width:100%;padding:.38rem .6rem;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.76rem;font-family:'Plus Jakarta Sans',sans-serif;outline:none;margin-bottom:.5rem;background:#f8fafc;box-sizing:border-box}
   .ra-search:focus{border-color:#0A14E0}
   .mr{display:flex;align-items:center;gap:.4rem;padding:.38rem .3rem;border-bottom:1px solid #f5f5f5;cursor:pointer}
   .mr:last-child{border-bottom:none}
-  .mr-av{width:28px;height:28px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;flex-shrink:0}
+  .mr-av{width:28px;height:28px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0}
   .mr-info{flex:1;min-width:0}
   .mr-name{font-size:.75rem;font-weight:700;color:#1a1a1a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .mr-badge{font-size:.55rem;font-weight:700;color:#fff;padding:.08rem .38rem;border-radius:20px;display:inline-block}
+  .mr-badge{font-size:.75rem;font-weight:700;color:#fff;padding:.08rem .38rem;border-radius:20px;display:inline-block}
   .rpicker-sheet{display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,.55);align-items:flex-end;justify-content:center}
   .rpicker-sheet.open{display:flex!important}
   .rpicker-inner{background:#fff;width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:1rem;max-height:80vh;overflow-y:auto}
@@ -390,8 +390,8 @@ require_once __DIR__ . '/../includes/header.php';
   .rp-item.sel .rp-dot{background:#0A14E0;border-color:#0A14E0}
   .mod-row{border:1px solid #e2e8f0;border-radius:10px;padding:.5rem .6rem;margin-bottom:.4rem}
   .mod-admins{display:flex;gap:.25rem;flex-wrap:wrap;margin-bottom:.35rem}
-  .mod-tag{display:inline-flex;align-items:center;gap:.2rem;background:#dbeafe;border-radius:20px;padding:.12rem .45rem;font-size:.62rem;font-weight:700;color:#1A23C9}
-  .mod-tag button{background:none;border:none;color:#1A23C9;cursor:pointer;font-size:.6rem;padding:0;line-height:1}
+  .mod-tag{display:inline-flex;align-items:center;gap:.2rem;background:#dbeafe;border-radius:20px;padding:.12rem .45rem;font-size:.75rem;font-weight:700;color:#1A23C9}
+  .mod-tag button{background:none;border:none;color:#1A23C9;cursor:pointer;font-size:.75rem;padding:0;line-height:1}
   .ap-row{display:flex;align-items:center;gap:.45rem;padding:.45rem .3rem;border-bottom:1px solid #f5f5f5}
   .ap-row:last-child{border-bottom:none}
   </style>
@@ -545,15 +545,15 @@ require_once __DIR__ . '/../includes/header.php';
           <div style="font-size:1.6rem;flex-shrink:0"><?= h($act['emoji']) ?></div>
           <div style="flex:1;min-width:0">
             <div style="font-weight:700;font-size:.9rem;color:#0B1033"><?= h($act['name']) ?></div>
-            <?php if($act['description']): ?><div style="font-size:.74rem;color:#64748b;margin-top:.1rem"><?= h(mb_strimwidth($act['description'],0,60,'…')) ?></div><?php endif; ?>
+            <?php if($act['description']): ?><div style="font-size:.75rem;color:#64748b;margin-top:.1rem"><?= h(mb_strimwidth($act['description'],0,60,'…')) ?></div><?php endif; ?>
             <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.35rem">
               <?php if($act['reg_link']): ?>
-              <a href="<?= h($act['reg_link']) ?>" target="_blank" style="font-size:.65rem;color:#0A14E0;text-decoration:none;background:#ECEEFF;padding:.1rem .45rem;border-radius:20px">🔗 Reg Link</a>
+              <a href="<?= h($act['reg_link']) ?>" target="_blank" style="font-size:.75rem;color:#0A14E0;text-decoration:none;background:#ECEEFF;padding:.1rem .45rem;border-radius:20px">🔗 Reg Link</a>
               <?php endif; ?>
               <?php if($act['info_url']): ?>
-              <a href="<?= h($act['info_url']) ?>" target="_blank" style="font-size:.65rem;color:#6a1b9a;text-decoration:none;background:#f3e5f5;padding:.1rem .45rem;border-radius:20px">ℹ️ Info URL</a>
+              <a href="<?= h($act['info_url']) ?>" target="_blank" style="font-size:.75rem;color:#6a1b9a;text-decoration:none;background:#f3e5f5;padding:.1rem .45rem;border-radius:20px">ℹ️ Info URL</a>
               <?php endif; ?>
-              <span style="font-size:.65rem;background:<?= $act['is_active']?'#e8f5e9':'#f1f5f9' ?>;color:<?= $act['is_active']?'#1b5e20':'#64748b' ?>;padding:.1rem .45rem;border-radius:20px"><?= $act['is_active']?'● Active':'○ Hidden' ?></span>
+              <span style="font-size:.75rem;background:<?= $act['is_active']?'#e8f5e9':'#f1f5f9' ?>;color:<?= $act['is_active']?'#1b5e20':'#64748b' ?>;padding:.1rem .45rem;border-radius:20px"><?= $act['is_active']?'● Active':'○ Hidden' ?></span>
             </div>
           </div>
           <div style="display:flex;gap:.35rem;flex-shrink:0">
@@ -643,7 +643,7 @@ require_once __DIR__ . '/../includes/header.php';
           foreach($presets as $p):
           ?>
           <button type="button" onclick="quickAct('<?= addslashes($p[0]) ?>','<?= addslashes($p[1]) ?>','<?= $p[2] ?>')"
-            style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:20px;padding:.3rem .75rem;font-size:.74rem;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:.3rem;transition:all .18s"
+            style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:20px;padding:.3rem .75rem;font-size:.75rem;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:.3rem;transition:all .18s"
             onmouseover="this.style.borderColor='#0A14E0';this.style.color='#0A14E0'"
             onmouseout="this.style.borderColor='#e2e8f0';this.style.color=''">
             <?= $p[0] ?> <?= $p[1] ?>
@@ -777,7 +777,7 @@ require_once __DIR__ . '/../includes/header.php';
     .wa-code{font-family:ui-monospace,Consolas,monospace;font-size:.78rem;background:#0B1033;color:#fff;border-radius:12px;padding:.75rem .9rem;word-break:break-all;white-space:pre-wrap}
     .wa-log{width:100%;border-collapse:collapse;font-size:.8rem}
     .wa-log td,.wa-log th{padding:.45rem .4rem;border-bottom:1px solid #eef1fa;text-align:left;vertical-align:top}
-    .wa-log th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:#565D82}
+    .wa-log th{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:#565D82}
     .wa-steps{padding-left:1.2rem;font-size:.88rem;color:#3B4266;line-height:1.6}
     .wa-steps li{margin-bottom:.45rem}
     .wa-steps code{background:#F0F2FF;padding:.05rem .35rem;border-radius:6px;font-size:.82rem}
@@ -980,7 +980,7 @@ require_once __DIR__ . '/../includes/header.php';
             <div class="mr-name"><?php echo h($u['name']); ?></div>
             <span class="mr-badge" style="background:<?php echo $rc; ?>"><?php echo $ri; ?> <?php echo $rl; ?></span>
           </div>
-          <span style="font-size:.7rem;color:#666666">›</span>
+          <span style="font-size:.75rem;color:#666666">›</span>
         </div>
         <?php endforeach; ?>
         </div>
@@ -1035,16 +1035,16 @@ require_once __DIR__ . '/../includes/header.php';
         <div style="text-align:center;padding:.8rem;font-size:.78rem;color:#5d6b80">✅ No pending approvals</div>
         <?php else: foreach($_pending as $p): ?>
         <div class="ap-row" id="apr_<?php echo (int)$p['id']; ?>">
-          <div style="width:30px;height:30px;border-radius:50%;background:#e65100;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0">
+          <div style="width:30px;height:30px;border-radius:50%;background:#e65100;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0">
             <?php echo h(mb_substr($p['name'],0,1)); ?>
           </div>
           <div style="flex:1;min-width:0">
             <div style="font-size:.75rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><?php echo h($p['name']); ?></div>
-            <div style="font-size:.6rem;color:#94a3b8"><?php echo h($p['whatsapp_number']); ?> · <?php echo date('d M',strtotime($p['created_at'])); ?></div>
+            <div style="font-size:.75rem;color:#94a3b8"><?php echo h($p['whatsapp_number']); ?> · <?php echo date('d M',strtotime($p['created_at'])); ?></div>
           </div>
           <div style="display:flex;gap:.3rem">
-            <button onclick="doApprove(<?php echo (int)$p['id']; ?>)" style="background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;border-radius:7px;padding:.28rem .55rem;font-size:.7rem;font-weight:700;cursor:pointer">✅ Approve</button>
-            <button onclick="doReject(<?php echo (int)$p['id']; ?>)" style="background:#ffebee;color:#b71c1c;border:1px solid #ffcdd2;border-radius:7px;padding:.28rem .55rem;font-size:.7rem;font-weight:700;cursor:pointer">❌ Reject</button>
+            <button onclick="doApprove(<?php echo (int)$p['id']; ?>)" style="background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;border-radius:7px;padding:.28rem .55rem;font-size:.75rem;font-weight:700;cursor:pointer">✅ Approve</button>
+            <button onclick="doReject(<?php echo (int)$p['id']; ?>)" style="background:#ffebee;color:#b71c1c;border:1px solid #ffcdd2;border-radius:7px;padding:.28rem .55rem;font-size:.75rem;font-weight:700;cursor:pointer">❌ Reject</button>
           </div>
         </div>
         <?php endforeach; endif; ?>
@@ -1067,7 +1067,7 @@ require_once __DIR__ . '/../includes/header.php';
         <span style="font-size:1.2rem">📱</span>
         <div>
           <div style="font-size:.82rem;font-weight:700;color:#1A23C9"><?php echo $pushStats['subscribers']; ?> subscribers</div>
-          <div style="font-size:.62rem;color:#64748b">Members with notifications enabled</div>
+          <div style="font-size:.75rem;color:#64748b">Members with notifications enabled</div>
         </div>
       </div>
       <div class="fg">
@@ -1101,10 +1101,10 @@ require_once __DIR__ . '/../includes/header.php';
       <div style="padding:.5rem .3rem;border-bottom:1px solid #f5f5f5">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.15rem">
           <div style="font-size:.78rem;font-weight:700;color:#1a1a1a"><?php echo h($log['title']); ?></div>
-          <span style="font-size:.6rem;background:#ECEEFF;color:#1A23C9;padding:.1rem .4rem;border-radius:20px;font-weight:700"><?php echo (int)$log['total_sent']; ?> sent</span>
+          <span style="font-size:.75rem;background:#ECEEFF;color:#1A23C9;padding:.1rem .4rem;border-radius:20px;font-weight:700"><?php echo (int)$log['total_sent']; ?> sent</span>
         </div>
-        <div style="font-size:.68rem;color:#64748b"><?php echo h($log['body']); ?></div>
-        <div style="font-size:.58rem;color:#5d6b80;margin-top:.15rem"><?php echo h($log['sender']); ?> · <?php echo date('d M Y H:i',strtotime($log['sent_at'])); ?></div>
+        <div style="font-size:.75rem;color:#64748b"><?php echo h($log['body']); ?></div>
+        <div style="font-size:.75rem;color:#5d6b80;margin-top:.15rem"><?php echo h($log['sender']); ?> · <?php echo date('d M Y H:i',strtotime($log['sent_at'])); ?></div>
       </div>
       <?php endforeach; ?>
     </div>
@@ -1127,7 +1127,7 @@ require_once __DIR__ . '/../includes/header.php';
         • Store the file somewhere safe (Google Drive, your computer).<br>
         • To restore: import the .sql file via Hostinger → phpMyAdmin.
       </div>
-      <div style="margin-top:.9rem;font-size:.74rem;color:#5d6b80">
+      <div style="margin-top:.9rem;font-size:.75rem;color:#5d6b80">
         Backup file name: <span style="font-family:monospace">backup_<?= h(defined('DB_NAME')?DB_NAME:'database') ?>_<?= date('Y-m-d') ?>.sql</span>
       </div>
     </div>
@@ -1138,13 +1138,13 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="rpicker-inner">
       <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;padding-bottom:.6rem;border-bottom:1px solid #f0f0f0">
         <div id="rpAv" style="width:36px;height:36px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;flex-shrink:0;background:#888"></div>
-        <div style="flex:1"><div id="rpNm" style="font-size:.88rem;font-weight:800"></div><div id="rpCr" style="font-size:.62rem;color:#94a3b8"></div></div>
+        <div style="flex:1"><div id="rpNm" style="font-size:.88rem;font-weight:800"></div><div id="rpCr" style="font-size:.75rem;color:#94a3b8"></div></div>
         <button onclick="closeRP()" style="background:#f1f5f9;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer">✕</button>
       </div>
       <?php foreach($RL as $rv=>$ri): ?>
       <div class="rp-item" id="rpi_<?php echo $rv; ?>" onclick="pickRP('<?php echo $rv; ?>')">
         <span style="font-size:1rem"><?php echo $ri[1]; ?></span>
-        <div style="flex:1"><div style="font-size:.78rem;font-weight:700"><?php echo $ri[0]; ?></div><div style="font-size:.58rem;color:#5d6b80"><?php echo $ri[2]; ?></div></div>
+        <div style="flex:1"><div style="font-size:.78rem;font-weight:700"><?php echo $ri[0]; ?></div><div style="font-size:.75rem;color:#5d6b80"><?php echo $ri[2]; ?></div></div>
         <div class="rp-dot"></div>
       </div>
       <?php endforeach; ?>

@@ -133,10 +133,10 @@ require_once __DIR__ . '/../includes/header.php';
 .gal-overlay{position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(0,0,0,.75));opacity:0;transition:opacity .3s;display:flex;flex-direction:column;justify-content:flex-end;padding:.8rem}
 .gal-item:hover .gal-overlay{opacity:1}
 .gal-caption{color:#fff;font-size:.78rem;font-weight:700;line-height:1.3}
-.gal-meta{font-size:.65rem;color:rgba(255,255,255,.6);margin-top:.15rem}
+.gal-meta{font-size:.75rem;color:rgba(255,255,255,.6);margin-top:.15rem}
 /* Admin badges */
-.badge-hero{position:absolute;top:.5rem;left:.5rem;background:#D4A017;color:#fff;font-size:.62rem;font-weight:700;padding:.18rem .5rem;border-radius:20px;z-index:3}
-.badge-hidden{position:absolute;top:.5rem;left:.5rem;background:rgba(0,0,0,.55);color:#fff;font-size:.62rem;font-weight:700;padding:.18rem .5rem;border-radius:20px;z-index:3}
+.badge-hero{position:absolute;top:.5rem;left:.5rem;background:#D4A017;color:#fff;font-size:.75rem;font-weight:700;padding:.18rem .5rem;border-radius:20px;z-index:3}
+.badge-hidden{position:absolute;top:.5rem;left:.5rem;background:rgba(0,0,0,.55);color:#fff;font-size:.75rem;font-weight:700;padding:.18rem .5rem;border-radius:20px;z-index:3}
 .admin-actions{position:absolute;top:.5rem;right:.5rem;display:flex;gap:.25rem;z-index:3;opacity:0;transition:opacity .2s}
 .gal-item:hover .admin-actions{opacity:1}
 .act-btn{width:28px;height:28px;border-radius:50%;border:none;cursor:pointer;font-size:.75rem;display:flex;align-items:center;justify-content:center;transition:all .2s}
@@ -191,12 +191,12 @@ require_once __DIR__ . '/../includes/header.php';
       </div>
       <div class="col-md-4">
         <div class="mb-2">
-          <label style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#4a5568;display:block;margin-bottom:.3rem">Photo Title</label>
-          <input type="text" name="title" class="form-control" placeholder="e.g. Onam 2024 Pookalam" style="border-radius:8px;font-size:.88rem">
+          <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#4a5568;display:block;margin-bottom:.3rem">Photo Title</label>
+          <input type="text" name="title" class="form-control" placeholder="e.g. Onam 2024 Pookalam" style="border-radius:8px;font-size:16px">
         </div>
         <div class="mb-2">
-          <label style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#4a5568;display:block;margin-bottom:.3rem">Category</label>
-          <select name="category" class="form-select" aria-label="Photo category" style="border-radius:8px;font-size:.88rem">
+          <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#4a5568;display:block;margin-bottom:.3rem">Category</label>
+          <select name="category" class="form-select" aria-label="Photo category" style="border-radius:8px;font-size:16px">
             <option value="general">General</option>
             <option value="football">Football</option>
             <option value="cricket">Cricket</option>
@@ -211,15 +211,15 @@ require_once __DIR__ . '/../includes/header.php';
           </select>
         </div>
         <div class="mb-2">
-          <label style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#4a5568;display:block;margin-bottom:.3rem">Description</label>
-          <textarea name="description" class="form-control" rows="2" placeholder="Brief description…" style="border-radius:8px;font-size:.88rem;resize:none"></textarea>
+          <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#4a5568;display:block;margin-bottom:.3rem">Description</label>
+          <textarea name="description" class="form-control" rows="2" placeholder="Brief description…" style="border-radius:8px;font-size:16px;resize:none"></textarea>
         </div>
         <div class="mb-3">
           <div class="form-check">
             <input type="checkbox" name="is_hero" id="isHero" class="form-check-input" value="1">
               <div style="margin-top:.6rem">
-                <label class="lbl" style="font-size:.65rem;margin-bottom:.25rem;display:block">🎯 Photo Focus (for hero slider)</label>
-                <select name="img_position" class="inp" aria-label="Image position" style="padding:.4rem .7rem;font-size:.8rem">
+                <label class="lbl" style="font-size:.75rem;margin-bottom:.25rem;display:block">🎯 Photo Focus (for hero slider)</label>
+                <select name="img_position" class="inp" aria-label="Image position" style="padding:.4rem .7rem;font-size:16px">
                   <option value="center 20%">👤 Top — Show faces (recommended)</option>
                   <option value="center 40%">🎯 Upper-middle</option>
                   <option value="center center">⬛ Center of image</option>

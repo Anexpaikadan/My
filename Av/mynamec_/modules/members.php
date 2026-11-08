@@ -62,8 +62,8 @@ function renderMemberCard($m, $user, $size = 'normal') {
         }
         echo '<div style="font-weight:700;font-size:1rem;color:#0B1033;margin-bottom:.2rem">'.h($m['name']).'</div>';
         echo '<div style="font-size:.75rem;color:#565D82;margin-bottom:.5rem">'.h($m['committee_position']??roleLabel($m['role'])).'</div>';
-        echo '<span style="display:inline-block;padding:.2rem .7rem;border-radius:20px;font-size:.65rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:'.$borderColor.'22;color:#0B1033;border:1px solid '.$borderColor.'66;border:1px solid '.$borderColor.'44">'.h(roleLabel($m['role'])).'</span>';
-        if ($m['blood_group']) echo '<div style="font-size:.72rem;color:#B71C1C;font-weight:700;margin-top:.4rem">🩸 '.h($m['blood_group']).'</div>';
+        echo '<span style="display:inline-block;padding:.2rem .7rem;border-radius:20px;font-size:.75rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:'.$borderColor.'22;color:#0B1033;border:1px solid '.$borderColor.'66;border:1px solid '.$borderColor.'44">'.h(roleLabel($m['role'])).'</span>';
+        if ($m['blood_group']) echo '<div style="font-size:.75rem;color:#B71C1C;font-weight:700;margin-top:.4rem">🩸 '.h($m['blood_group']).'</div>';
         echo '</div>';
         if ($canSeePhone) {
             echo '<div style="padding:.6rem 1.2rem;background:#F7F8FF;border-top:1px solid #E3E7F5;text-align:center">';
@@ -81,9 +81,9 @@ function renderMemberCard($m, $user, $size = 'normal') {
             echo '<div style="width:64px;height:64px;border-radius:50%;background:'.($canSeePhoto?'#ECEEFF':'#F5F5F5').';border:2.5px solid '.$borderColor.';margin:0 auto .6rem;display:flex;align-items:center;justify-content:center;font-size:1.5rem">'.($canSeePhoto?'👤':'🔒').'</div>';
         }
         echo '<div style="font-weight:700;font-size:.88rem;color:#0B1033;margin-bottom:.2rem">'.h($m['name']).'</div>';
-        echo '<div style="font-size:.7rem;color:#565D82;margin-bottom:.4rem">'.h($m['committee_position']??roleLabel($m['role'])).'</div>';
-        if ($m['skill']) echo '<div style="font-size:.7rem;background:#ECEEFF;color:#0B1033;border-radius:20px;padding:.12rem .5rem;display:inline-block;margin-bottom:.3rem">'.h($m['skill']).'</div>';
-        if ($m['blood_group']) echo '<div style="font-size:.68rem;color:#B71C1C;font-weight:700;margin-bottom:.3rem">🩸 '.h($m['blood_group']).'</div>';
+        echo '<div style="font-size:.75rem;color:#565D82;margin-bottom:.4rem">'.h($m['committee_position']??roleLabel($m['role'])).'</div>';
+        if ($m['skill']) echo '<div style="font-size:.75rem;background:#ECEEFF;color:#0B1033;border-radius:20px;padding:.12rem .5rem;display:inline-block;margin-bottom:.3rem">'.h($m['skill']).'</div>';
+        if ($m['blood_group']) echo '<div style="font-size:.75rem;color:#B71C1C;font-weight:700;margin-bottom:.3rem">🩸 '.h($m['blood_group']).'</div>';
         echo '</div></a>';
     }
 }
@@ -99,7 +99,7 @@ function renderMemberCard($m, $user, $size = 'normal') {
 
   <!-- Search -->
   <div style="display:flex;gap:.6rem;margin-bottom:1.5rem;flex-wrap:wrap">
-    <input type="text" id="msearch" style="flex:1;min-width:180px;padding:.68rem .9rem;border:2px solid #E3E7F5;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;outline:none;transition:border-color .18s" placeholder="🔍 Search any member…" oninput="searchMembers(this.value)">
+    <input type="text" id="msearch" style="flex:1;min-width:180px;padding:.68rem .9rem;border:2px solid #E3E7F5;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;outline:none;transition:border-color .18s" placeholder="🔍 Search any member…" oninput="searchMembers(this.value)">
     <a href="#executives" style="padding:.6rem 1rem;background:#B8860B22;color:#7a5a08;border:1px solid #B8860B44;border-radius:9px;font-size:.8rem;font-weight:700;text-decoration:none">⭐ Executive</a>
     <a href="#committee" style="padding:.6rem 1rem;background:#7B1FA222;color:#7B1FA2;border:1px solid #7B1FA244;border-radius:9px;font-size:.8rem;font-weight:700;text-decoration:none">🏛 Committee</a>
     <a href="#members" style="padding:.6rem 1rem;background:#0A14E022;color:#0A14E0;border:1px solid #0A14E044;border-radius:9px;font-size:.8rem;font-weight:700;text-decoration:none">👥 Members</a>
@@ -144,15 +144,15 @@ function renderMemberCard($m, $user, $size = 'normal') {
           <div style="width:72px;height:72px;border-radius:50%;background:#F3E5F5;border:2.5px solid #7B1FA2;margin:0 auto .65rem;display:flex;align-items:center;justify-content:center;font-size:1.6rem"><?= $canSeePhoto2?'👤':'🔒' ?></div>
           <?php endif; ?>
           <div style="font-weight:700;font-size:.88rem;color:#0B1033;margin-bottom:.2rem"><?= h($m['name']) ?></div>
-          <div style="font-size:.7rem;color:#565D82;margin-bottom:.4rem"><?= h($m['committee_position']??'Committee Member') ?></div>
-          <?php if($m['committee_name']): ?><div style="font-size:.65rem;color:#7B1FA2;font-weight:700;margin-bottom:.35rem"><?= h($m['committee_name']) ?></div><?php endif; ?>
-          <?php if($m['skill']): ?><div style="font-size:.67rem;background:#F3E5F5;color:#4A148C;border-radius:20px;padding:.1rem .5rem;display:inline-block;margin-bottom:.3rem"><?= h($m['skill']) ?></div><?php endif; ?>
-          <?php if($m['blood_group']): ?><div style="font-size:.68rem;color:#B71C1C;font-weight:700;margin-bottom:.3rem">🩸 <?= h($m['blood_group']) ?></div><?php endif; ?>
+          <div style="font-size:.75rem;color:#565D82;margin-bottom:.4rem"><?= h($m['committee_position']??'Committee Member') ?></div>
+          <?php if($m['committee_name']): ?><div style="font-size:.75rem;color:#7B1FA2;font-weight:700;margin-bottom:.35rem"><?= h($m['committee_name']) ?></div><?php endif; ?>
+          <?php if($m['skill']): ?><div style="font-size:.75rem;background:#F3E5F5;color:#4A148C;border-radius:20px;padding:.1rem .5rem;display:inline-block;margin-bottom:.3rem"><?= h($m['skill']) ?></div><?php endif; ?>
+          <?php if($m['blood_group']): ?><div style="font-size:.75rem;color:#B71C1C;font-weight:700;margin-bottom:.3rem">🩸 <?= h($m['blood_group']) ?></div><?php endif; ?>
         </div>
         <div style="padding:.5rem .9rem;background:#F3E5F5;border-top:1px solid #E1BEE7;display:flex;gap:.4rem;justify-content:center">
-          <a href="<?= url('modules/profile.php') ?>?id=<?= $m['id'] ?>" style="font-size:.72rem;color:#4A148C;font-weight:700;text-decoration:none;padding:.25rem .6rem;background:rgba(123,31,162,.1);border-radius:6px">👤 Profile</a>
+          <a href="<?= url('modules/profile.php') ?>?id=<?= $m['id'] ?>" style="font-size:.75rem;color:#4A148C;font-weight:700;text-decoration:none;padding:.25rem .6rem;background:rgba(123,31,162,.1);border-radius:6px">👤 Profile</a>
           <?php if($canSeePhone2): ?>
-          <a href="https://wa.me/<?= $wn2 ?>" target="_blank" style="font-size:.72rem;color:#25D366;font-weight:700;text-decoration:none;padding:.25rem .6rem;background:rgba(37,211,102,.1);border-radius:6px">💬 Chat</a>
+          <a href="https://wa.me/<?= $wn2 ?>" target="_blank" style="font-size:.75rem;color:#25D366;font-weight:700;text-decoration:none;padding:.25rem .6rem;background:rgba(37,211,102,.1);border-radius:6px">💬 Chat</a>
           <?php endif; ?>
         </div>
       </div>

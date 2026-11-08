@@ -76,20 +76,20 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="card mb-3">
   <div class="card-header" style="background:linear-gradient(135deg,#1B5E20,#2E7D32);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
     <h3>❤️ <?=h($camp['title'])?></h3>
-    <span style="background:<?=$sc[0]?>;color:<?=$sc[1]?>;border-radius:20px;padding:.2rem .8rem;font-size:.7rem;font-weight:700"><?=strtoupper($camp['status'])?></span>
+    <span style="background:<?=$sc[0]?>;color:<?=$sc[1]?>;border-radius:20px;padding:.2rem .8rem;font-size:.75rem;font-weight:700"><?=strtoupper($camp['status'])?></span>
   </div>
   <div class="card-body">
     <?php if($camp['description']): ?><p style="font-size:.84rem;color:var(--t2);margin-bottom:1rem"><?=h($camp['description'])?></p><?php endif;?>
     <!-- Progress bar -->
     <div style="background:#E8F5E9;border-radius:12px;padding:1rem;margin-bottom:1.2rem">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
-        <div><span style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.28rem;color:#2E7D32">₹<?=number_format($camp['raised_amount'])?></span><span style="font-size:.72rem;color:var(--t3)"> raised of ₹<?=number_format($camp['goal_amount'])?></span></div>
+        <div><span style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.28rem;color:#2E7D32">₹<?=number_format($camp['raised_amount'])?></span><span style="font-size:.75rem;color:var(--t3)"> raised of ₹<?=number_format($camp['goal_amount'])?></span></div>
         <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.12rem;color:#1B5E20"><?=$pct?>%</div>
       </div>
       <div style="background:#C8E6C9;border-radius:8px;height:10px;overflow:hidden">
         <div style="background:linear-gradient(90deg,#2E7D32,#4CAF50);height:10px;border-radius:8px;width:<?=$pct?>%;transition:width 1s ease"></div>
       </div>
-      <div style="display:flex;justify-content:space-between;margin-top:.4rem;font-size:.7rem;color:var(--t3)">
+      <div style="display:flex;justify-content:space-between;margin-top:.4rem;font-size:.75rem;color:var(--t3)">
         <span><?=count($donations)?> donors</span>
         <span>📅 Ends <?=date('d M Y',strtotime($camp['end_date']))?></span>
       </div>
@@ -102,7 +102,7 @@ require_once __DIR__ . '/../includes/header.php';
       <?php if($camp['upi_id']): ?>
       <div style="background:#E8F5E9;border-radius:8px;padding:.6rem .9rem;margin-bottom:.7rem;font-size:.8rem;display:flex;align-items:center;gap:.5rem">
         <span>📱 UPI:</span><strong><?=h($camp['upi_id'])?></strong>
-        <span style="color:var(--t3);font-size:.7rem">Pay and enter reference below</span>
+        <span style="color:var(--t3);font-size:.75rem">Pay and enter reference below</span>
       </div>
       <?php endif;?>
       <form method="POST" action="<?=url('modules/donation.php')?>">
@@ -126,9 +126,9 @@ require_once __DIR__ . '/../includes/header.php';
       <div><strong><?=h($d['dname'])?></strong><?php if($d['message']): ?> <span style="color:var(--t3);font-size:.75rem">— <?=h($d['message'])?></span><?php endif;?></div>
       <div style="display:flex;align-items:center;gap:.5rem">
         <strong style="color:#2E7D32">₹<?=number_format($d['amount'])?></strong>
-        <?php if($d['status']==='pending'): ?><span style="font-size:.65rem;background:#FFF8E1;color:#E65100;border-radius:20px;padding:.1rem .4rem;font-weight:700">Pending</span><?php else: ?><span style="font-size:.65rem;color:#2E7D32;font-weight:700">✅</span><?php endif;?>
+        <?php if($d['status']==='pending'): ?><span style="font-size:.75rem;background:#FFF8E1;color:#E65100;border-radius:20px;padding:.1rem .4rem;font-weight:700">Pending</span><?php else: ?><span style="font-size:.75rem;color:#2E7D32;font-weight:700">✅</span><?php endif;?>
         <?php if($isAdmin&&$d['status']==='pending'): ?>
-        <form method="POST" action="<?=url('modules/donation.php')?>" style="display:inline"><input type="hidden" name="did" value="<?=$d['id']?>"><button type="submit" name="verify_donation" class="btn btn-green btn-sm" style="padding:.25rem .5rem;font-size:.68rem">Verify</button></form>
+        <form method="POST" action="<?=url('modules/donation.php')?>" style="display:inline"><input type="hidden" name="did" value="<?=$d['id']?>"><button type="submit" name="verify_donation" class="btn btn-green btn-sm" style="padding:.25rem .5rem;font-size:.75rem">Verify</button></form>
         <?php endif;?>
       </div>
     </div>

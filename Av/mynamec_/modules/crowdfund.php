@@ -306,7 +306,7 @@ require_once __DIR__.'/../includes/header.php';
 .cf-stat{padding:.65rem .5rem;text-align:center;border-right:1px solid rgba(255,255,255,.08)}
 .cf-stat:last-child{border-right:none}
 .cf-stat-n{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.2rem;color:var(--cfa);line-height:1}
-.cf-stat-l{font-size:.62rem;color:rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:.1em}
+.cf-stat-l{font-size:.75rem;color:rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:.1em}
 
 /* Pending bar */
 .pending-bar{background:linear-gradient(135deg,#b71c1c,#c62828);color:#fff;padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:.7rem}
@@ -317,10 +317,10 @@ require_once __DIR__.'/../includes/header.php';
 .cf-cover{height:180px;position:relative;overflow:hidden;background:#F5F7FF}
 .cf-cover img{width:100%;height:100%;object-fit:cover}
 .cf-cover-ph{height:100%;display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,rgba(26,58,107,.06),rgba(26,58,107,.03))}
-.cf-cat-badge{position:absolute;top:.6rem;left:.6rem;padding:.18rem .6rem;border-radius:20px;font-size:.62rem;font-weight:700;color:#fff}
-.cf-feat{position:absolute;top:.6rem;right:.6rem;background:var(--cfa);color:#fff;padding:.18rem .6rem;border-radius:20px;font-size:.62rem;font-weight:700}
+.cf-cat-badge{position:absolute;top:.6rem;left:.6rem;padding:.18rem .6rem;border-radius:20px;font-size:.75rem;font-weight:700;color:#fff}
+.cf-feat{position:absolute;top:.6rem;right:.6rem;background:var(--cfa);color:#fff;padding:.18rem .6rem;border-radius:20px;font-size:.75rem;font-weight:700}
 /* Admin delete on card */
-.cf-del-btn{position:absolute;bottom:.6rem;right:.6rem;background:rgba(183,28,28,.9);color:#fff;border:none;border-radius:8px;padding:.3rem .65rem;font-size:.68rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:.25rem}
+.cf-del-btn{position:absolute;bottom:.6rem;right:.6rem;background:rgba(183,28,28,.9);color:#fff;border:none;border-radius:8px;padding:.3rem .65rem;font-size:.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:.25rem}
 
 .cf-body{padding:1rem}
 .cf-title{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.92rem;letter-spacing:.01em;color:var(--cf1);margin-bottom:.3rem;line-height:1.25}
@@ -332,14 +332,14 @@ require_once __DIR__.'/../includes/header.php';
 .cf-prog-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,#1b5e20,#4caf50);transition:width 1.2s}
 .cf-prog-row{display:flex;justify-content:space-between;align-items:baseline}
 .cf-raised{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.96rem;color:var(--cfg);letter-spacing:.01em}
-.cf-target{font-size:.7rem;color:#8a93a8}
+.cf-target{font-size:.75rem;color:#8a93a8}
 .cf-pct{font-size:.75rem;font-weight:700;color:var(--cfg)}
 
 .cf-meta{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.8rem}
-.cf-chip{font-size:.68rem;color:#4a5568;background:#F5F7FF;padding:.2rem .6rem;border-radius:20px;display:flex;align-items:center;gap:.25rem}
+.cf-chip{font-size:.75rem;color:#4a5568;background:#F5F7FF;padding:.2rem .6rem;border-radius:20px;display:flex;align-items:center;gap:.25rem}
 
 /* Status badges */
-.st{display:inline-block;padding:.18rem .65rem;border-radius:20px;font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em}
+.st{display:inline-block;padding:.18rem .65rem;border-radius:20px;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em}
 .st-active{background:#e8f5e9;color:#1b5e20}.st-pending{background:#fff8e1;color:#e65100}
 .st-completed{background:#ECEEFF;color:#0A14E0}.st-rejected{background:#ffebee;color:#b71c1c}
 .st-paused{background:#f3e5f5;color:#7b1fa2}
@@ -366,7 +366,7 @@ require_once __DIR__.'/../includes/header.php';
 .cf-qs{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.8rem}
 .cf-qs-box{background:#F7F8FF;border-radius:10px;padding:.6rem .4rem;text-align:center}
 .cf-qs-n{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.0rem;color:var(--cf1);line-height:1}
-.cf-qs-l{font-size:.58rem;color:#5f6880;text-transform:uppercase;letter-spacing:.08em}
+.cf-qs-l{font-size:.75rem;color:#5f6880;text-transform:uppercase;letter-spacing:.08em}
 
 /* UPI box */
 .upi-box{background:#F5F7FF;border:2px dashed rgba(10,20,224,.2);border-radius:12px;padding:1rem;text-align:center;margin-bottom:1rem}
@@ -387,7 +387,7 @@ require_once __DIR__.'/../includes/header.php';
 /* Donors */
 .donor-row{display:flex;align-items:center;gap:.7rem;padding:.6rem 0;border-bottom:1px solid #F5F7FF}
 .donor-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--cf1),var(--cf2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem;flex-shrink:0}
-.don-badge{display:inline-block;font-size:.6rem;padding:.1rem .42rem;border-radius:20px;font-weight:700}
+.don-badge{display:inline-block;font-size:.75rem;padding:.1rem .42rem;border-radius:20px;font-weight:700}
 .db-pending{background:#fff8e1;color:#e65100}.db-verified{background:#e8f5e9;color:#1b5e20}.db-rejected{background:#ffebee;color:#b71c1c}
 
 /* Admin */
@@ -429,7 +429,7 @@ require_once __DIR__.'/../includes/header.php';
 <div class="pending-bar">
   <div>
     <div style="font-weight:700;font-size:.88rem">🔔 <?php echo count($pendingDons); ?> donation<?php echo count($pendingDons)>1?'s':''; ?> waiting approval</div>
-    <div style="font-size:.72rem;color:rgba(255,255,255,.75)">Verify payment screenshots</div>
+    <div style="font-size:.75rem;color:rgba(255,255,255,.75)">Verify payment screenshots</div>
   </div>
   <a href="?view=pending">✅ Review →</a>
 </div>
@@ -462,7 +462,7 @@ if ($view==='campaign' && !empty($camp)):
 <div style="margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
   <span class="st st-<?php echo $camp['status']; ?>"><?php echo ucfirst($camp['status']); ?></span>
   <span class="cf-chip"><?php echo $catIcons[$camp['category']]??''; ?> <?php echo ucfirst($camp['category']); ?></span>
-  <?php if($camp['is_featured']): ?><span style="background:var(--cfa);color:#fff;font-size:.62rem;font-weight:700;padding:.18rem .6rem;border-radius:20px">⭐ Featured</span><?php endif; ?>
+  <?php if($camp['is_featured']): ?><span style="background:var(--cfa);color:#fff;font-size:.75rem;font-weight:700;padding:.18rem .6rem;border-radius:20px">⭐ Featured</span><?php endif; ?>
 </div>
 
 <h2 style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.28rem;letter-spacing:.01em;color:var(--cf1);margin-bottom:.5rem;line-height:1.2"><?php echo h($camp['title']); ?></h2>
@@ -509,7 +509,7 @@ if ($view==='campaign' && !empty($camp)):
     <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--cf1),var(--cf2));color:#fff;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">👤</div>
     <div>
       <div style="font-weight:700;font-size:.88rem"><?php echo h($camp['organizer_name']); ?></div>
-      <div style="font-size:.73rem;color:#5f6880">Organizer<?php if($camp['organizer_phone']): ?> · <?php echo h($camp['organizer_phone']); ?><?php endif; ?></div>
+      <div style="font-size:.75rem;color:#5f6880">Organizer<?php if($camp['organizer_phone']): ?> · <?php echo h($camp['organizer_phone']); ?><?php endif; ?></div>
     </div>
   </div>
   <?php endif; ?>
@@ -522,7 +522,7 @@ if ($view==='campaign' && !empty($camp)):
   <div style="background:#fff;border-radius:12px;padding:1rem;border-left:4px solid var(--cf1);box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:.7rem">
     <div style="font-weight:700;font-size:.9rem;margin-bottom:.25rem"><?php echo h($up['title']); ?></div>
     <div style="font-size:.82rem;color:#4a5568;line-height:1.65"><?php echo nl2br(h($up['body'])); ?></div>
-    <div style="font-size:.68rem;color:#5f6880;margin-top:.4rem"><?php echo h($up['poster']??'Admin'); ?> · <?php echo date('d M Y',strtotime($up['created_at'])); ?></div>
+    <div style="font-size:.75rem;color:#5f6880;margin-top:.4rem"><?php echo h($up['poster']??'Admin'); ?> · <?php echo date('d M Y',strtotime($up['created_at'])); ?></div>
   </div>
   <?php endforeach; ?>
 </div>
@@ -540,27 +540,27 @@ if ($view==='campaign' && !empty($camp)):
       <div style="flex:1;min-width:0;font-weight:700;font-size:.86rem;color:#0B1033;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><?php echo h($td['donor_name']); ?></div>
       <div style="text-align:right;flex-shrink:0">
         <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.92rem;color:#1b5e20">₹<?php echo number_format($td['total']); ?></div>
-        <?php if($td['cnt']>1): ?><div style="font-size:.62rem;color:#5f6880"><?php echo $td['cnt']; ?> donations</div><?php endif; ?>
+        <?php if($td['cnt']>1): ?><div style="font-size:.75rem;color:#5f6880"><?php echo $td['cnt']; ?> donations</div><?php endif; ?>
       </div>
     </div>
     <?php endforeach; ?>
   </div>
-  <div style="font-size:.72rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem">All Donors</div>
+  <div style="font-size:.75rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem">All Donors</div>
   <?php endif; ?>
   <?php foreach($donations as $don): ?>
   <div class="donor-row">
     <div class="donor-av"><?php echo strtoupper(substr($don['donor_name'],0,1)); ?></div>
     <div style="flex:1;min-width:0">
       <div style="font-weight:700;font-size:.85rem"><?php echo h($don['donor_name']); ?></div>
-      <div style="font-size:.7rem;color:#5f6880"><?php echo date('d M Y',strtotime($don['donated_at'])); ?> · <?php echo ucfirst($don['payment_method']); ?></div>
+      <div style="font-size:.75rem;color:#5f6880"><?php echo date('d M Y',strtotime($don['donated_at'])); ?> · <?php echo ucfirst($don['payment_method']); ?></div>
     </div>
     <div style="text-align:right;flex-shrink:0">
       <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.88rem;color:var(--cfg)">₹<?php echo number_format($don['amount']); ?></div>
       <span class="don-badge db-<?php echo $don['status']; ?>"><?php echo ucfirst($don['status']); ?></span>
       <?php if($isAdmin && $don['status']==='pending'): ?>
       <div style="display:flex;gap:.25rem;margin-top:.25rem;justify-content:flex-end">
-        <form method="POST" style="display:inline" data-sudo><input type="hidden" name="act" value="verify_donation"><input type="hidden" name="did" value="<?php echo $don['id']; ?>"><input type="hidden" name="cid" value="<?php echo $campId; ?>"><button style="background:#2e7d32;color:#fff;border:none;border-radius:6px;padding:.22rem .5rem;font-size:.65rem;font-weight:700;cursor:pointer">✅</button></form>
-        <form method="POST" style="display:inline" data-sudo><input type="hidden" name="act" value="reject_donation"><input type="hidden" name="did" value="<?php echo $don['id']; ?>"><input type="hidden" name="cid" value="<?php echo $campId; ?>"><button style="background:#b71c1c;color:#fff;border:none;border-radius:6px;padding:.22rem .5rem;font-size:.65rem;font-weight:700;cursor:pointer">✗</button></form>
+        <form method="POST" style="display:inline" data-sudo><input type="hidden" name="act" value="verify_donation"><input type="hidden" name="did" value="<?php echo $don['id']; ?>"><input type="hidden" name="cid" value="<?php echo $campId; ?>"><button style="background:#2e7d32;color:#fff;border:none;border-radius:6px;padding:.22rem .5rem;font-size:.75rem;font-weight:700;cursor:pointer">✅</button></form>
+        <form method="POST" style="display:inline" data-sudo><input type="hidden" name="act" value="reject_donation"><input type="hidden" name="did" value="<?php echo $don['id']; ?>"><input type="hidden" name="cid" value="<?php echo $campId; ?>"><button style="background:#b71c1c;color:#fff;border:none;border-radius:6px;padding:.22rem .5rem;font-size:.75rem;font-weight:700;cursor:pointer">✗</button></form>
       </div>
       <?php endif; ?>
     </div>
@@ -571,10 +571,10 @@ if ($view==='campaign' && !empty($camp)):
   <!-- My donations -->
   <?php if(!empty($myDon)): ?>
   <div style="margin-top:1rem;padding:.9rem;background:#F7F8FF;border-radius:12px;border:1px solid #E3E7F5">
-    <div style="font-size:.72rem;font-weight:800;color:#5f6880;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.6rem">Your Donations</div>
+    <div style="font-size:.75rem;font-weight:800;color:#5f6880;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.6rem">Your Donations</div>
     <?php foreach($myDon as $md): ?>
     <div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid #F5F7FF;font-size:.82rem">
-      <div><div style="font-weight:700">₹<?php echo number_format($md['amount']); ?></div><div style="font-size:.68rem;color:#5f6880"><?php echo h($md['receipt_no']); ?></div></div>
+      <div><div style="font-weight:700">₹<?php echo number_format($md['amount']); ?></div><div style="font-size:.75rem;color:#5f6880"><?php echo h($md['receipt_no']); ?></div></div>
       <span class="don-badge db-<?php echo $md['status']; ?>"><?php echo ucfirst($md['status']); ?></span>
     </div>
     <?php endforeach; ?>
@@ -590,7 +590,7 @@ if ($view==='campaign' && !empty($camp)):
     <div class="admin-panel-body">
       <!-- Status -->
       <div style="margin-bottom:.9rem">
-        <div style="font-size:.7rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">Campaign Status</div>
+        <div style="font-size:.75rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">Campaign Status</div>
         <div class="admin-btns">
           <?php foreach(['approve'=>['✅ Approve','#2e7d32'],'pause'=>['⏸ Pause','#7b1fa2'],'complete'=>['🏁 Complete','#0A14E0'],'reject'=>['✗ Reject','#b71c1c']] as $a=>[$lbl,$bg]): ?>
           <form method="POST"><input type="hidden" name="act" value="<?php echo $a; ?>"><input type="hidden" name="cid" value="<?php echo $campId; ?>"><button style="background:<?php echo $bg; ?>;color:#fff;border:none;border-radius:8px;padding:.42rem .85rem;font-size:.75rem;font-weight:700;cursor:pointer"><?php echo $lbl; ?></button></form>
@@ -609,7 +609,7 @@ if ($view==='campaign' && !empty($camp)):
       <!-- Download PDF report -->
       <a href="<?php echo url('modules/cf_report.php'); ?>?id=<?php echo $campId; ?>" style="display:flex;align-items:center;justify-content:center;gap:.4rem;width:100%;background:linear-gradient(135deg,#1b5e20,#2e7d32);color:#fff;border-radius:9px;padding:.55rem;font-size:.82rem;font-weight:800;text-decoration:none;margin-bottom:.9rem">📄 Download Funding Report (PDF)</a>
       <!-- Post update -->
-      <div style="font-size:.7rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">Post Campaign Update</div>
+      <div style="font-size:.75rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">Post Campaign Update</div>
       <form method="POST">
         <input type="hidden" name="act" value="post_update">
         <input type="hidden" name="cid" value="<?php echo $campId; ?>">
@@ -626,20 +626,20 @@ if ($view==='campaign' && !empty($camp)):
 <?php if($camp['status']==='active'): ?>
 <div class="cf-donate">
   <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.0rem;letter-spacing:.01em;color:var(--cf1);margin-bottom:.3rem">💖 MAKE A DONATION</div>
-  <p style="font-size:.74rem;color:#8a93a8;margin-bottom:.9rem">3 quick steps — choose amount, pay, confirm.</p>
+  <p style="font-size:.75rem;color:#8a93a8;margin-bottom:.9rem">3 quick steps — choose amount, pay, confirm.</p>
   <form method="POST" enctype="multipart/form-data" id="donateForm" onsubmit="return validateDonate()">
     <input type="hidden" name="act" value="donate">
     <input type="hidden" name="cid" value="<?php echo $campId; ?>">
 
     <?php if($isGuest): ?>
     <!-- STEP 0: who's donating (guests) -->
-    <div style="font-size:.72rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">👤 Your Details</div>
+    <div style="font-size:.75rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">👤 Your Details</div>
     <input type="text" name="donor_name" id="donorName" class="inp" placeholder="Your name" style="margin-bottom:.6rem">
     <input type="tel" name="donor_phone" id="donorPhone" class="inp" placeholder="WhatsApp number (for thank-you receipt)" style="margin-bottom:.9rem">
     <?php endif; ?>
 
     <!-- STEP 1: amount -->
-    <div style="font-size:.72rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">1️⃣ Choose Amount</div>
+    <div style="font-size:.75rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">1️⃣ Choose Amount</div>
     <div class="amt-grid">
       <?php foreach([100,250,500,1000,2500,5000] as $qa): ?>
       <button type="button" class="amt-btn" onclick="setAmt(<?php echo $qa; ?>)">₹<?php echo $qa; ?></button>
@@ -649,7 +649,7 @@ if ($view==='campaign' && !empty($camp)):
 
     <!-- STEP 2: pay -->
     <?php if($upiId): ?>
-    <div style="font-size:.72rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">2️⃣ Pay <span id="payAmtLbl" style="color:var(--cf1)"></span></div>
+    <div style="font-size:.75rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">2️⃣ Pay <span id="payAmtLbl" style="color:var(--cf1)"></span></div>
     <div style="background:#f8f9ff;border:1px solid #e3e8f7;border-radius:12px;padding:1rem .85rem;margin-bottom:.9rem;text-align:center">
 
       <!-- (a) QR code -->
@@ -658,14 +658,14 @@ if ($view==='campaign' && !empty($camp)):
 
       <!-- (b) Copy UPI ID -->
       <div style="border-top:1px dashed #d8e0ee;padding-top:.7rem;margin-bottom:.6rem">
-        <div style="font-size:.74rem;font-weight:800;color:#0B1033;margin-bottom:.3rem">📋 Step 2 — or Copy UPI ID</div>
+        <div style="font-size:.75rem;font-weight:800;color:#0B1033;margin-bottom:.3rem">📋 Step 2 — or Copy UPI ID</div>
         <div class="upi-id" style="font-size:.84rem;font-weight:800;color:#0B1033;word-break:break-all;margin-bottom:.4rem"><?php echo h($upiId); ?></div>
         <button type="button" class="copy-btn" onclick="copyTxt('<?php echo h($upiId); ?>')">📋 Copy UPI ID</button>
       </div>
 
       <!-- (c) Open Google Pay -->
       <div style="border-top:1px dashed #d8e0ee;padding-top:.7rem">
-        <div style="font-size:.74rem;font-weight:800;color:#0B1033;margin-bottom:.45rem">📲 Step 3 — or Open Google Pay</div>
+        <div style="font-size:.75rem;font-weight:800;color:#0B1033;margin-bottom:.45rem">📲 Step 3 — or Open Google Pay</div>
         <a id="payNowBtn" href="#" onclick="return openGpay()"
            style="display:flex;align-items:center;justify-content:center;gap:.45rem;width:100%;padding:.7rem;background:linear-gradient(135deg,#0A14E0,#1A23C9);color:#fff;border:none;border-radius:10px;font-weight:800;font-size:.88rem;text-decoration:none;box-shadow:0 4px 12px rgba(26,35,201,.3)">
           📲 Open Google Pay
@@ -675,7 +675,7 @@ if ($view==='campaign' && !empty($camp)):
     <?php endif; ?>
 
     <!-- STEP 3: confirm -->
-    <div style="font-size:.72rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">3️⃣ Confirm Your Payment</div>
+    <div style="font-size:.75rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">3️⃣ Confirm Your Payment</div>
     <select name="method" class="inp" style="margin-bottom:.6rem">
       <option value="gpay">Google Pay</option>
       <option value="upi">UPI / QR Code</option>
@@ -692,7 +692,7 @@ if ($view==='campaign' && !empty($camp)):
       <input type="checkbox" name="anonymous"> Donate anonymously
     </label>
     <button type="submit" style="width:100%;padding:.75rem;background:linear-gradient(135deg,var(--cf1),var(--cf2));color:#fff;border:none;border-radius:10px;font-weight:700;font-size:.9rem;cursor:pointer">❤️ Confirm Donation</button>
-    <p style="font-size:.72rem;color:#5f6880;text-align:center;margin-top:.5rem">🔒 An admin verifies every donation. You'll get a receipt number. Funds go directly to the organizer's UPI.</p>
+    <p style="font-size:.75rem;color:#5f6880;text-align:center;margin-top:.5rem">🔒 An admin verifies every donation. You'll get a receipt number. Funds go directly to the organizer's UPI.</p>
   </form>
 </div>
 <?php endif; ?>
@@ -733,7 +733,7 @@ elseif ($view==='edit' && $isAdmin && !empty($editCamp)):
         <?php endforeach; ?>
       </select>
     </div>
-    <div class="fg"><label class="lbl">Cover Image <span style="font-size:.7rem;color:#5f6880">(leave empty to keep current)</span></label>
+    <div class="fg"><label class="lbl">Cover Image <span style="font-size:.75rem;color:#5f6880">(leave empty to keep current)</span></label>
       <div style="border:2px dashed rgba(10,20,224,.2);border-radius:10px;padding:1rem;text-align:center;background:#f8f9ff;cursor:pointer" onclick="document.getElementById('covF').click()">
         <input type="file" name="cover_image" id="covF" accept="image/*" style="display:none" onchange="prvCov(this)">
         <?php if($editCamp['cover_image']): ?><img src="<?php echo url('assets/uploads/'.$editCamp['cover_image']); ?>" style="max-height:90px;border-radius:7px;margin-bottom:.4rem;display:block;margin:0 auto .4rem"><?php endif; ?>
@@ -798,7 +798,7 @@ elseif ($view==='create' && $isAdmin):
     </label>
     <?php endif; ?>
     <button type="submit" style="width:100%;padding:.75rem;background:linear-gradient(135deg,var(--cf1),var(--cf2));color:#fff;border:none;border-radius:10px;font-weight:700;font-size:.88rem;cursor:pointer">🚀 Submit Campaign</button>
-    <?php if(!$isAdmin): ?><p style="font-size:.74rem;color:#5f6880;text-align:center;margin-top:.5rem">Your campaign will be reviewed by admin before going live.</p><?php endif; ?>
+    <?php if(!$isAdmin): ?><p style="font-size:.75rem;color:#5f6880;text-align:center;margin-top:.5rem">Your campaign will be reviewed by admin before going live.</p><?php endif; ?>
   </form>
 </div>
 
@@ -820,11 +820,11 @@ elseif ($view==='pending' && $isAdmin):
     <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--cf1),var(--cf2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0"><?php echo strtoupper(substr($pd2['donor_name'],0,1)); ?></div>
     <div>
       <div style="font-weight:700;font-size:.9rem"><?php echo h($pd2['donor_name']); ?></div>
-      <div style="font-size:.7rem;color:#5f6880"><?php echo date('d M Y, g:i A',strtotime($pd2['donated_at'])); ?></div>
+      <div style="font-size:.75rem;color:#5f6880"><?php echo date('d M Y, g:i A',strtotime($pd2['donated_at'])); ?></div>
     </div>
     <div style="margin-left:auto;text-align:right">
       <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.12rem;color:var(--cfg)">₹<?php echo number_format($pd2['amount']); ?></div>
-      <div style="font-size:.65rem;color:#5f6880"><?php echo ucfirst($pd2['payment_method']); ?></div>
+      <div style="font-size:.75rem;color:#5f6880"><?php echo ucfirst($pd2['payment_method']); ?></div>
     </div>
   </div>
   <div style="background:#F7F8FF;border-radius:8px;padding:.5rem .75rem;font-size:.8rem;margin-bottom:.6rem">
@@ -859,7 +859,7 @@ else:
   <button class="cf-ftab" onclick="cfFilter('completed',this)">🏁 Completed</button>
   <?php if($isAdmin): ?><button class="cf-ftab" onclick="cfFilter('pending',this)">⏳ Pending</button><?php endif; ?>
 </div>
-<style>.cf-ftab{padding:.32rem .75rem;border-radius:20px;font-size:.72rem;font-weight:700;cursor:pointer;border:1.5px solid rgba(26,58,107,.2);color:#64748b;background:#fff;white-space:nowrap;flex-shrink:0}.cf-ftab.on{background:var(--cf1);color:#fff;border-color:var(--cf1)}</style>
+<style>.cf-ftab{padding:.32rem .75rem;border-radius:20px;font-size:.75rem;font-weight:700;cursor:pointer;border:1.5px solid rgba(26,58,107,.2);color:#64748b;background:#fff;white-space:nowrap;flex-shrink:0}.cf-ftab.on{background:var(--cf1);color:#fff;border-color:var(--cf1)}</style>
 
 <?php if(empty($campaigns)): ?>
 <div class="empty-cf"><div style="font-size:2.5rem;margin-bottom:.5rem">❤️</div><p>No campaigns yet.</p></div>
@@ -934,7 +934,7 @@ else:
       <button onclick="closeHowTo()" style="position:absolute;top:.8rem;right:.9rem;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.2);border:none;color:#fff;font-size:1rem;cursor:pointer">✕</button>
       <div style="font-size:1.9rem">❤️</div>
       <div style="font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:800;color:#fff;margin-top:.2rem">How to Donate</div>
-      <div style="font-size:.72rem;color:rgba(255,255,255,.7);margin-top:.2rem">5 easy steps · 100% secure</div>
+      <div style="font-size:.75rem;color:rgba(255,255,255,.7);margin-top:.2rem">5 easy steps · 100% secure</div>
     </div>
     <div style="padding:1rem 1.2rem 1.4rem">
       <?php

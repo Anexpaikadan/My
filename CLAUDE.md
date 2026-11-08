@@ -179,7 +179,10 @@ require_once __DIR__ . '/../includes/header.php';
   - Viewport: `width=device-width,initial-scale=1,viewport-fit=cover`. **Never add `maximum-scale` or `user-scalable=no`.**
 - Accessibility rules that the current code already meets. Keep meeting them:
   - Tap targets are at least 44px (`@media (pointer:coarse)` in the header).
-  - Text boxes are at least 16px, so iPhones don't zoom in.
+  - Text boxes are at least 16px, so iPhones don't zoom in (club.css forces 16px unless a field sets its own inline size — then use 16px there).
+  - No text below 12px (`.75rem`) except on the ID card and Poster Studio, which export images. Do not write `font-size:.6rem`/`.7rem`.
+  - Page bottom padding must be taller than the fixed bottom bar (`body.pub` 104px, `body.app` 96px + safe area).
+  - Leading emoji in buttons/links/headings are hidden from screen readers by the footer script; an icon-only button still needs an `aria-label`.
   - Every `<label>` has `for=` matching an `id`.
   - Icon-only controls have an `aria-label`.
   - Use `<button type="button">`, not `<div onclick>`.

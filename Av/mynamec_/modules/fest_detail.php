@@ -68,10 +68,10 @@ $nowT=date('Y-m-d H:i:s');
 <div style="background:linear-gradient(135deg,#0B1033,#0A14E0);padding:.75rem 1rem;border-radius:24px 24px 0 0;display:flex;align-items:center;gap:.5rem">
   <div style="flex:1">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.08em;color:#fff"><?= h($fest['title']) ?></div>
-    <div style="font-size:.62rem;color:rgba(255,255,255,.55)"><?= count($entries) ?> entries · <?= $totalLikes ?> likes</div>
+    <div style="font-size:.75rem;color:rgba(255,255,255,.55)"><?= count($entries) ?> entries · <?= $totalLikes ?> likes</div>
   </div>
   <?php if($isAdmin): ?>
-  <button onclick="toggleFestVoting(<?= $fid ?>,this)" style="background:<?= $fest['voting_open']?'#b71c1c':'#2e7d32' ?>;color:#fff;border:none;border-radius:8px;padding:.35rem .7rem;font-size:.7rem;font-weight:700;cursor:pointer">
+  <button onclick="toggleFestVoting(<?= $fid ?>,this)" style="background:<?= $fest['voting_open']?'#b71c1c':'#2e7d32' ?>;color:#fff;border:none;border-radius:8px;padding:.35rem .7rem;font-size:.75rem;font-weight:700;cursor:pointer">
     <?= $fest['voting_open']?'🔒 Close':'🗳️ Open' ?>
   </button>
   <?php endif; ?>
@@ -84,7 +84,7 @@ $nowT=date('Y-m-d H:i:s');
 <?php endif; ?>
 
 <!-- Voting badge -->
-<div style="text-align:center;padding:.4rem;font-size:.72rem;font-weight:700;letter-spacing:.06em;<?= $fest['voting_open']?'background:#e8f5e9;color:#2e7d32':'background:#ffebee;color:#b71c1c' ?>">
+<div style="text-align:center;padding:.4rem;font-size:.75rem;font-weight:700;letter-spacing:.06em;<?= $fest['voting_open']?'background:#e8f5e9;color:#2e7d32':'background:#ffebee;color:#b71c1c' ?>">
   <?php if($fest['voting_open']): ?>❤️ Liking is OPEN
   <?php elseif($fest['vote_start']&&$nowT<$fest['vote_start']): ?>⏳ Opens <?= date('d M, h:i A',strtotime($fest['vote_start'])) ?>
   <?php else: ?>🔒 Liking is CLOSED<?php endif; ?>
@@ -104,8 +104,8 @@ $nowT=date('Y-m-d H:i:s');
     <span style="font-size:1rem"><?= $pv[0] ?></span>
     <span style="font-size:.78rem;font-weight:600;color:#b45309;flex:1"><?= h($pv[1]) ?></span>
     <?php if($pw&&$pw['like_count']>0): ?>
-    <span style="font-size:.68rem;color:#d97706;font-weight:700"><?= h($pw['member_name']) ?> · <?= $pw['like_count'] ?> ❤️</span>
-    <?php else: ?><span style="font-size:.65rem;color:#666666">TBD</span><?php endif; ?>
+    <span style="font-size:.75rem;color:#d97706;font-weight:700"><?= h($pw['member_name']) ?> · <?= $pw['like_count'] ?> ❤️</span>
+    <?php else: ?><span style="font-size:.75rem;color:#666666">TBD</span><?php endif; ?>
   </div>
   <?php endforeach; ?>
 </div>
@@ -122,7 +122,7 @@ $nowT=date('Y-m-d H:i:s');
     <?php endif; ?>
     <?php if($myEntry): ?>
     <img src="<?= h($SITE.'/assets/uploads/fests/'.$fid.'/'.basename($myEntry['image_path'])) ?>" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;margin-bottom:.5rem">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#0B1033;text-align:center"><?= (int)$myEntry['like_count'] ?> <span style="font-size:.6rem;color:#64748b;font-family:'Plus Jakarta Sans',sans-serif">LIKES</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#0B1033;text-align:center"><?= (int)$myEntry['like_count'] ?> <span style="font-size:.75rem;color:#64748b;font-family:'Plus Jakarta Sans',sans-serif">LIKES</span></div>
     <div style="display:flex;gap:.4rem;margin-top:.5rem">
       <button onclick="shareEntry(<?= $myEntry['id'] ?>,<?= $fid ?>,'<?= h(addslashes($me['name'])) ?>','<?= h(addslashes($fest['title'])) ?>','<?= $fest['sponsor_name']?h(addslashes($fest['sponsor_name'])):'' ?>')" style="flex:1;background:#25d366;color:#fff;border:none;border-radius:8px;padding:.5rem;font-weight:700;cursor:pointer;font-size:.78rem">💚 Share</button>
       <button onclick="deleteEntry(<?= $myEntry['id'] ?>,<?= $fid ?>)" style="background:#ffebee;color:#b71c1c;border:1px solid #ffcdd2;border-radius:8px;padding:.5rem .8rem;font-weight:700;cursor:pointer;font-size:.78rem">🗑️</button>
@@ -153,21 +153,21 @@ $nowT=date('Y-m-d H:i:s');
 ?>
 <div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.08);border:1.5px solid <?= $isLiked?'#e53935':($rank===0?'#f5a623':($rank===1?'#9e9e9e':($rank===2?'#cd7f32':'#E3E7F5'))) ?>;position:relative">
   <?php if($rank<3&&$entry['like_count']>0): ?>
-  <div style="position:absolute;top:6px;left:6px;width:24px;height:24px;border-radius:50%;background:<?= ['#f5a623','#9e9e9e','#cd7f32'][$rank] ?>;display:flex;align-items:center;justify-content:center;font-size:.7rem;z-index:5;box-shadow:0 2px 6px rgba(0,0,0,.2)"><?= ['🥇','🥈','🥉'][$rank] ?></div>
+  <div style="position:absolute;top:6px;left:6px;width:24px;height:24px;border-radius:50%;background:<?= ['#f5a623','#9e9e9e','#cd7f32'][$rank] ?>;display:flex;align-items:center;justify-content:center;font-size:.75rem;z-index:5;box-shadow:0 2px 6px rgba(0,0,0,.2)"><?= ['🥇','🥈','🥉'][$rank] ?></div>
   <?php endif; ?>
   <img src="<?= h($imgU) ?>" style="width:100%;aspect-ratio:3/4;object-fit:cover;display:block" loading="lazy">
   <div style="padding:.4rem .5rem .5rem">
-    <div style="font-size:.68rem;font-weight:800;color:#0B1033;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><?= h($entry['member_name']) ?></div>
+    <div style="font-size:.75rem;font-weight:800;color:#0B1033;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><?= h($entry['member_name']) ?></div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.2rem">
-      <div><span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:#e53935"><?= (int)$entry['like_count'] ?></span><span style="font-size:.55rem;color:#5d6b80;margin-left:2px">❤️</span></div>
+      <div><span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:#e53935"><?= (int)$entry['like_count'] ?></span><span style="font-size:.75rem;color:#5d6b80;margin-left:2px">❤️</span></div>
       <?php if($isMine): ?>
-      <button style="padding:.25rem .5rem;background:#f1f5f9;color:#64748b;border:none;border-radius:6px;font-size:.62rem;font-weight:700">Mine</button>
+      <button style="padding:.25rem .5rem;background:#f1f5f9;color:#64748b;border:none;border-radius:6px;font-size:.75rem;font-weight:700">Mine</button>
       <?php elseif($isLiked): ?>
-      <button style="padding:.25rem .5rem;background:#fce4ec;color:#c62828;border:none;border-radius:6px;font-size:.62rem;font-weight:700">✅ Liked</button>
+      <button style="padding:.25rem .5rem;background:#fce4ec;color:#c62828;border:none;border-radius:6px;font-size:.75rem;font-weight:700">✅ Liked</button>
       <?php elseif($canLikeThis): ?>
-      <button onclick="likeEntry(<?= $entry['id'] ?>,<?= $fid ?>,this)" style="padding:.25rem .55rem;background:linear-gradient(135deg,#e53935,#b71c1c);color:#fff;border:none;border-radius:6px;font-size:.65rem;font-weight:800;cursor:pointer">❤️ Like</button>
+      <button onclick="likeEntry(<?= $entry['id'] ?>,<?= $fid ?>,this)" style="padding:.25rem .55rem;background:linear-gradient(135deg,#e53935,#b71c1c);color:#fff;border:none;border-radius:6px;font-size:.75rem;font-weight:800;cursor:pointer">❤️ Like</button>
       <?php else: ?>
-      <button style="padding:.25rem .5rem;background:#f5f5f5;color:#666666;border:none;border-radius:6px;font-size:.62rem">🔒</button>
+      <button style="padding:.25rem .5rem;background:#f5f5f5;color:#666666;border:none;border-radius:6px;font-size:.75rem">🔒</button>
       <?php endif; ?>
     </div>
   </div>

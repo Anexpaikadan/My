@@ -152,19 +152,19 @@ require_once __DIR__.'/../includes/header.php';
         <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.12rem;letter-spacing:.01em;color:#FFC107">✅ ACTIVE SUBSCRIPTION</div>
         <div style="font-size:.78rem;color:rgba(255,255,255,.65)"><?= h(ucfirst($activeSub['plan_type'])) ?> Plan · <?= h(CLUB_NAME) ?></div>
       </div>
-      <span style="background:rgba(76,175,80,.2);border:1.5px solid #4CAF50;color:#A5D6A7;border-radius:20px;padding:.25rem .9rem;font-size:.72rem;font-weight:700">✓ PAID</span>
+      <span style="background:rgba(76,175,80,.2);border:1.5px solid #4CAF50;color:#A5D6A7;border-radius:20px;padding:.25rem .9rem;font-size:.75rem;font-weight:700">✓ PAID</span>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1rem;margin-bottom:1.2rem">
-      <div><div style="font-size:.6rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.07em">Valid From</div><div style="font-weight:700;margin-top:.15rem"><?= date('d M Y',strtotime($activeSub['valid_from'])) ?></div></div>
-      <div><div style="font-size:.6rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.07em">Valid Until</div><div style="font-weight:700;margin-top:.15rem"><?= date('d M Y',strtotime($activeSub['valid_until'])) ?></div></div>
-      <div><div style="font-size:.6rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.07em">Amount Paid</div><div style="font-weight:700;color:#FFC107;margin-top:.15rem">₹<?= number_format($activeSub['amount_paid']) ?></div></div>
-      <div><div style="font-size:.6rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.07em">Days Left</div><div style="font-weight:700;color:<?= $daysLeft > 30 ? '#A5D6A7' : '#EF9A9A' ?>;margin-top:.15rem"><?= $daysLeft ?> days</div></div>
+      <div><div style="font-size:.75rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.07em">Valid From</div><div style="font-weight:700;margin-top:.15rem"><?= date('d M Y',strtotime($activeSub['valid_from'])) ?></div></div>
+      <div><div style="font-size:.75rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.07em">Valid Until</div><div style="font-weight:700;margin-top:.15rem"><?= date('d M Y',strtotime($activeSub['valid_until'])) ?></div></div>
+      <div><div style="font-size:.75rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.07em">Amount Paid</div><div style="font-weight:700;color:#FFC107;margin-top:.15rem">₹<?= number_format($activeSub['amount_paid']) ?></div></div>
+      <div><div style="font-size:.75rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.07em">Days Left</div><div style="font-weight:700;color:<?= $daysLeft > 30 ? '#A5D6A7' : '#EF9A9A' ?>;margin-top:.15rem"><?= $daysLeft ?> days</div></div>
     </div>
     <!-- Progress Bar -->
     <div style="background:rgba(255,255,255,.15);border-radius:20px;height:8px;overflow:hidden">
       <div style="background:<?= $barColor ?>;width:<?= $barPct ?>%;height:100%;border-radius:20px;transition:width .5s"></div>
     </div>
-    <div style="font-size:.7rem;color:rgba(255,255,255,.5);margin-top:.4rem"><?= $daysLeft ?> days remaining of your <?= $activeSub['plan_type'] ?> subscription</div>
+    <div style="font-size:.75rem;color:rgba(255,255,255,.5);margin-top:.4rem"><?= $daysLeft ?> days remaining of your <?= $activeSub['plan_type'] ?> subscription</div>
   </div>
   <?php else: ?>
   <!-- No active subscription warning -->
@@ -192,7 +192,7 @@ require_once __DIR__.'/../includes/header.php';
     </div>
     <!-- Annual Plan — recommended -->
     <div style="background:linear-gradient(160deg,#0B1033,#0A14E0);border-radius:14px;padding:1.3rem;box-shadow:0 6px 20px rgba(10,20,224,.3);border:2px solid #1A23C9;position:relative;color:#fff" id="planAnnual">
-      <div style="position:absolute;top:-1px;right:12px;background:#FFC107;color:#0B1033;font-size:.62rem;font-weight:700;padding:.2rem .7rem;border-radius:0 0 8px 8px;letter-spacing:.05em">RECOMMENDED</div>
+      <div style="position:absolute;top:-1px;right:12px;background:#FFC107;color:#0B1033;font-size:.75rem;font-weight:700;padding:.2rem .7rem;border-radius:0 0 8px 8px;letter-spacing:.05em">RECOMMENDED</div>
       <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.04rem;letter-spacing:.01em;color:#FFC107">ANNUAL</div>
       <div style="font-size:2rem;font-weight:700;color:#fff;margin:.3rem 0">₹<?= number_format($feeAnnual) ?></div>
       <div style="font-size:.78rem;color:rgba(255,255,255,.6);margin-bottom:.8rem">per year · Best value</div>
@@ -216,21 +216,21 @@ require_once __DIR__.'/../includes/header.php';
   <div style="background:#fff;border-radius:16px;box-shadow:0 3px 14px rgba(0,0,0,.09);overflow:hidden;margin-bottom:1.5rem">
     <div style="background:linear-gradient(135deg,#0A14E0,#1A23C9);padding:.9rem 1.2rem;display:flex;justify-content:space-between;align-items:center">
       <h3 style="color:#fff;font-size:.95rem;font-weight:700">📋 Current Request #<?= $pendingReq['id'] ?></h3>
-      <span style="background:<?= $sbg ?>;color:<?= $stxt ?>;border:1.5px solid <?= $sbdr ?>;border-radius:20px;padding:.2rem .8rem;font-size:.7rem;font-weight:700;text-transform:uppercase"><?= $pendingReq['status'] === 'partial' ? '⚠️ Partial' : ($pendingReq['status']==='approved'?'✅ Approved':ucfirst($pendingReq['status'])) ?></span>
+      <span style="background:<?= $sbg ?>;color:<?= $stxt ?>;border:1.5px solid <?= $sbdr ?>;border-radius:20px;padding:.2rem .8rem;font-size:.75rem;font-weight:700;text-transform:uppercase"><?= $pendingReq['status'] === 'partial' ? '⚠️ Partial' : ($pendingReq['status']==='approved'?'✅ Approved':ucfirst($pendingReq['status'])) ?></span>
     </div>
     <div style="padding:1.2rem">
       <!-- Amount breakdown -->
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-bottom:1rem">
         <div style="text-align:center;padding:.7rem;background:#F7F8FF;border-radius:10px">
-          <div style="font-size:.62rem;color:#666666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.2rem">Plan</div>
+          <div style="font-size:.75rem;color:#666666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.2rem">Plan</div>
           <div style="font-weight:700;color:#0B1033;font-size:.95rem"><?= h(ucfirst($pendingReq['plan_type'])) ?></div>
         </div>
         <div style="text-align:center;padding:.7rem;background:#F7F8FF;border-radius:10px">
-          <div style="font-size:.62rem;color:#666666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.2rem">Total Due</div>
+          <div style="font-size:.75rem;color:#666666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.2rem">Total Due</div>
           <div style="font-weight:700;color:#0B1033;font-size:.95rem">₹<?= number_format($pendingReq['amount_due']) ?></div>
         </div>
         <div style="text-align:center;padding:.7rem;background:#F7F8FF;border-radius:10px">
-          <div style="font-size:.62rem;color:#666666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.2rem">Paid So Far</div>
+          <div style="font-size:.75rem;color:#666666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.2rem">Paid So Far</div>
           <div style="font-weight:700;color:#2E7D32;font-size:.95rem">₹<?= number_format($pendingReq['total_paid_calc']) ?></div>
         </div>
       </div>
@@ -251,7 +251,7 @@ require_once __DIR__.'/../includes/header.php';
       <div style="background:#E3E7F5;border-radius:20px;height:10px;overflow:hidden;margin-bottom:.4rem">
         <div style="background:<?= $paidPct >= 100 ? '#4CAF50' : '#0A14E0' ?>;width:<?= min($paidPct,100) ?>%;height:100%;border-radius:20px;transition:width .5s"></div>
       </div>
-      <div style="font-size:.7rem;color:#666666;margin-bottom:1rem">₹<?= number_format($pendingReq['total_paid_calc']) ?> paid of ₹<?= number_format($pendingReq['amount_due']) ?> (<?= round($paidPct) ?>%)</div>
+      <div style="font-size:.75rem;color:#666666;margin-bottom:1rem">₹<?= number_format($pendingReq['total_paid_calc']) ?> paid of ₹<?= number_format($pendingReq['amount_due']) ?> (<?= round($paidPct) ?>%)</div>
 
       <!-- Payment history -->
       <?php if(!empty($pendingPayments)): ?>
@@ -274,14 +274,14 @@ require_once __DIR__.'/../includes/header.php';
           <input type="hidden" name="req_id" value="<?= $pendingReq['id'] ?>">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.6rem">
             <div>
-              <label style="font-size:.68rem;font-weight:700;color:#4A5E8A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.3rem">Amount (₹) *</label>
+              <label style="font-size:.75rem;font-weight:700;color:#4A5E8A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.3rem">Amount (₹) *</label>
               <input type="number" name="pay_amount" min="1" max="<?= $balance ?>" step="0.01" required
                      style="width:100%;padding:.65rem .8rem;border:2px solid #E3E7F5;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;outline:none"
                      placeholder="₹<?= number_format($balance) ?>" value="<?= $balance ?>">
             </div>
             <div>
-              <label style="font-size:.68rem;font-weight:700;color:#4A5E8A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.3rem">Payment Method</label>
-              <select name="pay_method" style="width:100%;padding:.65rem .8rem;border:2px solid #E3E7F5;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;outline:none;cursor:pointer">
+              <label style="font-size:.75rem;font-weight:700;color:#4A5E8A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.3rem">Payment Method</label>
+              <select name="pay_method" style="width:100%;padding:.65rem .8rem;border:2px solid #E3E7F5;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;outline:none;cursor:pointer">
                 <option value="cash">💵 Cash</option>
                 <option value="upi">📱 UPI / GPay / PhonePe</option>
                 <option value="bank_transfer">🏦 Bank Transfer</option>
@@ -290,7 +290,7 @@ require_once __DIR__.'/../includes/header.php';
             </div>
           </div>
           <input type="text" name="pay_upi" placeholder="UPI / Transaction Reference (optional)"
-                 style="width:100%;padding:.65rem .8rem;border:2px solid #E3E7F5;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;outline:none;margin-bottom:.6rem">
+                 style="width:100%;padding:.65rem .8rem;border:2px solid #E3E7F5;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;outline:none;margin-bottom:.6rem">
           <button type="submit" name="pay_balance" style="width:100%;padding:.75rem;background:#0A14E0;color:#fff;border:none;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.88rem;cursor:pointer">
             💳 Submit Balance Payment
           </button>
@@ -321,17 +321,17 @@ require_once __DIR__.'/../includes/header.php';
       <form method="POST" action="<?= url('modules/subscription.php') ?>">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem">
           <div>
-            <label style="font-size:.68rem;font-weight:700;color:#4A5E8A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.4rem">Plan Type *</label>
+            <label style="font-size:.75rem;font-weight:700;color:#4A5E8A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.4rem">Plan Type *</label>
             <select name="plan_type" id="planSelect" aria-label="Plan" onchange="updateAmount(this.value)"
-                    style="width:100%;padding:.68rem .9rem;border:2px solid #E3E7F5;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;outline:none;cursor:pointer">
+                    style="width:100%;padding:.68rem .9rem;border:2px solid #E3E7F5;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;outline:none;cursor:pointer">
               <option value="annual">Annual — ₹<?= number_format($feeAnnual) ?> (Recommended)</option>
               <option value="monthly">Monthly — ₹<?= number_format($feeMonthly) ?></option>
             </select>
           </div>
           <div>
-            <label style="font-size:.68rem;font-weight:700;color:#4A5E8A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.4rem">Payment Method</label>
+            <label style="font-size:.75rem;font-weight:700;color:#4A5E8A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.4rem">Payment Method</label>
             <select name="payment_method" aria-label="Payment method"
-                    style="width:100%;padding:.68rem .9rem;border:2px solid #E3E7F5;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;outline:none;cursor:pointer">
+                    style="width:100%;padding:.68rem .9rem;border:2px solid #E3E7F5;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;outline:none;cursor:pointer">
               <option value="cash">💵 Cash</option>
               <option value="upi">📱 UPI / GPay / PhonePe</option>
               <option value="bank_transfer">🏦 Bank Transfer</option>
@@ -348,16 +348,16 @@ require_once __DIR__.'/../includes/header.php';
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem">
           <div>
-            <label style="font-size:.68rem;font-weight:700;color:#4A5E8A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.4rem">Initial Payment (₹)</label>
+            <label style="font-size:.75rem;font-weight:700;color:#4A5E8A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.4rem">Initial Payment (₹)</label>
             <input type="number" name="initial_payment" id="initPay" min="0"
-                   style="width:100%;padding:.68rem .9rem;border:2px solid #E3E7F5;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;outline:none"
+                   style="width:100%;padding:.68rem .9rem;border:2px solid #E3E7F5;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;outline:none"
                    placeholder="0 for full payment later" value="0" oninput="updateBalance(this.value)">
-            <div style="font-size:.7rem;color:#666666;margin-top:.25rem">Enter 0 if paying cash to secretary</div>
+            <div style="font-size:.75rem;color:#666666;margin-top:.25rem">Enter 0 if paying cash to secretary</div>
           </div>
           <div>
-            <label style="font-size:.68rem;font-weight:700;color:#4A5E8A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.4rem">UPI / Transaction Ref</label>
+            <label style="font-size:.75rem;font-weight:700;color:#4A5E8A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.4rem">UPI / Transaction Ref</label>
             <input type="text" name="upi_ref"
-                   style="width:100%;padding:.68rem .9rem;border:2px solid #E3E7F5;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;outline:none"
+                   style="width:100%;padding:.68rem .9rem;border:2px solid #E3E7F5;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;outline:none"
                    placeholder="Optional UPI/transaction ID">
           </div>
         </div>
@@ -369,9 +369,9 @@ require_once __DIR__.'/../includes/header.php';
         </div>
 
         <div>
-          <label style="font-size:.68rem;font-weight:700;color:#4A5E8A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.4rem">Notes (Optional)</label>
+          <label style="font-size:.75rem;font-weight:700;color:#4A5E8A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:.4rem">Notes (Optional)</label>
           <textarea name="notes" rows="2"
-                    style="width:100%;padding:.68rem .9rem;border:2px solid #E3E7F5;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;outline:none;resize:vertical"
+                    style="width:100%;padding:.68rem .9rem;border:2px solid #E3E7F5;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;outline:none;resize:vertical"
                     placeholder="Any message for the Secretary…"></textarea>
         </div>
 
@@ -425,7 +425,7 @@ require_once __DIR__.'/../includes/header.php';
           <?php endif; ?>
         </div>
         <div style="text-align:right">
-          <span style="background:<?= $sbg ?>;color:<?= $stxt ?>;border-radius:20px;padding:.2rem .75rem;font-size:.68rem;font-weight:700;display:inline-block;margin-bottom:.25rem"><?= $sico ?> <?= h(ucfirst($r['status'])) ?></span>
+          <span style="background:<?= $sbg ?>;color:<?= $stxt ?>;border-radius:20px;padding:.2rem .75rem;font-size:.75rem;font-weight:700;display:inline-block;margin-bottom:.25rem"><?= $sico ?> <?= h(ucfirst($r['status'])) ?></span>
           <div style="font-size:.75rem;color:#666666">Paid: <strong style="color:#2E7D32">₹<?= number_format($r['total_paid_calc']) ?></strong> / ₹<?= number_format($r['amount_due']) ?></div>
         </div>
       </div>

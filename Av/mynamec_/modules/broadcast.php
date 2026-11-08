@@ -161,7 +161,7 @@ require_once __DIR__ . '/../includes/header.php';
 .bc-stat { padding: .7rem .5rem; text-align: center; border-right: 1px solid rgba(255,255,255,.1); }
 .bc-stat:last-child { border-right: none; }
 .bc-stat-n { font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase; font-size:1.2rem; color: #25d366; line-height: 1; }
-.bc-stat-l { font-size: .62rem; color: rgba(255,255,255,.85); text-transform: uppercase; letter-spacing: .08em; margin-top: .1rem; }
+.bc-stat-l { font-size: .75rem; color: rgba(255,255,255,.85); text-transform: uppercase; letter-spacing: .08em; margin-top: .1rem; }
 
 /* Main card */
 .bc-card {
@@ -203,12 +203,12 @@ require_once __DIR__ . '/../includes/header.php';
 .tmpl-btn:hover { border-color: #25d366; background: #f0fdf4; }
 .tmpl-btn:active { transform: scale(.97); }
 .tmpl-em { font-size: 1.2rem; display: block; margin-bottom: .2rem; }
-.tmpl-lbl { font-size: .72rem; font-weight: 700; color: #075e54; }
-.tmpl-sub { font-size: .62rem; color: #5d6b80; }
+.tmpl-lbl { font-size: .75rem; font-weight: 700; color: #075e54; }
+.tmpl-sub { font-size: .75rem; color: #5d6b80; }
 
 /* Form */
 .bc-label {
-    font-size: .7rem;
+    font-size: .75rem;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: .08em;
@@ -264,7 +264,7 @@ require_once __DIR__ . '/../includes/header.php';
     position: relative;
 }
 .preview-label {
-    font-size: .6rem;
+    font-size: .75rem;
     font-weight: 800;
     color: #0f7a3d;
     letter-spacing: .1em;
@@ -287,7 +287,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 /* Character count */
 .char-count {
-    font-size: .65rem;
+    font-size: .75rem;
     color: #5d6b80;
     text-align: right;
     margin-top: .25rem;
@@ -355,7 +355,7 @@ require_once __DIR__ . '/../includes/header.php';
     border-radius: 20px;
     border: 1.5px solid #E3E7F5;
     background: #f8fafc;
-    font-size: .72rem;
+    font-size: .75rem;
     font-weight: 700;
     cursor: pointer;
     transition: all .18s;
@@ -376,12 +376,12 @@ require_once __DIR__ . '/../includes/header.php';
 .hist-item:hover { border-color: #25d366; background: #f0fdf4; }
 .hist-item:active { transform: scale(.98); }
 .hist-title { font-size: .85rem; font-weight: 800; color: #0B1033; margin-bottom: .2rem; }
-.hist-meta { font-size: .65rem; color: #5d6b80; display: flex; gap: .6rem; flex-wrap: wrap; }
+.hist-meta { font-size: .75rem; color: #5d6b80; display: flex; gap: .6rem; flex-wrap: wrap; }
 .hist-cat {
     display: inline-block;
     padding: .08rem .45rem;
     border-radius: 20px;
-    font-size: .6rem;
+    font-size: .75rem;
     font-weight: 700;
 }
 .hist-preview {
@@ -397,7 +397,7 @@ require_once __DIR__ . '/../includes/header.php';
 .reuse-btn {
     display: inline-block;
     margin-top: .35rem;
-    font-size: .72rem;
+    font-size: .75rem;
     font-weight: 700;
     color: #0E6B37;
     background: #f0fdf4;
@@ -533,7 +533,7 @@ require_once __DIR__ . '/../includes/header.php';
         <!-- Extra fields panel -->
         <div id="extraFields" style="display:none;margin-bottom:.75rem">
           <div style="background:#f0f9ff;border:1.5px solid #B9BFFF;border-radius:12px;padding:.85rem">
-            <div style="font-size:.65rem;font-weight:800;color:#0A14E0;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.6rem">📝 Fill In Details</div>
+            <div style="font-size:.75rem;font-weight:800;color:#0A14E0;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.6rem">📝 Fill In Details</div>
             <div id="fieldSlots" style="display:flex;flex-direction:column;gap:.45rem"></div>
             <button type="button" onclick="injectFields()" style="width:100%;margin-top:.65rem;padding:.6rem;background:#0A14E0;color:#fff;border:none;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.84rem;cursor:pointer">✅ Apply to Message</button>
           </div>
@@ -768,9 +768,9 @@ function useTemplate(key) {
     if (fields.length) {
         fs.innerHTML = '';
         fields.forEach(function(f,i) {
-            fs.innerHTML += '<div><label style="font-size:.63rem;font-weight:700;color:#3d4f7c;display:block;margin-bottom:.18rem">'+f+'</label>'
+            fs.innerHTML += '<div><label style="font-size:.75rem;font-weight:700;color:#3d4f7c;display:block;margin-bottom:.18rem">'+f+'</label>'
                 +'<input type="text" id="ef_'+i+'" placeholder="Enter '+f+'"'
-                +' style="width:100%;padding:.5rem .75rem;border:1.5px solid #E3E7F5;border-radius:8px;font-family:DM Sans,sans-serif;font-size:.84rem;outline:none">'
+                +' style="width:100%;padding:.5rem .75rem;border:1.5px solid #E3E7F5;border-radius:8px;font-family:DM Sans,sans-serif;font-size:16px;outline:none">'
                 +'</div>';
         });
         ef.setAttribute('data-fields', JSON.stringify(fields));

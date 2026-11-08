@@ -50,6 +50,27 @@ $_tabs = $_tbAdm
 </nav>
 <script src="<?= url('assets/vendor/bootstrap/js/bootstrap.bundle.min.js') ?>"></script>
 <script>
+// Emoji used as icons at the start of buttons, links, tabs, labels and headings are decorative:
+// hide them from screen readers so they read "Save", not "floppy disk Save".
+(function(){
+  var re = /^(\s*)((?:\p{Extended_Pictographic}|\p{Regional_Indicator}|[\u200d\ufe0f\u20e3])+)\s*/u;
+  function fix(root){
+    (root || document).querySelectorAll('button,a,h1,h2,h3,h4,label,legend,summary,th,.btn,.tab,.chip,[role=tab],[role=button]').forEach(function(el){
+      var n = el.firstChild;
+      while (n && n.nodeType === 3 && !n.textContent.trim()) n = n.nextSibling;
+      if (!n || n.nodeType !== 3) return;
+      var m = n.textContent.match(re); if (!m) return;
+      // keep the emoji readable when it is the only content and the control has no other name
+      if (!el.textContent.slice(m[0].length).trim() && !el.getAttribute('aria-label') && !el.getAttribute('title')) return;
+      var sp = document.createElement('span'); sp.setAttribute('aria-hidden','true'); sp.textContent = m[2] + ' ';
+      n.textContent = n.textContent.slice(m[0].length);
+      el.insertBefore(sp, n);
+    });
+  }
+  try { fix(); } catch(e) {}
+})();
+</script>
+<script>
 // wide tables that scroll sideways can be scrolled with the keyboard too
 document.querySelectorAll('.table-wrap').forEach(function(w){ if(w.scrollWidth > w.clientWidth + 2){ w.tabIndex = 0; w.setAttribute('role','region'); if(!w.hasAttribute('aria-label')) w.setAttribute('aria-label','Table (scroll sideways)'); } });
 </script>

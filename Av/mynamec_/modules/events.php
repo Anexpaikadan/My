@@ -115,7 +115,7 @@ require_once __DIR__.'/../includes/header.php';
   border:1px solid rgba(255,255,255,.2);border-radius:12px;
   padding:.5rem .8rem;text-align:center;flex:1}
 .ev-hstat-n{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.2rem;color:#fff;line-height:1}
-.ev-hstat-l{font-size:.55rem;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.09em;font-weight:700}
+.ev-hstat-l{font-size:.75rem;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.09em;font-weight:700}
 
 /* Filter pills */
 .ev-filters{background:#fff;border-radius:20px 20px 0 0;margin-top:-1.8rem;
@@ -125,7 +125,7 @@ require_once __DIR__.'/../includes/header.php';
 .ev-filter-row::-webkit-scrollbar{display:none}
 .ev-pill{display:inline-flex;align-items:center;gap:.28rem;padding:.42rem .9rem;
   border-radius:20px;border:1.5px solid #ECEEFF;background:#f8fafc;
-  color:#475569;font-size:.74rem;font-weight:700;text-decoration:none;
+  color:#475569;font-size:.75rem;font-weight:700;text-decoration:none;
   white-space:nowrap;transition:all .22s;flex-shrink:0}
 .ev-pill:active{transform:scale(.93)}
 .ev-pill.on{color:#fff;border-color:transparent;box-shadow:0 3px 12px rgba(0,0,0,.18)}
@@ -134,7 +134,7 @@ require_once __DIR__.'/../includes/header.php';
 .ev-sec{padding:.9rem 1rem .45rem;display:flex;align-items:center;gap:.6rem}
 .ev-sec-title{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.88rem;letter-spacing:.01em;color:#0B1033}
 .ev-sec-line{flex:1;height:2px;background:linear-gradient(90deg,#c8922a,transparent);border-radius:2px}
-.ev-sec-count{font-size:.68rem;font-weight:700;color:#5d6b80;background:#F5F7FF;
+.ev-sec-count{font-size:.75rem;font-weight:700;color:#5d6b80;background:#F5F7FF;
   border-radius:20px;padding:.1rem .55rem}
 
 /* Event cards */
@@ -154,9 +154,9 @@ require_once __DIR__.'/../includes/header.php';
 .ev-card-top{height:7px}
 .ev-card-body{padding:.9rem 1rem}
 .ev-card-row1{display:flex;align-items:center;justify-content:space-between;margin-bottom:.55rem}
-.ev-type-pill{display:inline-flex;align-items:center;gap:.28rem;font-size:.65rem;
+.ev-type-pill{display:inline-flex;align-items:center;gap:.28rem;font-size:.75rem;
   font-weight:800;border-radius:20px;padding:.12rem .6rem;letter-spacing:.04em}
-.ev-countdown{font-size:.72rem;font-weight:800;display:inline-flex;align-items:center;gap:.25rem}
+.ev-countdown{font-size:.75rem;font-weight:800;display:inline-flex;align-items:center;gap:.25rem}
 .ev-countdown.today{color:#b71c1c;animation:pulseFade 1.5s ease-in-out infinite}
 .ev-countdown.soon{color:#e65100}
 .ev-countdown.normal{color:#64748b}
@@ -168,24 +168,24 @@ require_once __DIR__.'/../includes/header.php';
 .ev-meta{display:flex;flex-direction:column;gap:.22rem}
 .ev-meta-row{display:flex;align-items:center;gap:.4rem;font-size:.75rem;color:#64748b}
 .ev-meta-icon{width:20px;height:20px;border-radius:6px;display:flex;align-items:center;
-  justify-content:center;font-size:.72rem;flex-shrink:0;background:#F5F7FF}
+  justify-content:center;font-size:.75rem;flex-shrink:0;background:#F5F7FF}
 
 /* Admin actions */
 .ev-admin-bar{border-top:1px solid #F5F7FF;padding:.6rem 1rem;
   display:flex;justify-content:flex-end;gap:.4rem}
 .ev-del-btn{background:#fff5f5;border:1.5px solid #fecaca;color:#b71c1c;
-  border-radius:8px;padding:.3rem .75rem;font-size:.72rem;font-weight:700;cursor:pointer;
+  border-radius:8px;padding:.3rem .75rem;font-size:.75rem;font-weight:700;cursor:pointer;
   display:inline-flex;align-items:center;gap:.3rem;transition:all .2s}
 .ev-del-btn:hover{background:#ffebee}
 
 /* Past events */
 .ev-past{padding:0 1rem}
-.ev-past-row{background:#fff;border-radius:12px;padding:.72rem .9rem;
+.ev-past-row{background:#F1F3F9;border-radius:12px;padding:.72rem .9rem;
   margin-bottom:.45rem;display:grid;grid-template-columns:1fr auto;
-  gap:.5rem;align-items:center;box-shadow:0 1px 6px rgba(0,0,0,.05);opacity:.72}
+  gap:.5rem;align-items:center;box-shadow:0 1px 6px rgba(0,0,0,.05)}
 .ev-past-title{font-weight:700;font-size:.85rem;color:#0B1033;margin-bottom:.18rem}
-.ev-past-meta{font-size:.7rem;color:#5d6b80;display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}
-.ev-past-date{font-size:.72rem;font-weight:700;color:#64748b;text-align:right}
+.ev-past-meta{font-size:.75rem;color:#5d6b80;display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}
+.ev-past-date{font-size:.75rem;font-weight:700;color:#475569;text-align:right}
 
 /* Empty state */
 .ev-empty{text-align:center;padding:3rem 1.5rem;background:#fff;
@@ -203,15 +203,15 @@ require_once __DIR__.'/../includes/header.php';
 .ev-fab:active{transform:scale(.93)}
 @keyframes fabIn{from{opacity:0;transform:translateY(20px) scale(.8)}to{opacity:1;transform:translateY(0) scale(1)}}
 .ev-rsvp{border-top:1px solid #F5F7FF;margin-top:.7rem;padding-top:.7rem}
-.ev-rsvp-q{font-size:.7rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.45rem}
+.ev-rsvp-q{font-size:.75rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.45rem}
 .ev-rsvp-btns{display:flex;gap:.4rem}
-.ev-rsvp-b{flex:1;display:flex;flex-direction:column;align-items:center;gap:.1rem;padding:.5rem .2rem;border:1.5px solid #E3E7F5;background:#fff;border-radius:11px;font-family:inherit;font-size:.7rem;font-weight:800;color:#64748b;cursor:pointer;transition:all .15s}
-.ev-rsvp-b .rc{font-size:.62rem;opacity:.7;min-height:.7rem}
+.ev-rsvp-b{flex:1;display:flex;flex-direction:column;align-items:center;gap:.1rem;padding:.5rem .2rem;border:1.5px solid #E3E7F5;background:#fff;border-radius:11px;font-family:inherit;font-size:.75rem;font-weight:800;color:#64748b;cursor:pointer;transition:all .15s}
+.ev-rsvp-b .rc{font-size:.75rem;opacity:.7;min-height:.7rem}
 .ev-rsvp-b:active{transform:scale(.94)}
 .ev-rsvp-b.going.on{background:#e8f5e9;border-color:#66bb6a;color:#1b5e20}
 .ev-rsvp-b.maybe.on{background:#fff8e1;border-color:#ffca28;color:#e65100}
 .ev-rsvp-b.no.on{background:#ffebee;border-color:#ef9a9a;color:#b71c1c}
-.ev-rsvp-admin{margin-top:.5rem;font-size:.74rem;color:#556274;background:#F7F8FF;border-radius:8px;padding:.4rem .6rem}
+.ev-rsvp-admin{margin-top:.5rem;font-size:.75rem;color:#556274;background:#F7F8FF;border-radius:8px;padding:.4rem .6rem}
 </style>
 
 <div class="ev-shell">
@@ -371,7 +371,7 @@ require_once __DIR__.'/../includes/header.php';
       <div class="ev-past-title"><?= h($ev['title']) ?></div>
       <div class="ev-past-meta">
         <span style="background:<?= $ti['bg'] ?>;color:<?= $ti['color'] ?>;
-              border-radius:20px;padding:.06rem .5rem;font-size:.62rem;font-weight:700">
+              border-radius:20px;padding:.06rem .5rem;font-size:.75rem;font-weight:700">
           <?= $ti['em'] ?> <?= h(ucfirst($ev['event_type'])) ?>
         </span>
         <?php if($ev['location']): ?>
@@ -381,13 +381,13 @@ require_once __DIR__.'/../includes/header.php';
     </div>
     <div>
       <div class="ev-past-date"><?= date('d M', strtotime($ev['event_date'])) ?></div>
-      <div style="font-size:.62rem;color:#5d6b80;text-align:right"><?= date('Y', strtotime($ev['event_date'])) ?></div>
+      <div style="font-size:.75rem;color:#5d6b80;text-align:right"><?= date('Y', strtotime($ev['event_date'])) ?></div>
       <?php if($isAdmin): ?>
       <form method="POST" style="margin-top:.3rem" data-confirm="Delete?" data-sudo>
         <input type="hidden" name="eid" value="<?= $ev['id'] ?>">
         <button type="submit" name="del_event"
           style="background:#fff5f5;border:1px solid #fecaca;color:#b71c1c;
-                 border-radius:6px;padding:.18rem .45rem;font-size:.62rem;font-weight:700;cursor:pointer">
+                 border-radius:6px;padding:.18rem .45rem;font-size:.75rem;font-weight:700;cursor:pointer">
           🗑
         </button>
       </form>
@@ -408,17 +408,17 @@ require_once __DIR__.'/../includes/header.php';
 <div id="evOv" onclick="if(event.target===this)evCloseCreate()" style="display:none;position:fixed;inset:0;background:rgba(13,27,62,.6);z-index:10000;align-items:flex-end;justify-content:center">
   <div style="background:#fff;width:100%;max-width:480px;border-radius:22px 22px 0 0;padding:1.2rem 1.2rem 1.6rem;animation:evSlide .3s ease">
     <h3 style="font-size:1.1rem;color:#0B1033;margin-bottom:.9rem">➕ New Event</h3>
-    <input type="text" id="evTitle" placeholder="Event title *" style="width:100%;padding:.7rem .8rem;border:1.5px solid #E3E7F5;border-radius:11px;font-size:.9rem;box-sizing:border-box;margin-bottom:.55rem;font-family:inherit">
-    <select id="evType" style="width:100%;padding:.7rem .8rem;border:1.5px solid #E3E7F5;border-radius:11px;font-size:.9rem;box-sizing:border-box;margin-bottom:.55rem;font-family:inherit">
+    <input type="text" id="evTitle" placeholder="Event title *" style="width:100%;padding:.7rem .8rem;border:1.5px solid #E3E7F5;border-radius:11px;font-size:16px;box-sizing:border-box;margin-bottom:.55rem;font-family:inherit">
+    <select id="evType" style="width:100%;padding:.7rem .8rem;border:1.5px solid #E3E7F5;border-radius:11px;font-size:16px;box-sizing:border-box;margin-bottom:.55rem;font-family:inherit">
       <option value="football">⚽ Football</option><option value="cricket">🏏 Cricket</option><option value="kabaddi">🤼 Kabaddi</option>
       <option value="charity">🤝 Charity</option><option value="cultural">🎭 Cultural</option><option value="meeting">📋 Meeting</option><option value="other">📌 Other</option>
     </select>
     <div style="display:flex;gap:.5rem">
       <input type="date" id="evDate" value="<?= date('Y-m-d') ?>" style="flex:1;padding:.7rem .8rem;border:1.5px solid #E3E7F5;border-radius:11px;font-size:.9rem;box-sizing:border-box;margin-bottom:.55rem;font-family:inherit">
-      <input type="time" id="evTime" style="flex:1;padding:.7rem .8rem;border:1.5px solid #E3E7F5;border-radius:11px;font-size:.9rem;box-sizing:border-box;margin-bottom:.55rem;font-family:inherit">
+      <input type="time" id="evTime" style="flex:1;padding:.7rem .8rem;border:1.5px solid #E3E7F5;border-radius:11px;font-size:16px;box-sizing:border-box;margin-bottom:.55rem;font-family:inherit">
     </div>
-    <input type="text" id="evLoc" placeholder="Location" style="width:100%;padding:.7rem .8rem;border:1.5px solid #E3E7F5;border-radius:11px;font-size:.9rem;box-sizing:border-box;margin-bottom:.55rem;font-family:inherit">
-    <textarea id="evDescr" rows="2" placeholder="Description (optional)" style="width:100%;padding:.7rem .8rem;border:1.5px solid #E3E7F5;border-radius:11px;font-size:.9rem;box-sizing:border-box;margin-bottom:.7rem;font-family:inherit;resize:none"></textarea>
+    <input type="text" id="evLoc" placeholder="Location" style="width:100%;padding:.7rem .8rem;border:1.5px solid #E3E7F5;border-radius:11px;font-size:16px;box-sizing:border-box;margin-bottom:.55rem;font-family:inherit">
+    <textarea id="evDescr" rows="2" placeholder="Description (optional)" style="width:100%;padding:.7rem .8rem;border:1.5px solid #E3E7F5;border-radius:11px;font-size:16px;box-sizing:border-box;margin-bottom:.7rem;font-family:inherit;resize:none"></textarea>
     <div style="display:flex;gap:.5rem">
       <button onclick="evSaveCreate()" style="flex:1;background:linear-gradient(135deg,#0A14E0,#1A23C9);color:#fff;border:none;border-radius:11px;padding:.75rem;font-weight:800;cursor:pointer">Create Event</button>
       <button onclick="evCloseCreate()" style="background:#eceff1;color:#546e7a;border:none;border-radius:11px;padding:.75rem 1.1rem;font-weight:700;cursor:pointer">Cancel</button>

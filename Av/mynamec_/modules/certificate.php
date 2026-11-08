@@ -220,11 +220,11 @@ $cats = [
 .ach-stats{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap;margin-top:1.2rem}
 .ach-stat{background:rgba(255,255,255,.12);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:.45rem 1rem;display:flex;align-items:center;gap:.4rem}
 .ach-stat-num{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.04rem;color:#f5d060;line-height:1}
-.ach-stat-lbl{font-size:.62rem;color:rgba(255,255,255,.6);font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.ach-stat-lbl{font-size:.75rem;color:rgba(255,255,255,.6);font-weight:700;text-transform:uppercase;letter-spacing:.08em}
 
 /* Filters */
 .filter-bar{background:#fff;border-bottom:1px solid #E3E7F5;padding:.75rem 1rem;display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;position:sticky;top:60px;z-index:90;box-shadow:0 2px 8px rgba(0,0,0,.06)}
-.filter-pill{padding:.3rem .8rem;border-radius:20px;border:1.5px solid #ECEEFF;font-size:.74rem;font-weight:700;cursor:pointer;background:#fff;color:#0A14E0;transition:all .2s;white-space:nowrap;text-decoration:none;display:inline-block}
+.filter-pill{padding:.3rem .8rem;border-radius:20px;border:1.5px solid #ECEEFF;font-size:.75rem;font-weight:700;cursor:pointer;background:#fff;color:#0A14E0;transition:all .2s;white-space:nowrap;text-decoration:none;display:inline-block}
 .filter-pill:hover,.filter-pill.on{background:#0A14E0;color:#fff;border-color:#0A14E0}
 .filter-pill.gold-pill.on{background:linear-gradient(135deg,#c8922a,#e6b84a);border-color:#c8922a;color:#5c3a00}
 .filter-pill.silver-pill.on{background:#8a8a8a;border-color:#8a8a8a;color:#fff}
@@ -251,12 +251,12 @@ $cats = [
 .ach-member-photo{width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #ECEEFF;flex-shrink:0}
 .ach-member-ph{width:38px;height:38px;border-radius:50%;background:#ECEEFF;border:2px solid #ECEEFF;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
 .ach-member-name{font-weight:800;font-size:.9rem;color:#0B1033;line-height:1.2}
-.ach-member-date{font-size:.66rem;color:#5d6b80}
+.ach-member-date{font-size:.75rem;color:#5d6b80}
 .ach-title{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#0B1033;margin-bottom:.45rem;line-height:1.35}
 .ach-desc{font-size:.78rem;color:#64748b;line-height:1.55;margin-bottom:.7rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.ach-cat-badge{display:inline-flex;align-items:center;gap:.3rem;border-radius:20px;padding:.18rem .6rem;font-size:.65rem;font-weight:700;border:1px solid}
+.ach-cat-badge{display:inline-flex;align-items:center;gap:.3rem;border-radius:20px;padding:.18rem .6rem;font-size:.75rem;font-weight:700;border:1px solid}
 .ach-admin-btns{display:flex;gap:.35rem;margin-top:.75rem;padding-top:.65rem;border-top:1px solid #F5F7FF}
-.ach-btn{padding:.3rem .7rem;border-radius:8px;border:none;font-size:.72rem;font-weight:700;cursor:pointer;transition:all .2s}
+.ach-btn{padding:.3rem .7rem;border-radius:8px;border:none;font-size:.75rem;font-weight:700;cursor:pointer;transition:all .2s}
 
 /* Timeline view */
 .timeline{padding:1.2rem;max-width:680px;margin:0 auto}
@@ -267,7 +267,7 @@ $cats = [
 .tl-icon{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.15);z-index:1;position:relative}
 .tl-content{background:#fff;border-radius:14px;padding:.85rem 1rem;box-shadow:0 3px 14px rgba(0,0,0,.08);border-left:3px solid;flex:1}
 .tl-content h4{font-weight:800;font-size:.9rem;color:#0B1033;margin-bottom:.2rem}
-.tl-content .tl-sub{font-size:.74rem;color:#64748b;margin-bottom:.3rem}
+.tl-content .tl-sub{font-size:.75rem;color:#64748b;margin-bottom:.3rem}
 .tl-content .tl-desc{font-size:.78rem;color:#64748b;line-height:1.5}
 
 /* Admin form */
@@ -278,7 +278,7 @@ $cats = [
 .inp2{width:100%;padding:.6rem .85rem;border:1.5px solid #ECEEFF;border-radius:9px;font-family:Inter,sans-serif;font-size:.86rem;color:#0B1033;outline:none;transition:border-color .2s;background:#f8fafc}
 .inp2:focus{border-color:#0A14E0;background:#fff}
 textarea.inp2{resize:vertical;min-height:70px}
-.lbl2{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#64748b;display:block;margin-bottom:.28rem}
+.lbl2{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#64748b;display:block;margin-bottom:.28rem}
 .btn-save{background:linear-gradient(135deg,#0A14E0,#1A23C9);color:#fff;border:none;border-radius:10px;padding:.7rem 1.6rem;font-family:Inter,sans-serif;font-weight:700;font-size:.88rem;cursor:pointer;box-shadow:0 4px 16px rgba(10,20,224,.3);transition:all .25s}
 .btn-save:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(10,20,224,.4)}
 </style>
@@ -406,7 +406,7 @@ textarea.inp2{resize:vertical;min-height:70px}
      <?= $fMine ? 'background:#0A14E0;color:#fff;border-color:#0A14E0' : 'background:#f8fafc;color:#64748b;border-color:#E3E7F5' ?>">
     ⭐ My Achievements
     <?php if($myAchCount > 0): ?>
-    <span style="background:<?= $fMine ? 'rgba(255,255,255,.3)' : '#0A14E0' ?>;color:<?= $fMine ? '#fff' : '#fff' ?>;border-radius:20px;padding:.05rem .45rem;font-size:.65rem;font-weight:900"><?= $myAchCount ?></span>
+    <span style="background:<?= $fMine ? 'rgba(255,255,255,.3)' : '#0A14E0' ?>;color:<?= $fMine ? '#fff' : '#fff' ?>;border-radius:20px;padding:.05rem .45rem;font-size:.75rem;font-weight:900"><?= $myAchCount ?></span>
     <?php endif; ?>
   </a>
 </div>
@@ -414,7 +414,7 @@ textarea.inp2{resize:vertical;min-height:70px}
 <!-- FILTER BAR -->
 <div class="filter-bar">
   <input type="text" id="searchQ" placeholder="🔍 Search member…" value="<?=h($fSearch)?>"
-    style="padding:.38rem .85rem;border:1.5px solid #ECEEFF;border-radius:20px;font-size:.78rem;outline:none;min-width:0;flex:1;max-width:200px"
+    style="padding:.38rem .85rem;border:1.5px solid #ECEEFF;border-radius:20px;font-size:16px;outline:none;min-width:0;flex:1;max-width:200px"
     oninput="filterCards()">
   <!-- Category pills -->
   <a href="?<?=http_build_query(array_merge($_GET,['cat'=>'','page'=>1]))?>" class="filter-pill <?=$fCat===''?'on':''?>">All</a>
@@ -430,9 +430,9 @@ textarea.inp2{resize:vertical;min-height:70px}
 
 <!-- Medal filter row -->
 <div style="padding:.5rem 1rem;display:flex;gap:.4rem;overflow-x:auto;scrollbar-width:none;background:#f8fafc;border-bottom:1px solid #F5F7FF">
-  <a href="?<?=http_build_query(array_merge($_GET,['medal'=>'']))?>" class="filter-pill <?=$fMedal===''?'on':''?>" style="font-size:.7rem">All Medals</a>
+  <a href="?<?=http_build_query(array_merge($_GET,['medal'=>'']))?>" class="filter-pill <?=$fMedal===''?'on':''?>" style="font-size:.75rem">All Medals</a>
   <?php foreach ($medals as $mk=>$mv): ?>
-  <a href="?<?=http_build_query(array_merge($_GET,['medal'=>$mk]))?>" class="filter-pill <?=$mk?>-pill <?=$fMedal===$mk?'on':''?>" style="font-size:.7rem"><?=$mv['icon']?> <?=$mv['label']?></a>
+  <a href="?<?=http_build_query(array_merge($_GET,['medal'=>$mk]))?>" class="filter-pill <?=$mk?>-pill <?=$fMedal===$mk?'on':''?>" style="font-size:.75rem"><?=$mv['icon']?> <?=$mv['label']?></a>
   <?php endforeach; ?>
 </div>
 
@@ -476,7 +476,7 @@ textarea.inp2{resize:vertical;min-height:70px}
       <div style="position:absolute;bottom:0;left:0;right:0;height:50%;background:linear-gradient(transparent,rgba(0,0,0,.4));z-index:4"></div>
       <?php endif; ?>
       <?php if ($a['status']==='inactive'): ?>
-      <div style="position:absolute;top:.5rem;right:.5rem;background:rgba(0,0,0,.5);color:#fff;border-radius:20px;padding:.15rem .55rem;font-size:.62rem;font-weight:700">Hidden</div>
+      <div style="position:absolute;top:.5rem;right:.5rem;background:rgba(0,0,0,.5);color:#fff;border-radius:20px;padding:.15rem .55rem;font-size:.75rem;font-weight:700">Hidden</div>
       <?php endif; ?>
     </div>
 
@@ -531,28 +531,28 @@ textarea.inp2{resize:vertical;min-height:70px}
       ?>
       <?php if ($a['member_id'] == $me['id'] || $isAdmin): ?>
       <div style="margin-top:.65rem;padding-top:.65rem;border-top:1px solid #F5F7FF">
-        <div style="font-size:.62rem;font-weight:800;color:#5d6b80;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.45rem">Share Achievement</div>
+        <div style="font-size:.75rem;font-weight:800;color:#5d6b80;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.45rem">Share Achievement</div>
         <div style="display:flex;gap:.4rem;flex-wrap:wrap">
           <!-- WhatsApp Share -->
           <a href="<?= h($waUrl) ?>" target="_blank"
-             style="display:inline-flex;align-items:center;gap:.3rem;padding:.38rem .75rem;background:#25d366;color:#fff;border-radius:8px;font-size:.72rem;font-weight:700;text-decoration:none">
+             style="display:inline-flex;align-items:center;gap:.3rem;padding:.38rem .75rem;background:#25d366;color:#fff;border-radius:8px;font-size:.75rem;font-weight:700;text-decoration:none">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
             WhatsApp
           </a>
           <!-- Copy Link -->
           <button onclick="copyAchLink('<?= h($shareUrl) ?>','<?= h(addslashes($shareTitle)) ?>')"
-             style="display:inline-flex;align-items:center;gap:.3rem;padding:.38rem .75rem;background:#F5F7FF;color:#0A14E0;border:1px solid #ECEEFF;border-radius:8px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">
+             style="display:inline-flex;align-items:center;gap:.3rem;padding:.38rem .75rem;background:#F5F7FF;color:#0A14E0;border:1px solid #ECEEFF;border-radius:8px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">
             🔗 Copy Link
           </button>
           <!-- Download Photo (if has image) -->
           <?php if($achImgFull): ?>
           <a href="<?= h($achImgFull) ?>" download target="_blank"
-             style="display:inline-flex;align-items:center;gap:.3rem;padding:.38rem .75rem;background:#fff8e1;color:#e65100;border:1px solid #ffe082;border-radius:8px;font-size:.72rem;font-weight:700;text-decoration:none">
+             style="display:inline-flex;align-items:center;gap:.3rem;padding:.38rem .75rem;background:#fff8e1;color:#e65100;border:1px solid #ffe082;border-radius:8px;font-size:.75rem;font-weight:700;text-decoration:none">
             📥 Photo
           </a>
           <!-- Native share WITH image -->
           <button onclick="shareAchImg('<?= h($achImgFull) ?>','<?= h(addslashes($shareDesc)) ?>','<?= h($shareUrl) ?>')"
-             style="display:inline-flex;align-items:center;gap:.3rem;padding:.38rem .75rem;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:8px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">
+             style="display:inline-flex;align-items:center;gap:.3rem;padding:.38rem .75rem;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:8px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">
             📤 Share Photo + Link
           </button>
           <?php endif; ?>
@@ -560,7 +560,7 @@ textarea.inp2{resize:vertical;min-height:70px}
           <form method="POST" style="display:inline">
             <input type="hidden" name="share_ach_id" value="<?= (int)$a['id'] ?>">
             <button type="submit" name="share_ach_feed"
-               style="display:inline-flex;align-items:center;gap:.3rem;padding:.38rem .75rem;background:#ECEEFF;color:#0A14E0;border:1px solid #B9BFFF;border-radius:8px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">
+               style="display:inline-flex;align-items:center;gap:.3rem;padding:.38rem .75rem;background:#ECEEFF;color:#0A14E0;border:1px solid #B9BFFF;border-radius:8px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">
               📰 Share to Feed
             </button>
           </form>
@@ -624,8 +624,8 @@ textarea.inp2{resize:vertical;min-height:70px}
           <span style="font-weight:800;font-size:.85rem;color:#0B1033"><?=h($a['member_name'])?></span>
         </div>
         <div style="display:flex;align-items:center;gap:.35rem">
-          <span class="ach-cat-badge" style="color:<?=$cv['color']?>;background:<?=$cv['bg']?>;border-color:<?=$cv['color']?>33;font-size:.62rem"><?=$cv['icon']?></span>
-          <span style="font-size:.66rem;color:#94a3b8"><?=$a['achievement_date']?date('d M Y',strtotime($a['achievement_date'])):'—'?></span>
+          <span class="ach-cat-badge" style="color:<?=$cv['color']?>;background:<?=$cv['bg']?>;border-color:<?=$cv['color']?>33;font-size:.75rem"><?=$cv['icon']?></span>
+          <span style="font-size:.75rem;color:#94a3b8"><?=$a['achievement_date']?date('d M Y',strtotime($a['achievement_date'])):'—'?></span>
         </div>
       </div>
       <h4><?=h($a['title'])?></h4>
@@ -634,10 +634,10 @@ textarea.inp2{resize:vertical;min-height:70px}
       <?php endif; ?>
       <?php if ($isAdmin): ?>
       <div style="display:flex;gap:.3rem;margin-top:.5rem">
-        <a href="?edit=<?=$a['id']?>" class="ach-btn" style="background:#ECEEFF;color:#0A14E0;padding:.25rem .6rem;border-radius:7px;font-size:.7rem;font-weight:700;text-decoration:none">✏️</a>
+        <a href="?edit=<?=$a['id']?>" class="ach-btn" style="background:#ECEEFF;color:#0A14E0;padding:.25rem .6rem;border-radius:7px;font-size:.75rem;font-weight:700;text-decoration:none">✏️</a>
         <form method="POST" style="display:inline" data-sudo data-confirm="Delete this achievement?">
           <input type="hidden" name="del_id" value="<?=$a['id']?>">
-          <button name="del_achievement" style="background:#ffebee;color:#b71c1c;border:none;border-radius:7px;padding:.25rem .6rem;font-size:.7rem;font-weight:700;cursor:pointer">🗑</button>
+          <button name="del_achievement" style="background:#ffebee;color:#b71c1c;border:none;border-radius:7px;padding:.25rem .6rem;font-size:.75rem;font-weight:700;cursor:pointer">🗑</button>
         </form>
       </div>
       <?php endif; ?>

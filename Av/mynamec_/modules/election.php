@@ -87,11 +87,11 @@ require_once __DIR__ . '/../includes/header.php';
   <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
     <h3>🗳️ <?=h($el['title'])?></h3>
     <div style="display:flex;gap:.5rem;align-items:center">
-      <span style="background:<?=$c[0]?>;color:<?=$c[1]?>;border-radius:20px;padding:.2rem .8rem;font-size:.7rem;font-weight:700"><?=strtoupper($el['status'])?></span>
+      <span style="background:<?=$c[0]?>;color:<?=$c[1]?>;border-radius:20px;padding:.2rem .8rem;font-size:.75rem;font-weight:700"><?=strtoupper($el['status'])?></span>
       <?php if($isAdmin): ?>
       <form method="POST" style="display:inline" action="<?=url('modules/election.php')?>">
         <input type="hidden" name="eid" value="<?=$el['id']?>">
-        <select name="new_status" class="inp" style="width:auto;padding:.3rem .6rem;font-size:.75rem" onchange="this.form.submit()">
+        <select name="new_status" class="inp" style="width:auto;padding:.3rem .6rem;font-size:16px" onchange="this.form.submit()">
           <option value="upcoming" <?=$el['status']==='upcoming'?'selected':''?>>Upcoming</option>
           <option value="active" <?=$el['status']==='active'?'selected':''?>>Active</option>
           <option value="completed" <?=$el['status']==='completed'?'selected':''?>>Completed</option>
@@ -103,7 +103,7 @@ require_once __DIR__ . '/../includes/header.php';
   </div>
   <div class="card-body">
     <?php if($el['description']): ?><p style="font-size:.85rem;color:var(--t2);margin-bottom:.8rem"><?=h($el['description'])?></p><?php endif; ?>
-    <p style="font-size:.74rem;color:var(--t3);margin-bottom:1rem">📅 <?=date('d M Y',strtotime($el['start_date']))?> → <?=date('d M Y',strtotime($el['end_date']))?> · <?=$total?> total votes</p>
+    <p style="font-size:.75rem;color:var(--t3);margin-bottom:1rem">📅 <?=date('d M Y',strtotime($el['start_date']))?> → <?=date('d M Y',strtotime($el['end_date']))?> · <?=$total?> total votes</p>
 
     <?php if($isAdmin): ?>
     <details style="margin-bottom:1rem"><summary style="cursor:pointer;font-size:.8rem;font-weight:700;color:var(--blue)">➕ Add Candidate</summary>
@@ -129,11 +129,11 @@ require_once __DIR__ . '/../includes/header.php';
     <div style="background:#F7F8FF;border-radius:14px;padding:1.1rem;text-align:center;border:2px solid #E3E7F5">
       <?php if($cp): ?><img src="<?=$cp?>" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2.5px solid #0A14E0;margin:0 auto .5rem;display:block" alt=""><?php else: ?><div style="width:56px;height:56px;border-radius:50%;background:#ECEEFF;margin:0 auto .5rem;display:flex;align-items:center;justify-content:center;font-size:1.4rem">👤</div><?php endif;?>
       <div style="font-weight:700;font-size:.9rem;margin-bottom:.15rem"><?=h($c2['name'])?></div>
-      <div style="font-size:.7rem;color:var(--t3);margin-bottom:.5rem"><?=h($c2['post'])?></div>
-      <?php if($c2['bio']): ?><div style="font-size:.72rem;color:var(--t2);margin-bottom:.6rem;line-height:1.4"><?=h($c2['bio'])?></div><?php endif;?>
+      <div style="font-size:.75rem;color:var(--t3);margin-bottom:.5rem"><?=h($c2['post'])?></div>
+      <?php if($c2['bio']): ?><div style="font-size:.75rem;color:var(--t2);margin-bottom:.6rem;line-height:1.4"><?=h($c2['bio'])?></div><?php endif;?>
       <div style="background:#ECEEFF;border-radius:8px;padding:.5rem;margin-bottom:.6rem">
         <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.04rem;color:#0A14E0"><?=$c2['votes']?></div>
-        <div style="font-size:.62rem;color:var(--t3);margin-bottom:.3rem">votes · <?=$pct?>%</div>
+        <div style="font-size:.75rem;color:var(--t3);margin-bottom:.3rem">votes · <?=$pct?>%</div>
         <div style="background:#D6DAFF;border-radius:4px;height:5px"><div style="background:#0A14E0;height:5px;border-radius:4px;width:<?=$pct?>%"></div></div>
       </div>
       <?php if($el['status']==='active'&&!$voted): ?>
@@ -141,7 +141,7 @@ require_once __DIR__ . '/../includes/header.php';
         <input type="hidden" name="eid" value="<?=$el['id']?>"><input type="hidden" name="cid" value="<?=$c2['id']?>">
         <button type="submit" name="cast_vote" class="btn btn-blue btn-sm btn-block" onclick="return confirm('Vote for <?=h($c2['name'])?>?')">🗳️ Vote</button>
       </form>
-      <?php elseif($voted&&$el['status']==='active'): ?><div style="font-size:.72rem;color:#2E7D32;font-weight:700">✅ You Voted</div>
+      <?php elseif($voted&&$el['status']==='active'): ?><div style="font-size:.75rem;color:#2E7D32;font-weight:700">✅ You Voted</div>
       <?php endif;?>
     </div>
     <?php endforeach;?>

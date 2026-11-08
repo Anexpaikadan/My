@@ -49,7 +49,7 @@ $_lang     = lang_current();
 <link rel="stylesheet" href="<?= url('assets/vendor/bootstrap/css/bootstrap.min.css') ?>">
 <link rel="stylesheet" href="<?= url('assets/vendor/bootstrap-icons/bootstrap-icons.min.css') ?>">
 <link rel="stylesheet" href="<?= url('assets/vendor/fontawesome/css/all.min.css') ?>">
-<link rel="stylesheet" href="<?= url('assets/css/club.css') ?>?v=3">
+<link rel="stylesheet" href="<?= url('assets/css/club.css') ?>?v=4">
 <script>
 window._pwaPrompt = null;
 window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); window._pwaPrompt = e; var b=document.getElementById('pwaInstallBtn'); if(b) b.style.display='flex'; });

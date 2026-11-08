@@ -247,23 +247,23 @@ require_once __DIR__ . '/../includes/header.php';
 .t-banner-ov{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,.7))}
 .t-banner-info{position:absolute;bottom:.8rem;left:1rem;right:1rem;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:.4rem;z-index:2}
 .t-banner-title{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.2rem;color:#fff;letter-spacing:.01em;line-height:1.1}
-.t-badge{border-radius:20px;padding:.2rem .8rem;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.t-badge{border-radius:20px;padding:.2rem .8rem;font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
 .t-admin-bar{background:#F7F8FF;border-bottom:1px solid #E3E7F5;padding:.6rem 1rem;display:flex;gap:.4rem;flex-wrap:wrap;align-items:center}
-.tab-pill{padding:.35rem .85rem;border-radius:20px;border:1.5px solid #ECEEFF;font-size:.74rem;font-weight:700;cursor:pointer;background:#fff;color:#0A14E0;transition:all .2s}
+.tab-pill{padding:.35rem .85rem;border-radius:20px;border:1.5px solid #ECEEFF;font-size:.75rem;font-weight:700;cursor:pointer;background:#fff;color:#0A14E0;transition:all .2s}
 .tab-pill.on{background:#0A14E0;color:#fff;border-color:#0A14E0}
 .tab-pane{display:none;padding:1rem}.tab-pane.on{display:block}
 .reg-card{background:#f8fafc;border-radius:10px;padding:.7rem .9rem;margin-bottom:.5rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap}
 .bracket-wrap{overflow-x:auto;padding:.5rem 0}
 .bracket{display:flex;gap:1.5rem;align-items:flex-start;min-width:max-content}
 .bracket-round{display:flex;flex-direction:column;gap:.6rem;min-width:160px}
-.bracket-round h5{font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#0A14E0;text-align:center;padding:.3rem;background:#ECEEFF;border-radius:6px;margin-bottom:.2rem}
+.bracket-round h5{font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#0A14E0;text-align:center;padding:.3rem;background:#ECEEFF;border-radius:6px;margin-bottom:.2rem}
 .bracket-match{background:#fff;border:1.5px solid #ECEEFF;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .bracket-team{display:flex;align-items:center;justify-content:space-between;padding:.45rem .7rem;font-size:.8rem;font-weight:700;border-bottom:1px solid #F5F7FF;gap:.4rem}
 .bracket-team:last-child{border-bottom:none}
 .bracket-team.winner{background:#f1f8e9;color:#1b5e20}
 .bracket-score{background:#0A14E0;color:#fff;border-radius:5px;padding:.1rem .45rem;font-size:.78rem;min-width:22px;text-align:center}
 .league-table{width:100%;border-collapse:collapse;font-size:.82rem}
-.league-table th{background:#1b5e20;color:#fff;padding:.55rem .6rem;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em}
+.league-table th{background:#1b5e20;color:#fff;padding:.55rem .6rem;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em}
 .league-table td{padding:.55rem .6rem;border-bottom:1px solid #F5F7FF;vertical-align:middle}
 .league-table tr:first-child td{background:#f1f8e9;font-weight:700}
 .league-table tr:nth-child(2) td{background:#fafffe}
@@ -302,21 +302,21 @@ require_once __DIR__ . '/../includes/header.php';
   <div style="display:none;padding:1.2rem">
     <form method="POST" action="<?=url('modules/football.php')?>" enctype="multipart/form-data">
       <div class="fg-row">
-        <div><label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:.3rem">Tournament Name *</label><input type="text" name="tname" class="inp-sm" required placeholder="e.g. AASC Cup 2025"></div>
-        <div><label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:.3rem">Format</label>
+        <div><label style="font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:.3rem">Tournament Name *</label><input type="text" name="tname" class="inp-sm" required placeholder="e.g. AASC Cup 2025"></div>
+        <div><label style="font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:.3rem">Format</label>
           <select name="tformat" class="inp-sm">
             <option value="league">🔄 League (All vs All)</option>
             <option value="knockout">⚔️ Knockout</option>
             <option value="group_knockout">🏆 Group Stage + Knockout</option>
           </select></div>
-        <div><label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:.3rem">Venue</label><input type="text" name="tvenue" class="inp-sm" placeholder="Ground name"></div>
-        <div><label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:.3rem">Prize</label><input type="text" name="tprize" class="inp-sm" placeholder="₹5000 + Trophy"></div>
-        <div><label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:.3rem">Start Date</label><input type="date" name="tstart" class="inp-sm" value="<?=date('Y-m-d')?>"></div>
-        <div><label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:.3rem">End Date</label><input type="date" name="tend" class="inp-sm" value="<?=date('Y-m-d',strtotime('+14 days'))?>"></div>
+        <div><label style="font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:.3rem">Venue</label><input type="text" name="tvenue" class="inp-sm" placeholder="Ground name"></div>
+        <div><label style="font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:.3rem">Prize</label><input type="text" name="tprize" class="inp-sm" placeholder="₹5000 + Trophy"></div>
+        <div><label style="font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:.3rem">Start Date</label><input type="date" name="tstart" class="inp-sm" value="<?=date('Y-m-d')?>"></div>
+        <div><label style="font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:.3rem">End Date</label><input type="date" name="tend" class="inp-sm" value="<?=date('Y-m-d',strtotime('+14 days'))?>"></div>
       </div>
-      <div style="margin-bottom:.6rem"><label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:.3rem">Banner Photo</label>
+      <div style="margin-bottom:.6rem"><label style="font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:.3rem">Banner Photo</label>
         <input type="file" name="banner" accept="image/*" style="width:100%;padding:.45rem;border:1.5px dashed #c7d2fe;border-radius:8px;font-size:.82rem"></div>
-      <div style="margin-bottom:.6rem"><label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:.3rem">Description</label>
+      <div style="margin-bottom:.6rem"><label style="font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:.3rem">Description</label>
         <textarea name="tdesc" class="inp-sm" rows="2" style="resize:vertical"></textarea></div>
       <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.8rem">
         <input type="checkbox" name="reg_open" value="1" id="ro" checked style="width:16px;height:16px;accent-color:#1b5e20">
@@ -374,7 +374,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="t-banner-info" style="<?=empty($t['banner_photo'])?'position:relative;padding:.7rem 1rem':''?>">
       <div>
         <div class="t-banner-title" style="<?=empty($t['banner_photo'])?'color:#fff':''?>"><?=h($t['name'])?></div>
-        <div style="font-size:.7rem;color:<?=empty($t['banner_photo'])?'rgba(255,255,255,.7)':'rgba(255,255,255,.8)'?>"><?=h($t['venue']??'')?> · <?=date('d M',strtotime($t['start_date']))?> – <?=date('d M Y',strtotime($t['end_date']))?></div>
+        <div style="font-size:.75rem;color:<?=empty($t['banner_photo'])?'rgba(255,255,255,.7)':'rgba(255,255,255,.8)'?>"><?=h($t['venue']??'')?> · <?=date('d M',strtotime($t['start_date']))?> – <?=date('d M Y',strtotime($t['end_date']))?></div>
       </div>
       <span class="t-badge" style="background:<?=$s[0]?>;color:<?=$s[1]?>"><?=strtoupper($t['status'])?></span>
     </div>
@@ -383,12 +383,12 @@ require_once __DIR__ . '/../includes/header.php';
   <!-- Admin controls bar -->
   <?php if ($isAdmin): ?>
   <div class="t-admin-bar">
-    <span style="font-size:.72rem;font-weight:700;color:#64748b;margin-right:.2rem">Admin:</span>
+    <span style="font-size:.75rem;font-weight:700;color:#64748b;margin-right:.2rem">Admin:</span>
     <!-- Status -->
     <form method="POST" style="display:inline">
       <input type="hidden" name="status_tid" value="<?=$tid?>">
       <input type="hidden" name="set_status" value="1">
-      <select name="new_status" onchange="this.form.submit()" style="font-size:.72rem;padding:.25rem .5rem;border-radius:8px;border:1.5px solid #ECEEFF;font-weight:700;cursor:pointer;background:#fff">
+      <select name="new_status" onchange="this.form.submit()" style="font-size:16px;padding:.25rem .5rem;border-radius:8px;border:1.5px solid #ECEEFF;font-weight:700;cursor:pointer;background:#fff">
         <option value="upcoming"  <?=$t['status']==='upcoming' ?'selected':''?>>Upcoming</option>
         <option value="ongoing"   <?=$t['status']==='ongoing'  ?'selected':''?>>Ongoing</option>
         <option value="completed" <?=$t['status']==='completed'?'selected':''?>>Completed</option>
@@ -397,14 +397,14 @@ require_once __DIR__ . '/../includes/header.php';
     <!-- Toggle registration -->
     <form method="POST" style="display:inline">
       <input type="hidden" name="reg_tid" value="<?=$tid?>">
-      <button type="submit" name="toggle_reg" style="font-size:.72rem;padding:.28rem .7rem;border-radius:8px;border:1.5px solid <?=$t['registration_open']?'#bbf7d0':'#fecaca'?>;background:<?=$t['registration_open']?'#f0fdf4':'#fff0f0'?>;color:<?=$t['registration_open']?'#166534':'#991b1b'?>;font-weight:700;cursor:pointer">
+      <button type="submit" name="toggle_reg" style="font-size:.75rem;padding:.28rem .7rem;border-radius:8px;border:1.5px solid <?=$t['registration_open']?'#bbf7d0':'#fecaca'?>;background:<?=$t['registration_open']?'#f0fdf4':'#fff0f0'?>;color:<?=$t['registration_open']?'#166534':'#991b1b'?>;font-weight:700;cursor:pointer">
         <?=$t['registration_open']?'🟢 Reg: Open':'🔴 Reg: Closed'?>
       </button>
     </form>
     <!-- Delete -->
     <form method="POST" style="display:inline;margin-left:auto" data-confirm="⚠️ DELETE this entire tournament including all teams and matches? This CANNOT be undone." data-sudo>
       <input type="hidden" name="del_tid" value="<?=$tid?>">
-      <button type="submit" name="del_tournament" style="font-size:.72rem;padding:.28rem .7rem;border-radius:8px;border:1.5px solid #fecaca;background:#fff0f0;color:#991b1b;font-weight:700;cursor:pointer">🗑 Delete Tournament</button>
+      <button type="submit" name="del_tournament" style="font-size:.75rem;padding:.28rem .7rem;border-radius:8px;border:1.5px solid #fecaca;background:#fff0f0;color:#991b1b;font-weight:700;cursor:pointer">🗑 Delete Tournament</button>
     </form>
   </div>
   <?php endif; ?>
@@ -425,7 +425,7 @@ require_once __DIR__ . '/../includes/header.php';
     <?php if (empty($teams)): ?>
     <div style="text-align:center;padding:2rem;color:#5d6b80;font-size:.85rem">No teams yet. Admin adds teams in Manage tab.</div>
     <?php else: ?>
-    <div style="margin-bottom:.5rem;font-size:.72rem;color:#64748b">Format: <strong><?=$t['format']==='league'?'League':'Knockout'?></strong> · <?=count($teams)?> teams</div>
+    <div style="margin-bottom:.5rem;font-size:.75rem;color:#64748b">Format: <strong><?=$t['format']==='league'?'League':'Knockout'?></strong> · <?=count($teams)?> teams</div>
     <div style="overflow-x:auto;border-radius:10px;margin-bottom:.5rem">
     <table class="league-table">
       <thead><tr>
@@ -445,7 +445,7 @@ require_once __DIR__ . '/../includes/header.php';
             <?php if ($tp): ?><img src="<?=$tp?>" class="team-avatar" alt=""><?php else: ?><div class="team-avatar-ph">⚽</div><?php endif; ?>
             <div>
               <div style="font-weight:700"><?=h($tm['team_name'])?></div>
-              <?php if ($tm['captain']): ?><div style="font-size:.65rem;color:#5d6b80">Captain: <?=h($tm['captain'])?></div><?php endif; ?>
+              <?php if ($tm['captain']): ?><div style="font-size:.75rem;color:#5d6b80">Captain: <?=h($tm['captain'])?></div><?php endif; ?>
             </div>
           </div>
         </td>
@@ -468,7 +468,7 @@ require_once __DIR__ . '/../includes/header.php';
       </tbody>
     </table>
     </div>
-    <div style="font-size:.68rem;color:#5d6b80;padding:.2rem .2rem .5rem">🥇 Top team advances · PTS = 3×Wins + Draws</div>
+    <div style="font-size:.75rem;color:#5d6b80;padding:.2rem .2rem .5rem">🥇 Top team advances · PTS = 3×Wins + Draws</div>
     <?php endif; ?>
   </div>
 
@@ -481,13 +481,13 @@ require_once __DIR__ . '/../includes/header.php';
       foreach ($allMatches as $mx) { $rounds[$mx['round']][] = $mx; }
       foreach ($rounds as $rname=>$rmatches):
     ?>
-    <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#0A14E0;margin-bottom:.4rem;margin-top:.8rem"><?=h($rname)?></div>
+    <div style="font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#0A14E0;margin-bottom:.4rem;margin-top:.8rem"><?=h($rname)?></div>
     <?php foreach ($rmatches as $mx):
       $t1p = !empty($mx['t1p']) ? url('assets/uploads/teams/'.$mx['t1p']) : '';
       $t2p = !empty($mx['t2p']) ? url('assets/uploads/teams/'.$mx['t2p']) : '';
     ?>
     <div class="match-row">
-      <div style="font-size:.68rem;color:#5d6b80;width:100%"><?=date('d M Y',strtotime($mx['match_date']))?><?php if($mx['match_time']): ?> · <?=date('g:i A',strtotime($mx['match_time']))?><?php endif; ?> <?php if($mx['venue']): ?>· <?=h($mx['venue'])?><?php endif; ?></div>
+      <div style="font-size:.75rem;color:#5d6b80;width:100%"><?=date('d M Y',strtotime($mx['match_date']))?><?php if($mx['match_time']): ?> · <?=date('g:i A',strtotime($mx['match_time']))?><?php endif; ?> <?php if($mx['venue']): ?>· <?=h($mx['venue'])?><?php endif; ?></div>
       <div style="display:flex;align-items:center;gap:.6rem;flex:1;justify-content:center">
         <div style="display:flex;align-items:center;gap:.4rem">
           <?php if ($t1p): ?><img src="<?=$t1p?>" class="team-avatar" alt=""><?php endif; ?>
@@ -506,7 +506,7 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
       </div>
       <?php if ($mx['status']==='completed'): ?>
-      <span style="font-size:.68rem;color:#1b5e20;font-weight:700;width:100%;text-align:center">✅ Final</span>
+      <span style="font-size:.75rem;color:#1b5e20;font-weight:700;width:100%;text-align:center">✅ Final</span>
       <?php endif; ?>
       <?php if ($isAdmin): ?>
       <div style="display:flex;gap:.4rem;align-items:center;width:100%;margin-top:.3rem">
@@ -547,12 +547,12 @@ require_once __DIR__ . '/../includes/header.php';
     if ($n > 1):
     ?>
     <div style="overflow-x:auto">
-    <table style="border-collapse:collapse;font-size:.72rem;min-width:max-content">
+    <table style="border-collapse:collapse;font-size:.75rem;min-width:max-content">
       <thead>
         <tr>
-          <th style="background:#ECEEFF;color:#0A14E0;padding:.4rem .5rem;border:1px solid #c7d2fe;font-size:.65rem">Team</th>
+          <th style="background:#ECEEFF;color:#0A14E0;padding:.4rem .5rem;border:1px solid #c7d2fe;font-size:.75rem">Team</th>
           <?php foreach ($teams as $th): ?>
-          <th style="background:#ECEEFF;color:#0A14E0;padding:.4rem .5rem;border:1px solid #c7d2fe;font-size:.62rem;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><?=h(mb_strimwidth($th['team_name'],0,8,'…'))?></th>
+          <th style="background:#ECEEFF;color:#0A14E0;padding:.4rem .5rem;border:1px solid #c7d2fe;font-size:.75rem;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><?=h(mb_strimwidth($th['team_name'],0,8,'…'))?></th>
           <?php endforeach; ?>
         </tr>
       </thead>
@@ -580,7 +580,7 @@ require_once __DIR__ . '/../includes/header.php';
             $co = $g1>$g2?'#166534':($g1<$g2?'#991b1b':'#374151');
             echo '<td style="background:'.$bg.';color:'.$co.';font-weight:700;border:1px solid #ECEEFF;text-align:center;padding:.4rem .5rem">'.$g1.'-'.$g2.'</td>';
         } else {
-            echo '<td style="border:1px solid #ECEEFF;text-align:center;color:#5d6b80;font-size:.68rem;padding:.4rem .5rem">TBD</td>';
+            echo '<td style="border:1px solid #ECEEFF;text-align:center;color:#5d6b80;font-size:.75rem;padding:.4rem .5rem">TBD</td>';
         }
         ?>
         <?php endforeach; ?>
@@ -642,9 +642,9 @@ require_once __DIR__ . '/../includes/header.php';
     <form method="POST">
       <input type="hidden" name="reg_tid" value="<?=$tid?>">
       <div class="fg-row" style="margin-bottom:.6rem">
-        <div><label style="font-size:.72rem;font-weight:700;color:#64748b;display:block;margin-bottom:.25rem">Your Name</label>
+        <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:.25rem">Your Name</label>
           <input type="text" name="player_name" class="inp-sm" value="<?=h($user['name'])?>" required></div>
-        <div><label style="font-size:.72rem;font-weight:700;color:#64748b;display:block;margin-bottom:.25rem">Position</label>
+        <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:.25rem">Position</label>
           <select name="position" class="inp-sm">
             <option value="">Any</option>
             <option>Goalkeeper</option><option>Defender</option>
@@ -670,22 +670,22 @@ require_once __DIR__ . '/../includes/header.php';
           <div style="font-weight:700;font-size:.85rem;display:flex;align-items:center;gap:.4rem">
             <?=h($rg['uname'])?>
             <?php if($rg['has_sub']): ?>
-            <span style="background:#e8f5e9;color:#1b5e20;border-radius:20px;padding:.08rem .45rem;font-size:.6rem;font-weight:800">✅ Subscriber</span>
+            <span style="background:#e8f5e9;color:#1b5e20;border-radius:20px;padding:.08rem .45rem;font-size:.75rem;font-weight:800">✅ Subscriber</span>
             <?php else: ?>
-            <span style="background:#fff8e1;color:#92400e;border-radius:20px;padding:.08rem .45rem;font-size:.6rem;font-weight:800">⚠️ No Sub</span>
+            <span style="background:#fff8e1;color:#92400e;border-radius:20px;padding:.08rem .45rem;font-size:.75rem;font-weight:800">⚠️ No Sub</span>
             <?php endif; ?>
           </div>
-          <div style="font-size:.72rem;color:#64748b">Pos: <?=h($rg['position']??'Any')?> <?php if($rg['bld']): ?>· Blood: <span style="color:#b71c1c;font-weight:700"><?=h($rg['bld'])?></span><?php endif; ?></div>
+          <div style="font-size:.75rem;color:#64748b">Pos: <?=h($rg['position']??'Any')?> <?php if($rg['bld']): ?>· Blood: <span style="color:#b71c1c;font-weight:700"><?=h($rg['bld'])?></span><?php endif; ?></div>
         </div>
         <div style="display:flex;gap:.35rem;align-items:center">
           <?php if ($rg['status']==='pending'): ?>
           <form method="POST" style="display:flex;gap:.3rem">
             <input type="hidden" name="reg_id" value="<?=$rg['id']?>">
-            <button name="reg_action" value="approved" class="btn-g" style="padding:.3rem .7rem;font-size:.72rem">✅</button>
-            <button name="reg_action" value="rejected" class="btn-r" style="padding:.3rem .7rem;font-size:.72rem">❌</button>
+            <button name="reg_action" value="approved" class="btn-g" style="padding:.3rem .7rem;font-size:.75rem">✅</button>
+            <button name="reg_action" value="rejected" class="btn-r" style="padding:.3rem .7rem;font-size:.75rem">❌</button>
           </form>
           <?php else: ?>
-          <span style="font-size:.7rem;font-weight:700;padding:.2rem .6rem;border-radius:20px;background:<?=$rg['status']==='approved'?'#f0fdf4':'#fff0f0'?>;color:<?=$rg['status']==='approved'?'#166534':'#991b1b'?>"><?=ucfirst($rg['status'])?></span>
+          <span style="font-size:.75rem;font-weight:700;padding:.2rem .6rem;border-radius:20px;background:<?=$rg['status']==='approved'?'#f0fdf4':'#fff0f0'?>;color:<?=$rg['status']==='approved'?'#166534':'#991b1b'?>"><?=ucfirst($rg['status'])?></span>
           <?php endif; ?>
         </div>
       </div>
@@ -704,12 +704,12 @@ require_once __DIR__ . '/../includes/header.php';
       <form method="POST" action="<?=url('modules/football.php')?>" enctype="multipart/form-data">
         <input type="hidden" name="tid" value="<?=$tid?>">
         <div class="fg-row">
-          <div><label style="font-size:.7rem;font-weight:700;color:#64748b;display:block;margin-bottom:.25rem">Team Name *</label>
+          <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:.25rem">Team Name *</label>
             <input type="text" name="team_name" class="inp-sm" required></div>
-          <div><label style="font-size:.7rem;font-weight:700;color:#64748b;display:block;margin-bottom:.25rem">Captain</label>
+          <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:.25rem">Captain</label>
             <input type="text" name="captain" class="inp-sm"></div>
         </div>
-        <div style="margin-bottom:.7rem"><label style="font-size:.7rem;font-weight:700;color:#64748b;display:block;margin-bottom:.25rem">Team Logo/Photo</label>
+        <div style="margin-bottom:.7rem"><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:.25rem">Team Logo/Photo</label>
           <input type="file" name="team_photo" accept="image/*" style="width:100%;padding:.4rem;border:1.5px dashed #c7d2fe;border-radius:8px;font-size:.78rem"></div>
         <button type="submit" name="add_team" class="btn-g">➕ Add Team</button>
       </form>
@@ -752,17 +752,17 @@ require_once __DIR__ . '/../includes/header.php';
       <form method="POST" action="<?=url('modules/football.php')?>">
         <input type="hidden" name="mid_t" value="<?=$tid?>">
         <div class="fg-row">
-          <div><label style="font-size:.7rem;font-weight:700;color:#64748b;display:block;margin-bottom:.25rem">Team 1</label>
+          <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:.25rem">Team 1</label>
             <select name="team1" class="inp-sm" required><option value="">— Select —</option><?php foreach($teams as $tm): ?><option value="<?=$tm['id']?>"><?=h($tm['team_name'])?></option><?php endforeach; ?></select></div>
-          <div><label style="font-size:.7rem;font-weight:700;color:#64748b;display:block;margin-bottom:.25rem">Team 2</label>
+          <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:.25rem">Team 2</label>
             <select name="team2" class="inp-sm" required><option value="">— Select —</option><?php foreach($teams as $tm): ?><option value="<?=$tm['id']?>"><?=h($tm['team_name'])?></option><?php endforeach; ?></select></div>
-          <div><label style="font-size:.7rem;font-weight:700;color:#64748b;display:block;margin-bottom:.25rem">Date</label>
+          <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:.25rem">Date</label>
             <input type="date" name="mdate" class="inp-sm" required value="<?=date('Y-m-d')?>"></div>
-          <div><label style="font-size:.7rem;font-weight:700;color:#64748b;display:block;margin-bottom:.25rem">Time</label>
+          <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:.25rem">Time</label>
             <input type="time" name="mtime" class="inp-sm"></div>
-          <div><label style="font-size:.7rem;font-weight:700;color:#64748b;display:block;margin-bottom:.25rem">Round</label>
+          <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:.25rem">Round</label>
             <input type="text" name="mround" class="inp-sm" value="Group Stage"></div>
-          <div><label style="font-size:.7rem;font-weight:700;color:#64748b;display:block;margin-bottom:.25rem">Stage</label>
+          <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:.25rem">Stage</label>
             <select name="mstage" class="inp-sm">
               <option value="group">Group Stage</option>
               <option value="knockout">Knockout</option>

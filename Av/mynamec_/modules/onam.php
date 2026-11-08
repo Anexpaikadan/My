@@ -85,7 +85,7 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="card mb-3">
   <div class="card-header" style="background:linear-gradient(135deg,#E65100,#FF8F00);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
     <h3>🌸 Onam <?=$on['year']?><?php if($on['theme']): ?> — <?=h($on['theme'])?><?php endif;?></h3>
-    <span style="background:rgba(255,255,255,.25);color:#fff;border-radius:20px;padding:.2rem .8rem;font-size:.7rem;font-weight:700"><?=strtoupper($on['status'])?></span>
+    <span style="background:rgba(255,255,255,.25);color:#fff;border-radius:20px;padding:.2rem .8rem;font-size:.75rem;font-weight:700"><?=strtoupper($on['status'])?></span>
   </div>
   <div class="card-body">
     <div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:1rem;font-size:.8rem;color:var(--t2)">
@@ -122,26 +122,26 @@ require_once __DIR__ . '/../includes/header.php';
     <div style="background:<?=$pt[2]?>;border-radius:12px;padding:1rem;border:1.5px solid <?=$pt[3]?>22">
       <div style="font-size:1.5rem;margin-bottom:.3rem"><?=$pt[0]?></div>
       <div style="font-weight:700;font-size:.88rem;color:<?=$pt[3]?>;margin-bottom:.2rem"><?=h($prog['title'])?></div>
-      <?php if($prog['time_slot']): ?><div style="font-size:.7rem;color:var(--t3)">⏰ <?=h($prog['time_slot'])?></div><?php endif;?>
-      <?php if($prog['participants']): ?><div style="font-size:.7rem;color:var(--t3)">👥 <?=h($prog['participants'])?></div><?php endif;?>
-      <div style="font-size:.68rem;font-weight:700;color:var(--t3);margin:.3rem 0"><?=$prog['regc']?> registered</div>
+      <?php if($prog['time_slot']): ?><div style="font-size:.75rem;color:var(--t3)">⏰ <?=h($prog['time_slot'])?></div><?php endif;?>
+      <?php if($prog['participants']): ?><div style="font-size:.75rem;color:var(--t3)">👥 <?=h($prog['participants'])?></div><?php endif;?>
+      <div style="font-size:.75rem;font-weight:700;color:var(--t3);margin:.3rem 0"><?=$prog['regc']?> registered</div>
       <?php if($prog['winner']): ?>
-      <div style="background:#FFF9C4;border-radius:8px;padding:.3rem .6rem;margin-top:.4rem;font-size:.72rem;font-weight:700;color:#E65100">🏆 Winner: <?=h($prog['winner'])?></div>
+      <div style="background:#FFF9C4;border-radius:8px;padding:.3rem .6rem;margin-top:.4rem;font-size:.75rem;font-weight:700;color:#E65100">🏆 Winner: <?=h($prog['winner'])?></div>
       <?php endif;?>
       <?php if(!$isReg&&$on['status']!=='completed'): ?>
       <form method="POST" action="<?=url('modules/onam.php')?>" style="margin-top:.5rem">
         <input type="hidden" name="oid" value="<?=$on['id']?>"><input type="hidden" name="pid" value="<?=$prog['id']?>">
-        <input type="text" name="team_name" class="inp" placeholder="Your name / team" style="margin-bottom:.35rem;font-size:.78rem;padding:.45rem .6rem">
-        <button type="submit" name="register_program" class="btn btn-sm btn-block" style="background:<?=$pt[3]?>;color:#fff;font-size:.73rem">✅ Register</button>
+        <input type="text" name="team_name" class="inp" placeholder="Your name / team" style="margin-bottom:.35rem;font-size:16px;padding:.45rem .6rem">
+        <button type="submit" name="register_program" class="btn btn-sm btn-block" style="background:<?=$pt[3]?>;color:#fff;font-size:.75rem">✅ Register</button>
       </form>
       <?php elseif($isReg): ?>
-      <div style="margin-top:.5rem;text-align:center;font-size:.72rem;color:#2E7D32;font-weight:700">✅ Registered!</div>
+      <div style="margin-top:.5rem;text-align:center;font-size:.75rem;color:#2E7D32;font-weight:700">✅ Registered!</div>
       <?php endif;?>
       <?php if($isAdmin&&$on['status']==='active'&&!$prog['winner']): ?>
       <form method="POST" action="<?=url('modules/onam.php')?>" style="margin-top:.4rem;display:flex;gap:.3rem">
         <input type="hidden" name="pid" value="<?=$prog['id']?>">
-        <input type="text" name="winner" class="inp" placeholder="Winner name" style="flex:1;font-size:.75rem;padding:.4rem .5rem">
-        <button type="submit" name="set_winner" class="btn btn-sm" style="background:#E65100;color:#fff;padding:.4rem .6rem;font-size:.72rem">🏆</button>
+        <input type="text" name="winner" class="inp" placeholder="Winner name" style="flex:1;font-size:16px;padding:.4rem .5rem">
+        <button type="submit" name="set_winner" class="btn btn-sm" style="background:#E65100;color:#fff;padding:.4rem .6rem;font-size:.75rem">🏆</button>
       </form>
       <?php endif;?>
     </div>

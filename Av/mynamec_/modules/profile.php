@@ -220,11 +220,11 @@ require_once __DIR__.'/../includes/header.php';
 
     <!-- Role badge top -->
     <div style="display:flex;justify-content:space-between;align-items:flex-start;position:relative">
-      <span style="background:rgba(0,0,0,.28);color:rgba(255,255,255,.95);border-radius:20px;padding:.3rem 1rem;font-size:.68rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;backdrop-filter:blur(4px)">
+      <span style="background:rgba(0,0,0,.28);color:rgba(255,255,255,.95);border-radius:20px;padding:.3rem 1rem;font-size:.75rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;backdrop-filter:blur(4px)">
         <?= h(roleLabel($profile['role'])) ?>
       </span>
       <?php if($isOwn): ?>
-      <a href="<?= url('modules/idcard.php') ?>" style="background:rgba(255,193,7,.25);color:#FFC107;border:1px solid rgba(255,193,7,.45);border-radius:20px;padding:.3rem 1rem;font-size:.68rem;font-weight:800;text-decoration:none;backdrop-filter:blur(4px)">
+      <a href="<?= url('modules/idcard.php') ?>" style="background:rgba(255,193,7,.25);color:#FFC107;border:1px solid rgba(255,193,7,.45);border-radius:20px;padding:.3rem 1rem;font-size:.75rem;font-weight:800;text-decoration:none;backdrop-filter:blur(4px)">
         🪪 My ID
       </a>
       <?php endif; ?>
@@ -245,9 +245,9 @@ require_once __DIR__.'/../includes/header.php';
         </div>
         <?php endif; ?>
         <?php if($profile['privacy_photo'] === 'private' && !$isOwn && !$isAdmin): ?>
-        <div style="position:absolute;bottom:4px;right:4px;background:#B71C1C;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:.68rem;border:2px solid #fff">🔒</div>
+        <div style="position:absolute;bottom:4px;right:4px;background:#B71C1C;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:.75rem;border:2px solid #fff">🔒</div>
         <?php else: ?>
-        <div style="position:absolute;bottom:6px;right:6px;background:#2E7D32;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:.6rem;border:2px solid #fff;color:#fff">✓</div>
+        <div style="position:absolute;bottom:6px;right:6px;background:#2E7D32;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:.75rem;border:2px solid #fff;color:#fff">✓</div>
         <?php endif; ?>
       </div>
 
@@ -257,7 +257,7 @@ require_once __DIR__.'/../includes/header.php';
         <div style="font-size:.86rem;color:#3D4F7C;font-weight:700"><?= h($profile['committee_position']) ?></div>
         <?php endif; ?>
         <?php if($profile['committee_name']): ?>
-        <div style="font-size:.74rem;color:#565D82"><?= h($profile['committee_name']) ?></div>
+        <div style="font-size:.75rem;color:#565D82"><?= h($profile['committee_name']) ?></div>
         <?php endif; ?>
         <?php if($isOwn): ?>
         <button onclick="document.getElementById('editSection').style.display=document.getElementById('editSection').style.display==='none'?'block':'none';document.getElementById('editSection').scrollIntoView({behavior:'smooth'})" style="margin-top:.7rem;background:linear-gradient(135deg,#0A14E0,#1A23C9);color:#fff;border:none;border-radius:22px;padding:.5rem 1.4rem;font-size:.8rem;font-weight:800;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;box-shadow:0 4px 12px rgba(26,35,201,.3)">✏️ Edit Profile</button>
@@ -361,7 +361,7 @@ require_once __DIR__.'/../includes/header.php';
 @keyframes pfFloat{0%,100%{transform:translate(0,0)}50%{transform:translate(12px,-10px)}}
 .pf-tile{border-radius:14px;padding:.7rem .65rem;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.25rem;min-height:74px;transition:transform .2s}
 .pf-tile:active{transform:scale(.96)}
-.pf-tile-l{font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+.pf-tile-l{font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
 </style>
 
 <!-- ── GROUND FUND CONTRIBUTION CARD ───────────────────────── -->
@@ -372,24 +372,24 @@ require_once __DIR__.'/../includes/header.php';
       <span style="font-size:1.4rem">🏟️</span>
       <div>
         <div style="font-weight:800;font-size:.95rem;color:#0B1033;line-height:1.1">Ground Fund</div>
-        <div style="font-size:.68rem;color:#5f6880">Contribution to club ground</div>
+        <div style="font-size:.75rem;color:#5f6880">Contribution to club ground</div>
       </div>
     </div>
-    <a href="<?= url('modules/groundfund.php') ?>" style="font-size:.7rem;font-weight:700;color:#0A14E0;text-decoration:none">View all →</a>
+    <a href="<?= url('modules/groundfund.php') ?>" style="font-size:.75rem;font-weight:700;color:#0A14E0;text-decoration:none">View all →</a>
   </div>
 
   <!-- Paid / Pledge / Balance tiles -->
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.55rem;margin-bottom:.9rem">
     <div style="background:linear-gradient(135deg,#f1faf3,#e8f5e9);border:1px solid #a5d6a7;border-radius:12px;padding:.6rem;text-align:center">
-      <div style="font-size:.56rem;font-weight:800;color:#2E7D32;text-transform:uppercase">Paid</div>
+      <div style="font-size:.75rem;font-weight:800;color:#2E7D32;text-transform:uppercase">Paid</div>
       <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.08rem;color:#1b5e20">₹<?= number_format($gfPaid) ?></div>
     </div>
     <div style="background:linear-gradient(135deg,#f3f7ff,#ECEEFF);border:1px solid #D6DAFF;border-radius:12px;padding:.6rem;text-align:center">
-      <div style="font-size:.56rem;font-weight:800;color:#0A14E0;text-transform:uppercase">Pledged</div>
+      <div style="font-size:.75rem;font-weight:800;color:#0A14E0;text-transform:uppercase">Pledged</div>
       <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.08rem;color:#0A14E0">₹<?= number_format($gfPledge) ?></div>
     </div>
     <div style="background:linear-gradient(135deg,<?= $gfBalance>0?'#fff8f0,#fff3e0':'#f1faf3,#e8f5e9' ?>);border:1px solid <?= $gfBalance>0?'#ffe0b2':'#a5d6a7' ?>;border-radius:12px;padding:.6rem;text-align:center">
-      <div style="font-size:.56rem;font-weight:800;color:<?= $gfBalance>0?'#E65100':'#2E7D32' ?>;text-transform:uppercase">Balance</div>
+      <div style="font-size:.75rem;font-weight:800;color:<?= $gfBalance>0?'#E65100':'#2E7D32' ?>;text-transform:uppercase">Balance</div>
       <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.08rem;color:<?= $gfBalance>0?'#e65100':'#1b5e20' ?>"><?= $gfBalance>0?'₹'.number_format($gfBalance):'✓ Paid' ?></div>
     </div>
   </div>
@@ -399,7 +399,7 @@ require_once __DIR__.'/../includes/header.php';
   <div style="height:8px;background:#eef1f6;border-radius:5px;overflow:hidden">
     <div style="height:100%;width:<?= $gfPct ?>%;background:linear-gradient(90deg,#1b5e20,#4caf50);border-radius:5px;transition:width 1s"></div>
   </div>
-  <div style="font-size:.66rem;color:#8a93a8;text-align:right;margin-top:.25rem"><?= $gfPct ?>% of pledge paid</div>
+  <div style="font-size:.75rem;color:#8a93a8;text-align:right;margin-top:.25rem"><?= $gfPct ?>% of pledge paid</div>
   <?php endif; ?>
 </div>
 <?php endif; ?>
@@ -415,7 +415,7 @@ require_once __DIR__.'/../includes/header.php';
         <div class="fg">
           <label class="lbl">Profile Photo</label>
           <input type="file" name="photo" class="inp" accept="image/jpeg,image/png,image/webp" style="padding:.6rem" onchange="prevPhoto(this)">
-          <div style="font-size:.68rem;color:var(--t3);margin-top:.25rem">Max 3MB · JPG/PNG/WebP</div>
+          <div style="font-size:.75rem;color:var(--t3);margin-top:.25rem">Max 3MB · JPG/PNG/WebP</div>
         </div>
         <div class="fg">
           <label class="lbl">Full Name *</label>
@@ -485,7 +485,7 @@ require_once __DIR__.'/../includes/header.php';
           </button>
         </div>
         <div id="unavailForm" style="display:<?= !$bAvail?'block':'none' ?>;margin-bottom:.75rem">
-          <select id="unavailReason" style="width:100%;padding:.6rem .85rem;border:1.5px solid #ffcdd2;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.85rem;margin-bottom:.6rem;background:#fff;color:#1e293b">
+          <select id="unavailReason" style="width:100%;padding:.6rem .85rem;border:1.5px solid #ffcdd2;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;margin-bottom:.6rem;background:#fff;color:#1e293b">
             <option value="Recently Donated" <?= ($profile['blood_unavail_reason']??'')==='Recently Donated'?'selected':'' ?>>Recently Donated</option>
             <option value="Abroad" <?= ($profile['blood_unavail_reason']??'')==='Abroad'?'selected':'' ?>>Currently Abroad</option>
             <option value="Unwell" <?= ($profile['blood_unavail_reason']??'')==='Unwell'?'selected':'' ?>>Health Issue / Unwell</option>
@@ -495,10 +495,10 @@ require_once __DIR__.'/../includes/header.php';
           <button type="button" onclick="setBldAvail(0)" style="width:100%;padding:.6rem;background:#b71c1c;color:#fff;border:none;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:.84rem;cursor:pointer">Save Status</button>
         </div>
         <div>
-          <label style="font-size:.74rem;font-weight:700;color:#64748b;display:block;margin-bottom:.3rem">Last Donation Date (optional)</label>
+          <label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:.3rem">Last Donation Date (optional)</label>
           <input type="date" id="lastDonDate" value="<?= h($profile['blood_last_donated']??'') ?>"
             style="width:100%;padding:.58rem .9rem;border:1.5px solid #ECEEFF;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.85rem;margin-bottom:.5rem">
-          <p style="font-size:.72rem;color:#94a3b8">If set, system auto-marks unavailable for 90 days after donation</p>
+          <p style="font-size:.75rem;color:#94a3b8">If set, system auto-marks unavailable for 90 days after donation</p>
         </div>
         <div id="bldMsg" style="font-size:.82rem;text-align:center;min-height:1.2em;margin-top:.4rem"></div>
       </div>
@@ -575,7 +575,7 @@ require_once __DIR__.'/../includes/header.php';
 <style>
 :root{--t3:#565D82}
 .fg{margin-bottom:.9rem}
-.lbl{display:block;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#4A5E8A;margin-bottom:.38rem}
+.lbl{display:block;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#4A5E8A;margin-bottom:.38rem}
 .inp{width:100%;padding:.68rem .9rem;border:2px solid #E3E7F5;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;color:#0B1033;background:#fff;outline:none;-webkit-appearance:none;transition:border-color .18s}
 .inp:focus{border-color:#0A14E0;box-shadow:0 0 0 3px rgba(10,20,224,.1)}
 select.inp{cursor:pointer}

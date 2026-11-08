@@ -138,13 +138,13 @@ require_once __DIR__.'/../includes/header.php';
               <div style="font-size:0.78rem; color:#565D82; margin-top:0.15rem;">📱 <?= h($rawPhone) ?></div>
             <?php else: ?>
               <div style="margin-top:0.3rem;">
-                <input type="tel" id="input_phone_<?= $r['id'] ?>" placeholder="Enter WhatsApp #" style="font-size:0.75rem; padding:0.2rem; border:1px solid #CCC; border-radius:4px; width:120px;">
+                <input type="tel" id="input_phone_<?= $r['id'] ?>" placeholder="Enter WhatsApp #" style="font-size:16px; padding:0.2rem; border:1px solid #CCC; border-radius:4px; width:120px;">
               </div>
             <?php endif; ?>
           </td>
           
           <td style="padding:1rem; vertical-align:top;">
-            <span style="background:#E8EAF6; color:#283593; font-size:0.7rem; font-weight:700; padding:0.15rem 0.5rem; border-radius:4px; text-transform:uppercase;">
+            <span style="background:#E8EAF6; color:#283593; font-size:.75rem; font-weight:700; padding:0.15rem 0.5rem; border-radius:4px; text-transform:uppercase;">
               <?= h($r['plan_type']) ?>
             </span>
             <div style="font-size:0.75rem; color:#666666; margin-top:0.3rem;">Req: <?= date('d M Y', strtotime($r['requested_at'])) ?></div>
@@ -159,7 +159,7 @@ require_once __DIR__.'/../includes/header.php';
           </td>
           
           <td style="padding:1rem; vertical-align:top;">
-            <span style="background:<?= $bg ?>; color:<?= $txt ?>; border:1px solid <?= $bdr ?>; border-radius:12px; padding:0.15rem 0.6rem; font-size:0.72rem; font-weight:700; display:inline-block; margin-bottom:0.3rem;">
+            <span style="background:<?= $bg ?>; color:<?= $txt ?>; border:1px solid <?= $bdr ?>; border-radius:12px; padding:0.15rem 0.6rem; font-size:.75rem; font-weight:700; display:inline-block; margin-bottom:0.3rem;">
               <?= $lbl ?>
             </span>
           </td>
@@ -181,7 +181,7 @@ require_once __DIR__.'/../includes/header.php';
                   </button>
                 </form>
 
-                <button onclick="document.getElementById('rejectBox<?= $r['id'] ?>').style.display='block'" style="background:#FFF0F0; color:#C62828; border:1px solid #FFCDD2; border-radius:6px; padding:0.25rem 0.6rem; font-size:0.72rem; cursor:pointer;">
+                <button onclick="document.getElementById('rejectBox<?= $r['id'] ?>').style.display='block'" style="background:#FFF0F0; color:#C62828; border:1px solid #FFCDD2; border-radius:6px; padding:0.25rem 0.6rem; font-size:.75rem; cursor:pointer;">
                   Reject
                 </button>
                 
@@ -189,10 +189,10 @@ require_once __DIR__.'/../includes/header.php';
                   <form method="POST" style="margin:0;">
                     <input type="hidden" name="req_id" value="<?= $r['id'] ?>">
                     <input type="hidden" name="action" value="reject">
-                    <input type="text" name="rejection_note" placeholder="Reason..." required style="width:100%; font-size:0.75rem; padding:0.3rem; margin-bottom:0.3rem; border:1px solid #CCC; border-radius:4px;">
+                    <input type="text" name="rejection_note" placeholder="Reason..." required style="width:100%; font-size:16px; padding:0.3rem; margin-bottom:0.3rem; border:1px solid #CCC; border-radius:4px;">
                     <div style="display:flex; gap:0.3rem;">
-                      <button type="submit" style="background:#B71C1C; color:#fff; border:none; padding:0.2rem 0.4rem; font-size:0.7rem; border-radius:4px; cursor:pointer;">Confirm</button>
-                      <button type="button" onclick="document.getElementById('rejectBox<?= $r['id'] ?>').style.display='none'" style="background:#9E9E9E; color:#fff; border:none; padding:0.2rem 0.4rem; font-size:0.7rem; border-radius:4px; cursor:pointer;">Cancel</button>
+                      <button type="submit" style="background:#B71C1C; color:#fff; border:none; padding:0.2rem 0.4rem; font-size:.75rem; border-radius:4px; cursor:pointer;">Confirm</button>
+                      <button type="button" onclick="document.getElementById('rejectBox<?= $r['id'] ?>').style.display='none'" style="background:#9E9E9E; color:#fff; border:none; padding:0.2rem 0.4rem; font-size:.75rem; border-radius:4px; cursor:pointer;">Cancel</button>
                     </div>
                   </form>
                 </div>

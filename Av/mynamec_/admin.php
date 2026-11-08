@@ -162,8 +162,8 @@ require_once __DIR__.'/includes/header.php';
 }
 .adm-header::before{content:'🛡';position:absolute;right:-.5rem;top:-.5rem;font-size:7rem;opacity:.07;transform:rotate(15deg)}
 .adm-hrow{display:flex;align-items:center;justify-content:space-between;margin-bottom:.9rem}
-.adm-hname{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.68rem;letter-spacing:.01em;color:rgba(255,255,255,.55)}
-.adm-hrole{font-size:.72rem;color:rgba(255,255,255,.4);margin-top:.1rem}
+.adm-hname{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:.75rem;letter-spacing:.01em;color:rgba(255,255,255,.55)}
+.adm-hrole{font-size:.75rem;color:rgba(255,255,255,.4);margin-top:.1rem}
 .adm-havatar{width:40px;height:40px;border-radius:50%;border:2.5px solid rgba(200,146,42,.6);object-fit:cover;background:#121A5C;display:flex;align-items:center;justify-content:center;font-size:1.1rem;overflow:hidden}
 
 /* Stats strip */
@@ -177,7 +177,7 @@ require_once __DIR__.'/includes/header.php';
   backdrop-filter:blur(6px);
 }
 .adm-stat-n{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.28rem;color:#f5d060;line-height:1}
-.adm-stat-l{font-size:.55rem;text-transform:uppercase;letter-spacing:.09em;color:rgba(255,255,255,.5);font-weight:700;margin-top:.12rem}
+.adm-stat-l{font-size:.75rem;text-transform:uppercase;letter-spacing:.09em;color:rgba(255,255,255,.5);font-weight:700;margin-top:.12rem}
 
 /* Nav grid */
 .adm-nav{
@@ -198,7 +198,7 @@ require_once __DIR__.'/includes/header.php';
   background:#f8fafc;
   border:1.5px solid #e8eef8;
   color:#475569;
-  font-size:.68rem;font-weight:800;
+  font-size:.75rem;font-weight:800;
   font-family:'Plus Jakarta Sans',sans-serif;
   text-decoration:none;
   text-align:center;
@@ -224,7 +224,7 @@ require_once __DIR__.'/includes/header.php';
   position:absolute;top:-.35rem;right:-.35rem;
   background:#e53935;color:#fff;
   border-radius:20px;padding:.06rem .42rem;
-  font-size:.56rem;font-weight:900;line-height:1.5;
+  font-size:.75rem;font-weight:900;line-height:1.5;
   border:2px solid #fff;
   box-shadow:0 2px 6px rgba(229,57,53,.4);
 }
@@ -363,20 +363,20 @@ require_once __DIR__.'/includes/header.php';
 <style>
 .mcard{background:#fff;border-radius:14px;padding:.85rem 1rem;margin-bottom:.6rem;box-shadow:0 2px 10px rgba(0,0,0,.07);display:flex;align-items:center;gap:.75rem;transition:all .2s}
 .mcard:hover{box-shadow:0 4px 18px rgba(10,20,224,.14);transform:translateY(-1px)}
-.mcard-num{width:24px;font-size:.72rem;font-weight:700;color:#5d6b80;flex-shrink:0;text-align:center}
+.mcard-num{width:24px;font-size:.75rem;font-weight:700;color:#5d6b80;flex-shrink:0;text-align:center}
 .mcard-photo{width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#ECEEFF;display:flex;align-items:center;justify-content:center;font-size:1.2rem;border:2px solid #ECEEFF}
 .mcard-photo img{width:44px;height:44px;border-radius:50%;object-fit:cover}
 .mcard-info{flex:1;min-width:0}
 .mcard-name{font-weight:800;font-size:.92rem;color:#0A14E0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;display:block}
 .mcard-name:hover{color:#1A23C9}
 .mcard-meta{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-top:.2rem}
-.mcard-blood{font-size:.72rem;font-weight:800;color:#b71c1c}
-.mcard-role{font-size:.65rem;font-weight:700;padding:.1rem .45rem;border-radius:20px;background:#ECEEFF;color:#0A14E0}
+.mcard-blood{font-size:.75rem;font-weight:800;color:#b71c1c}
+.mcard-role{font-size:.75rem;font-weight:700;padding:.1rem .45rem;border-radius:20px;background:#ECEEFF;color:#0A14E0}
 .mcard-status-active{background:#e8f5e9;color:#2e7d32}
 .mcard-status-pending{background:#fff8e1;color:#f57f17}
 .mcard-status-inactive,.mcard-status-rejected{background:#ffebee;color:#b71c1c}
-.mcard-wa{font-size:.7rem;color:#157a3f;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:.2rem;margin-top:.15rem}
-.mcard-pos{font-size:.68rem;color:#64748b;margin-top:.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mcard-wa{font-size:.75rem;color:#157a3f;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:.2rem;margin-top:.15rem}
+.mcard-pos{font-size:.75rem;color:#64748b;margin-top:.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mcard-acts{display:flex;gap:.3rem;flex-shrink:0}
 #mlist{display:none}
 </style>
@@ -510,7 +510,7 @@ $lhActNames = array('set_passkey'=>'New passkey set','clear_passkey'=>'Passkey c
 .lh-who img,.lh-who .ph{width:58px;height:58px;border-radius:50%;object-fit:cover;background:#ECEEFF;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .lh-who b{font-size:1.05rem;display:block}
 .lh-chips{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.35rem}
-.lh-chip{font-size:.72rem;font-weight:700;padding:.15rem .55rem;border-radius:999px;background:#ECEEFF;color:#070FA8}
+.lh-chip{font-size:.75rem;font-weight:700;padding:.15rem .55rem;border-radius:999px;background:#ECEEFF;color:#070FA8}
 .lh-chip.ok{background:#E7F8EE;color:#0E6B37}.lh-chip.bad{background:#FFECEC;color:#B80F0A}
 .lh-grid{display:grid;gap:.8rem}
 @media(min-width:760px){.lh-grid{grid-template-columns:1fr 1fr}}

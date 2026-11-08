@@ -77,7 +77,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:1rem;font-size:.8rem;color:var(--t2)">
       <?php if($fst['event_date']): ?><span>📅 <?=date('d M Y',strtotime($fst['event_date']))?></span><?php endif;?>
       <?php if($fst['venue']): ?><span>📍 <?=h($fst['venue'])?></span><?php endif;?>
-      <span style="background:#F3E5F5;color:#6A1B9A;border-radius:20px;padding:.15rem .6rem;font-size:.68rem;font-weight:700"><?=strtoupper($fst['status'])?></span>
+      <span style="background:#F3E5F5;color:#6A1B9A;border-radius:20px;padding:.15rem .6rem;font-size:.75rem;font-weight:700"><?=strtoupper($fst['status'])?></span>
     </div>
     <?php if($fst['description']): ?><p style="font-size:.84rem;color:var(--t2);margin-bottom:1rem"><?=h($fst['description'])?></p><?php endif;?>
 
@@ -104,22 +104,22 @@ require_once __DIR__ . '/../includes/header.php';
     <div style="background:<?=$ct[1]?>;border-radius:12px;padding:1rem;border:1.5px solid <?=$ct[2]?>22">
       <div style="font-size:1.4rem;margin-bottom:.3rem"><?=$ct[0]?></div>
       <div style="font-weight:700;font-size:.88rem;color:<?=$ct[2]?>;margin-bottom:.2rem"><?=h($prog['title'])?></div>
-      <div style="font-size:.68rem;color:var(--t3)"><?=h(ucfirst($prog['category']))?><?php if($prog['age_group']): ?> · <?=h($prog['age_group'])?><?php endif;?></div>
-      <?php if($prog['time_slot']): ?><div style="font-size:.68rem;color:var(--t3)">⏰ <?=h($prog['time_slot'])?></div><?php endif;?>
-      <?php if($prog['prize']): ?><div style="font-size:.7rem;font-weight:700;color:#E65100;margin:.3rem 0">🏆 <?=h($prog['prize'])?></div><?php endif;?>
-      <div style="font-size:.65rem;color:var(--t3);margin-bottom:.4rem"><?=$prog['reg_count']?> registered</div>
-      <?php if($prog['winner']): ?><div style="background:#FFF9C4;border-radius:8px;padding:.28rem .5rem;font-size:.7rem;font-weight:700;color:#E65100">🥇 <?=h($prog['winner'])?></div><?php endif;?>
+      <div style="font-size:.75rem;color:var(--t3)"><?=h(ucfirst($prog['category']))?><?php if($prog['age_group']): ?> · <?=h($prog['age_group'])?><?php endif;?></div>
+      <?php if($prog['time_slot']): ?><div style="font-size:.75rem;color:var(--t3)">⏰ <?=h($prog['time_slot'])?></div><?php endif;?>
+      <?php if($prog['prize']): ?><div style="font-size:.75rem;font-weight:700;color:#E65100;margin:.3rem 0">🏆 <?=h($prog['prize'])?></div><?php endif;?>
+      <div style="font-size:.75rem;color:var(--t3);margin-bottom:.4rem"><?=$prog['reg_count']?> registered</div>
+      <?php if($prog['winner']): ?><div style="background:#FFF9C4;border-radius:8px;padding:.28rem .5rem;font-size:.75rem;font-weight:700;color:#E65100">🥇 <?=h($prog['winner'])?></div><?php endif;?>
       <?php if($fst['status']!=='completed'): ?>
       <form method="POST" action="<?=url('modules/arts_festival.php')?>" style="margin-top:.5rem">
         <input type="hidden" name="fid" value="<?=$fst['id']?>"><input type="hidden" name="pid" value="<?=$prog['id']?>">
-        <button type="submit" name="register_arts" class="btn btn-sm btn-block" style="background:<?=$ct[2]?>;color:#fff;font-size:.73rem">✅ Register</button>
+        <button type="submit" name="register_arts" class="btn btn-sm btn-block" style="background:<?=$ct[2]?>;color:#fff;font-size:.75rem">✅ Register</button>
       </form>
       <?php endif;?>
       <?php if($isAdmin&&!$prog['winner']&&$fst['status']==='active'): ?>
       <form method="POST" action="<?=url('modules/arts_festival.php')?>" style="margin-top:.4rem;display:flex;gap:.3rem">
         <input type="hidden" name="pid" value="<?=$prog['id']?>">
-        <input type="text" name="awinner" class="inp" placeholder="Winner" style="flex:1;font-size:.72rem;padding:.38rem .5rem">
-        <button type="submit" name="set_arts_winner" class="btn btn-sm" style="background:#7B1FA2;color:#fff;font-size:.72rem">🏆</button>
+        <input type="text" name="awinner" class="inp" placeholder="Winner" style="flex:1;font-size:16px;padding:.38rem .5rem">
+        <button type="submit" name="set_arts_winner" class="btn btn-sm" style="background:#7B1FA2;color:#fff;font-size:.75rem">🏆</button>
       </form>
       <?php endif;?>
     </div>

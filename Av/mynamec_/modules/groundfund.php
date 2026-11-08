@@ -141,11 +141,11 @@ if (($_GET['view'] ?? '')==='report') {
   .wm-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;opacity:.05;font-size:2.6rem;font-weight:900;color:#0B1033;transform:rotate(-18deg);text-align:center;padding:0 20px}
   .content{position:relative;z-index:1;padding:30px 32px 38px}
   .rhead{display:flex;align-items:center;gap:15px;border-bottom:3px solid #0A14E0;padding-bottom:15px}.rhead img{width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid #c8922a}.rhead h1{font-size:1.3rem;color:#0B1033}.rhead .sub{font-size:.8rem;color:#5a6680;margin-top:2px}
-  .rtag{display:inline-block;background:#0A14E0;color:#fff;font-size:.66rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 12px;border-radius:20px;margin:14px 0 10px}
-  .sumgrid{display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap}.sumbox{flex:1;min-width:110px;border:1px solid #E3E7F5;border-radius:9px;padding:11px 13px;background:#f8f9ff}.sumbox .l{font-size:.64rem;text-transform:uppercase;color:#5f6880;font-weight:700}.sumbox .v{font-size:1.25rem;font-weight:800;margin-top:3px}.green .v{color:#1b5e20}.blue .v{color:#0A14E0}.red .v{color:#c62828}.gold .v{color:#c8922a}
+  .rtag{display:inline-block;background:#0A14E0;color:#fff;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 12px;border-radius:20px;margin:14px 0 10px}
+  .sumgrid{display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap}.sumbox{flex:1;min-width:110px;border:1px solid #E3E7F5;border-radius:9px;padding:11px 13px;background:#f8f9ff}.sumbox .l{font-size:.75rem;text-transform:uppercase;color:#5f6880;font-weight:700}.sumbox .v{font-size:1.25rem;font-weight:800;margin-top:3px}.green .v{color:#1b5e20}.blue .v{color:#0A14E0}.red .v{color:#c62828}.gold .v{color:#c8922a}
   h3.sec{font-size:.92rem;color:#0B1033;margin:18px 0 10px;border-left:4px solid #c8922a;padding-left:8px}
-  table{width:100%;border-collapse:collapse;font-size:.8rem;margin-bottom:8px}th{background:#0B1033;color:#fff;text-align:left;padding:7px 9px;font-size:.7rem}th.r,td.r{text-align:right}td{padding:7px 9px;border-bottom:1px solid #eef1f6}tr:nth-child(even) td{background:#fafbfe}.due{color:#e65100;font-weight:700}.clear{color:#1b5e20;font-weight:700}tfoot td{font-weight:800;border-top:2px solid #0A14E0;background:#f0f4fc}
-  .rfoot{margin-top:24px;border-top:1px solid #E3E7F5;padding-top:13px;font-size:.72rem;color:#5f6880;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}.stamp{margin-top:9px;font-size:.68rem;color:#aab2c4;font-style:italic}
+  table{width:100%;border-collapse:collapse;font-size:.8rem;margin-bottom:8px}th{background:#0B1033;color:#fff;text-align:left;padding:7px 9px;font-size:.75rem}th.r,td.r{text-align:right}td{padding:7px 9px;border-bottom:1px solid #eef1f6}tr:nth-child(even) td{background:#fafbfe}.due{color:#e65100;font-weight:700}.clear{color:#1b5e20;font-weight:700}tfoot td{font-weight:800;border-top:2px solid #0A14E0;background:#f0f4fc}
+  .rfoot{margin-top:24px;border-top:1px solid #E3E7F5;padding-top:13px;font-size:.75rem;color:#5f6880;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}.stamp{margin-top:9px;font-size:.75rem;color:#aab2c4;font-style:italic}
   .pbar{max-width:780px;margin:0 auto 14px;display:flex;gap:10px;justify-content:flex-end}.pbtn{background:#0A14E0;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:.85rem;font-weight:700;cursor:pointer}.pbtn.alt{background:#5a6680}
   @media print{
     body{background:#fff;padding:0}
@@ -176,7 +176,7 @@ if (($_GET['view'] ?? '')==='report') {
       <h3 class="sec">👥 Member Contributions</h3>
       <table><thead><tr><th style="width:30px">#</th><th>Member</th><th>Phone</th><th class="r">Pledged</th><th class="r">Paid</th><th class="r">Balance</th></tr></thead><tbody>
         <?php foreach($rows as $i=>$r): $bal=$r['pledge']-$r['paid']; ?>
-        <tr><td><?= $i+1 ?></td><td><?= h($r['name']) ?><br><span style="color:#aab2c4;font-size:.7rem"><?= h(roleLabel($r['role'])) ?></span></td><td style="font-size:.74rem"><?= h($r['whatsapp_number']?:'—') ?></td><td class="r"><?= gfm($r['pledge']) ?></td><td class="r"><?= gfm($r['paid']) ?></td><td class="r <?= $bal>0?'due':'clear' ?>"><?= $bal>0?gfm($bal):'✓ Clear' ?></td></tr>
+        <tr><td><?= $i+1 ?></td><td><?= h($r['name']) ?><br><span style="color:#aab2c4;font-size:.75rem"><?= h(roleLabel($r['role'])) ?></span></td><td style="font-size:.75rem"><?= h($r['whatsapp_number']?:'—') ?></td><td class="r"><?= gfm($r['pledge']) ?></td><td class="r"><?= gfm($r['paid']) ?></td><td class="r <?= $bal>0?'due':'clear' ?>"><?= $bal>0?gfm($bal):'✓ Clear' ?></td></tr>
         <?php endforeach; ?>
       </tbody><tfoot><tr><td colspan="3">TOTAL</td><td class="r"><?= gfm($totalPledged) ?></td><td class="r"><?= gfm($totalPaid) ?></td><td class="r"><?= gfm(max(0,$totalPledged-$totalPaid)) ?></td></tr></tfoot></table>
       <?php if(!empty($expenses)): ?>
@@ -208,7 +208,7 @@ require_once __DIR__.'/../includes/header.php';
 .gf-sum-box{background:#fff;border-radius:16px;padding:.9rem;box-shadow:0 3px 14px rgba(13,27,62,.06);text-align:center;animation:gfUp .4s both}
 .gf-sum-box:nth-child(2){animation-delay:.05s}.gf-sum-box:nth-child(3){animation-delay:.1s}.gf-sum-box:nth-child(4){animation-delay:.15s}
 @keyframes gfUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.gf-sum-box .l{font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#5f6880;margin-bottom:.2rem}
+.gf-sum-box .l{font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#5f6880;margin-bottom:.2rem}
 .gf-sum-box .v{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.24rem}
 .v-paid{color:var(--gfg)}.v-pledge{color:var(--gf1)}.v-exp{color:#c62828}.v-bal{color:#8a6116}
 .gf-search{display:flex;align-items:center;gap:.5rem;background:#fff;border:1.5px solid #E3E7F5;border-radius:24px;padding:.55rem .9rem;margin-bottom:.7rem;box-shadow:0 2px 8px rgba(0,0,0,.04)}
@@ -220,9 +220,9 @@ require_once __DIR__.'/../includes/header.php';
 .gf-row{display:flex;align-items:center;gap:.7rem;padding:.85rem .9rem;cursor:pointer;transition:background .15s}
 .gf-row:active{background:#f6f8fc}
 .gf-av{width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0;background:linear-gradient(135deg,var(--gf1),var(--gf2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800}
-.gf-name{font-weight:800;font-size:.92rem;color:#0B1033}.gf-role{font-size:.66rem;color:#5f6880}
+.gf-name{font-weight:800;font-size:.92rem;color:#0B1033}.gf-role{font-size:.75rem;color:#5f6880}
 .gf-amt{text-align:right;flex-shrink:0}.gf-paid{font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.0rem;color:var(--gfg);line-height:1}
-.gf-bal-pill{display:inline-block;font-size:.6rem;font-weight:800;padding:.12rem .5rem;border-radius:10px;margin-top:.15rem}
+.gf-bal-pill{display:inline-block;font-size:.75rem;font-weight:800;padding:.12rem .5rem;border-radius:10px;margin-top:.15rem}
 .bal-due{background:#fff3e0;color:#e65100}.bal-clear{background:#e8f5e9;color:#1b5e20}.bal-none{background:#eceff1;color:#546e7a}
 .gf-chev{color:#cbd5e1;font-size:.9rem;transition:transform .25s}.gf-card.open .gf-chev{transform:rotate(90deg)}
 .gf-detail{display:none;border-top:1px solid #F5F7FF;padding:.9rem;background:#fafbff}
@@ -230,7 +230,7 @@ require_once __DIR__.'/../includes/header.php';
 .gf-prof{display:flex;gap:.7rem;align-items:center;margin-bottom:.7rem}
 .gf-prof-tiles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.4rem;margin-bottom:.7rem}
 .gf-tile{background:#fff;border:1px solid #eef1f6;border-radius:10px;padding:.5rem;text-align:center}
-.gf-tile .tl{font-size:.55rem;color:#5f6880;font-weight:800;text-transform:uppercase}.gf-tile .tv{font-size:.82rem;font-weight:800;color:#0B1033;margin-top:.1rem}
+.gf-tile .tl{font-size:.75rem;color:#5f6880;font-weight:800;text-transform:uppercase}.gf-tile .tv{font-size:.82rem;font-weight:800;color:#0B1033;margin-top:.1rem}
 .gf-pay-item{display:flex;justify-content:space-between;align-items:center;font-size:.78rem;padding:.4rem 0;border-bottom:1px dashed #E3E7F5}
 .gf-mini-btn{background:linear-gradient(135deg,var(--gfg),#2e7d32);color:#fff;border:none;border-radius:10px;padding:.5rem .9rem;font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit}
 .gf-mini-btn.blue{background:linear-gradient(135deg,var(--gf1),var(--gf2))}
@@ -267,11 +267,11 @@ require_once __DIR__.'/../includes/header.php';
     </div>
 
     <?php if($isAdmin): ?>
-    <div style="font-size:.7rem;font-weight:800;color:#556274;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem">📥 Reports & Export</div>
+    <div style="font-size:.75rem;font-weight:800;color:#556274;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem">📥 Reports & Export</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1rem">
       <a href="?view=report" class="gf-report-btn" style="margin:0;grid-column:1/-1">📄 Full Report (PDF) — Members + Expenses</a>
-      <a href="?view=export_members" class="gf-report-btn" style="margin:0;background:linear-gradient(135deg,#1d6f42,#2e7d32)">📊 Member Collection<br><span style="font-size:.62rem;opacity:.85;font-weight:600">Excel</span></a>
-      <a href="?view=export_expenses" class="gf-report-btn" style="margin:0;background:linear-gradient(135deg,#b25b00,#e65100)">💸 Expense Report<br><span style="font-size:.62rem;opacity:.85;font-weight:600">Excel</span></a>
+      <a href="?view=export_members" class="gf-report-btn" style="margin:0;background:linear-gradient(135deg,#1d6f42,#2e7d32)">📊 Member Collection<br><span style="font-size:.75rem;opacity:.85;font-weight:600">Excel</span></a>
+      <a href="?view=export_expenses" class="gf-report-btn" style="margin:0;background:linear-gradient(135deg,#b25b00,#e65100)">💸 Expense Report<br><span style="font-size:.75rem;opacity:.85;font-weight:600">Excel</span></a>
     </div>
     <?php endif; ?>
 
@@ -315,7 +315,7 @@ require_once __DIR__.'/../includes/header.php';
       <div class="gf-detail">
         <div class="gf-prof">
           <?php if($photo): ?><img src="<?= $photo ?>" style="width:54px;height:54px;border-radius:50%;object-fit:cover" alt=""><?php else: ?><div class="gf-av" style="width:54px;height:54px;font-size:1.3rem"><?= strtoupper(substr($r['name'],0,1)) ?></div><?php endif; ?>
-          <div><div style="font-weight:800;color:#0B1033"><?= h($r['name']) ?></div><div style="font-size:.72rem;color:#5f6880"><?= h(roleLabel($r['role'])) ?> · AV<?= str_pad($r['id'],4,'0',STR_PAD_LEFT) ?></div></div>
+          <div><div style="font-weight:800;color:#0B1033"><?= h($r['name']) ?></div><div style="font-size:.75rem;color:#5f6880"><?= h(roleLabel($r['role'])) ?> · AV<?= str_pad($r['id'],4,'0',STR_PAD_LEFT) ?></div></div>
         </div>
         <div class="gf-prof-tiles">
           <div class="gf-tile"><div class="tl">Pledged</div><div class="tv">₹<?= number_format($r['pledge']) ?></div></div>
@@ -325,11 +325,11 @@ require_once __DIR__.'/../includes/header.php';
           <?php if($r['profession']): ?><div class="gf-tile"><div class="tl">Job</div><div class="tv"><?= h($r['profession']) ?></div></div><?php endif; ?>
           <?php if($r['skill']): ?><div class="gf-tile"><div class="tl">Skill</div><div class="tv"><?= h($r['skill']) ?></div></div><?php endif; ?>
         </div>
-        <div style="font-size:.7rem;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:.3rem">Payment History</div>
+        <div style="font-size:.75rem;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:.3rem">Payment History</div>
         <?php if(empty($hist)): ?><div style="font-size:.78rem;color:#5f6880;padding:.3rem 0">No payments yet.</div>
         <?php else: foreach($hist as $hp): ?>
         <div class="gf-pay-item">
-          <div><span style="font-weight:700">₹<?= number_format($hp['amount']) ?></span><span style="color:#5f6880"> · <?= $hp['pay_date']?date('d M Y',strtotime($hp['pay_date'])):'—' ?> · <?= h(ucfirst($hp['method'])) ?></span><?php if($hp['note']): ?><div style="font-size:.68rem;color:#5f6880"><?= h($hp['note']) ?></div><?php endif; ?></div>
+          <div><span style="font-weight:700">₹<?= number_format($hp['amount']) ?></span><span style="color:#5f6880"> · <?= $hp['pay_date']?date('d M Y',strtotime($hp['pay_date'])):'—' ?> · <?= h(ucfirst($hp['method'])) ?></span><?php if($hp['note']): ?><div style="font-size:.75rem;color:#5f6880"><?= h($hp['note']) ?></div><?php endif; ?></div>
           <?php if($isAdmin): ?><button onclick="gfDelPay(<?= $hp['id'] ?>)" style="background:none;border:none;color:#b71c1c;cursor:pointer;font-size:.9rem">🗑</button><?php endif; ?>
         </div>
         <?php endforeach; endif; ?>
@@ -351,15 +351,15 @@ require_once __DIR__.'/../includes/header.php';
     <!-- Expense summary -->
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.7rem">
       <div style="background:#fff;border-radius:12px;padding:.6rem;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.04)">
-        <div style="font-size:.56rem;font-weight:800;color:#5f6880;text-transform:uppercase">Entries</div>
+        <div style="font-size:.75rem;font-weight:800;color:#5f6880;text-transform:uppercase">Entries</div>
         <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.04rem;color:#0B1033"><?= $expCount ?></div>
       </div>
       <div style="background:#fff;border-radius:12px;padding:.6rem;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.04)">
-        <div style="font-size:.56rem;font-weight:800;color:#5f6880;text-transform:uppercase">This Month</div>
+        <div style="font-size:.75rem;font-weight:800;color:#5f6880;text-transform:uppercase">This Month</div>
         <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.04rem;color:#c62828">₹<?= number_format($expThisMonth) ?></div>
       </div>
       <div style="background:#fff;border-radius:12px;padding:.6rem;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.04)">
-        <div style="font-size:.56rem;font-weight:800;color:#5f6880;text-transform:uppercase">Average</div>
+        <div style="font-size:.75rem;font-weight:800;color:#5f6880;text-transform:uppercase">Average</div>
         <div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:1.04rem;color:#0B1033">₹<?= number_format($expAvg) ?></div>
       </div>
     </div>
@@ -378,7 +378,7 @@ require_once __DIR__.'/../includes/header.php';
       $ePeriodY = ($ex['spent_date'] && substr($ex['spent_date'],0,4)===$curYear) ? '1' : '0';
     ?>
     <div class="gf-exp-row" data-month="<?= $ePeriodM ?>" data-year="<?= $ePeriodY ?>">
-      <div><div style="font-weight:700;font-size:.86rem;color:#0B1033"><?= h($ex['title']) ?></div><div style="font-size:.68rem;color:#5f6880"><?= $ex['spent_date']?date('d M Y',strtotime($ex['spent_date'])):'' ?><?= $ex['note']?' · '.h($ex['note']):'' ?></div></div>
+      <div><div style="font-weight:700;font-size:.86rem;color:#0B1033"><?= h($ex['title']) ?></div><div style="font-size:.75rem;color:#5f6880"><?= $ex['spent_date']?date('d M Y',strtotime($ex['spent_date'])):'' ?><?= $ex['note']?' · '.h($ex['note']):'' ?></div></div>
       <div style="display:flex;align-items:center;gap:.5rem"><div style="font-family:var(--font,'Plus Jakarta Sans'),sans-serif;font-weight:800;text-transform:uppercase;font-size:0.92rem;color:#c62828">₹<?= number_format($ex['amount']) ?></div><?php if($isAdmin): ?><button onclick="gfDelExp(<?= $ex['id'] ?>)" style="background:none;border:none;color:#b71c1c;cursor:pointer">🗑</button><?php endif; ?></div>
     </div>
     <?php endforeach; endif; ?>

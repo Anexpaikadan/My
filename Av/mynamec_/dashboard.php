@@ -179,7 +179,7 @@ $tileSets[t('app_this_month')] = array(
 .db-hello img,.db-hello .ph{width:56px;height:56px;border-radius:50%;object-fit:cover;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;border:2px solid rgba(255,255,255,.8)}
 .db-hello small{display:block;color:var(--muted);font-weight:600}
 .db-hello b{font-weight:900;text-transform:uppercase;font-style:italic;font-size:1.2rem;line-height:1.1}
-.db-hello .role{display:inline-block;margin-top:.3rem;font-size:.72rem;font-weight:800;background:var(--brand);padding:.12rem .55rem;border-radius:2rem}
+.db-hello .role{display:inline-block;margin-top:.3rem;font-size:.75rem;font-weight:800;background:var(--brand);padding:.12rem .55rem;border-radius:2rem}
 .db-panels{display:grid;gap:1rem;margin-top:.4rem}
 @media(min-width:992px){.db-panels{grid-template-columns:1.6fr 1fr;align-items:start}}
 .panel{background:#fff;border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--sh-soft);overflow:hidden}
@@ -193,11 +193,11 @@ $tileSets[t('app_this_month')] = array(
 .note b{display:block;font-size:.95rem}
 .note p{font-size:.88rem;color:var(--text-2);margin:.15rem 0;white-space:pre-line}
 .note small{font-size:.76rem;color:var(--text-3)}
-.pill2{display:inline-block;font-size:.68rem;font-weight:800;padding:.08rem .5rem;border-radius:2rem;margin-left:.3rem;vertical-align:middle;background:#FFECEC;color:#B80F0A}
+.pill2{display:inline-block;font-size:.75rem;font-weight:800;padding:.08rem .5rem;border-radius:2rem;margin-left:.3rem;vertical-align:middle;background:#FFECEC;color:#B80F0A}
 .ev{display:flex;gap:.75rem;align-items:center;padding:.6rem 0;border-bottom:1px solid var(--line)}
 .ev:last-child{border-bottom:0}
 .ev .date{width:48px;height:52px;border-radius:.8rem;background:var(--dark);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;line-height:1;flex-shrink:0}
-.ev .date small{font-size:.62rem;text-transform:uppercase;margin-top:.15rem;color:var(--muted)}
+.ev .date small{font-size:.75rem;text-transform:uppercase;margin-top:.15rem;color:var(--muted)}
 .ev b{display:block;font-size:.92rem}.ev span{font-size:.8rem;color:var(--text-3)}
 .mcard{display:block;border-radius:var(--r-card);padding:1.1rem;color:#fff;text-decoration:none;background:var(--dark);position:relative;overflow:hidden;box-shadow:var(--sh-soft)}
 .mcard:hover{color:#fff}
@@ -213,7 +213,7 @@ $tileSets[t('app_this_month')] = array(
 .ach{display:flex;gap:.6rem;overflow-x:auto;scrollbar-width:none;padding-bottom:.2rem}
 .ach-i{flex:0 0 150px;border-radius:.9rem;background:var(--light);border:1px solid var(--line);overflow:hidden}
 .ach-i img,.ach-i .ph{width:100%;height:96px;object-fit:cover;background:#FFF1C7;display:flex;align-items:center;justify-content:center;color:#B45309;font-size:2rem}
-.ach-i div{padding:.5rem .6rem}.ach-i b{font-size:.8rem;display:block;line-height:1.25}.ach-i span{font-size:.72rem;color:var(--text-3)}
+.ach-i div{padding:.5rem .6rem}.ach-i b{font-size:.8rem;display:block;line-height:1.25}.ach-i span{font-size:.75rem;color:var(--text-3)}
 .slides{display:flex;gap:.7rem;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
 .slides::-webkit-scrollbar{display:none}
 .slide{flex:0 0 82%;max-width:420px;height:170px;border-radius:var(--r-card);scroll-snap-align:start;position:relative;overflow:hidden;color:#fff;display:flex;flex-direction:column;justify-content:flex-end;padding:1rem;text-decoration:none;box-shadow:var(--sh-soft)}
@@ -221,7 +221,7 @@ $tileSets[t('app_this_month')] = array(
 .slide img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .slide::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,16,51,.05) 20%,rgba(11,16,51,.92));z-index:1}
 .slide>*{position:relative;z-index:2}
-.slide .type{font-size:.66rem;font-weight:800;letter-spacing:.08em;background:var(--brand);align-self:flex-start;padding:.1rem .5rem;border-radius:.4rem}
+.slide .type{font-size:.75rem;font-weight:800;letter-spacing:.08em;background:var(--brand);align-self:flex-start;padding:.1rem .5rem;border-radius:.4rem}
 .slide b{font-weight:900;font-size:1.05rem;text-transform:uppercase;font-style:italic;margin:.2rem 0}
 .slide span{font-size:.8rem;color:#e2e4f3}
 .empty{text-align:center;color:var(--text-3);font-size:.9rem;padding:1rem .5rem}
@@ -380,15 +380,15 @@ details.post summary::-webkit-details-marker{display:none}
             <div style="position:absolute;bottom:0;right:0;width:28px;height:28px;border-bottom:3px solid #A9B0FF;border-right:3px solid #A9B0FF;border-radius:0 0 3px 0"></div>
             <div style="position:absolute;left:8px;right:8px;height:2px;background:linear-gradient(90deg,transparent,#A9B0FF,transparent);animation:scanAnim 1.8s ease-in-out infinite;top:50%"></div>
           </div>
-          <div style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);color:#A9B0FF;font-size:.68rem;font-weight:700;letter-spacing:.1em;white-space:nowrap">POINT AT QR CODE</div>
+          <div style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);color:#A9B0FF;font-size:.75rem;font-weight:700;letter-spacing:.1em;white-space:nowrap">POINT AT QR CODE</div>
         </div>
       </div>
       <div id="dashResult" style="padding:.85rem 1rem;min-height:60px">
         <p style="color:rgba(255,255,255,.75);font-size:.8rem;text-align:center">Position the QR code inside the frame</p>
       </div>
       <div style="padding:0 1rem .9rem">
-        <div style="font-size:.65rem;color:rgba(255,255,255,.65);text-align:center;margin-bottom:.4rem">— or paste token —</div>
-        <input type="text" id="dashTokenInput" placeholder="Paste QR token here" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:.58rem .85rem;font-family:Inter,sans-serif;font-size:.85rem;color:#fff;outline:none;text-align:center" oninput="dashVerifyToken(this.value)">
+        <div style="font-size:.75rem;color:rgba(255,255,255,.65);text-align:center;margin-bottom:.4rem">— or paste token —</div>
+        <input type="text" id="dashTokenInput" placeholder="Paste QR token here" style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:.58rem .85rem;font-family:Inter,sans-serif;font-size:16px;color:#fff;outline:none;text-align:center" oninput="dashVerifyToken(this.value)">
       </div>
     </div>
   </div>
@@ -503,10 +503,10 @@ function dashVerifyToken(val){
         dr.innerHTML='<div style="background:rgba(0,230,118,.12);border:1.5px solid rgba(0,230,118,.35);border-radius:9px;padding:.8rem">'
           +'<div style="color:#00e676;font-weight:800;font-size:.9rem;margin-bottom:.5rem">✅ VALID VOLUNTEER</div>'
           +'<div style="font-size:.84rem;font-weight:700;color:#fff">'+dat.mname+'</div>'
-          +'<div style="font-size:.74rem;color:rgba(255,255,255,.6);margin:.15rem 0">'+dat.etitle+'</div>'
-          +'<div style="font-size:.74rem;color:rgba(255,255,255,.6)">'+dat.edate+'</div>'
-          +(dat.mblood?'<div style="font-size:.74rem;color:#ff8a80;font-weight:700;margin-top:.2rem">🩸 '+dat.mblood+'</div>':'')
-          +'<button onclick="resetDashScan()" style="margin-top:.6rem;background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:7px;padding:.38rem .8rem;font-family:Inter,sans-serif;font-size:.74rem;font-weight:700;cursor:pointer">📷 Scan Next</button>'
+          +'<div style="font-size:.75rem;color:rgba(255,255,255,.6);margin:.15rem 0">'+dat.etitle+'</div>'
+          +'<div style="font-size:.75rem;color:rgba(255,255,255,.6)">'+dat.edate+'</div>'
+          +(dat.mblood?'<div style="font-size:.75rem;color:#ff8a80;font-weight:700;margin-top:.2rem">🩸 '+dat.mblood+'</div>':'')
+          +'<button onclick="resetDashScan()" style="margin-top:.6rem;background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:7px;padding:.38rem .8rem;font-family:Inter,sans-serif;font-size:.75rem;font-weight:700;cursor:pointer">📷 Scan Next</button>'
           +'</div>';
       } else {
         dr.innerHTML='<div style="background:rgba(255,82,82,.12);border:1.5px solid rgba(255,82,82,.3);border-radius:9px;padding:.8rem;color:#ff5252;font-weight:700;font-size:.84rem">❌ '+(d.msg||'Invalid QR code')+'</div>';

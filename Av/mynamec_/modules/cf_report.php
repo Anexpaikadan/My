@@ -54,13 +54,13 @@ function rmoney($n){ return '₹'.number_format($n,2); }
   .rhead img{width:62px;height:62px;border-radius:50%;object-fit:cover;border:2px solid #c8922a}
   .rhead h1{font-size:1.32rem;color:#0B1033;line-height:1.2}
   .rhead .sub{font-size:.8rem;color:#5a6680;margin-top:2px}
-  .rtag{display:inline-block;background:#0A14E0;color:#fff;font-size:.66rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:3px 12px;border-radius:20px;margin:14px 0 4px}
+  .rtag{display:inline-block;background:#0A14E0;color:#fff;font-size:.75rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:3px 12px;border-radius:20px;margin:14px 0 4px}
   .ctitle{font-size:1.5rem;color:#0B1033;font-weight:800;margin-bottom:2px}
   .cmeta{font-size:.82rem;color:#5a6680;margin-bottom:18px}
   /* Summary */
   .sumgrid{display:flex;gap:12px;margin-bottom:22px;flex-wrap:wrap}
   .sumbox{flex:1;min-width:120px;border:1px solid #E3E7F5;border-radius:10px;padding:12px 14px;background:#f8f9ff}
-  .sumbox .l{font-size:.66rem;text-transform:uppercase;letter-spacing:.06em;color:#5f6880;font-weight:700}
+  .sumbox .l{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:#5f6880;font-weight:700}
   .sumbox .v{font-size:1.3rem;font-weight:800;color:#0B1033;margin-top:3px}
   .sumbox.green .v{color:#1b5e20}.sumbox.blue .v{color:#0A14E0}.sumbox.gold .v{color:#c8922a}
   .progress{height:10px;background:#E3E7F5;border-radius:6px;overflow:hidden;margin-bottom:24px}
@@ -68,7 +68,7 @@ function rmoney($n){ return '₹'.number_format($n,2); }
   /* Table */
   h3.sec{font-size:.95rem;color:#0B1033;margin-bottom:10px;border-left:4px solid #c8922a;padding-left:8px}
   table{width:100%;border-collapse:collapse;font-size:.82rem}
-  th{background:#0B1033;color:#fff;text-align:left;padding:8px 10px;font-size:.72rem;letter-spacing:.04em}
+  th{background:#0B1033;color:#fff;text-align:left;padding:8px 10px;font-size:.75rem;letter-spacing:.04em}
   th.r,td.r{text-align:right}
   td{padding:8px 10px;border-bottom:1px solid #eef1f6}
   tr:nth-child(even) td{background:#fafbfe}
@@ -76,8 +76,8 @@ function rmoney($n){ return '₹'.number_format($n,2); }
   .top1 td{background:#fffaf0 !important}
   tfoot td{font-weight:800;color:#0B1033;border-top:2px solid #0A14E0;background:#f0f4fc}
   /* Footer */
-  .rfoot{margin-top:26px;border-top:1px solid #E3E7F5;padding-top:14px;font-size:.72rem;color:#5f6880;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
-  .stamp{margin-top:10px;font-size:.7rem;color:#aab2c4;font-style:italic}
+  .rfoot{margin-top:26px;border-top:1px solid #E3E7F5;padding-top:14px;font-size:.75rem;color:#5f6880;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+  .stamp{margin-top:10px;font-size:.75rem;color:#aab2c4;font-style:italic}
   /* Print button */
   .pbar{max-width:760px;margin:0 auto 14px;display:flex;gap:10px;justify-content:flex-end}
   .pbtn{background:#0A14E0;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:.85rem;font-weight:700;cursor:pointer}
