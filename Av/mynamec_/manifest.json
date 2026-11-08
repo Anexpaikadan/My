@@ -1,0 +1,29 @@
+{
+  "name": "Aishwarya Arts & Sports Club",
+  "short_name": "Aishwarya",
+  "description": "Aishwarya Arts & Sports Club — Community App",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#07225c",
+  "theme_color": "#07225c",
+  "icons": [
+    {
+      "src": "/assets/logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [],
+  "categories": ["social", "sports"],
+  "lang": "en",
+  "dir": "ltr"
+}

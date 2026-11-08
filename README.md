@@ -4,6 +4,7 @@
 |---|---|
 | [`daybill/`](daybill/) | **Daybill Print** – print shop app (PHP + MySQL) |
 | `sales-pos.html` | Sales POS page |
+| [`Av/mynamec_/`](Av/mynamec_/) | **Aishwarya Arts & Sports Club** – members portal (PHP + MySQL), mynamecc.online |
 
 ## Daybill Print
 
@@ -34,3 +35,81 @@ staff see the order, check it and print it on the shop printer.
 - HTTPS is always required. Installable as an app (PWA).
 
 Setup, hosting and printer details: [`daybill/README.md`](daybill/README.md).
+
+## Aishwarya Arts & Sports Club (`Av/mynamec_/`)
+
+Members portal for the club in Vettikkattiri: public homepage, WhatsApp OTP / passkey login, dashboard,
+admin panel and modules (football, arts festival, henna fest, elections, blood donors,
+crowdfunding, ID cards, certificates, gallery, subscriptions…).
+
+**Setup:** in `includes/config.php` fill in `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS` (kept as placeholders in git).
+
+**UI/UX pass (shared header + footer, used by every member page):**
+- Pinch-zoom allowed again; no auto-zoom on iPhone when typing (inputs are 16px).
+- Clearer text: grey labels, placeholders, menu headings and bottom-bar labels now meet 4.5:1 contrast.
+- Bigger tap targets (44px): menu, close buttons, avatar, social icons, bottom bar, buttons on phones.
+- Keyboard and screen reader: "Skip to content" link, visible focus ring, menus report open/closed,
+  Escape closes menus and the drawer, current page is marked, decorative emoji hidden from readers.
+- Mobile menu highlights the page you are on.
+- Faster: Font Awesome loaded once (the duplicate JS copy is gone), duplicate PWA tags removed.
+- Honours the phone's "reduce motion" setting; safe-area padding for notched phones.
+
+**Public homepage (`index.php`) — UI/UX pass:**
+- Fixed: the "Install the app" instructions always showed at the bottom of the page; they now open as a sheet from the Install button.
+- Fixed: footer columns were stacked in one long list (they used Bootstrap classes without Bootstrap); now a proper 4-column / 2-column grid.
+- Fixed: Henna Fest script stopped with an error (broken quotes), and the slider dots never changed.
+- Fixed: the page had an empty browser title; it now shows the club name, plus a description for search and sharing.
+- Login popup and photo viewer now sit above the bottom bar; popup, tabs, keypad and menus work by keyboard and
+  screen reader; focus returns where it was on close; passkey can also be typed on a keyboard.
+- Slider pauses on hover/focus and doesn't auto-play with "reduce motion"; hidden slides can't be clicked.
+- Better contrast (grey and gold text, footer, labels), 16px inputs, 44px tap targets, labelled form fields.
+
+**All pages — UI/UX pass (checked with the axe accessibility checker on 34 pages):**
+- Automated problems went from 198 to 0 real ones (the 4 left are pages that need real data to render).
+- ~200 faint grey/gold/light-blue text colours darkened to meet 4.5:1 contrast (only on light backgrounds;
+  colours on dark sections were left alone or lightened instead).
+- Every form label is connected to its field; unlabelled dropdowns, sliders and icon-only buttons now have names.
+- Clickable cards and tabs built from `<div onclick>` now work with Tab + Enter/Space.
+- Closed side menu can no longer be reached with Tab.
+- No sideways scrolling on phones (Contact page, Club Settings tabs now scroll in one row).
+- ID card page allows pinch-zoom; Contact page inputs are 16px; credit footer readable on dark pages.
+
+**New design (2026-11):** dark glass app frame with a fresh teal/coral palette, one SVG icon set, a dashboard
+built like a phone home screen (app tiles), a floating bottom tab bar, bottom-sheet popups, and a redesigned public homepage.
+Name Slip and Henna (Mehndi) Fest modules were removed (their database tables and uploaded photos are kept).
+Club Settings → Homepage now really controls the homepage: banner texts, which sections show, about / join texts,
+colours, font and footer text. Fees from Club Settings → Fees are now used on the Subscription page.
+
+**Logo colours (2026-11):** the whole site now uses the club logo's white, red and blue, with the logo's red→blue
+gradient on the top bar, banners and main buttons. App tiles show 3D pictures (`assets/icons/3d/`, replaceable).
+
+**One design on every page:** each module opens with the same logo-gradient banner, its big 3D icon (added
+automatically from `app_modules()`), and a bold uppercase title; section headings use the red-blue bar; the old
+Bebas Neue headings now use the site font (ID card and Poster Studio keep theirs because they export images/PDFs).
+
+**WhatsApp sending (2026-11):** Club Settings → WhatsApp connects a free self-hosted GOWA server or Meta's official
+Cloud API. Then the site sends login and passkey-reset codes, welcome messages on approval, new-event
+announcements, blood requests to matching donors and fee reminders by itself (queued and spaced out).
+Setup steps: [`Av/mynamec_/WHATSAPP_SETUP.md`](Av/mynamec_/WHATSAPP_SETUP.md).
+
+**Login Help (Admin Panel):** search a member by phone number, then set a new passkey (typed or generated, sent with one
+tap on WhatsApp), clear the passkey so they pick a new one, change their login phone number, remove fingerprint /
+Face ID logins, or activate the account. Every change is logged. Member login is the normal passkey login; WhatsApp
+login codes are optional and off by default.
+
+**Bootstrap redesign (2026-11):** mobile-first, built for a 390px phone first. Bootstrap 5.3, Bootstrap Icons and Font
+Awesome are now stored in the site (no CDN), with one custom stylesheet `assets/css/club.css`.
+- **Public site (dark):** hero photo with "Join the Club", WhatsApp and Call buttons; about points; program cards with
+  details pop-up; achievements (gold), gallery and events sliders; fee cards; timings; numbered rules; shop with offer
+  prices, photo slideshow and "Enquire on WhatsApp"; contact; 3-button bottom bar (Home / Market / Login).
+- **Join the Club form:** saved under Admin → Enquiries, thank-you card, then WhatsApp opens with the details.
+  Spam protection: hidden honeypot field and 5 requests per hour per address.
+- **English / Malayalam** switch on every page; all fixed texts are in `includes/lang.php`.
+- **Admin → Public Website:** main photo, every heading and text (English and Malayalam), section on/off switches,
+  programs, fee cards, timings, rules, contact numbers, map, and the WhatsApp link preview (with on/off switch).
+  Gallery, achievements and market items have a "show on public website" switch; market items an old price.
+- **Member/admin app (light):** dark sidebar on desktop, dark top bar, 5-tab bottom bar on phones and a "More" page
+  with all modules; colourful dashboard tiles (Today / Members / This month).
+- **Passkey check:** admins type their login passkey again before deleting anything or changing money
+  (fees, payments, donations, campaigns). It stays valid for 5 minutes.
+- Uploaded photos are resized automatically (max 1200px, JPG 80%). New app icons made from the logo.

@@ -1,0 +1,68 @@
+# ============================================================
+#  .htaccess — Security Hardened
+#  Upload to: mynamec_/.htaccess
+# ============================================================
+
+# Disable directory listing
+Options -Indexes
+
+# Hide PHP errors from users
+php_flag display_errors Off
+php_flag log_errors On
+
+# Block direct access to sensitive files
+<FilesMatch "^(config|whatsapp_otp|header|footer|database|debug|test|delete_dummy|clear_cache)\.php$">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+# Block SQL files
+<FilesMatch "\.(sql|log|env|bak|backup|old|orig)$">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+# Block access to hidden files (.git, .env, etc)
+<FilesMatch "^\.">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+# Block uploads folder from executing PHP
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^assets/uploads/.*\.(php|php3|php4|php5|phtml|pl|py|jsp|asp|sh|cgi)$ - [F,NC,L]
+</IfModule>
+
+# Security headers
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set X-XSS-Protection "1; mode=block"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+</IfModule>
+
+# Prevent access to composer files
+<FilesMatch "(composer\.json|composer\.lock|package\.json|package-lock\.json|yarn\.lock)$">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+# Force HTTPS
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTPS} off
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# Limit file upload size
+php_value upload_max_filesize 15M
+php_value post_max_size 16M
+php_value max_execution_time 60
+
+# Session security
+php_value session.cookie_httponly 1
+php_value session.cookie_secure 1
+php_value session.use_strict_mode 1
+php_value session.cookie_samesite Strict
