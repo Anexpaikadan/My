@@ -69,6 +69,7 @@ function lang_strings() {
         'ct_sent' => 'Message sent!', 'ct_sent_sub' => 'Thank you. We will get back to you soon.', 'ct_again' => 'Send another',
         'ct_group' => 'WhatsApp group', 'ct_group_join' => 'Join our community group', 'ct_portal' => 'Member portal',
         'ct_portal_go' => 'Log in or apply to join', 'ct_err' => 'Please enter your name and a message.',
+        'theme_light' => 'Switch to light theme', 'theme_dark' => 'Switch to dark theme',
     ),
     'ml' => array(
         'nav_home' => 'ഹോം', 'nav_market' => 'മാർക്കറ്റ്', 'nav_login' => 'ലോഗിൻ', 'nav_dashboard' => 'ഡാഷ്ബോർഡ്',
@@ -106,6 +107,7 @@ function lang_strings() {
         'ct_sent' => 'സന്ദേശം അയച്ചു!', 'ct_sent_sub' => 'നന്ദി. ഞങ്ങൾ ഉടൻ ബന്ധപ്പെടും.', 'ct_again' => 'വീണ്ടും അയക്കുക',
         'ct_group' => 'വാട്സാപ്പ് ഗ്രൂപ്പ്', 'ct_group_join' => 'ഞങ്ങളുടെ ഗ്രൂപ്പിൽ ചേരൂ', 'ct_portal' => 'അംഗങ്ങളുടെ പോർട്ടൽ',
         'ct_portal_go' => 'ലോഗിൻ ചെയ്യുക / അംഗമാകുക', 'ct_err' => 'പേരും സന്ദേശവും നൽകുക.',
+        'theme_light' => 'ലൈറ്റ് തീമിലേക്ക് മാറുക', 'theme_dark' => 'ഡാർക്ക് തീമിലേക്ക് മാറുക',
     ),
     );
 }

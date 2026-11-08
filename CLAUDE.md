@@ -34,8 +34,15 @@ reference.** Rewrite it as plain HTML and CSS that follow the app's own tokens a
 ```
 Old names (`--primary --blue --navy --t2 --t3 --bg --border --radius --brand-grad …`) are kept as aliases so older module code works.
 Headings: `.h-sec` (900 weight, UPPERCASE, 3rem×4px red bar under it), `.h-big` (big italic title).
-- **Two looks:** `<body class="pub">` = dark public pages (`index.php`, `contact.php`); `<body class="app">` = light
+- **Two looks:** `<body class="pub">` = public pages (`index.php`, `contact.php`); `<body class="app">` = light
   member/admin pages (`includes/header.php`). Scope public-only styles under `.pub` so they don't leak into the app.
+- **Public light theme:** `<html data-theme="light">` (set before paint by `theme_head()` in `includes/theme.php`; sun/moon
+  button `theme_button()`; default in Admin → Public Website → Sections, `pub_theme` dark|light|auto). It redefines the
+  public tokens (`--dark` → white cards, `--page-dark` → #F4F6FB, `--muted` → #4A5170, `--brand-text` → #B80F0A) under
+  `html[data-theme=light] body.pub`. **New public styles must use these tokens**, not `#fff`/`rgba(255,255,255,…)`;
+  if you must hard-code white, add a matching `html[data-theme=light]` override and test both themes.
+- **Graphics:** logo gradient `--grad-rb` (red→purple→blue), slanted three-stripe corner on `.sec-alt`, dot texture,
+  hero glows + speed lines (`.hero-pub::before/::after`), gradient heading bar (`--bar2` sets its end colour).
 - **Public page content is data, not code.** Admin → **Public Website** (`modules/site.php`) saves to `club_settings`
   (`hero_photo`, `hero_title`, `hero_subtitle`, `about_points`, `join_options`, `footer_text`, `pub_title_<section>`,
   `pub_show_<section>` on/off, `site_whatsapp`, `site_phone`, `site_address`, `site_map`, `social_instagram`, `og_on/og_title/og_desc/og_image`).
@@ -135,7 +142,7 @@ require_once __DIR__ . '/../includes/header.php';
   Daybill keeps its libraries **in the repo** (`daybill/assets/pdf-lib.min.js`, `qrcode.js`) and serves no CDN code.
 - **No build system or bundler.** Bust the browser cache by hand: club `club.css?v=N` (in `includes/header.php`,
   `index.php`, `contact.php`), Daybill `style.css?v=21`, `app.js?v=8`: **bump the number** whenever you edit those files.
-  The club PWA cache is named in `sw.js` (`const CACHE = 'aasc-v6'`): bump it when you change cached files.
+  The club PWA cache is named in `sw.js` (`const CACHE = 'aasc-v7'`): bump it when you change cached files.
 - PWA: `manifest.php` + `sw.js` in both apps.
 
 ## 4. Assets

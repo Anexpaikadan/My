@@ -1,5 +1,5 @@
 // Aishwarya Club PWA Service Worker v2
-const CACHE = 'aasc-v6';
+const CACHE = 'aasc-v7';
 
 self.addEventListener('install', function(e) {
   self.skipWaiting();

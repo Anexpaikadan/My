@@ -3,6 +3,7 @@ require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/icons.php';
 require_once __DIR__ . '/includes/lang.php';
 require_once __DIR__ . '/includes/og.php';
+require_once __DIR__ . '/includes/theme.php';
 require_once __DIR__ . '/includes/site_schema.php';
 lang_current();
 
@@ -38,12 +39,11 @@ $isEmbed   = (bool)preg_match('#^https://(www\.)?google\.[a-z.]+/maps/embed#', $
 <title><?= h(t('sec_contact') . ' · ' . $clubName) ?></title>
 <?= og_tags(array('title' => t('sec_contact') . ' · ' . $clubName, 'url' => rtrim(SITE_URL, '/') . '/contact.php')) ?>
 <link rel="manifest" href="<?= url('manifest.php') ?>">
-<meta name="theme-color" content="#0B1033">
-<link rel="apple-touch-icon" href="<?= url('assets/icons/app/apple-touch-icon.png') ?>">
+<?= theme_head() ?><link rel="apple-touch-icon" href="<?= url('assets/icons/app/apple-touch-icon.png') ?>">
 <link rel="icon" type="image/png" href="<?= url('assets/icons/app/favicon-64.png') ?>">
 <link rel="stylesheet" href="<?= url('assets/vendor/bootstrap/css/bootstrap.min.css') ?>">
 <link rel="stylesheet" href="<?= url('assets/vendor/bootstrap-icons/bootstrap-icons.min.css') ?>">
-<link rel="stylesheet" href="<?= url('assets/css/club.css') ?>?v=5">
+<link rel="stylesheet" href="<?= url('assets/css/club.css') ?>?v=6">
 <style>
 .cf-card{background:var(--dark);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-card);padding:1.2rem}
 .cf-card .form-control{min-height:52px;background:var(--page-dark);border:1.5px solid rgba(255,255,255,.15);color:#fff;font-size:1rem;border-radius:.8rem}
@@ -62,6 +62,7 @@ $isEmbed   = (bool)preg_match('#^https://(www\.)?google\.[a-z.]+/maps/embed#', $
       <span><span class="name d-block"><?= h($clubName) ?></span><span class="sub"><?= h($clubPlace) ?> · Kerala</span></span>
     </a>
     <a class="lang" href="<?= h(lang_url(lang_current() === 'ml' ? 'en' : 'ml')) ?>" lang="<?= lang_current() === 'ml' ? 'en' : 'ml' ?>" aria-label="<?= h(t('lang_label')) ?>"><i class="bi bi-translate" aria-hidden="true"></i><?= h(t('lang_switch')) ?></a>
+    <?= theme_button() ?>
   </div>
 </header>
 

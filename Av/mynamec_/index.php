@@ -7,6 +7,7 @@ require_once __DIR__ . '/includes/whatsapp_otp.php';
 require_once __DIR__ . '/includes/wa_gateway.php';
 require_once __DIR__ . '/includes/lang.php';
 require_once __DIR__ . '/includes/og.php';
+require_once __DIR__ . '/includes/theme.php';
 require_once __DIR__ . '/includes/site_schema.php';
 lang_current();
 
@@ -400,8 +401,7 @@ $money = function($v){ $v = trim((string)$v); if ($v === '') return 'On request'
 <title><?= h($clubName . ' · ' . $clubPlace) ?></title>
 <?= og_tags() ?>
 <link rel="manifest" href="<?= url('manifest.php') ?>">
-<meta name="theme-color" content="#0B1033">
-<meta name="mobile-web-app-capable" content="yes">
+<?= theme_head() ?><meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Aishwarya">
@@ -410,7 +410,7 @@ $money = function($v){ $v = trim((string)$v); if ($v === '') return 'On request'
 <link rel="stylesheet" href="<?= url('assets/vendor/bootstrap/css/bootstrap.min.css') ?>">
 <link rel="stylesheet" href="<?= url('assets/vendor/bootstrap-icons/bootstrap-icons.min.css') ?>">
 <link rel="stylesheet" href="<?= url('assets/vendor/fontawesome/css/all.min.css') ?>">
-<link rel="stylesheet" href="<?= url('assets/css/club.css') ?>?v=5">
+<link rel="stylesheet" href="<?= url('assets/css/club.css') ?>?v=6">
 <style>
 /* login pop-up (logic unchanged; classes renamed so they don't clash with Bootstrap) */
 .overlay{display:none;position:fixed;inset:0;z-index:2000;background:rgba(5,8,25,.7);align-items:flex-end;justify-content:center}
@@ -506,6 +506,7 @@ function closeModal(){
       <?php if($Pon('contact')): ?><a href="#contact"><?= h($Ptitle('contact')) ?></a><?php endif; ?>
     </nav>
     <a class="lang" href="<?= h(lang_url(lang_current() === 'ml' ? 'en' : 'ml')) ?>" lang="<?= lang_current() === 'ml' ? 'en' : 'ml' ?>" aria-label="<?= h(t('lang_label')) ?>"><i class="bi bi-translate" aria-hidden="true"></i><?= h(t('lang_switch')) ?></a>
+    <?= theme_button() ?>
   </div>
 </header>
 
@@ -583,7 +584,7 @@ $slJson = array();
 foreach ($sliders as $key => $sl): $slJson[$key] = $sl[1]; ?>
 <!-- ══ 4. <?= strtoupper($key) ?> ══ -->
 <section<?= $key==='gallery' ? ' class="sec-alt"' : '' ?> id="<?= $key ?>" aria-labelledby="h_<?= $key ?>"><div class="wrap">
-  <h2 class="h-sec" id="h_<?= $key ?>"<?= $sl[0]==='gold' ? ' style="--brand:var(--gold)"' : '' ?>><?= h($Ptitle($key)) ?></h2>
+  <h2 class="h-sec" id="h_<?= $key ?>"<?= $sl[0]==='gold' ? ' style="--brand:var(--gold);--bar2:var(--gold)"' : '' ?>><?= h($Ptitle($key)) ?></h2>
   <div class="sl <?= $sl[0] ?>" data-slider>
     <div class="sl-track" tabindex="0" role="region" aria-label="<?= h($Ptitle($key)) ?>">
       <?php foreach($sl[1] as $j => $it): ?>

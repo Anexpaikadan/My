@@ -51,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $flash = 'Texts saved.'; break;
             case 'sections':
                 foreach ($SECTIONS as $k => $l) ss_save('pub_show_' . $k, !empty($_POST['show'][$k]) ? '1' : '0');
+                $th = $_POST['pub_theme'] ?? 'dark'; ss_save('pub_theme', in_array($th, array('dark','light','auto'), true) ? $th : 'dark');
                 $flash = 'Sections saved.'; break;
             case 'contact':
                 foreach (array('site_whatsapp','site_phone','site_map','social_instagram') as $k) ss_save($k, $T($k));
@@ -220,6 +221,15 @@ $editId = (int)($_GET['edit'] ?? 0);
   $old = array('about'=>'home_about_show','programs'=>'home_activities_show','achievements'=>'home_achievements_show','gallery'=>'home_gallery_show','events'=>'home_events_show','notices'=>'home_notices_show','committee'=>'home_committee_show'); ?>
   <form method="post" class="ws-card ws-sw">
     <?= csrfField() ?><input type="hidden" name="do" value="sections">
+    <h2>Look</h2>
+    <label class="form-label" for="pubTheme">Default look for visitors</label>
+    <?php $curTh = ss_get('pub_theme', 'dark'); ?>
+    <select class="form-select mb-1" name="pub_theme" id="pubTheme">
+      <option value="dark"<?= $curTh === 'dark' ? ' selected' : '' ?>>Dark (navy, like the club logo background)</option>
+      <option value="light"<?= $curTh === 'light' ? ' selected' : '' ?>>Light (white, same red and blue)</option>
+      <option value="auto"<?= $curTh === 'auto' ? ' selected' : '' ?>>Follow the visitor's phone setting</option>
+    </select>
+    <p class="ws-hint mb-4">Visitors can still switch with the sun / moon button in the top bar. Their choice is remembered on their phone.</p>
     <h2>Show on the public page</h2>
     <?php foreach($SECTIONS as $k => $l): $v = ss_get('pub_show_' . $k, ''); if ($v === '') $v = isset($old[$k]) ? ss_get($old[$k], '1') : '1'; ?>
     <div class="form-check form-switch"><label class="form-check-label" for="sw_<?= $k ?>"><?= h($l) ?></label><input class="form-check-input" type="checkbox" role="switch" name="show[<?= $k ?>]" value="1" id="sw_<?= $k ?>"<?= $v !== '0' ? ' checked' : '' ?>></div>

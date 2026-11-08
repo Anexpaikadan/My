@@ -429,3 +429,118 @@ html{scroll-behavior:smooth}
   .hero-pub *,.app .page-wrap,.modal .modal-dialog,.lgn,.popup-box,.thanks>i{animation:none!important;transform:none!important}
   .btn:active,.pcard:active,.prod:active,.sl-card:active,.dtile:active,.tile-l:active,.chip:active,.eq-card:active,.pcard:hover,.prod:hover,.sl-card:hover,.fee:hover,.tile-l:hover,.eq-card:hover,.dtile:hover{transform:none!important}
 }
+
+/* ================================================================
+   GRAPHICS (logo-inspired: red→blue gradient, slanted speed stripes, dots)
+   ================================================================ */
+:root{--grad-rb:linear-gradient(90deg,#E30613 0%,#8A0A8E 50%,#0A14E0 100%)}
+.h-sec::after{background:linear-gradient(90deg,var(--brand),var(--bar2,var(--accent)))}
+/* top bar: thin logo-gradient line */
+.pub-top{position:sticky}
+.pub-top::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--grad-rb);opacity:.85}
+/* hero: drifting red + blue glows and fine speed lines behind the photo */
+.hero-pub{position:relative;isolation:isolate;overflow:hidden}
+.hero-pub::before{content:"";position:absolute;inset:-20% -30%;z-index:-2;pointer-events:none;
+  background:radial-gradient(38% 34% at 22% 30%,rgba(227,6,19,.38),transparent 70%),radial-gradient(36% 32% at 80% 58%,rgba(10,20,224,.42),transparent 70%);
+  filter:blur(8px);animation:heroDrift 18s ease-in-out infinite alternate}
+.hero-pub::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.5;
+  background:repeating-linear-gradient(115deg,rgba(255,255,255,.07) 0 2px,transparent 2px 22px);
+  -webkit-mask-image:radial-gradient(70% 60% at 50% 40%,#000 0%,transparent 75%);mask-image:radial-gradient(70% 60% at 50% 40%,#000 0%,transparent 75%)}
+@keyframes heroDrift{0%{transform:translate3d(-3%,-2%,0) rotate(0deg)}100%{transform:translate3d(3%,3%,0) rotate(6deg)}}
+/* alternate sections: soft dot texture + three slanted stripes in the corner (like the logo's red/purple/blue) */
+.pub .sec-alt{position:relative;overflow:hidden;
+  background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1.4px);background-size:18px 18px}
+.pub .sec-alt::before{content:"";position:absolute;top:22px;right:-24px;width:150px;height:44px;pointer-events:none;opacity:.55;
+  background:linear-gradient(#E30613,#E30613) 0 0/100% 8px no-repeat,linear-gradient(#8A0A8E,#8A0A8E) 22px 18px/100% 8px no-repeat,linear-gradient(#0A14E0,#0A14E0) 44px 36px/100% 8px no-repeat;
+  transform:skewX(-28deg);border-radius:4px}
+.pub .sec-alt>.wrap{position:relative}
+/* cards without a photo get a brand glow instead of a flat box */
+.pcard .ph,.sl-card .ph,.prod .ph{background:radial-gradient(70% 60% at 15% 100%,rgba(227,6,19,.32),transparent 70%),radial-gradient(60% 55% at 90% 0%,rgba(10,20,224,.38),transparent 70%),var(--dark-2)}
+.sl.gold .sl-card .ph{background:radial-gradient(70% 60% at 50% 110%,rgba(232,185,35,.35),transparent 70%),var(--dark-2)}
+/* point icons sit on a small gradient disc */
+.pt-box i{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;flex:0 0 34px;border-radius:50%;color:#fff!important;background:var(--grad-rb);font-size:1.05rem}
+/* member/admin page banners: same speed lines */
+.app .hero{position:relative;isolation:isolate}
+.app .hero::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.6;border-radius:inherit;
+  background:repeating-linear-gradient(115deg,rgba(255,255,255,.06) 0 2px,transparent 2px 22px);
+  -webkit-mask-image:linear-gradient(90deg,transparent 30%,#000);mask-image:linear-gradient(90deg,transparent 30%,#000)}
+.app .hero>*{position:relative;z-index:1}
+
+/* red button: a light sweep (once after the hero arrives, and on hover with a mouse) */
+.btn-brand{position:relative;overflow:hidden}
+.btn-brand::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:45%;pointer-events:none;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.38),transparent);transform:skewX(-20deg);opacity:0}
+.hero-pub .btn-brand::after{animation:sheen 1.1s var(--ease-out) 1.2s 1 both}
+@media (hover:hover) and (pointer:fine){.btn-brand:hover::after{animation:sheen .9s var(--ease-out) 1}}
+@keyframes sheen{0%{left:-60%;opacity:1}100%{left:130%;opacity:1}}
+
+/* theme switch button (public top bar) */
+.theme-tg{width:44px;height:44px;flex:0 0 44px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);background:transparent;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:1.1rem;transition:transform var(--dur) var(--ease-spring),background-color var(--dur) var(--ease-out)}
+.theme-tg:active{transform:scale(.9) rotate(-20deg)}
+.theme-tg i{transition:transform var(--dur-slow) var(--ease-out)}
+html[data-theme=light] .theme-tg i{transform:rotate(-360deg)}
+/* colours ease across only while switching (class added for 500ms by the button) */
+html.theme-anim body.pub,html.theme-anim body.pub *{transition:background-color var(--dur) var(--ease-out),color var(--dur) var(--ease-out),border-color var(--dur) var(--ease-out),box-shadow var(--dur) var(--ease-out)!important}
+
+/* ================================================================
+   LIGHT THEME for the public pages — same logo red and blue
+   Turned on by <html data-theme="light"> (button in the top bar, or
+   Admin → Public Website → Sections → Default look).
+   Redefines the public tokens, then fixes the few hard-coded whites.
+   ================================================================ */
+html[data-theme=light] body.pub{
+  --dark:#FFFFFF; --page-dark:#F4F6FB; --dark-2:#E6EAF6; --muted:#4A5170;
+  --brand-text:#B80F0A; --accent-text:#0A14E0; --on:#0B1033; --hair:rgba(11,16,51,.12);
+  background:var(--page-dark);color:var(--on)}
+html[data-theme=light]{color-scheme:light}
+html[data-theme=light] .pub .text-white{color:var(--on)!important}
+html[data-theme=light] .pub .sec-alt{background-color:#E9EDF8;background-image:radial-gradient(rgba(11,16,51,.07) 1px,transparent 1.4px)}
+html[data-theme=light] .pub .sec-alt::before{opacity:.35}
+html[data-theme=light] .pub-top{background:rgba(255,255,255,.9);border-bottom-color:var(--hair)}
+html[data-theme=light] .pub-top .lang,html[data-theme=light] .theme-tg{border-color:rgba(11,16,51,.25);color:var(--on)}
+html[data-theme=light] .pub-top nav a:hover{color:var(--on);background:rgba(11,16,51,.06)}
+html[data-theme=light] .hero-pub::before{opacity:.45}
+html[data-theme=light] .hero-pub::after{background:repeating-linear-gradient(115deg,rgba(11,16,51,.06) 0 2px,transparent 2px 22px)}
+html[data-theme=light] .hero-photo{box-shadow:var(--sh-soft)}
+html[data-theme=light] :is(.pt-box,.pcard,.sl-card,.fee,.tm-row,.rule-box,.prod,.ct-box,.nt,.person,.cf-card){color:var(--on);border-color:var(--hair);box-shadow:var(--sh-soft)}
+html[data-theme=light] .pt-box,html[data-theme=light] .fee:not(.pop){border:1px solid var(--hair)}
+html[data-theme=light] .pcard .nm{color:#fff}
+html[data-theme=light] .pcard .ph,html[data-theme=light] .sl-card .ph,html[data-theme=light] .prod .ph{background:radial-gradient(70% 60% at 15% 100%,rgba(227,6,19,.18),transparent 70%),radial-gradient(60% 55% at 90% 0%,rgba(10,20,224,.2),transparent 70%),var(--dark-2)}
+html[data-theme=light] .pcard .ph::after{background:linear-gradient(transparent,rgba(11,16,51,.85))}
+html[data-theme=light] .btn-line{border-color:rgba(11,16,51,.35);color:var(--on)}
+html[data-theme=light] .btn-line:hover{background:rgba(11,16,51,.06);color:var(--on);border-color:var(--on)}
+html[data-theme=light] .chip{border-color:rgba(11,16,51,.25);color:var(--on)}
+html[data-theme=light] .chip[aria-pressed="true"],html[data-theme=light] .chip.on{color:#fff}
+html[data-theme=light] .sl-arrow{border-color:rgba(11,16,51,.25);color:var(--on)}
+html[data-theme=light] .sl-dot{background:rgba(11,16,51,.25)}
+html[data-theme=light] .sl.gold .tag{color:#8A6100!important}
+html[data-theme=light] .tm-row i{color:#A16207}
+html[data-theme=light] .rule-box li{color:#23294D}
+html[data-theme=light] .pub-foot{border-top-color:var(--hair)}
+html[data-theme=light] .bnav3{background:#fff;border-color:var(--hair);box-shadow:0 -6px 24px -10px rgba(11,16,51,.25)}
+html[data-theme=light] .bnav3 .on,html[data-theme=light] .bnav3 .mid{color:var(--on)}
+html[data-theme=light] .bnav3 .on .pill{background:rgba(11,16,51,.08)}
+html[data-theme=light] .bnav3 .mid .ring{box-shadow:0 8px 24px -4px rgba(227,6,19,.6),0 0 0 5px #fff;color:#fff}
+html[data-theme=light] .modal-dark .modal-content{color:var(--on);border-color:var(--hair)}
+html[data-theme=light] .modal-dark .modal-header,html[data-theme=light] .modal-dark .modal-footer,html[data-theme=light] .mrow{border-color:var(--hair)}
+html[data-theme=light] .modal-dark .btn-close{filter:none}
+html[data-theme=light] .modal-dark .form-label{color:var(--on)}
+html[data-theme=light] :is(.modal-dark .form-control,.modal-dark .form-select,.cf-card .form-control,.finp,.otp-cell){border-color:rgba(11,16,51,.18);color:var(--on)}
+html[data-theme=light] :is(.modal-dark .form-control,.cf-card .form-control,.finp)::placeholder{color:#6B7194}
+html[data-theme=light] .modal-dark .form-control:focus{color:var(--on)}
+/* login pop-up (styles live in index.php) */
+html[data-theme=light] .lgn{color:var(--on);--tx:var(--on);--line:rgba(11,16,51,.15)}
+html[data-theme=light] .lgn-bar{background:rgba(11,16,51,.2)}
+html[data-theme=light] .lgn-x{background:rgba(11,16,51,.06);color:var(--on)}
+html[data-theme=light] .num-keypad button{border-color:rgba(11,16,51,.12);color:var(--on)}
+html[data-theme=light] .num-keypad .pk-ok{color:#fff}
+html[data-theme=light] .pk-dot{background:rgba(11,16,51,.2)}
+html[data-theme=light] .pk-dot.filled{background:var(--on)}
+html[data-theme=light] .fmsg.ok{background:#DCFCE7;border-color:#86EFAC;color:#14532D}
+html[data-theme=light] .fmsg.err{background:#FEE2E2;border-color:#FCA5A5;color:#7F1D1D}
+
+@media (prefers-reduced-motion:reduce){
+  .hero-pub::before,.btn-brand::after,.hero-pub .btn-brand::after{animation:none!important}
+  .theme-tg i{transition:none}
+  html.theme-anim body.pub,html.theme-anim body.pub *{transition:none!important}
+}
