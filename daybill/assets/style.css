@@ -1,11 +1,11 @@
-/* Daybill Print – app design (v21)
+/* Daybill Print – app design (v22)
    Colours: --primary / --accent and their tints come from Settings → App colour (theme_css() in lib.php). */
 :root {
   --primary: #360dd9; --accent: #7ed957; --on-primary: #fff;
   --p-50: #f7f5ff; --p-100: #efeafd; --p-200: #cfc4f7; --p-300: #b9aaf2; --p-dark: #4b3c8f;
   --a-50: #eefbe8; --a-200: #c9eeb8; --a-dark: #2a7a1c;
-  --bg: #f4f5fa; --card: #fff; --soft: #f1f3f8; --text: #141925; --muted: #687387; --line: #e4e8f0;
-  --ok: #1f9254; --ok-bg: #e5f6ec; --danger: #d23b3b; --danger-bg: #fdeceb; --warn: #b26b00; --warn-bg: #fff4dc; --info-bg: #eef3fe;
+  --bg: #f4f5fa; --card: #fff; --soft: #f1f3f8; --text: #141925; --muted: #5b6678; --line: #e4e8f0;
+  --ok: #17753f; --ok-bg: #e5f6ec; --danger: #c42f2f; --danger-bg: #fdeceb; --warn: #8f5600; --warn-bg: #fff4dc; --info-bg: #eef3fe;
   --radius: 18px; --r-md: 14px; --r-sm: 10px;
   --shadow: 0 1px 2px rgba(20,25,37,.05), 0 6px 20px rgba(20,25,37,.06);
   --shadow-lg: 0 10px 40px rgba(20,25,37,.16);
@@ -98,10 +98,13 @@ input, select, textarea { display: block; width: 100%; margin-top: 6px; padding:
   background: var(--soft); border: 1.5px solid transparent; border-radius: var(--r-sm); transition: border-color .15s, background .15s; }
 textarea { min-height: 90px; }
 select { appearance: none; -webkit-appearance: none; padding-inline-end: 36px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23687387' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%235b6678' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 14px center; }
 [dir=rtl] select { background-position: left 14px center; }
-input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); background-color: #fff; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); background-color: #fff; box-shadow: 0 0 0 3px var(--p-200); }
+/* keyboard focus ring for buttons, links and controls (mouse / touch clicks show none) */
+:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none; }
 input[type=checkbox], input[type=radio] { width: 20px; height: 20px; margin: 0; padding: 0; accent-color: var(--primary); flex: none; }
 input[type=color] { height: 48px; padding: 4px; cursor: pointer; }
 input[type=range] { padding: 0; margin: 0; background: transparent; border: 0; accent-color: var(--primary); }

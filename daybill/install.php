@@ -76,7 +76,7 @@ if ($hasAdmin) {
 ?>
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Install – Daybill Print</title><link rel="stylesheet" href="assets/style.css?v=6"><link rel="icon" type="image/png" href="assets/icons/favicon.png"></head>
+<title>Install – Daybill Print</title><link rel="stylesheet" href="assets/style.css?v=22"><link rel="icon" type="image/png" href="assets/icons/favicon.png"></head>
 <body><main class="wrap narrow">
 <div class="card">
   <img src="assets/logo.png" alt="DAYbill Solution" class="login-logo">

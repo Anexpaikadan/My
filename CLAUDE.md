@@ -120,7 +120,7 @@ No component framework. "Components" are **CSS classes + PHP helper functions th
 | PWA | `manifest.php`, `sw.js`, `offline.html` | `manifest.php`, `manifest.json`, `sw.js` | — |
 
 **When you change a CSS/JS file, bump its `?v=` number** where it is linked (Daybill: `page_header()` in
-`lib.php`, e.g. `style.css?v=21`; Club: `index.php` and `includes/header.php`, e.g. `club.css?v=6`).
+`lib.php`, e.g. `style.css?v=22`, and the `CACHE` name in `daybill/sw.js`; Club: `index.php` and `includes/header.php`, e.g. `club.css?v=6`).
 Otherwise the service workers keep serving the old file.
 
 ---
@@ -182,7 +182,7 @@ Export Figma icons in that form (no fill, round caps and joins).
 - Phone-app details to keep: `env(safe-area-inset-*)` padding on fixed bars, `backdrop-filter` glass
   bars, tap targets of at least 44px (`.btn{min-height:44px}`, `@media(pointer:coarse)`),
   `-webkit-tap-highlight-color:transparent`.
-- Accessibility rules already in place: `:focus-visible` outlines, `.skip-link`, `.sr-only`,
+- Accessibility rules already in place (both apps): `:focus-visible` outline rings (never remove them), `.skip-link`, `.sr-only`,
   `prefers-reduced-motion` blocks that turn off animations, contrast notes on tokens (e.g.
   `--brand-text … (5.5:1)`). New colours must reach WCAG AA.
 - RTL (Daybill Arabic): use logical properties (`margin-inline-start/end`) and `[dir=rtl]` overrides,

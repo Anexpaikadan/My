@@ -1274,7 +1274,7 @@ function _buildShareImg(imgUrl,title,msg,link){
   // Fetch ALL images as blobs to avoid CORS canvas taint
   Promise.all([
     fetch(imgUrl).then(function(r){return r.blob();}),
-    fetch(SITE+'/assets/logo.png').then(function(r){return r.blob();}).catch(function(){return null;})
+    fetch(SITE+'/assets/logo.jpg').then(function(r){return r.blob();}).catch(function(){return null;})
   ]).then(function(blobs){
     var prodBlob=blobs[0], logoBlob=blobs[1];
     var prodUrl=URL.createObjectURL(prodBlob);

@@ -270,7 +270,7 @@ function shareEntry(eid,fid,name,festTitle,sponsorName){
           drawWatermarkText();
         };
         logo.onerror=function(){ drawWatermarkText(); };
-        logo.src=SITE+'/assets/logo.png';
+        logo.src=SITE+'/assets/logo.jpg';
 
         function drawWatermarkText(){
           var tX=Math.round(W*0.16);
