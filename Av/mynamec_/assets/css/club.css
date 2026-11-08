@@ -361,3 +361,71 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px soli
   .x,.lgn-x,.popup-x,.tb-btn,.btn-close,.ev-del-btn,.cs-btn,.cs-color,.fd-back,.fd-search-btn,.btn-sm{min-width:44px;min-height:44px}
   .btn-close{padding:.75rem}
 }
+
+/* ── Motion (2026-11) ───────────────────────────────────────────────────
+   Tokens: fast = taps, base = state changes, slow = things arriving.
+   Arrivals decelerate (ease-out); leaving accelerates (ease-in) and is quicker.
+   assets/js/motion.js adds .rv/.in for scroll reveal and counts dashboard numbers.
+   Everything is switched off for "reduce motion" (bottom of this block). */
+:root{--dur-fast:140ms;--dur:260ms;--dur-slow:520ms;--ease-out:cubic-bezier(.22,1,.36,1);--ease-in:cubic-bezier(.4,0,1,1);--ease-spring:cubic-bezier(.34,1.56,.64,1)}
+html{scroll-behavior:smooth}
+
+/* scroll reveal: only content that starts off-screen is hidden, so nothing flickers */
+.rv{opacity:0;transform:translateY(18px)}
+.rv.in{opacity:1;transform:none;transition:opacity var(--dur-slow) var(--ease-out),transform var(--dur-slow) var(--ease-out);transition-delay:calc(var(--i,0) * 60ms)}
+.h-sec.rv{transform:translateX(-12px)}
+.h-sec::after{transform-origin:left center}
+.h-sec.rv.in::after{animation:barGrow var(--dur-slow) var(--ease-out) both;animation-delay:120ms}
+@keyframes barGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+/* public hero: photo, title, line, buttons arrive one after another */
+@keyframes riseIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes zoomIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+.hero-pub .hero-photo{animation:zoomIn 700ms var(--ease-out) both}
+.hero-pub .h-big{animation:riseIn var(--dur-slow) var(--ease-out) 120ms both}
+.hero-pub .lead2{animation:riseIn var(--dur-slow) var(--ease-out) 200ms both}
+.hero-pub .hero-btns>*{animation:riseIn var(--dur-slow) var(--ease-out) 280ms both}
+.hero-pub .hero-btns>*+*{animation-delay:360ms}
+
+/* app pages: content fades in under the top bar */
+.app .page-wrap{animation:riseIn 360ms var(--ease-out) both}
+
+/* press feedback (all pointers) */
+.btn,.pcard,.prod,.sl-card,.dtile,.tile-l,.fee,.chip,.eq-card,.tabbar a,.bnav3 a,.bnav3 button,.lang,.sl-arrow{transition:transform var(--dur-fast) var(--ease-out),box-shadow var(--dur) var(--ease-out),background-color var(--dur) var(--ease-out),border-color var(--dur) var(--ease-out),color var(--dur) var(--ease-out),filter var(--dur) var(--ease-out)}
+.btn:active,.chip:active,.lang:active,.sl-arrow:active{transform:scale(.97)}
+.pcard:active,.prod:active,.sl-card:active,.dtile:active,.tile-l:active,.eq-card:active{transform:scale(.98)}
+.tabbar a:active .pill,.bnav3 a:active .pill,.bnav3 button:active .pill{transform:scale(.9)}
+.tabbar .ring,.bnav3 .ring{transition:transform var(--dur) var(--ease-spring)}
+.tabbar a:active .ring,.bnav3 a:active .ring{transform:scale(.92)}
+.tabbar .pill,.bnav3 .pill{transition:transform var(--dur-fast) var(--ease-out),background-color var(--dur) var(--ease-out)}
+
+/* hover lift for mouse users only */
+@media (hover:hover) and (pointer:fine){
+  .pcard:hover,.prod:hover,.sl-card:hover,.fee:hover,.tile-l:hover,.eq-card:hover{transform:translateY(-4px);box-shadow:0 14px 30px -14px rgba(0,0,0,.45)}
+  .dtile:hover{transform:translateY(-3px)}
+  .pcard:hover img,.prod:hover img,.sl-card:hover img{transform:scale(1.04)}
+  .bnav3 .mid:hover .ring,.tabbar .mid:hover .ring{transform:translateY(-2px)}
+}
+.pcard img,.prod img,.sl-card img{transition:transform 600ms var(--ease-out)}
+
+/* pop-ups: rise like a phone sheet, leave a little faster */
+.modal.fade .modal-dialog{transform:translateY(32px) scale(.98);transition:transform var(--dur) var(--ease-in)}
+.modal.show .modal-dialog{transform:none;transition:transform 380ms var(--ease-out)}
+.modal-backdrop.fade{transition:opacity var(--dur) linear}
+.overlay.show .lgn,.popup-ov.show .popup-box{animation:sheetUp 380ms var(--ease-out) both}
+@keyframes sheetUp{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+
+/* thank-you tick pops in */
+.thanks:not(.d-none)>i{display:inline-block;animation:pop 520ms var(--ease-spring) both}
+@keyframes pop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
+
+/* slider dot stretches to the active slide */
+.sl-dot{transition:width var(--dur) var(--ease-out),background-color var(--dur) var(--ease-out)}
+
+/* reduce motion: no movement, content always visible */
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .rv{opacity:1!important;transform:none!important}
+  .hero-pub *,.app .page-wrap,.modal .modal-dialog,.lgn,.popup-box,.thanks>i{animation:none!important;transform:none!important}
+  .btn:active,.pcard:active,.prod:active,.sl-card:active,.dtile:active,.tile-l:active,.chip:active,.eq-card:active,.pcard:hover,.prod:hover,.sl-card:hover,.fee:hover,.tile-l:hover,.eq-card:hover,.dtile:hover{transform:none!important}
+}

@@ -49,6 +49,7 @@ $_tabs = $_tbAdm
 <?php endforeach; ?>
 </nav>
 <script src="<?= url('assets/vendor/bootstrap/js/bootstrap.bundle.min.js') ?>"></script>
+<script src="<?= url('assets/js/motion.js') ?>?v=1" defer></script>
 <script>
 // Emoji used as icons at the start of buttons, links, tabs, labels and headings are decorative:
 // hide them from screen readers so they read "Save", not "floppy disk Save".

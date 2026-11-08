@@ -135,7 +135,7 @@ require_once __DIR__ . '/../includes/header.php';
   Daybill keeps its libraries **in the repo** (`daybill/assets/pdf-lib.min.js`, `qrcode.js`) and serves no CDN code.
 - **No build system or bundler.** Bust the browser cache by hand: club `club.css?v=N` (in `includes/header.php`,
   `index.php`, `contact.php`), Daybill `style.css?v=21`, `app.js?v=8`: **bump the number** whenever you edit those files.
-  The club PWA cache is named in `sw.js` (`const CACHE = 'aasc-v4'`): bump it when you change cached files.
+  The club PWA cache is named in `sw.js` (`const CACHE = 'aasc-v6'`): bump it when you change cached files.
 - PWA: `manifest.php` + `sw.js` in both apps.
 
 ## 4. Assets
@@ -188,6 +188,10 @@ require_once __DIR__ . '/../includes/header.php';
   - Use `<button type="button">`, not `<div onclick>`.
   - Show a `:focus-visible` ring.
   - Respect `@media (prefers-reduced-motion: reduce)`.
+  - **Motion:** use the tokens in `club.css` (`--dur-fast` 140ms taps, `--dur` 260ms states, `--dur-slow` 520ms arrivals;
+    `--ease-out` arriving, `--ease-in` leaving, `--ease-spring` small pops). Animate only `transform`/`opacity`.
+    `assets/js/motion.js` reveals cards and headings as they scroll in (only ones that start off-screen) and counts
+    dashboard numbers; add a new card class to its `SEL` list to reveal it. Never hide content without the script.
   - Pop-ups get `role="dialog" aria-modal="true"`, close with Escape and return focus.
   - Anything layered over the bottom bar needs a higher `z-index` (Bootstrap modals already are).
   - Pop-ups: use Bootstrap `.modal` (dark: add `.modal-dark`). The public login pop-up uses its own `.overlay > .lgn` classes.
