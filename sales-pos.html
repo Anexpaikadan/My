@@ -15,7 +15,7 @@
     --accent2: #7c6ffd;
     --warn: #ff6b6b;
     --text: #e8e8f0;
-    --muted: #6b6b88;
+    --muted: #9494b0;
     --green: #00e5a0;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -107,7 +107,7 @@
     border-radius: 10px;
     padding: 6px 10px;
   }
-  .qty-wrap label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .qty-wrap label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
   #qtyInput {
     width: 52px;
     background: transparent;
@@ -130,7 +130,7 @@
   .count-badge {
     background: var(--accent2);
     color: white;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     padding: 2px 8px;
     border-radius: 10px;
@@ -171,7 +171,7 @@
     color: var(--accent);
     font-weight: 700;
   }
-  .product-stock { font-size: 10px; color: var(--muted); margin-top: 4px; }
+  .product-stock { font-size: 12px; color: var(--muted); margin-top: 4px; }
   .flash {
     animation: flash 0.3s ease;
   }
@@ -209,7 +209,7 @@
     border: 1px solid var(--border);
     color: var(--muted);
     font-family: 'Syne', sans-serif;
-    font-size: 11px;
+    font-size: 12px;
     padding: 4px 10px;
     border-radius: 6px;
     cursor: pointer;
@@ -256,7 +256,7 @@
     to { opacity: 1; transform: translateX(0); }
   }
   .cart-item-name { font-size: 13px; font-weight: 600; }
-  .cart-item-meta { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+  .cart-item-meta { font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
   .cart-item-total {
     font-family: 'JetBrains Mono', monospace;
     font-size: 14px;
@@ -271,7 +271,7 @@
     margin-top: 4px;
   }
   .qty-btn {
-    width: 22px; height: 22px;
+    width: 32px; height: 32px;
     background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 5px;
@@ -285,7 +285,7 @@
   .qty-btn:hover { border-color: var(--accent); color: var(--accent); }
   .cart-qty { font-family: 'JetBrains Mono', monospace; font-size: 13px; min-width: 20px; text-align: center; }
   .remove-btn {
-    width: 22px; height: 22px;
+    width: 32px; height: 32px;
     background: none;
     border: 1px solid transparent;
     border-radius: 5px;
@@ -321,7 +321,7 @@
     padding-top: 8px;
     border-top: 1px solid var(--border);
   }
-  .total-row .label { font-family: 'Syne', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+  .total-row .label { font-family: 'Syne', sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
   .total-row.grand .label { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 800; color: var(--text); }
 
   /* Discount row */
@@ -344,7 +344,7 @@
   }
   #discountInput:focus { border-color: var(--accent2); }
   #discountInput::placeholder { color: var(--muted); }
-  .disc-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .disc-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
 
   /* Checkout */
   .checkout-btn {
@@ -424,7 +424,7 @@
 
   /* Keyboard hint */
   .kbd-hint {
-    font-size: 10px;
+    font-size: 12px;
     color: var(--muted);
     text-align: center;
     padding: 0 0 8px;
@@ -435,8 +435,35 @@
     border: 1px solid var(--border);
     border-radius: 3px;
     padding: 1px 4px;
-    font-size: 10px;
+    font-size: 12px;
     font-family: 'JetBrains Mono', monospace;
+  }
+  /* ---- Accessibility and small screens ---- */
+  button.product-card { font: inherit; color: inherit; text-align: left; width: 100%; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  input:focus-visible, #searchInput:focus-visible, #qtyInput:focus-visible { outline: 3px solid var(--accent) !important; outline-offset: 1px; }
+  #discountInput:focus-visible { outline: 3px solid var(--accent2) !important; }
+  @media (pointer: coarse) {
+    .qty-btn, .remove-btn { width: 44px; height: 44px; font-size: 18px; }
+    .cart-item-controls { gap: 8px; }
+  }
+  @media (max-width: 860px) {
+    body { height: auto; min-height: 100vh; overflow: auto; grid-template-rows: 56px auto; }
+    header { position: sticky; top: 0; z-index: 10; padding: 0 16px; }
+    .main { grid-template-columns: 1fr; overflow: visible; }
+    .left { overflow: visible; padding: 16px; }
+    .products-grid { overflow: visible; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+    .cart-panel { border-left: 0; border-top: 1px solid var(--border); overflow: visible; }
+    .cart-items { overflow: visible; max-height: none; }
+    .receipt { width: calc(100% - 32px); max-width: 340px; }
+    .kbd-hint { display: none; }
+  }
+  @media (max-width: 480px) {
+    .cashier-badge { display: none; }
+    .search-area { flex-wrap: wrap; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
   }
 </style>
 </head>
@@ -453,11 +480,11 @@
   <div class="left">
     <div class="search-area">
       <div class="search-wrap">
-        <span class="icon">🔍</span>
-        <input type="text" id="searchInput" placeholder="Search product name or code... (press Enter to add)" autofocus autocomplete="off">
+        <span class="icon" aria-hidden="true">🔍</span>
+        <input type="text" id="searchInput" aria-label="Search product name or code" placeholder="Search product name or code... (press Enter to add)" autofocus autocomplete="off">
       </div>
       <div class="qty-wrap">
-        <label>QTY</label>
+        <label for="qtyInput">QTY</label>
         <input type="number" id="qtyInput" value="1" min="1" max="99">
       </div>
     </div>
@@ -477,11 +504,11 @@
       <button class="cart-clear" onclick="clearCart()">Clear All</button>
     </div>
 
-    <div class="cart-items" id="cartItems">
+    <div class="cart-items" id="cartItems" aria-live="polite">
       <div class="cart-empty" id="cartEmpty">
         <span class="big-icon">🛒</span>
         <p>No items yet</p>
-        <p style="font-size:11px">Search and press Enter to add</p>
+        <p style="font-size: 12px">Search and press Enter to add</p>
       </div>
     </div>
 
@@ -491,7 +518,7 @@
         <span id="subtotal" style="font-family:'JetBrains Mono',monospace">$0.00</span>
       </div>
       <div class="discount-row">
-        <span class="disc-label">Discount %</span>
+        <label class="disc-label" for="discountInput">Discount %</label>
         <input type="number" id="discountInput" placeholder="0" min="0" max="100" oninput="updateTotals()">
       </div>
       <div class="total-row" id="discountRow" style="display:none">
@@ -516,13 +543,13 @@
 </div>
 
 <!-- Receipt Modal -->
-<div class="modal-overlay" id="modal">
+<div class="modal-overlay" id="modal" role="dialog" aria-modal="true" aria-labelledby="receiptTitle">
   <div class="receipt">
     <div class="receipt-icon">✅</div>
-    <h2>Sale Complete!</h2>
+    <h2 id="receiptTitle">Sale Complete!</h2>
     <div class="receipt-total" id="receiptTotal">$0.00</div>
     <div class="receipt-items" id="receiptItems"></div>
-    <button class="new-sale-btn" onclick="newSale()">+ New Sale</button>
+    <button class="new-sale-btn" id="newSaleBtn" onclick="newSale()">+ New Sale</button>
   </div>
 </div>
 
@@ -569,12 +596,12 @@ function renderProducts() {
   }
 
   grid.innerHTML = filtered.map((p, i) =>
-    `<div class="product-card ${i === 0 ? 'active-search' : ''}" onclick="addToCartById(${p.id})" id="pc-${p.id}">
-      <span class="product-emoji">${p.emoji}</span>
+    `<button type="button" class="product-card ${i === 0 ? 'active-search' : ''}" onclick="addToCartById(${p.id})" id="pc-${p.id}">
+      <span class="product-emoji" aria-hidden="true">${p.emoji}</span>
       <div class="product-name">${p.name}</div>
       <div class="product-price">$${p.price.toFixed(2)}</div>
       <div class="product-stock">Stock: ${p.stock}</div>
-    </div>`
+    </button>`
   ).join('');
 }
 
@@ -654,10 +681,10 @@ function renderCart() {
         <div class="cart-item-name">${item.emoji} ${item.name}</div>
         <div class="cart-item-meta">$${item.price.toFixed(2)} each</div>
         <div class="cart-item-controls">
-          <button class="qty-btn" onclick="changeQty(${item.id}, -1)">−</button>
+          <button class="qty-btn" onclick="changeQty(${item.id}, -1)" aria-label="One less ${item.name}">−</button>
           <span class="cart-qty">${item.qty}</span>
-          <button class="qty-btn" onclick="changeQty(${item.id}, 1)">+</button>
-          <button class="remove-btn" onclick="removeItem(${item.id})" title="Remove">✕</button>
+          <button class="qty-btn" onclick="changeQty(${item.id}, 1)" aria-label="One more ${item.name}">+</button>
+          <button class="remove-btn" onclick="removeItem(${item.id})" title="Remove" aria-label="Remove ${item.name}">✕</button>
         </div>
       </div>
       <div class="cart-item-total">$${(item.price * item.qty).toFixed(2)}</div>
@@ -716,6 +743,7 @@ function checkout() {
   ).join('');
 
   document.getElementById('modal').classList.add('show');
+  document.getElementById('newSaleBtn').focus();
 }
 
 function newSale() {
