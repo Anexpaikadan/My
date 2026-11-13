@@ -10,6 +10,7 @@ $slots = PLAN_SLOTS;
 $view = get('view') === 'week' ? 'week' : 'month';
 $month = preg_match('/^\d{4}-\d{2}$/', get('month')) ? get('month') : date('Y-m');
 $day = valid_date(get('day')) ? get('day') : '';
+$show = get('show') === 'list' ? 'list' : 'table'; // month as timetable (calendar) or as a list
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = post('action');
@@ -24,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('activities.php?view=week');
     }
     $date = valid_date(post('date')) ? post('date') : '';
-    $back = 'activities.php?month=' . substr($date ?: today(), 0, 7) . ($date ? '#d' . $date : '');
+    $back = 'activities.php?month=' . substr($date ?: today(), 0, 7);
     if ($date !== '' && in_array($action, ['day', 'rest', 'reset'], true)) {
         // also for the same weekday in the rest of that month, when ticked
         $dates = [$date];
@@ -123,8 +124,11 @@ foreach (q('SELECT day_no, slot, activity FROM activities')->fetchAll() as $r) {
     <a href="?month=<?= $next ?>" class="btn btn-sm btn-light me-auto" aria-label="Next"><i class="bi bi-chevron-right"></i></a>
     <?php require __DIR__ . '/includes/export_buttons.php'; ?>
   </div>
-  <div class="card-body py-2 small-muted"><?= e(t('month_plan_help')) ?></div>
-  <div class="table-responsive d-none d-lg-block d-print-block">
+  <div class="card-body py-2 d-flex flex-wrap align-items-center gap-2 d-print-none"><span class="small-muted me-auto"><?= e(t('month_plan_help')) ?></span>
+    <div class="btn-group btn-group-sm"><a href="?month=<?= e($month) ?>" class="btn <?= $show === 'table' ? 'btn-primary' : 'btn-outline-primary' ?>"><i class="bi bi-calendar3"></i> <?= e(t('timetable')) ?></a>
+      <a href="?month=<?= e($month) ?>&show=list" class="btn <?= $show === 'list' ? 'btn-primary' : 'btn-outline-primary' ?>"><i class="bi bi-list-ul"></i> <?= e(t('list')) ?></a></div></div>
+  <?php if ($show === 'table'): ?><?= plan_timetable($month, $plans, $leave, fn($d) => 'activities.php?day=' . $d) ?><?php endif; ?>
+  <div class="table-responsive <?= $show === 'table' ? 'd-none' : 'd-none d-lg-block d-print-block' ?>">
     <table class="table table-bordered week-table mb-0" id="reportTable" data-title="Valley daily - <?= e($monthName) ?>" data-landscape="1">
       <thead><tr><th data-en="Date"><?= e(t('date')) ?></th>
         <?php foreach ($slots as $slot): ?><th data-en="<?= e(t_en('slot_' . $slot)) ?>"><?= e(t('slot_' . $slot)) ?></th><?php endforeach; ?><th class="no-export"></th></tr></thead>
@@ -140,7 +144,7 @@ foreach (q('SELECT day_no, slot, activity FROM activities')->fetchAll() as $r) {
     </table>
   </div>
 </div>
-<div class="d-lg-none d-print-none">
+<div class="d-lg-none d-print-none<?= $show === 'table' ? ' d-none' : '' ?>">
   <?php foreach ($plans as $d => $p): $isLeave = isset($leave[$d]); ?>
     <a href="?day=<?= $d ?>" id="d<?= $d ?>" class="card mb-2 text-decoration-none text-reset<?= $d === today() ? ' border border-primary' : '' ?>"><div class="card-body py-2 d-flex gap-3">
       <div class="plan-date<?= $d === today() ? ' on' : '' ?>"><b><?= e(date('d', strtotime($d))) ?></b><span><?= e(mb_substr(t('day' . date('N', strtotime($d))), 0, 3)) ?></span></div>

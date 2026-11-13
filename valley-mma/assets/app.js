@@ -1,5 +1,5 @@
 // Valley MMA – page helpers: install as app, forms, exports, WhatsApp sharing, member QR scan.
-window.VM_JS = '4.7'; // same as APP_VERSION in includes/init.php
+window.VM_JS = '4.8'; // same as APP_VERSION in includes/init.php
 
 (function () {
   var $ = function (s, el) { return (el || document).querySelector(s); };
@@ -35,6 +35,12 @@ window.VM_JS = '4.7'; // same as APP_VERSION in includes/init.php
   });
   waMark();
   $$('[data-wa-ios]').forEach(function (el) { el.classList.toggle('d-none', !/iPhone|iPad|iPod/i.test(navigator.userAgent)); });
+
+  // Monthly timetable: on a phone, slide to today's column.
+  $$('.tt-wrap').forEach(function (w) {
+    var c = w.querySelector('.tt-today');
+    if (c && w.scrollWidth > w.clientWidth) w.scrollLeft = Math.max(0, c.offsetLeft - (w.clientWidth - c.offsetWidth) / 2);
+  });
 
   // ---- Install as phone app (PWA) ----
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {

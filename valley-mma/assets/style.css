@@ -428,3 +428,22 @@ body.pub-dark .dev-credit { color: #8E8B8B; }
 .plan-date.on { background: var(--vm-blue); color: #fff; }
 .plan-date.on span { color: #fff; }
 .today-row > * { background: #FBE7E6 !important; }
+
+/* Monthly timetable (calendar grid of the training plan) */
+.tt-wrap { border-radius: 0 0 var(--bs-card-border-radius) var(--bs-card-border-radius); }
+.tt { width: 100%; min-width: 760px; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+.tt th { background: var(--vm-dark); color: #fff; font-size: .75rem; text-transform: uppercase; letter-spacing: .5px; padding: .45rem .3rem; text-align: center; position: sticky; top: 0; }
+.tt td { border: 1px solid #E8E6E6; vertical-align: top; height: 6.2rem; padding: 0; background: #fff; }
+.tt td.tt-empty { background: #F6F6F6; }
+.tt-cell > a, .tt-cell > div { display: block; height: 100%; padding: .3rem .4rem; color: inherit; text-decoration: none; }
+.tt-cell > a:hover { background: #FBE7E6; }
+.tt-date { display: block; font-weight: 800; font-size: .95rem; line-height: 1.2; }
+.tt-date small { font-size: .62rem; font-weight: 700; text-transform: uppercase; color: var(--vm-blue); }
+.tt-main { display: block; font-size: .74rem; font-weight: 700; line-height: 1.2; margin-top: .15rem; }
+.tt-line { display: block; font-size: .68rem; color: #6E6B6B; line-height: 1.2; margin-top: .1rem; }
+.tt-today { box-shadow: inset 0 0 0 2px var(--vm-blue); background: #FFF7F6 !important; }
+.tt-rest { background: #FAFAFA !important; }
+.tt-leave { background: #FBE7E6 !important; }
+.tt-leave .tt-main { color: var(--vm-blue); }
+.tt-past .tt-main, .tt-past .tt-line, .tt-past .tt-date { opacity: .55; }
+@media print { .tt { min-width: 0; } .tt td { height: auto; min-height: 4rem; } .tt th { background: #eee !important; color: #000 !important; } .tt-past * { opacity: 1 !important; } }

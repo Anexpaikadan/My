@@ -4,7 +4,7 @@
 declare(strict_types=1);
 
 // App version: shown in the app (More, login, Scanner test). Must match window.VM_JS in assets/app.js.
-const APP_VERSION = '4.7';
+const APP_VERSION = '4.8';
 
 $CONFIG = require __DIR__ . '/../config.php';
 date_default_timezone_set($CONFIG['timezone'] ?? 'Asia/Kolkata');
@@ -681,6 +681,41 @@ function day_plan_save(string $date, array $plan): void
         q('INSERT INTO activity_days (plan_date, slot, activity) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE activity = VALUES(activity)',
             [$date, $slot, mb_substr(trim((string)($plan[$slot] ?? '')), 0, 200)]);
     }
+}
+
+// Monthly timetable: a calendar grid (Mon–Sun) with the training of every date.
+// $link: function(date) => url for a cell, or null for no links (member view).
+function plan_timetable(string $month, array $plans, array $leave, ?callable $link = null): string
+{
+    $first = $month . '-01';
+    $h = '<div class="table-responsive tt-wrap"><table class="tt"><thead><tr>';
+    for ($i = 1; $i <= 7; $i++) {
+        $h .= '<th>' . e(t('day' . $i)) . '</th>';
+    }
+    $h .= '</tr></thead><tbody><tr>' . str_repeat('<td class="tt-empty"></td>', (int)date('N', strtotime($first)) - 1);
+    foreach ($plans as $d => $p) {
+        $dow = (int)date('N', strtotime($d));
+        if ($dow === 1 && $d !== $first) {
+            $h .= '</tr><tr>';
+        }
+        $cls = ($d === today() ? ' tt-today' : '') . (isset($leave[$d]) ? ' tt-leave' : (!$p['plan'] ? ' tt-rest' : '')) . ($d < today() ? ' tt-past' : '');
+        $body = '<span class="tt-date">' . (int)substr($d, 8) . ($d === today() ? ' <small>' . e(t('today')) . '</small>' : '') . '</span>';
+        if (isset($leave[$d])) {
+            $body .= '<span class="tt-main"><i class="bi bi-calendar-x"></i> ' . e($leave[$d]['title']) . '</span>';
+        } elseif (!$p['plan']) {
+            $body .= '<span class="tt-line">' . e(t('rest_day')) . '</span>';
+        } else {
+            foreach (PLAN_SLOTS as $slot) {
+                if (isset($p['plan'][$slot])) {
+                    $body .= '<span class="' . ($slot === 'primary' ? 'tt-main' : 'tt-line') . '" title="' . e(t('slot_' . $slot)) . '">' . e($p['plan'][$slot]) . '</span>';
+                }
+            }
+        }
+        $url = $link ? $link($d) : null;
+        $h .= '<td class="tt-cell' . $cls . '">' . ($url ? '<a href="' . e($url) . '">' . $body . '</a>' : '<div>' . $body . '</div>') . '</td>';
+    }
+    $lastDow = (int)date('N', strtotime(array_key_last($plans)));
+    return $h . str_repeat('<td class="tt-empty"></td>', 7 - $lastDow) . '</tr></tbody></table></div>';
 }
 
 // ---- Batches (class times) ----------------------------------------
