@@ -49,7 +49,7 @@ $month = acc_totals($monthStart, $today);
 $todayAcc = acc_totals($today, $today);
 $cash = acc_balance();
 $recent = q('SELECT p.*, m.name FROM payments p JOIN members m ON m.id = p.member_id ORDER BY p.id DESC LIMIT 5')->fetchAll();
-$work = q('SELECT slot, activity FROM activities WHERE day_no = ?', [(int)date('N')])->fetchAll(PDO::FETCH_KEY_PAIR);
+$work = day_plan($today);
 
 $title = t('dashboard');
 $active = 'dashboard';

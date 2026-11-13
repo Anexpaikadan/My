@@ -420,3 +420,11 @@ body.pub-dark .dev-credit { color: #8E8B8B; }
 .pub-batch-time { text-align: right; font-weight: 900; font-size: 1.05rem; white-space: nowrap; }
 .pub-batch-time small { font-weight: 600; }
 .progress { --bs-progress-bar-bg: var(--vm-blue); }
+
+/* Monthly training plan */
+.plan-date { width: 3rem; flex: none; border-radius: .7rem; background: #F3F2F2; text-align: center; padding: .35rem 0; align-self: flex-start; }
+.plan-date b { display: block; font-size: 1.15rem; line-height: 1.1; }
+.plan-date span { font-size: .7rem; text-transform: uppercase; color: #8E8B8B; }
+.plan-date.on { background: var(--vm-blue); color: #fff; }
+.plan-date.on span { color: #fff; }
+.today-row > * { background: #FBE7E6 !important; }

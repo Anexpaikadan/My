@@ -93,10 +93,7 @@ $days = q('SELECT DAY(att_date) FROM attendance WHERE member_id = ? AND att_date
     [$m['id'], $month . '-01', date('Y-m-d', strtotime($month . '-01 +1 month'))])->fetchAll(PDO::FETCH_COLUMN);
 $todayIn = in_array((int)date('j'), array_map('intval', $days), true);
 $payments = q('SELECT id, receipt_no, pay_date, paid FROM payments WHERE member_id = ? ORDER BY pay_date DESC, id DESC LIMIT 10', [$m['id']])->fetchAll();
-$week = [];
-foreach (q('SELECT day_no, slot, activity FROM activities')->fetchAll() as $r) {
-    $week[(int)$r['day_no']][$r['slot']] = $r['activity'];
-}
+$todayPlan = day_plan(today());
 $dow = (int)date('N');
 $marks = day_marks($month . '-01', date('Y-m-t'), (int)$m['id']);
 $freeze = current_freeze((int)$m['id']);
@@ -202,9 +199,10 @@ $payAmount = $balance > 0 ? $balance : ($st !== 'active' && $plan ? (float)$plan
 
 <div class="card mb-3"><div class="card-header"><i class="bi bi-lightning-charge-fill text-primary"></i> <?= e(t('todays_training')) ?> – <?= e(t('day' . $dow)) ?></div>
   <div class="card-body py-2">
-    <?php $any = false; foreach (['warmup', 'primary', 'secondary', 'finisher', 'cooldown'] as $slot): if (($week[$dow][$slot] ?? '') === '') continue; $any = true; ?>
-      <div class="d-flex py-1 border-bottom"><span class="small-muted" style="width:8.5rem"><?= e(t('slot_' . $slot)) ?></span><span class="fw-semibold"><?= e($week[$dow][$slot]) ?></span></div>
-    <?php endforeach; if (!$any): ?><div class="text-muted py-1"><?= e(t('rest_day')) ?></div><?php endif; ?>
+    <?php foreach (PLAN_SLOTS as $slot): if (!isset($todayPlan[$slot])) continue; ?>
+      <div class="d-flex py-1 border-bottom"><span class="small-muted" style="width:8.5rem"><?= e(t('slot_' . $slot)) ?></span><span class="fw-semibold"><?= e($todayPlan[$slot]) ?></span></div>
+    <?php endforeach; if (!$todayPlan): ?><div class="text-muted py-1"><?= e(t('rest_day')) ?></div><?php endif; ?>
+    <a href="me_plan.php" class="btn btn-sm btn-outline-primary w-100 mt-2"><i class="bi bi-calendar3"></i> <?= e(t('month_plan')) ?></a>
   </div>
 </div>
 

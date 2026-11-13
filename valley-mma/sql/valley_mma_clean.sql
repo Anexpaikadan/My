@@ -200,6 +200,15 @@ CREATE TABLE IF NOT EXISTS activities (
   PRIMARY KEY (day_no, slot)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+/* Monthly training plan: the plan of one date. A date with no rows here uses the weekly plan (activities). */
+CREATE TABLE IF NOT EXISTS activity_days (
+  plan_date DATE NOT NULL,
+  slot ENUM('warmup','primary','secondary','finisher','cooldown') NOT NULL,
+  activity VARCHAR(200) NOT NULL DEFAULT '',
+  PRIMARY KEY (plan_date, slot)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 
 /* =====================================================================
    8. ACCOUNTS (cash / bank, income & expense)
@@ -465,7 +474,7 @@ INSERT IGNORE INTO settings (k, v) VALUES
   ('acc_map_upi',       '2'),
   ('acc_map_card',      '2'),
   ('acc_map_bank',      '2'),
-  ('schema_version',    '10');
+  ('schema_version',    '11');
 
 /* Membership plans (change prices in the app: Plans) */
 INSERT IGNORE INTO plans (id, name, duration_value, duration_unit, price, description, sort_order) VALUES

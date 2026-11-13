@@ -4,7 +4,7 @@
 declare(strict_types=1);
 
 // App version: shown in the app (More, login, Scanner test). Must match window.VM_JS in assets/app.js.
-const APP_VERSION = '4.6';
+const APP_VERSION = '4.7';
 
 $CONFIG = require __DIR__ . '/../config.php';
 date_default_timezone_set($CONFIG['timezone'] ?? 'Asia/Kolkata');
@@ -66,7 +66,7 @@ function db(): PDO
 function migrate(PDO $pdo): void
 {
     $v = (int)$pdo->query("SELECT v FROM settings WHERE k = 'schema_version'")->fetchColumn();
-    if ($v >= 10) {
+    if ($v >= 11) {
         return;
     }
     if ($v < 2) {
@@ -116,7 +116,9 @@ function migrate(PDO $pdo): void
             $pdo->exec("ALTER TABLE $table ADD COLUMN batch_id INT UNSIGNED NULL AFTER $after, ADD KEY idx_batch (batch_id)");
         }
     }
-    $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '10') ON DUPLICATE KEY UPDATE v = '10'");
+    // v11: monthly training plan (plan per date)
+    run_sql($pdo, file_get_contents(__DIR__ . '/../sql/activity_days.sql'));
+    $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '11') ON DUPLICATE KEY UPDATE v = '11'");
 }
 
 // Sets level_id from the attendance days (add a WHERE).
@@ -643,6 +645,41 @@ function delete_payment(array $p): void
     } else {
         q('UPDATE members SET plan_id = ?, start_date = ?, expiry_date = ? WHERE id = ?',
             [$p['prev_plan_id'], $p['prev_start'], $p['prev_expiry'], $p['member_id']]);
+    }
+}
+
+// ---- Training plan: per date (monthly plan), else the weekly plan ----
+
+const PLAN_SLOTS = ['warmup', 'primary', 'secondary', 'finisher', 'cooldown'];
+
+// Plans of all dates from $first to $last: date => ['plan' => [slot => text], 'custom' => set for this date?]
+function plan_range(string $first, string $last): array
+{
+    $week = [];
+    foreach (q('SELECT day_no, slot, activity FROM activities')->fetchAll() as $r) {
+        $week[(int)$r['day_no']][$r['slot']] = $r['activity'];
+    }
+    $custom = [];
+    foreach (q('SELECT plan_date, slot, activity FROM activity_days WHERE plan_date BETWEEN ? AND ?', [$first, $last])->fetchAll() as $r) {
+        $custom[$r['plan_date']][$r['slot']] = $r['activity'];
+    }
+    $out = [];
+    for ($d = $first; $d <= $last; $d = date('Y-m-d', strtotime($d . ' +1 day'))) {
+        $out[$d] = ['plan' => array_filter($custom[$d] ?? ($week[(int)date('N', strtotime($d))] ?? []), fn($v) => $v !== ''), 'custom' => isset($custom[$d])];
+    }
+    return $out;
+}
+
+function day_plan(string $date): array
+{
+    return plan_range($date, $date)[$date]['plan'];
+}
+
+function day_plan_save(string $date, array $plan): void
+{
+    foreach (PLAN_SLOTS as $slot) {
+        q('INSERT INTO activity_days (plan_date, slot, activity) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE activity = VALUES(activity)',
+            [$date, $slot, mb_substr(trim((string)($plan[$slot] ?? '')), 0, 200)]);
     }
 }
 
