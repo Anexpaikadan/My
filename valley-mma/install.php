@@ -51,6 +51,7 @@ if ($installed) {
             run_sql($pdo, file_get_contents(__DIR__ . '/sql/join_requests.sql'));
             run_sql($pdo, file_get_contents(__DIR__ . '/sql/programs.sql'));
             run_sql($pdo, file_get_contents(__DIR__ . '/sql/batches.sql'));
+            run_sql($pdo, file_get_contents(__DIR__ . '/sql/events.sql'));
             if (!empty($_POST['sample']) && !(int)$pdo->query('SELECT COUNT(*) FROM members')->fetchColumn()) {
                 run_sql($pdo, file_get_contents(__DIR__ . '/sql/sample_data.sql'));
             }

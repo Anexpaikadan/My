@@ -20,6 +20,8 @@ $v = APP_VERSION;
 <link rel="stylesheet" href="assets/vendor/bootstrap.min.css">
 <link rel="stylesheet" href="assets/vendor/bootstrap-icons.min.css">
 <link rel="stylesheet" href="assets/style.css?v=<?= $v ?>">
+<link rel="stylesheet" href="assets/ui.css?v=<?= $v ?>">
+<script>try { if (localStorage.getItem('vm_theme') === 'dark') { document.documentElement.dataset.theme = 'dark'; document.documentElement.dataset.bsTheme = 'dark'; } } catch (e) {}</script>
 </head>
 <body class="<?= $bare ? 'bare' : 'with-nav' ?><?= !empty($publicPage) ? ' pub' . (in_array($publicPage, ['home', 'shop', 'rules'], true) ? ' pub-dark' : '') : '' ?> lang-<?= e(lang()) ?>">
 <?php if (!$bare): ?>

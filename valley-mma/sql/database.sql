@@ -182,7 +182,7 @@ INSERT IGNORE INTO settings (k, v) VALUES
   ('trial_days', '7'),
   ('auto_backup', '1'),
   ('backup_keep', '14'),
-  ('schema_version', '11');
+  ('schema_version', '12');
 
 INSERT IGNORE INTO plans (id, name, duration_value, duration_unit, price, description, sort_order) VALUES
   (1, 'Monthly', 1, 'month', 1500, 'MMA, boxing, kickboxing and fitness training', 1),
@@ -623,3 +623,43 @@ INSERT INTO join_requests (name, place, phone, program, status, created_at, upda
 UPDATE members SET batch_id = 1 WHERE id IN (1, 2, 5, 8, 11);
 UPDATE members SET batch_id = 2 WHERE id IN (3, 4, 6, 9, 12);
 UPDATE members SET batch_id = 3 WHERE id IN (7, 10);
+/* Events and fight nights: shown on the public page; members and visitors register */
+CREATE TABLE IF NOT EXISTS events (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(150) NOT NULL,
+  kind ENUM('fight','event','seminar','grading','camp','other') NOT NULL DEFAULT 'event',
+  event_date DATE NOT NULL,
+  start_time TIME NULL,
+  venue VARCHAR(200) NOT NULL DEFAULT '',
+  description TEXT NULL,
+  /* media/events/… */
+  image VARCHAR(200) NOT NULL DEFAULT '',
+  fee DECIMAL(10,2) NOT NULL DEFAULT 0,
+  capacity SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  reg_open TINYINT(1) NOT NULL DEFAULT 1,
+  reg_last DATE NULL,
+  /* visitors (not members) may register too */
+  allow_public TINYINT(1) NOT NULL DEFAULT 1,
+  show_public TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_date (event_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS event_regs (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  event_id INT UNSIGNED NOT NULL,
+  member_id INT UNSIGNED NULL,
+  name VARCHAR(100) NOT NULL,
+  phone VARCHAR(20) NOT NULL,
+  place VARCHAR(100) NOT NULL DEFAULT '',
+  /* weight class, category or a note from the person */
+  note VARCHAR(200) NOT NULL DEFAULT '',
+  status ENUM('registered','confirmed','cancelled') NOT NULL DEFAULT 'registered',
+  paid TINYINT(1) NOT NULL DEFAULT 0,
+  ip VARCHAR(45) NOT NULL DEFAULT '',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_event (event_id, status),
+  KEY idx_member (member_id),
+  CONSTRAINT fk_reg_event FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE,
+  CONSTRAINT fk_reg_member FOREIGN KEY (member_id) REFERENCES members (id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

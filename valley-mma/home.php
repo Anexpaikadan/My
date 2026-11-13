@@ -12,6 +12,7 @@ $phones = array_filter([setting('phone1'), setting('phone2')]);
 $programs = programs_list();
 $pubBatches = array_values(array_filter(batches(), fn($b) => $b['show_public']));
 $achievements = pub_on('achievements') ? achievements_public() : [];
+$events = pub_on('events') ? events_upcoming() : [];
 
 $title = pub('pub_hero_title');
 $bare = true;
@@ -55,6 +56,15 @@ require __DIR__ . '/includes/header.php';
             <span class="prog-more"><?= e(t('more_details')) ?> <i class="bi bi-arrow-right"></i></span></span>
         </button>
       <?php endforeach; ?>
+    </div>
+  </section>
+<?php endif; ?>
+
+<?php if ($events): ?>
+  <section class="pub-sec" id="events">
+    <h2 class="pub-h"><?= e(pub('pub_events_title')) ?></h2>
+    <div class="ev-track">
+      <?php foreach ($events as $ev) echo event_card_html($ev, 'event.php?id=' . (int)$ev['id']); ?>
     </div>
   </section>
 <?php endif; ?>

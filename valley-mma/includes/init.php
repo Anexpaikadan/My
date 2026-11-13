@@ -4,7 +4,7 @@
 declare(strict_types=1);
 
 // App version: shown in the app (More, login, Scanner test). Must match window.VM_JS in assets/app.js.
-const APP_VERSION = '4.8';
+const APP_VERSION = '4.9';
 
 $CONFIG = require __DIR__ . '/../config.php';
 date_default_timezone_set($CONFIG['timezone'] ?? 'Asia/Kolkata');
@@ -66,7 +66,7 @@ function db(): PDO
 function migrate(PDO $pdo): void
 {
     $v = (int)$pdo->query("SELECT v FROM settings WHERE k = 'schema_version'")->fetchColumn();
-    if ($v >= 11) {
+    if ($v >= 12) {
         return;
     }
     if ($v < 2) {
@@ -118,7 +118,9 @@ function migrate(PDO $pdo): void
     }
     // v11: monthly training plan (plan per date)
     run_sql($pdo, file_get_contents(__DIR__ . '/../sql/activity_days.sql'));
-    $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '11') ON DUPLICATE KEY UPDATE v = '11'");
+    // v12: events and fight nights
+    run_sql($pdo, file_get_contents(__DIR__ . '/../sql/events.sql'));
+    $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '12') ON DUPLICATE KEY UPDATE v = '12'");
 }
 
 // Sets level_id from the attendance days (add a WHERE).
@@ -437,7 +439,8 @@ function nav_sections(): array
             ['member_invite.php', 'invite_member', 'bi-person-plus-fill', 'add_member'],
             ['member_edit.php', 'add_member', 'bi-person-vcard-fill', 'add_member'],
             ['member_edit.php?old=1', 'add_old_student', 'bi-person-check-fill', 'add_member'],
-            ['plans.php', 'plans', 'bi-card-checklist', 'plans'],
+            ['batches.php', 'batches', 'bi-clock-history', 'batches'],
+            ['events.php', 'events', 'bi-calendar-event-fill', 'events'],
             ['attendance.php', 'attendance', 'bi-qr-code-scan', 'attendance'],
             ['batches.php', 'batches', 'bi-clock-history', 'batches'],
             ['alerts.php', 'alerts', 'bi-bell-fill', 'alerts'],
@@ -1238,3 +1241,4 @@ function reminder_text(array $m, float $amount = 0): string
 }
 
 require __DIR__ . '/public.php';
+require __DIR__ . '/events_lib.php';

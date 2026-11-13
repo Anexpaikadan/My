@@ -75,7 +75,7 @@ require __DIR__ . '/includes/header.php';
       </div>
     </div></div>
     <?php if ($promoted): ?>
-      <div class="alert alert-success fs-5"><i class="bi bi-trophy-fill"></i> <?= e(t('promoted_you', $promoted['name'])) ?></div>
+      <div class="alert alert-success fs-5" data-confetti><i class="bi bi-trophy-fill"></i> <?= e(t('promoted_you', $promoted['name'])) ?></div>
     <?php endif; ?>
     <?php if (levels()): ?><div class="card mb-3 text-start"><div class="card-body"><?= level_progress_html(level_progress(q('SELECT * FROM members WHERE id = ?', [$m['id']])->fetch())) ?></div></div><?php endif; ?>
     <?php if ($status === 'expired'): ?>

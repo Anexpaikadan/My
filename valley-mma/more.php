@@ -50,6 +50,8 @@ require __DIR__ . '/includes/header.php';
 
 <h2 class="section-head"><?= e(t('app')) ?></h2>
 <div class="card mb-4"><div class="list-group list-group-flush">
+  <div class="list-group-item d-flex align-items-center gap-2"><i class="bi bi-moon-stars-fill text-primary"></i><label class="me-auto mb-0" for="themeSw"><?= e(t('dark_mode')) ?></label>
+    <div class="form-check form-switch mb-0"><input class="form-check-input" type="checkbox" role="switch" id="themeSw" data-theme-toggle></div></div>
   <div class="list-group-item d-flex align-items-center gap-2"><i class="bi bi-translate text-primary"></i><span class="me-auto"><?= e(t('language')) ?></span>
     <div class="btn-group btn-group-sm"><a href="lang.php?l=en" class="btn <?= lang() === 'en' ? 'btn-primary' : 'btn-outline-primary' ?>">English</a><a href="lang.php?l=ml" class="btn <?= lang() === 'ml' ? 'btn-primary' : 'btn-outline-primary' ?>">മലയാളം</a></div></div>
   <div class="list-group-item">

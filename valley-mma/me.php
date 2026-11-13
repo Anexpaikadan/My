@@ -98,6 +98,8 @@ $dow = (int)date('N');
 $marks = day_marks($month . '-01', date('Y-m-t'), (int)$m['id']);
 $freeze = current_freeze((int)$m['id']);
 $leaves = q('SELECT * FROM gym_leaves WHERE to_date >= ? AND from_date <= ? ORDER BY from_date', [today(), date('Y-m-d', strtotime('+14 day'))])->fetchAll();
+$myEvents = events_upcoming(true, 5);
+$myRegs = q("SELECT event_id FROM event_regs WHERE member_id = ? AND status <> 'cancelled'", [$m['id']])->fetchAll(PDO::FETCH_COLUMN);
 $myAch = q('SELECT * FROM achievements WHERE member_id = ? ORDER BY ach_date IS NULL, ach_date DESC, id DESC', [$m['id']])->fetchAll();
 $progress = levels() && $m['status'] !== 'pending' ? level_progress($m) : null;
 $unread = (int)q('SELECT COUNT(*) FROM complaints WHERE member_id = ? AND member_unread = 1', [$m['id']])->fetchColumn();
@@ -106,18 +108,23 @@ $payAmount = $balance > 0 ? $balance : ($st !== 'active' && $plan ? (float)$plan
 <div class="d-flex align-items-center gap-3 mb-3 pt-2">
   <img src="<?= e(photo_url($m)) ?>" class="avatar" style="width:64px;height:64px" alt="">
   <div class="me-auto"><div class="fw-bold fs-5"><?= e($m['name']) ?></div><div class="small-muted"><?= e($m['adm_no']) ?> · <?= e(gym_title()) ?></div></div>
+  <button type="button" class="btn btn-sm btn-light theme-switch" data-theme-toggle aria-label="<?= e(t('dark_mode')) ?>"><i class="bi bi-moon-stars-fill"></i><i class="bi bi-sun-fill"></i></button>
   <a href="lang.php?l=<?= lang() === 'en' ? 'ml' : 'en' ?>" class="btn btn-sm btn-light"><?= lang() === 'en' ? 'മല' : 'EN' ?></a>
 </div>
 <?= flashes() ?>
 
-<div class="card mb-3 text-white" style="background:linear-gradient(135deg,#C8160E,#1A1A1A)"><div class="card-body">
-  <div class="d-flex justify-content-between align-items-start">
-    <div><div class="small opacity-75"><?= e(t('plan')) ?></div><div class="fs-5 fw-bold"><?= e($plan['name'] ?? '–') ?></div></div>
+<?php // days-left ring: how much of the current period is left
+$periodDays = $m['start_date'] && $m['expiry_date'] ? max(1, day_count($m['start_date'], $m['expiry_date'])) : 30;
+$ringPct = $m['expiry_date'] && $dl >= 0 ? min(100, round(($dl + 1) * 100 / $periodDays)) : 0; ?>
+<div class="card mb-3 text-white" style="background:linear-gradient(135deg,#C8160E,#1A1A1A)"><div class="card-body d-flex align-items-center gap-3">
+  <div class="me-auto">
+    <div class="small opacity-75"><?= e(t('plan')) ?></div><div class="fs-5 fw-bold mb-1"><?= e($plan['name'] ?? '–') ?></div>
     <?= status_badge($m['expiry_date'], $m['status']) ?>
+    <div class="small opacity-75 mt-2"><?= e(t('expiry_date')) ?></div><div class="fw-bold"><?= e(fdate($m['expiry_date'])) ?></div>
   </div>
-  <div class="d-flex justify-content-between mt-3">
-    <div><div class="small opacity-75"><?= e(t('expiry_date')) ?></div><div class="fw-bold"><?= e(fdate($m['expiry_date'])) ?></div></div>
-    <div class="text-end"><div class="small opacity-75"><?= e($dl < 0 ? t('st_expired') : t('days_left_label')) ?></div><div class="fs-4 fw-bold" style="color:#E8261C"><?= $m['expiry_date'] ? abs($dl) : '–' ?></div></div>
+  <div class="ring<?= $dl < 0 ? ' out' : ($dl <= 5 ? ' low' : '') ?>" data-ring="<?= $ringPct ?>">
+    <svg viewBox="0 0 100 100" aria-hidden="true"><circle class="ring-bg" cx="50" cy="50" r="42"></circle><circle class="ring-fg" cx="50" cy="50" r="42"></circle></svg>
+    <div class="ring-num"><?= $m['expiry_date'] ? abs($dl) : '–' ?><small><?= e($dl < 0 ? t('st_expired') : t('days_left_label')) ?></small></div>
   </div>
 </div></div>
 
@@ -172,6 +179,19 @@ $payAmount = $balance > 0 ? $balance : ($st !== 'active' && $plan ? (float)$plan
   <div class="me-auto"><div class="small-muted"><?= e(t('my_batch')) ?></div><div class="fw-bold"><?= e($myBatch['name']) ?></div>
     <div class="small"><?= e(batch_time($myBatch)) ?> · <?= e(batch_days($myBatch)) ?><?= $myBatch['trainer'] !== '' ? ' · ' . e($myBatch['trainer']) : '' ?></div></div>
 </div></div>
+<?php endif; ?>
+<?php if ($myEvents): ?>
+<div class="card mb-3"><div class="card-header"><i class="bi bi-calendar-event-fill text-primary"></i> <?= e(t('events')) ?></div>
+  <div class="list-group list-group-flush">
+    <?php foreach ($myEvents as $ev): $in = in_array($ev['id'], $myRegs); ?>
+      <a href="event.php?id=<?= (int)$ev['id'] ?>" class="list-group-item list-group-item-action d-flex align-items-center gap-3">
+        <span class="ev-thumb"><b><?= date('d', strtotime($ev['event_date'])) ?></b><?= e(date('M', strtotime($ev['event_date']))) ?></span>
+        <span class="me-auto"><span class="fw-semibold d-block"><?= e($ev['title']) ?></span><span class="small-muted"><?= e(t('evk_' . $ev['kind'])) ?><?= $ev['venue'] !== '' ? ' · ' . e($ev['venue']) : '' ?></span></span>
+        <span class="badge <?= $in ? 'bg-success' : 'bg-primary' ?>"><?= e(t($in ? 'ev_you_in' : 'ev_register')) ?></span>
+      </a>
+    <?php endforeach; ?>
+  </div>
+</div>
 <?php endif; ?>
 <?php if ($progress): ?>
 <?php if ($myAch): ?>

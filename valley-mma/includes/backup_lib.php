@@ -107,7 +107,7 @@ function read_backup(string $path, string $name): ?array
         for ($i = 0; $i < $zip->numFiles; $i++) {
             if (preg_match('#^photos/([a-f0-9]{20}\.jpg)$#', (string)$zip->getNameIndex($i), $mm)) {
                 $photos[$mm[1]] = $zip->getFromIndex($i);
-            } elseif (preg_match('#^media/(?:(?:products|programs|achievements)/)?[a-f0-9]{20}\.jpg$#', (string)$zip->getNameIndex($i))) {
+            } elseif (preg_match('#^media/(?:(?:products|programs|achievements|events)/)?[a-f0-9]{20}\.jpg$#', (string)$zip->getNameIndex($i))) {
                 $photos[(string)$zip->getNameIndex($i)] = $zip->getFromIndex($i);
             }
         }

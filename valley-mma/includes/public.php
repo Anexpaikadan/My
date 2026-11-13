@@ -2,7 +2,7 @@
 // Public website (home page, shop, rules): texts and settings the admin changes in
 // "Public page" (public_settings.php), the gym rules, product images and the public bottom bar.
 
-const PUB_SECTIONS = ['about', 'programs', 'achievements', 'fees', 'timings', 'rules', 'shop', 'contact'];
+const PUB_SECTIONS = ['about', 'programs', 'events', 'achievements', 'fees', 'timings', 'rules', 'shop', 'contact'];
 
 function pub_defaults(): array
 {
@@ -16,6 +16,8 @@ function pub_defaults(): array
         'pub_about_text'     => "Real fight training from coaches who compete.\nA friendly team for beginners – no experience needed.\nGet fit, learn to defend yourself and build confidence.",
         'pub_programs_title' => 'Programs',
         'pub_achievements_title' => 'Our Champions',
+        'pub_events_title'   => 'Events & Fight Nights',
+        'pub_show_events'    => '1',
         'pub_programs'       => "MMA | Striking, wrestling and ground work – the complete fight game\nBoxing | Footwork, defence and powerful punches\nMuay Thai | Kicks, knees, elbows and clinch work\nFitness | Strength, stamina and fat loss with fight conditioning",
         'pub_fees_title'     => 'Membership Fees',
         'pub_fees_note'      => 'One-time admission fee: ₹500. Renew every 30 days.',
@@ -77,7 +79,7 @@ function pub_wa_phone(string $k = 'pub_whatsapp'): string
 // A photo path saved in the database: only the app's own folders, and only when the file is there.
 function safe_img(string $path): string
 {
-    return preg_match('#^(assets/programs|media/(programs|achievements))/[\w.-]+\.(jpg|png|webp)$#', $path) && is_file(__DIR__ . '/../' . $path) ? $path : '';
+    return preg_match('#^(assets/programs|media/(programs|achievements|events))/[\w.-]+\.(jpg|png|webp)$#', $path) && is_file(__DIR__ . '/../' . $path) ? $path : '';
 }
 
 function programs_list(bool $all = false): array
@@ -127,6 +129,9 @@ function og_on(): bool
 
 function og_image_path(): string
 {
+    if (!empty($GLOBALS['vm_og_image'])) { // a page's own photo (e.g. an event)
+        return (string)$GLOBALS['vm_og_image'];
+    }
     $f = setting('og_img');
     return $f !== '' && is_file(__DIR__ . '/../media/' . $f) ? 'media/' . rawurlencode($f) : hero_url();
 }

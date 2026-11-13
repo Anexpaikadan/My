@@ -29,5 +29,6 @@
     'phones' => trim(setting('phone1') . '  ' . setting('phone2')),
 ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) ?>;</script>
 <script src="assets/app.js?v=<?= e(APP_VERSION) ?>"></script>
+<script src="assets/ui.js?v=<?= e(APP_VERSION) ?>"></script>
 </body>
 </html>
