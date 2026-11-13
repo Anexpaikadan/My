@@ -6,6 +6,12 @@ CREATE TABLE IF NOT EXISTS admins (
   username VARCHAR(50) NOT NULL UNIQUE,
   full_name VARCHAR(100) NOT NULL DEFAULT '',
   password_hash VARCHAR(255) NOT NULL,
+  /* admin = everything; trainer = only the rights listed in `rights` */
+  role ENUM('admin','trainer') NOT NULL DEFAULT 'admin',
+  phone VARCHAR(20) NOT NULL DEFAULT '',
+  about VARCHAR(300) NOT NULL DEFAULT '',
+  rights VARCHAR(200) NOT NULL DEFAULT '',
+  active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -169,7 +175,7 @@ INSERT IGNORE INTO settings (k, v) VALUES
   ('trial_days', '7'),
   ('auto_backup', '1'),
   ('backup_keep', '14'),
-  ('schema_version', '12');
+  ('schema_version', '13');
 
 INSERT IGNORE INTO plans (id, name, duration_value, duration_unit, price, description, sort_order) VALUES
   (1, 'Monthly', 1, 'month', 1500, 'MMA, boxing, kickboxing and fitness training', 1),

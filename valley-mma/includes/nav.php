@@ -10,7 +10,7 @@ $sections = nav_sections();
   <div class="sidebar-inner">
     <?= brand_html('index.php') ?>
     <nav class="nav flex-column mt-2">
-      <a class="nav-link<?= $active === 'dashboard' ? ' active' : '' ?>" href="index.php"><i class="bi bi-speedometer2"></i><span><?= e(t('dashboard')) ?></span></a>
+      <?php if (!is_trainer()): ?><a class="nav-link<?= $active === 'dashboard' ? ' active' : '' ?>" href="index.php"><i class="bi bi-speedometer2"></i><span><?= e(t('dashboard')) ?></span></a><?php endif; ?>
       <?php foreach ($sections as $sec => $items): ?>
         <div class="nav-section"><?= e(t($sec)) ?></div>
         <?php foreach ($items as [$href, $key, $icon, $id]): ?>
@@ -32,7 +32,7 @@ $sections = nav_sections();
 </aside>
 
 <?php
-$navTab = ['dashboard' => 'home', 'members' => 'members', 'add_member' => 'members', 'plans' => 'members', 'alerts' => 'members', 'levels' => 'members', 'complaints' => 'members', 'requests' => 'members', 'achievements' => 'members', 'batches' => 'attendance', 'events' => 'more',
+$navTab = ['dashboard' => 'home', 'members' => 'members', 'add_member' => 'members', 'plans' => 'members', 'alerts' => 'members', 'levels' => 'members', 'complaints' => 'members', 'requests' => 'members', 'achievements' => 'members', 'batches' => 'attendance', 'timetable' => 'attendance', 'events' => 'more',
     'attendance' => 'attendance', 'accounts' => 'money', 'payments' => 'money', 'reports' => 'money'][$active] ?? 'more';
 $bottom = [
     ['index.php', 'home', 'bi-house-door', 'bi-house-door-fill', t('home')],
@@ -41,6 +41,18 @@ $bottom = [
     ['accounts.php', 'money', 'bi-wallet2', 'bi-wallet-fill', t('accounts')],
     ['more.php', 'more', 'bi-grid', 'bi-grid-fill', t('more')],
 ];
+if (is_trainer()) { // trainers: their classes, the timetable and (with the right) attendance
+    $navTab = ['trainer' => 'home', 'timetable' => 'members', 'attendance' => 'attendance', 'activities' => 'money'][$active] ?? 'more';
+    $bottom = [
+        ['trainer.php', 'home', 'bi-house-door', 'bi-house-door-fill', t('home')],
+        ['timetable.php', 'members', 'bi-calendar3', 'bi-calendar3', t('timetable')],
+        trainer_can('attendance') ? ['attendance.php', 'attendance', 'bi-qr-code-scan', 'bi-qr-code-scan', t('attendance')]
+            : ['timetable.php?day=' . today(), 'attendance', 'bi-calendar-day', 'bi-calendar-day', t('today')],
+        trainer_can('plan') ? ['activities.php', 'money', 'bi-calendar-week', 'bi-calendar-week-fill', t('month_plan')]
+            : ['me.php', 'money', 'bi-phone', 'bi-phone-fill', t('member_app')],
+        ['more.php', 'more', 'bi-grid', 'bi-grid-fill', t('more')],
+    ];
+}
 ?>
 <nav class="bottom-nav d-lg-none d-print-none" aria-label="<?= e(t('menu')) ?>">
   <?php foreach ($bottom as [$href, $id, $icon, $iconOn, $label]): ?>

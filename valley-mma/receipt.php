@@ -5,7 +5,7 @@
 require __DIR__ . '/includes/init.php';
 
 $id = (int)get('id');
-$isAdmin = admin() !== null;
+$isAdmin = admin() !== null && !is_trainer(); // trainers have no right to see payments
 if (!$isAdmin && !hash_equals(sign('receipt' . $id), get('k'))) {
     $member = member_user();
     $own = $member && q('SELECT COUNT(*) FROM payments WHERE id = ? AND member_id = ?', [$id, $member['id']])->fetchColumn();

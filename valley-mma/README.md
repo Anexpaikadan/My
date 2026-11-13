@@ -24,6 +24,10 @@ It has English and Malayalam (switch at any time), and you can install it on a p
 | **Plans** | Monthly, 3 months, 6 months, yearly (or any number of days/months). Change price and duration. Send one plan or all plans on WhatsApp |
 | **Payments** | Admission fee, plan (renews the membership automatically), other fee, total, paid, balance. Cash / UPI / card / bank, UPI QR code for the exact amount. **Change or delete a payment** (pencil button in Payments, on the member page or *Edit / Delete* on the receipt; same receipt number, membership dates and accounts follow, password asked). Payment history and a printable receipt in the same layout as the paper receipt, with a WhatsApp button that sends the receipt link |
 | **Alerts** | Members expiring soon, expired members and pending balances, each with a WhatsApp reminder that includes the UPI ID, UPI number and a pay link. Birthdays (today and next 7 days) with a WhatsApp wish. Absent members (active but not came for N days, set in Settings) with a WhatsApp follow-up |
+| **Class timetable** | A new timetable for every month, made from the batches: tick the **weekly holidays** (e.g. Saturday and Sunday) and press *Create timetable*. Calendar of the month with every class and its trainer; tap a date to set the trainer of a class (also for the rest of the month), switch a class off, add an extra class or make the day a holiday. Every class lists its **students** with today's attendance. Members see the timetable of their batch in the member app; print for the wall |
+| **Trainers** | A login for each trainer with the role *Trainer* and rights the admin switches on: mark attendance, contact students, change the training plan, see all classes, join requests. A trainer sees only their own page (today's classes, next classes, their batches and students) and the timetable – never payments, accounts, reports, settings, backups or member data. Send the login on WhatsApp |
+| **Events & fight nights** | Events with photo, date, venue, fee, capacity and registration. Public event page (shown in a slider on the public page and in the member app): members register with one tap, visitors with name and WhatsApp number. Admin: registrations, confirm, fee paid, WhatsApp, share the event |
+| **Look and motion** | Page fade-in, cards rise in on scroll, dashboard numbers count up, press feedback, loading bar, animated check-in tick with vibration, confetti on a new position, days-left ring in the member app. **Dark mode** switch (More page / member app). Motion is off for phones set to reduce motion |
 | **Batches** | Class times (Morning, Evening, Night, Kids … – time, days, trainer, capacity, note). Every member has a batch (member form; or tick members in a batch and *Move to*). A batch page shows its members, who came today and who was **late** (minutes after the start), fill vs capacity, and *Message batch* on WhatsApp (group or each member). Filters by batch in Members, *Mark by hand* and Monthly attendance. The public page shows the batches as class timings, the free trial form asks for the preferred batch, and the member app shows *My batch*. Dashboard: batches today and the next one |
 | **Attendance** | 1) The admin phone shows today's QR code (dated, optionally changing every few minutes). Members scan it with their phone camera and are marked present. 2) The admin scans member ID cards (front/back camera). 3) Mark by hand. The order of these 3 ways and the default one are set in Settings. Monthly attendance sheet |
 | **Gym leave** | Write a gym-closed notice (dates, title, message – quick titles: holiday, festival, rain …) and share it on WhatsApp: to a group or any chat, copy the text, or send it to each active member one by one. Shown on the dashboard, in the member app and in red on all attendance calendars; tap a red day to change it |
@@ -126,7 +130,8 @@ valley-mma/
   activities.php        monthly training plan (and the standard week); me_plan.php (member view)
   home.php, shop.php, rules.php, trial.php   public website; join_requests.php, join_request.php (admin); public_settings.php, products.php (admin)
   media/                public photos (top photo, products) – must be writable
-  batches.php           batches (class times)
+  batches.php           batches (class times); timetable.php (monthly class timetable); trainers.php, trainer.php (trainer home)
+  events.php, event.php events and fight nights (admin / public page)
   programs.php, achievements.php   programs and champions for the public page
   levels.php            positions by attendance; complaints.php, complaint.php (admin), me_complaints.php (member)
   leaves.php            gym leave (closed days) with WhatsApp sharing; freeze.php (member freeze)
@@ -139,7 +144,7 @@ valley-mma/
   includes/             init.php (helpers), accounts.php, header/nav/footer, lang.php (English + Malayalam), sql_tools.php
   assets/               style.css, print.css, app.js, attendance.js, qr.js, icons, vendor libraries
   sql/                  valley_mma_clean.sql (clean, for phpMyAdmin), database.sql (with sample data),
-                        schema.sql, accounts.sql, leaves.sql, levels.sql, shop.sql, join_requests.sql, programs.sql, batches.sql, sample_data.sql (used by install.php)
+                        schema.sql, accounts.sql, leaves.sql, levels.sql, shop.sql, join_requests.sql, programs.sql, batches.sql, events.sql, timetable.sql, sample_data.sql (used by install.php)
   uploads/photos/       member photos (not web-accessible)
   backups/              backups saved on the server (not web-accessible)
 ```

@@ -42,6 +42,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         q('INSERT INTO batches (name, start_time, end_time, days, trainer, capacity, note, show_public, active, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', $vals);
         $id = (int)db()->lastInsertId();
     }
+    // trainer with a login (Trainers page): the name is taken from there
+    $tid = (int)post('trainer_id');
+    $tname = $tid ? trainer_name($tid) : '';
+    q('UPDATE batches SET trainer_id = ?' . ($tname !== '' ? ', trainer = ' . db()->quote($tname) : '') . ' WHERE id = ?', [$tname !== '' ? $tid : null, $id]);
     flash('success', t('saved'));
     redirect('batches.php?id=' . $id);
 }
@@ -81,7 +85,12 @@ require __DIR__ . '/includes/header.php';
           <label class="btn btn-outline-primary" for="bd<?= $d ?>"><?= e(mb_substr(t('day' . $d), 0, 3)) ?></label>
         <?php endfor; ?>
       </div></div>
-    <div class="col-md-6"><label class="form-label small" for="bt"><?= e(t('trainer')) ?></label><input class="form-control" id="bt" name="trainer" maxlength="100" value="<?= e($edit['trainer']) ?>" placeholder="<?= e(t('trainer_ph')) ?>"></div>
+    <div class="col-md-6"><label class="form-label small" for="bt"><?= e(t('trainer')) ?></label>
+      <?php if (trainers()): ?>
+        <select class="form-select mb-1" name="trainer_id" aria-label="<?= e(t('trainer')) ?>" onchange="if(this.value)document.getElementById('bt').value=this.options[this.selectedIndex].text"><option value=""><?= e(t('trainer_other')) ?></option>
+          <?php foreach (trainers() as $tr): ?><option value="<?= $tr['id'] ?>"<?= (int)($edit['trainer_id'] ?? 0) === (int)$tr['id'] ? ' selected' : '' ?>><?= e($tr['full_name'] ?: $tr['username']) ?></option><?php endforeach; ?></select>
+      <?php endif; ?>
+      <input class="form-control" id="bt" name="trainer" maxlength="100" value="<?= e($edit['trainer']) ?>" placeholder="<?= e(t('trainer_ph')) ?>"></div>
     <div class="col-6 col-md-3"><label class="form-label small" for="bc"><?= e(t('capacity')) ?></label><input class="form-control" type="number" min="0" max="999" id="bc" name="capacity" value="<?= (int)$edit['capacity'] ?>"><div class="form-text"><?= e(t('capacity_help')) ?></div></div>
     <div class="col-6 col-md-3"><label class="form-label small" for="bo"><?= e(t('sort_order')) ?></label><input class="form-control" type="number" id="bo" name="sort_order" value="<?= (int)$edit['sort_order'] ?>"></div>
     <div class="col-12"><label class="form-label small" for="bx"><?= e(t('note')) ?></label><input class="form-control" id="bx" name="note" maxlength="200" value="<?= e($edit['note']) ?>" placeholder="<?= e(t('batch_note_ph')) ?>"></div>

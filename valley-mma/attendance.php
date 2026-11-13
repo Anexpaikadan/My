@@ -26,7 +26,7 @@ function today_list(): array
 
 $action = post('action') ?: get('action');
 
-if ($action === 'set_url') { // fix the address in the QR (phones cannot open "localhost")
+if ($action === 'set_url' && !is_trainer()) { // fix the address in the QR (phones cannot open "localhost")
     $url = post('url');
     if (valid_app_url($url)) {
         set_setting('app_url', rtrim($url, '/') . '/');
@@ -88,7 +88,7 @@ if ($action === 'manual') {
     if ($skipped) {
         flash('warning', t('not_marked_list', implode(', ', $skipped)));
     }
-    redirect(post('back') === 'member' ? 'member_view.php?id=' . (int)post('member_id') : 'attendance.php?tab=manual&date=' . $date);
+    redirect(post('back') === 'member' ? 'member_view.php?id=' . (int)post('member_id') : (post('back') === 'class' ? 'timetable.php?day=' . $date : 'attendance.php?tab=manual&date=' . $date));
 }
 if ($action === 'remove') {
     require_verify('attendance.php?tab=list');

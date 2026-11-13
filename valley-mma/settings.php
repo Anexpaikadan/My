@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect('settings.php#' . $a);
 }
 
-$admins = q('SELECT id, username, full_name, created_at FROM admins ORDER BY id')->fetchAll();
+$admins = q("SELECT id, username, full_name, created_at FROM admins WHERE role = 'admin' ORDER BY id")->fetchAll();
 $order = array_values(array_unique(array_merge(array_intersect(explode(',', setting('att_order', 'qr,card,manual')), ['qr', 'card', 'manual']), ['qr', 'card', 'manual'])));
 $attLabels = ['qr' => t('show_qr'), 'card' => t('scan_card'), 'manual' => t('mark_manually')];
 $s = fn($k, $d = '') => e(setting($k, $d));

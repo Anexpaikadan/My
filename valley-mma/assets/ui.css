@@ -167,3 +167,17 @@ html[data-theme="dark"] .theme-switch .bi-moon-stars-fill { display: none; }
   .main, .main-bare { animation: none !important; }
   #vmBar { display: none !important; }
 }
+
+/* ---------- Class timetable (classes with trainers) ---------- */
+.tt-classes td { height: 7rem; }
+.tt th.tt-hol { background: #5a5656; }
+.tt-class { display: block; font-size: .7rem; line-height: 1.25; margin-top: .2rem; padding: .15rem .3rem; border-radius: .35rem; background: #FBE7E6; border-left: 3px solid var(--vm-blue); }
+.tt-class b { font-weight: 800; }
+.tt-class i { display: block; font-style: normal; color: #6E6B6B; }
+.tt-class i.tt-warn { color: #b26a00; font-weight: 700; }
+.tt-class.off { background: #EEE; border-left-color: #999; text-decoration: line-through; opacity: .7; }
+.tt-holiday { text-transform: uppercase; letter-spacing: .5px; font-weight: 700; }
+html[data-theme="dark"] body:not(.pub-dark) .tt-class { background: #3a1512; }
+html[data-theme="dark"] body:not(.pub-dark) .tt-class i { color: #C9C6C6; }
+html[data-theme="dark"] body:not(.pub-dark) .tt-class.off { background: #2B2929; }
+@media print { .tt-classes td { height: auto; } .tt-class { border: 1px solid #ccc; } }

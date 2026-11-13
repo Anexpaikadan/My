@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS batches (
   /* days of the week: 1 = Monday … 7 = Sunday, e.g. '123456' */
   days VARCHAR(7) NOT NULL DEFAULT '123456',
   trainer VARCHAR(100) NOT NULL DEFAULT '',
+  trainer_id INT UNSIGNED NULL,
   capacity SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   note VARCHAR(200) NOT NULL DEFAULT '',
   show_public TINYINT(1) NOT NULL DEFAULT 1,

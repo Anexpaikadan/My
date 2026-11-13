@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (too_many_attempts()) {
         $error = t('too_many');
     } else {
-        $u = q('SELECT * FROM admins WHERE username = ?', [post('username')])->fetch();
+        $u = q('SELECT * FROM admins WHERE username = ? AND active = 1', [post('username')])->fetch();
         if ($u && password_verify((string)($_POST['password'] ?? ''), $u['password_hash'])) {
             session_regenerate_id(true);
             $_SESSION['admin_id'] = (int)$u['id'];
@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $to = (string)($_SESSION['after_login'] ?? '');
             unset($_SESSION['after_login']);
-            redirect(preg_match('#^/[^/\\\\]#', $to) ? $to : 'index.php');
+            redirect($u['role'] === 'trainer' ? 'trainer.php' : (preg_match('#^/[^/\\\\]#', $to) ? $to : 'index.php'));
         }
         failed_attempt();
         $error = t('login_wrong');

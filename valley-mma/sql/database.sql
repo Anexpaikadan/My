@@ -19,6 +19,12 @@ CREATE TABLE IF NOT EXISTS admins (
   username VARCHAR(50) NOT NULL UNIQUE,
   full_name VARCHAR(100) NOT NULL DEFAULT '',
   password_hash VARCHAR(255) NOT NULL,
+  /* admin = everything; trainer = only the rights listed in `rights` */
+  role ENUM('admin','trainer') NOT NULL DEFAULT 'admin',
+  phone VARCHAR(20) NOT NULL DEFAULT '',
+  about VARCHAR(300) NOT NULL DEFAULT '',
+  rights VARCHAR(200) NOT NULL DEFAULT '',
+  active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -182,7 +188,7 @@ INSERT IGNORE INTO settings (k, v) VALUES
   ('trial_days', '7'),
   ('auto_backup', '1'),
   ('backup_keep', '14'),
-  ('schema_version', '12');
+  ('schema_version', '13');
 
 INSERT IGNORE INTO plans (id, name, duration_value, duration_unit, price, description, sort_order) VALUES
   (1, 'Monthly', 1, 'month', 1500, 'MMA, boxing, kickboxing and fitness training', 1),
@@ -404,6 +410,7 @@ CREATE TABLE IF NOT EXISTS batches (
   /* days of the week: 1 = Monday … 7 = Sunday, e.g. '123456' */
   days VARCHAR(7) NOT NULL DEFAULT '123456',
   trainer VARCHAR(100) NOT NULL DEFAULT '',
+  trainer_id INT UNSIGNED NULL,
   capacity SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   note VARCHAR(200) NOT NULL DEFAULT '',
   show_public TINYINT(1) NOT NULL DEFAULT 1,
@@ -662,4 +669,25 @@ CREATE TABLE IF NOT EXISTS event_regs (
   KEY idx_member (member_id),
   CONSTRAINT fk_reg_event FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE,
   CONSTRAINT fk_reg_member FOREIGN KEY (member_id) REFERENCES members (id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+/* Monthly class timetable: one row per class (batch on a date) with its trainer.
+   Trainers are logins in the admins table with role 'trainer' and limited rights. */
+CREATE TABLE IF NOT EXISTS timetable_months (
+  month CHAR(7) NOT NULL PRIMARY KEY,
+  /* weekly holidays of that month: 1 = Monday … 7 = Sunday, e.g. '67' */
+  holidays VARCHAR(7) NOT NULL DEFAULT '',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS class_sessions (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  class_date DATE NOT NULL,
+  batch_id INT UNSIGNED NOT NULL,
+  trainer_id INT UNSIGNED NULL,
+  status ENUM('on','off') NOT NULL DEFAULT 'on',
+  note VARCHAR(200) NOT NULL DEFAULT '',
+  UNIQUE KEY uq_class (class_date, batch_id),
+  KEY idx_trainer (trainer_id, class_date),
+  CONSTRAINT fk_cs_batch FOREIGN KEY (batch_id) REFERENCES batches (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -29,7 +29,7 @@ $title = t('more');
 $active = 'more';
 require __DIR__ . '/includes/header.php';
 ?>
-<form action="members.php" class="mb-3" role="search">
+<form action="members.php" class="mb-3<?= is_trainer() ? ' d-none' : '' ?>" role="search">
   <div class="input-group input-group-lg">
     <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
     <input class="form-control" type="search" name="s" placeholder="<?= e(t('search_ph')) ?>" aria-label="<?= e(t('search')) ?>">
@@ -41,7 +41,7 @@ require __DIR__ . '/includes/header.php';
   <div class="tile-grid mb-4">
     <?php foreach (array_merge($items, $extra[$sec] ?? []) as [$href, $key, $icon]): ?>
       <a href="<?= e($href) ?>" class="tile tap"<?= $href === 'me.php' || $href === 'member_print.php' ? ' target="_blank"' : '' ?>>
-        <span class="ico <?= $colors[$sec] ?>"><i class="bi <?= $icon ?>"></i></span>
+        <span class="ico <?= $colors[$sec] ?? 'ico-blue' ?>"><i class="bi <?= $icon ?>"></i></span>
         <span class="tl"><?= e(t($key)) ?></span>
       </a>
     <?php endforeach; ?>

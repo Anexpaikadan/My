@@ -4,7 +4,7 @@
 declare(strict_types=1);
 
 // App version: shown in the app (More, login, Scanner test). Must match window.VM_JS in assets/app.js.
-const APP_VERSION = '4.9';
+const APP_VERSION = '5.0';
 
 $CONFIG = require __DIR__ . '/../config.php';
 date_default_timezone_set($CONFIG['timezone'] ?? 'Asia/Kolkata');
@@ -66,7 +66,7 @@ function db(): PDO
 function migrate(PDO $pdo): void
 {
     $v = (int)$pdo->query("SELECT v FROM settings WHERE k = 'schema_version'")->fetchColumn();
-    if ($v >= 12) {
+    if ($v >= 13) {
         return;
     }
     if ($v < 2) {
@@ -120,7 +120,19 @@ function migrate(PDO $pdo): void
     run_sql($pdo, file_get_contents(__DIR__ . '/../sql/activity_days.sql'));
     // v12: events and fight nights
     run_sql($pdo, file_get_contents(__DIR__ . '/../sql/events.sql'));
-    $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '12') ON DUPLICATE KEY UPDATE v = '12'");
+    // v13: trainers (logins with limited rights) and the monthly class timetable
+    $cols = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'admins'")->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('role', $cols, true)) {
+        $pdo->exec("ALTER TABLE admins ADD COLUMN role ENUM('admin','trainer') NOT NULL DEFAULT 'admin' AFTER password_hash,
+            ADD COLUMN phone VARCHAR(20) NOT NULL DEFAULT '' AFTER role, ADD COLUMN about VARCHAR(300) NOT NULL DEFAULT '' AFTER phone,
+            ADD COLUMN rights VARCHAR(200) NOT NULL DEFAULT '' AFTER about, ADD COLUMN active TINYINT(1) NOT NULL DEFAULT 1 AFTER rights");
+    }
+    $cols = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'batches'")->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('trainer_id', $cols, true)) {
+        $pdo->exec('ALTER TABLE batches ADD COLUMN trainer_id INT UNSIGNED NULL AFTER trainer');
+    }
+    run_sql($pdo, file_get_contents(__DIR__ . '/../sql/timetable.sql'));
+    $pdo->exec("INSERT INTO settings (k, v) VALUES ('schema_version', '13') ON DUPLICATE KEY UPDATE v = '13'");
 }
 
 // Sets level_id from the attendance days (add a WHERE).
@@ -324,7 +336,7 @@ function admin(): ?array
                 unset($_SESSION['admin_id']);
             } else {
                 $_SESSION['admin_seen'] = time();
-                $a = q('SELECT id, username, full_name FROM admins WHERE id = ?', [$_SESSION['admin_id']])->fetch() ?: null;
+                $a = q('SELECT id, username, full_name, role, rights, phone FROM admins WHERE id = ? AND active = 1', [$_SESSION['admin_id']])->fetch() ?: null;
             }
         }
     }
@@ -339,11 +351,55 @@ function require_admin(): array
         redirect('login.php');
     }
     csrf_check();
+    if ($a['role'] === 'trainer') { // trainers: only their own pages and what their rights allow
+        $page = basename((string)($_SERVER['SCRIPT_NAME'] ?? ''));
+        $need = TRAINER_PAGES[$page] ?? null;
+        if ($need === null || ($need !== '' && !trainer_can($need))) {
+            if ($page !== 'index.php') {
+                flash('warning', t('no_right'));
+            }
+            redirect('trainer.php');
+        }
+        return $a;
+    }
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         require_once __DIR__ . '/backup_lib.php';
         auto_backup_if_due();
     }
     return $a;
+}
+
+// ---- Trainers: role and rights -------------------------------------
+// Rights the admin can give a trainer, and the pages a trainer may open ('' = always, else the right needed).
+const TRAINER_RIGHTS = ['attendance' => 'bi-qr-code-scan', 'contact' => 'bi-telephone', 'plan' => 'bi-calendar-week', 'all_classes' => 'bi-calendar3', 'requests' => 'bi-person-raised-hand'];
+const TRAINER_PAGES = ['trainer.php' => '', 'timetable.php' => '', 'more.php' => '', 'attendance.php' => 'attendance', 'attendance_monthly.php' => 'attendance',
+    'activities.php' => 'plan', 'join_requests.php' => 'requests', 'join_request.php' => 'requests'];
+
+function is_trainer(): bool
+{
+    return (admin()['role'] ?? '') === 'trainer';
+}
+
+function trainer_can(string $right): bool
+{
+    $a = admin();
+    return $a && ($a['role'] !== 'trainer' || in_array($right, explode(',', (string)$a['rights']), true));
+}
+
+function trainers(bool $all = false): array
+{
+    static $cache = [];
+    return $cache[(int)$all] ??= q("SELECT id, username, full_name, phone, about, rights, active FROM admins WHERE role = 'trainer'" . ($all ? '' : ' AND active = 1') . ' ORDER BY full_name, username')->fetchAll();
+}
+
+function trainer_name(?int $id): string
+{
+    foreach (trainers(true) as $t) {
+        if ((int)$t['id'] === (int)$id) {
+            return $t['full_name'] !== '' ? $t['full_name'] : $t['username'];
+        }
+    }
+    return '';
 }
 
 // Money changes and deletes need the admin password again (pop-up in the page, field "verify_password").
@@ -432,6 +488,19 @@ function valid_app_url(string $url): bool
 // Menu sections: [link, text key, icon, active key]. Used by the sidebar and the "More" page.
 function nav_sections(): array
 {
+    if (is_trainer()) { // trainers see only their pages
+        $items = [['trainer.php', 'my_classes', 'bi-person-badge-fill', 'trainer'], ['timetable.php', 'class_timetable', 'bi-calendar3', 'timetable']];
+        if (trainer_can('attendance')) {
+            $items[] = ['attendance.php', 'attendance', 'bi-qr-code-scan', 'attendance'];
+        }
+        if (trainer_can('plan')) {
+            $items[] = ['activities.php', 'daily_activity', 'bi-calendar-week', 'activities'];
+        }
+        if (trainer_can('requests')) {
+            $items[] = ['join_requests.php', 'join_requests', 'bi-person-raised-hand', 'requests'];
+        }
+        return ['trainer_menu' => $items];
+    }
     return [
         'sec_members' => [
             ['members.php', 'members', 'bi-people-fill', 'members'],
@@ -439,10 +508,12 @@ function nav_sections(): array
             ['member_invite.php', 'invite_member', 'bi-person-plus-fill', 'add_member'],
             ['member_edit.php', 'add_member', 'bi-person-vcard-fill', 'add_member'],
             ['member_edit.php?old=1', 'add_old_student', 'bi-person-check-fill', 'add_member'],
-            ['batches.php', 'batches', 'bi-clock-history', 'batches'],
-            ['events.php', 'events', 'bi-calendar-event-fill', 'events'],
+            ['plans.php', 'plans', 'bi-card-checklist', 'plans'],
             ['attendance.php', 'attendance', 'bi-qr-code-scan', 'attendance'],
             ['batches.php', 'batches', 'bi-clock-history', 'batches'],
+            ['timetable.php', 'class_timetable', 'bi-calendar3', 'timetable'],
+            ['trainers.php', 'trainers', 'bi-person-badge-fill', 'trainers'],
+            ['events.php', 'events', 'bi-calendar-event-fill', 'events'],
             ['alerts.php', 'alerts', 'bi-bell-fill', 'alerts'],
             ['levels.php', 'positions', 'bi-award-fill', 'levels'],
             ['complaints.php', 'complaints', 'bi-chat-left-text-fill', 'complaints'],
@@ -1242,3 +1313,4 @@ function reminder_text(array $m, float $amount = 0): string
 
 require __DIR__ . '/public.php';
 require __DIR__ . '/events_lib.php';
+require __DIR__ . '/timetable_lib.php';
