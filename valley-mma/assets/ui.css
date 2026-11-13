@@ -12,7 +12,8 @@
 @keyframes vm-confetti { to { transform: translate(var(--dx), 105vh) rotate(var(--rot)); opacity: .9; } }
 @keyframes vm-shake { 10%, 90% { transform: translateX(-2px); } 30%, 70% { transform: translateX(4px); } 50% { transform: translateX(-4px); } }
 
-.main, .main-bare { animation: vm-page-in .35s ease both; }
+/* "backwards" (not "both"): no transform stays on the page after the fade-in – a kept transform traps pop-ups (modals) under their backdrop. */
+.main, .main-bare { animation: vm-page-in .35s ease backwards; }
 
 /* Elements below the fold rise in when they are scrolled to (class added by ui.js). */
 .rv { opacity: 0; transform: translateY(18px); transition: opacity .5s ease, transform .5s cubic-bezier(.2, .7, .2, 1); transition-delay: calc(var(--i, 0) * 60ms); }
@@ -39,7 +40,7 @@
 .vm-confetti { position: fixed; top: -12px; width: 9px; height: 14px; z-index: 3000; pointer-events: none; border-radius: 2px; animation: vm-confetti var(--t, 2.6s) cubic-bezier(.2, .6, .4, 1) forwards; }
 
 /* Alerts and pop-ups */
-.alert { animation: vm-page-in .3s ease both; }
+.alert { animation: vm-page-in .3s ease backwards; }
 .modal.fade .modal-dialog { transform: translateY(30px) scale(.97); transition: transform .28s cubic-bezier(.2, .8, .2, 1); }
 .modal.show .modal-dialog { transform: none; }
 
@@ -53,7 +54,7 @@
 /* Public page */
 .pub-hero { overflow: hidden; }
 .pub-hero-img { animation: vm-kenburns 16s ease-in-out infinite alternate; transform-origin: 50% 30%; }
-.pub-hero-body { animation: vm-page-in .6s ease .15s both; }
+.pub-hero-body { animation: vm-page-in .6s ease .15s backwards; }
 .trial-btn { animation: vm-glow 2.4s ease-in-out infinite; }
 .prog-img, .ach-img, .ev-img, .shop-thumb img { transition: transform .5s cubic-bezier(.2, .7, .2, 1); }
 .prog-card:hover .prog-img, .prog-card:active .prog-img, .ach-card:hover .ach-img, .ev-card:hover .ev-img, .shop-item:hover .shop-thumb img { transform: scale(1.07); }
